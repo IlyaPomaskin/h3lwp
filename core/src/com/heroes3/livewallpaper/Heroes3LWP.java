@@ -1,7 +1,9 @@
 package com.heroes3.livewallpaper;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -36,15 +38,15 @@ public class Heroes3LWP extends ApplicationAdapter {
 
         setNewRandomRect(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
-//        Gdx.input.setInputProcessor(new InputAdapter() {
-//            @Override
-//            public boolean touchUp(int x, int y, int pointer, int button) {
-//                if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
-//                    setNewRandomRect(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-//                }
-//                return true;
-//            }
-//        });
+        Gdx.input.setInputProcessor(new InputAdapter() {
+            @Override
+            public boolean touchUp(int x, int y, int pointer, int button) {
+                if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
+                    setNewRandomRect(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+                }
+                return true;
+            }
+        });
 
         Gdx.graphics.setContinuousRendering(true);
     }
@@ -61,11 +63,11 @@ public class Heroes3LWP extends ApplicationAdapter {
         return null;
     }
 
-    private float deltaTime = 0;
-
     @Override
     public void render() {
-        mapRender.assets.update();
+        // FIXME render sprites as soon as they loaded
+        mapRender.assets.finishLoading();
+//        mapRender.assets.update();
 
         try {
             Thread.sleep(180);
@@ -78,7 +80,7 @@ public class Heroes3LWP extends ApplicationAdapter {
         batch.setTransformMatrix(camera.view);
         batch.setProjectionMatrix(camera.projection);
 
-        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClearColor(0, 0, 0, 0);
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -112,7 +114,6 @@ public class Heroes3LWP extends ApplicationAdapter {
             }
             mapRender.setRandomRect(width, height);
         }
-        ;
     }
 
     private String getRandomMapName() {
