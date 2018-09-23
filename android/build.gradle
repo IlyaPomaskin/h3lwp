@@ -1,6 +1,6 @@
 android {
-    buildToolsVersion "25.0.3"
-    compileSdkVersion 19
+    buildToolsVersion "28.0.2"
+    compileSdkVersion 28
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
@@ -12,15 +12,15 @@ android {
             jniLibs.srcDirs = ['libs']
         }
 
-        instrumentTest.setRoot('tests')
+//        instrumentTest.setRoot('tests')
     }
     packagingOptions {
         exclude 'META-INF/robovm/ios/robovm.xml'
     }
     defaultConfig {
         applicationId "com.heroes3.livewallpaper"
-        minSdkVersion 9
-        targetSdkVersion 19
+        minSdkVersion 28
+        targetSdkVersion 28
     }
 }
 
