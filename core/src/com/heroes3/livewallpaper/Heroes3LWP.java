@@ -36,13 +36,13 @@ public class Heroes3LWP extends ApplicationAdapter {
 
         mapRender = new MapRender(camera);
 
-        setNewRandomRect(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        setNewRandomRect(false);
 
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean touchUp(int x, int y, int pointer, int button) {
                 if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
-                    setNewRandomRect(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+                    setNewRandomRect(true);
                 }
                 return true;
             }
@@ -96,23 +96,24 @@ public class Heroes3LWP extends ApplicationAdapter {
     @Override
     public void resize(int width, int height) {
         camera.update();
-        setNewRandomRect(width, height);
+        setNewRandomRect(false);
     }
 
     @Override
     public void resume() {
-        setNewRandomRect(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        setNewRandomRect(false);
     }
 
-    private void setNewRandomRect(int width, int height) {
-        if (TimeUtils.timeSinceMillis(rectChangeTime) > RECT_CHANGE_INTERVAL) {
+    private void setNewRandomRect(boolean force) {
+        if (TimeUtils.timeSinceMillis(rectChangeTime) > RECT_CHANGE_INTERVAL || force) {
             rectChangeTime = TimeUtils.millis();
             String nextMap = getRandomMapName();
             if (!nextMap.equals(currentMap)) {
                 currentMap = nextMap;
                 mapRender.setMap(readMap("maps/" + currentMap));
             }
-            mapRender.setRandomRect(width, height);
+
+            mapRender.setRandomRect(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         }
     }
 

@@ -15,7 +15,6 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class MapRender {
@@ -49,11 +48,8 @@ public class MapRender {
         int offset = 3;
         int screenWidthTiles = MathUtils.ceil(width / MapRender.TILE_SIZE) + offset;
         int screenHeightTiles = MathUtils.ceil(height / MapRender.TILE_SIZE) + offset;
-
-//        int rectX = MathUtils.random(0, map.size - screenWidthTiles) - offset;
-//        int rectY = MathUtils.random(0, map.size - screenHeightTiles) - offset;
-        int rectX = MathUtils.random(0, 0) - offset;
-        int rectY = MathUtils.random(0, 0) - offset;
+        int rectX = MathUtils.random(0, map.size - screenWidthTiles) - offset;
+        int rectY = MathUtils.random(0, map.size - screenHeightTiles) - offset;
         Rectangle rect = new Rectangle(
                 Math.max(rectX, 0), Math.max(rectY, 0),
                 screenWidthTiles, screenHeightTiles
@@ -64,7 +60,7 @@ public class MapRender {
         setRect(rect);
     }
 
-    public void setRect(Rectangle nextRect) {
+    private void setRect(Rectangle nextRect) {
         this.rect = nextRect;
         refreshTerrainCache();
         removeQueuedAssets();
@@ -107,7 +103,7 @@ public class MapRender {
         visibleObjects.clear();
 
         for (MapObject object : map.objects) {
-            if (isFitInRect(object.x, object.y)) {
+            if (isFitInRect(object.x, object.y) && object.z == 0) {
                 Array<AtlasRegion> atlasRegions = mapObjectsAtlas.findRegions(object.def.toString());
                 if (atlasRegions.size == 0) {
                     System.err.printf("Sprite not found: %s\r\n", object.def.toString());
