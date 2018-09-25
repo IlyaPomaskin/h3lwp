@@ -18,18 +18,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MapRender {
-    public final static int TILE_SIZE = 32;
-    public SpriteCache terrainCache;
     public AssetManager assets = new AssetManager();
-    TextureAtlas terrains;
-    TextureAtlas mapObjectsAtlas;
+    private final static int TILE_SIZE = 32;
+    private SpriteCache terrainCache;
+    private TextureAtlas terrains;
+    private TextureAtlas mapObjectsAtlas;
     private Rectangle rect;
     private Map map;
     private List<MapSprite> visibleObjects = new ArrayList<MapSprite>();
     private int cacheId = 0;
     private OrthographicCamera camera;
 
-    public MapRender(OrthographicCamera camera) {
+    MapRender(OrthographicCamera camera) {
         this.camera = camera;
 
         loadAsset("terrains", true);
