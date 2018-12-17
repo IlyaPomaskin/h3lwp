@@ -29,6 +29,7 @@ public class Heroes3LWP extends ApplicationAdapter {
     @Override
     public void create() {
         camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        camera.zoom = 0.5f;
         camera.setToOrtho(true);
         camera.update();
 
@@ -113,7 +114,9 @@ public class Heroes3LWP extends ApplicationAdapter {
                 mapRender.setMap(readMap("maps/" + currentMap));
             }
 
-            mapRender.setRandomRect(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            int width = Math.round(Gdx.graphics.getWidth() * camera.zoom);
+            int height = Math.round(Gdx.graphics.getHeight() * camera.zoom);
+            mapRender.setRandomRect(width, height);
         }
     }
 
