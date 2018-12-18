@@ -811,7 +811,7 @@ public class MapReader {
                                 stream.readInt(1);
                                 break;
                             case CREATURE:
-                                stream.skip(map.version == Version.ROE ? 4 : 3);
+                                stream.skip(map.version == Version.ROE ? 3 : 4);
                                 break;
                         }
                         stream.skip(2);
