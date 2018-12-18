@@ -2,7 +2,19 @@ package MapReader;
 
 import java.util.BitSet;
 
-public class DefInfo {
+public class DefInfo implements Cloneable {
+    public DefInfo cloneWithSpriteName(String newSpriteName) {
+        DefInfo newDefIno;
+
+        try {
+            newDefIno = (DefInfo) super.clone();
+        } catch (CloneNotSupportedException ex) {
+            newDefIno = new DefInfo();
+        }
+
+        newDefIno.spriteName = newSpriteName;
+        return newDefIno;
+    }
 
     public String spriteName;
     public BitSet passableCells;
