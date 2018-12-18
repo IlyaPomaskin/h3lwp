@@ -653,7 +653,7 @@ public class MapReader {
             object.y = stream.readInt(1);
             object.z = stream.readInt(1);
             int idx = stream.readInt(4);
-            object.def = defs.get(idx);
+            object.def = defs.get(idx).clone();
             object.obj = MapObject.Obj.fromInt(object.def.objectId);
 
             stream.skip(5);
