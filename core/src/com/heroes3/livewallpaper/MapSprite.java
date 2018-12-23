@@ -39,15 +39,6 @@ class MapSprite {
 
         TextureRegion frame = spritesList.get(currentFrameIndex);
 
-        if (alpha < 1) {
-            alpha = Math.min(1, alpha + 0.18f);
-            batch.setColor(1.0f, 1.0f, 1.0f, alpha);
-        }
-
         batch.draw(frame, x - frame.getRegionWidth(), y - frame.getRegionHeight());
-
-        if (alpha < 1) {
-            batch.setColor(1.0f, 1.0f, 1.0f, 1);
-        }
     }
 }
