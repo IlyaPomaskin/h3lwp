@@ -45,18 +45,16 @@ public class MapRender {
     }
 
     public void setRandomRect(int width, int height) {
-        int offset = 3;
+        int offset = 2;
         int screenWidthTiles = MathUtils.ceil(width / MapRender.TILE_SIZE) + offset;
         int screenHeightTiles = MathUtils.ceil(height / MapRender.TILE_SIZE) + offset;
-        int rectX = MathUtils.random(0, map.size - screenWidthTiles) - offset;
-        int rectY = MathUtils.random(0, map.size - screenHeightTiles) - offset;
+        int rectX = MathUtils.random(0, map.size - screenWidthTiles);
+        int rectY = MathUtils.random(0, map.size - screenHeightTiles);
         Rectangle rect = new Rectangle(
                 Math.max(rectX, 0), Math.max(rectY, 0),
                 screenWidthTiles, screenHeightTiles
         );
-
-        System.out.println(rect.toString());
-
+        
         setRect(rect);
     }
 
