@@ -66,9 +66,7 @@ public class Heroes3LWP extends ApplicationAdapter {
 
     @Override
     public void render() {
-        // FIXME render sprites as soon as they loaded
         mapRender.assets.finishLoading();
-//        mapRender.assets.update();
 
         try {
             Thread.sleep(180);
