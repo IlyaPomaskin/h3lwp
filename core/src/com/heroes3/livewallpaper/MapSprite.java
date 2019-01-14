@@ -9,9 +9,8 @@ import java.util.Random;
 
 class MapSprite {
 
-    private int currentFrameIndex = 0;
+    private int currentFrameIndex;
     private Boolean isAnimated;
-    private float alpha = 0;
     private Array<TextureAtlas.AtlasRegion> spritesList;
     int x;
     int y;

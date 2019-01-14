@@ -1,13 +1,12 @@
 package com.heroes3.livewallpaper;
 
-import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.TimeUtils;
 
 import java.io.File;
@@ -23,32 +22,21 @@ public class Heroes3LWP extends ApplicationAdapter {
     private SpriteBatch batch;
     private MapRender mapRender;
     private OrthographicCamera camera;
-    private long rectChangeTime = 0;
-    private String currentMap;
+    private long lastRectChangeTime = 0;
+    private float zoomLevel = 0.5f;
 
     @Override
     public void create() {
-        camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        camera.zoom = 0.5f;
+        camera = new OrthographicCamera(
+                Gdx.graphics.getWidth() * zoomLevel,
+                Gdx.graphics.getHeight() * zoomLevel
+        );
+        camera.zoom = zoomLevel;
         camera.setToOrtho(true);
         camera.update();
-
         batch = new SpriteBatch();
-
-        mapRender = new MapRender(camera);
-
-        setNewRandomRect(false);
-
-        Gdx.input.setInputProcessor(new InputAdapter() {
-            @Override
-            public boolean touchUp(int x, int y, int pointer, int button) {
-                if (Gdx.app.getType() == Application.ApplicationType.Desktop) {
-                    setNewRandomRect(true);
-                }
-                return true;
-            }
-        });
-
+        mapRender = new MapRender(readMap("maps/" + getRandomMapName()));
+        setRandomCameraPosition();
         Gdx.graphics.setContinuousRendering(true);
     }
 
@@ -84,10 +72,9 @@ public class Heroes3LWP extends ApplicationAdapter {
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        mapRender.drawCache();
-
         batch.enableBlending();
         batch.begin();
+        mapRender.renderTerrain(batch);
         mapRender.renderSprites(batch);
         batch.end();
     }
@@ -95,27 +82,32 @@ public class Heroes3LWP extends ApplicationAdapter {
     @Override
     public void resize(int width, int height) {
         camera.update();
-        setNewRandomRect(false);
+        setRandomCameraPosition();
     }
 
     @Override
     public void resume() {
-        setNewRandomRect(false);
+        setRandomCameraPosition();
     }
 
-    private void setNewRandomRect(boolean force) {
-        if (TimeUtils.timeSinceMillis(rectChangeTime) > RECT_CHANGE_INTERVAL || force) {
-            rectChangeTime = TimeUtils.millis();
-            String nextMap = getRandomMapName();
-            if (!nextMap.equals(currentMap)) {
-                currentMap = nextMap;
-                mapRender.setMap(readMap("maps/" + currentMap));
-            }
-
-            int width = Math.round(Gdx.graphics.getWidth() * camera.zoom);
-            int height = Math.round(Gdx.graphics.getHeight() * camera.zoom);
-            mapRender.setRandomRect(width, height);
+    private void setRandomCameraPosition() {
+        if (TimeUtils.timeSinceMillis(lastRectChangeTime) < RECT_CHANGE_INTERVAL) {
+            return;
         }
+
+        lastRectChangeTime = TimeUtils.millis();
+
+        int offset = 3 * MapRender.TILE_SIZE;
+        int screenWidth = Math.round(Gdx.graphics.getWidth() * camera.zoom);
+        int screenHeight = Math.round(Gdx.graphics.getHeight() * camera.zoom);
+        float rectX = MathUtils.random(offset, mapRender.map.size * MapRender.TILE_SIZE - screenWidth - offset);
+        float rectY = MathUtils.random(offset + screenWidth, mapRender.map.size * MapRender.TILE_SIZE - screenHeight - offset);
+
+        camera.position.set(
+                (camera.viewportWidth / 2f * camera.zoom) + rectX,
+                (camera.viewportHeight / 2f * camera.zoom) + rectY,
+                0
+        );
     }
 
     private String getRandomMapName() {
