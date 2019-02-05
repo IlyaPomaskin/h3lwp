@@ -1,11 +1,24 @@
 apply plugin: "java"
-
 sourceCompatibility = 1.6
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
-
-sourceSets.main.java.srcDirs = [ "src/" ]
-
-
+sourceSets.main.java.srcDirs = ["src/"]
 eclipse.project {
     name = appName + "-core"
+}
+task compileClojure(type: Exec) {
+    workingDir '../clj'
+
+    commandLine 'sh', './compile.sh'
+
+    standardOutput = new ByteArrayOutputStream()
+
+    ext.output = {
+        return standardOutput.toString()
+    }
+}
+afterEvaluate {
+    compileJava.dependsOn compileClojure
+}
+dependencies {
+    implementation files('libs/clj-render-standalone.jar')
 }

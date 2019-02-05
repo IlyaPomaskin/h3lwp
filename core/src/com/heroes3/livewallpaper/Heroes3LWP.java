@@ -27,6 +27,9 @@ public class Heroes3LWP extends ApplicationAdapter {
 
     @Override
     public void create() {
+        clj.core a = new clj.core();
+        System.out.println(a.getStringWithPrefix("str"));
+
         camera = new OrthographicCamera(
                 Gdx.graphics.getWidth() * zoomLevel,
                 Gdx.graphics.getHeight() * zoomLevel
