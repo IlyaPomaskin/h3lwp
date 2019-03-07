@@ -8,5 +8,5 @@
 
 Unsigned debug apk:
 
-https://github.com/IlyaPomaskin/h3lwp/tree/master/android/build/outputs/apk/debug/android-debug.apk
+https://github.com/IlyaPomaskin/h3lwp/raw/master/android/build/outputs/apk/debug/android-debug.apk
 
