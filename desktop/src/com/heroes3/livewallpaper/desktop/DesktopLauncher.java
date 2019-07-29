@@ -9,6 +9,7 @@ public class DesktopLauncher {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
 		config.height = 1136;
 		config.width = 640;
-		new LwjglApplication(new Heroes3LWP(), config);
+
+		new LwjglApplication(new h3m.LwpCore(), config);
 	}
 }

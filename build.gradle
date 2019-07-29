@@ -63,7 +63,7 @@ project(":core") {
 
 
     dependencies {
-        compile files("libs/clj-render-standalone.jar")
+        compile files("libs/clj.jar")
         implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
         implementation "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
     }

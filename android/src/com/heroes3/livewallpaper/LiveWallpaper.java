@@ -12,7 +12,7 @@ public class LiveWallpaper extends AndroidLiveWallpaperService {
     }
 
     public ApplicationListener createListener () {
-        return new Heroes3LWP();
+        return new h3m.LwpCore();
     }
 
     public AndroidApplicationConfiguration createConfig () {
