@@ -21,5 +21,4 @@ afterEvaluate {
 }
 dependencies {
     implementation files('libs/clj.jar')
-    implementation 'org.clojure:clojure:1.10.0'
 }
