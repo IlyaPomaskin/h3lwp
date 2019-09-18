@@ -4,7 +4,7 @@
            [com.badlogic.gdx.graphics.g2d BitmapFont SpriteBatch SpriteCache TextureRegion])
   (:require [clojure.reflect :as cr]
             [clojure.pprint :as pp]
-            [h3m-parser.main :as h3m]
+            [h3m-parser.core :as h3m]
             [h3m-lwp-clj.assets :as assets]
             [h3m-lwp-clj.terrain :as terrain]
             [h3m-lwp-clj.objects :as objects]

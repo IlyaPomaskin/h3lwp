@@ -2,8 +2,7 @@
   (:import [com.badlogic.gdx ApplicationAdapter Game Gdx Graphics Screen]
            [com.badlogic.gdx.graphics Texture Color GL20 OrthographicCamera]
            [com.badlogic.gdx.graphics.g2d BitmapFont SpriteBatch SpriteCache TextureRegion])
-  (:require [h3m-parser.main :as h3m]
-            [h3m-lwp-clj.assets :as assets]
+  (:require [h3m-lwp-clj.assets :as assets]
             [h3m-lwp-clj.rect :as rect]
             [h3m-lwp-clj.consts :as consts]))
 

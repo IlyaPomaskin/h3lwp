@@ -1,6 +1,5 @@
 (ns h3m-lwp-clj.objects
-  (:require [h3m-parser.main :as h3m]
-            [h3m-lwp-clj.assets :as assets]
+  (:require [h3m-lwp-clj.assets :as assets]
             [h3m-lwp-clj.rect :as rect]
             [h3m-lwp-clj.consts :as consts]))
 

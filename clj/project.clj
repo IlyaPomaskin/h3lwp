@@ -7,11 +7,7 @@
                  [com.badlogicgames.gdx/gdx-backend-lwjgl "1.9.6"]
                  [com.badlogicgames.gdx/gdx-platform "1.9.6" :classifier "natives-desktop"]
                  [org.clojure/clojure "1.10.0"]
-                 [h3m-parser "9754dcf1c617d27f2e9c5752301da7c7c0ffc65f"]]
-  :plugins [[reifyhealth/lein-git-down "0.3.5"]]
-  :middleware [lein-git-down.plugin/inject-properties]
-  :git-down {h3m-parser {:coordinates IlyaPomaskin/h3m-parser}}
-  :repositories [["public-github" {:url "git://github.com"}]]
+                 [h3m-parser "1.0.0"]]
   :main h3m-lwp-clj.core
   :target-path "target/%s"
   :source-paths ["src"]
