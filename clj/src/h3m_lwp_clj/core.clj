@@ -2,8 +2,8 @@
   (:import [com.badlogic.gdx ApplicationAdapter Game Gdx Graphics Screen]
            [com.badlogic.gdx.graphics Texture Color GL20 OrthographicCamera]
            [com.badlogic.gdx.graphics.g2d BitmapFont SpriteBatch SpriteCache TextureRegion])
-  (:require [clojure.reflect :as cr]
-            [clojure.pprint :as pp]
+  (:require ;[clojure.reflect :as cr]
+            ;[clojure.pprint :as pp]
             [h3m-parser.core :as h3m]
             [h3m-lwp-clj.assets :as assets]
             [h3m-lwp-clj.terrain :as terrain]
@@ -100,10 +100,10 @@
                                 (println (.printStackTrace e#)))))))))
 
 
-(defn reflect
-  [class]
-  (->> (cr/reflect class)
-       :members
-       (sort-by :name)
-       (pp/print-table [:name :flags :parameter-types :return-type])))
+;(defn reflect
+;  [class]
+;  (->> (cr/reflect class)
+;       :members
+;       (sort-by :name)
+;       (pp/print-table [:name :flags :parameter-types :return-type])))
 
