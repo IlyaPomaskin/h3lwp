@@ -2,14 +2,13 @@
   (:import [com.badlogic.gdx ApplicationAdapter Game Gdx Graphics Screen]
            [com.badlogic.gdx.graphics Texture Color GL20 OrthographicCamera]
            [com.badlogic.gdx.graphics.g2d BitmapFont SpriteBatch SpriteCache TextureRegion])
-  (:require ;[clojure.reflect :as cr]
-            ;[clojure.pprint :as pp]
-            [h3m-parser.core :as h3m]
-            [h3m-lwp-clj.assets :as assets]
-            [h3m-lwp-clj.terrain :as terrain]
-            [h3m-lwp-clj.objects :as objects]
-            [h3m-lwp-clj.rect :as rect]
-            [h3m-lwp-clj.consts :as consts]))
+  (:require
+   [h3m-parser.core :as h3m]
+   [h3m-lwp-clj.assets :as assets]
+   [h3m-lwp-clj.terrain :as terrain]
+   [h3m-lwp-clj.objects :as objects]
+   [h3m-lwp-clj.rect :as rect]
+   [h3m-lwp-clj.consts :as consts]))
 
 
 (gen-class
@@ -98,12 +97,4 @@
           (catch Exception e# (do
                                 (println (str "repl macro exception: " (.getMessage e#)))
                                 (println (.printStackTrace e#)))))))))
-
-
-;(defn reflect
-;  [class]
-;  (->> (cr/reflect class)
-;       :members
-;       (sort-by :name)
-;       (pp/print-table [:name :flags :parameter-types :return-type])))
 
