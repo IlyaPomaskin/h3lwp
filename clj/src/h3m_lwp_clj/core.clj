@@ -35,8 +35,11 @@
 (defn -create
   [^ApplicationAdapter this]
   (let [screen-width (.getWidth (Gdx/graphics))
-        screen-height (.getHeight (Gdx/graphics))]
-    (reset! h3m-map (h3m/parse-file "./resources/invasion.h3m"))
+        screen-height (.getHeight (Gdx/graphics))
+        map-file (doto (Gdx/files)
+                   (.internal "invasion.h3m")
+                   (.read))]
+    (reset! h3m-map (h3m/parse-file map-file))
     (swap! h3m-map #(objects/sort-map-objects %))
     (reset! batch (new SpriteBatch))
     (reset! camera (create-camera screen-width screen-height))
