@@ -36,9 +36,7 @@
   [^ApplicationAdapter this]
   (let [screen-width (.getWidth (Gdx/graphics))
         screen-height (.getHeight (Gdx/graphics))
-        map-file (doto (Gdx/files)
-                   (.internal "invasion.h3m")
-                   (.read))]
+        map-file (.read (.internal (Gdx/files) "maps/invasion.h3m"))]
     (reset! h3m-map (h3m/parse-file map-file))
     (swap! h3m-map #(objects/sort-map-objects %))
     (reset! batch (new SpriteBatch))
