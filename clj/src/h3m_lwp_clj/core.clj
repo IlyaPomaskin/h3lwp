@@ -18,6 +18,8 @@
 
 (def h3m-map (atom nil))
 (def batch (atom nil))
+(def cache (atom nil))
+(def cache-id (atom nil))
 (def camera (atom nil))
 (def rect (atom {}))
 (def terrain-tiles (atom []))
@@ -25,28 +27,34 @@
 
 
 (defn create-camera
-  [screen-width screen-height]
+  [screen-width screen-height scale-factor]
   (let [camera (new OrthographicCamera screen-width screen-height)]
-    (set! (.-zoom camera) 1)
+    (set! (.-zoom camera) (/ 1.0 scale-factor))
     (.setToOrtho camera true)
     camera))
 
 
 (defn -create
   [^ApplicationAdapter this]
-  (let [screen-width (.getWidth (Gdx/graphics))
-        screen-height (.getHeight (Gdx/graphics))
+  (let [scale-factor 2
+        screen-width (/ (.getWidth (Gdx/graphics)) scale-factor)
+        screen-height (/ (.getHeight (Gdx/graphics)) scale-factor)
         map-file (.read (.internal (Gdx/files) "maps/invasion.h3m"))]
     (reset! h3m-map (h3m/parse-file map-file))
     (swap! h3m-map #(objects/sort-map-objects %))
     (reset! batch (new SpriteBatch))
-    (reset! camera (create-camera screen-width screen-height))
+    (reset! cache (new SpriteCache))
+    (reset! camera (create-camera screen-width screen-height scale-factor))
     (add-watch
      rect
      :watcher
      (fn [_ _ _ next-rect]
        (reset! terrain-tiles (terrain/get-visible-tiles next-rect @h3m-map))
        (reset! objects (objects/get-visible-objects next-rect @h3m-map))
+       (doto @cache
+         (.beginCache)
+         (terrain/render-terrain-tiles @terrain-tiles))
+       (reset! cache-id (.endCache @cache))
        (.set (.position @camera)
              (* consts/tile-size
                 (+ (:x1 next-rect)
@@ -76,12 +84,17 @@
     (.glBlendFunc GL20/GL_SRC_ALPHA GL20/GL_ONE_MINUS_SRC_ALPHA)
     (.glClear GL20/GL_COLOR_BUFFER_BIT))
   (.update @camera)
+  (doto @cache
+    (.setTransformMatrix (.-view @camera))
+    (.setProjectionMatrix (.-projection @camera))
+    (.begin)
+    (.draw @cache-id)
+    (.end))
   (doto @batch
     (.setTransformMatrix (.-view @camera))
     (.setProjectionMatrix (.-projection @camera))
     (.enableBlending)
     (.begin)
-    (terrain/render-terrain-tiles @terrain-tiles)
     (objects/render-objects @objects)
     (.end)))
 

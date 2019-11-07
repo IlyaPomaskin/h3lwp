@@ -16,7 +16,7 @@
     (Texture/setAssetManager)))
 
 
-(defn get-object
+(defn get-object-
   [name]
   (let [frames (-> manager
                    (.get object-atlas)
@@ -24,13 +24,19 @@
     (if (zero? (.size frames))
       (do
         (println "Sprite not found:" name)
-        (get-object "empty"))
+        (get-object- "empty"))
       frames)))
 
 
-(defn get-terrain
+(def get-object (memoize get-object-))
+
+
+(defn get-terrain-
   [name index]
   (-> manager
       (.get terrains-atlas)
       (.findRegions name)
       (.get index)))
+
+
+(def get-terrain (memoize get-terrain-))

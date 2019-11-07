@@ -52,7 +52,7 @@
       (clojure.string/replace #"\.def" "")))
 
 
-(defn create-object-original
+(defn create-object-
   [name]
   (let [frames (assets/get-object name)
         frames-count (.size frames)]
@@ -66,14 +66,14 @@
       (fn [] (.get frames 0)))))
 
 
-(def create-object (memoize create-object-original))
+(def create-object (memoize create-object-))
 
 
 (defn render-objects
   [batch objects]
   (doseq [{get-frame :get-frame
-         x-position :x-position
-         y-position :y-position} objects]
+           x-position :x-position
+           y-position :y-position} objects]
     (.draw
      batch
      (get-frame)
