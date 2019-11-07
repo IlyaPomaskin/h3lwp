@@ -23,7 +23,7 @@
 
 (defn render-tile
   [batch tile]
-  (.draw
+  (.add
    batch
    (create-terrain-texture-region
     (assets/get-terrain (tile->filename tile :terrain) (:terrain-image-index tile))
@@ -32,7 +32,7 @@
    (float (:x-position tile))
    (float (:y-position tile)))
   (when (pos? (:river tile))
-    (.draw
+    (.add
      batch
      (create-terrain-texture-region
       (assets/get-terrain (tile->filename tile :river) (:river-image-index tile))
@@ -41,7 +41,7 @@
      (float (:x-position tile))
      (float (:y-position tile))))
   (when (pos? (:road tile))
-    (.draw
+    (.add
      batch
      (create-terrain-texture-region
       (assets/get-terrain (tile->filename tile :road) (:road-image-index tile))
