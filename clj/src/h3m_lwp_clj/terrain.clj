@@ -12,10 +12,13 @@
   (get-in consts/terrain [part (get tile part)]))
 
 
-(defn create-terrain-texture-region
+(defn create-terrain-texture-region-
   [images-list flip-x flip-y]
   (doto (new TextureRegion images-list)
     (.flip flip-x flip-y)))
+
+
+(def create-terrain-texture-region (memoize create-terrain-texture-region-))
 
 
 (defn render-tile
