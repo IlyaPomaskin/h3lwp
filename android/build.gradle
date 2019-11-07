@@ -16,6 +16,7 @@ android {
     }
     packagingOptions {
         exclude 'META-INF/robovm/ios/robovm.xml'
+        exclude 'project.clj'
     }
     defaultConfig {
         applicationId "com.heroes3.livewallpaper"
