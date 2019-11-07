@@ -57,15 +57,15 @@
    (for [i (range 0 (* (* size size)
                        (if has-underground? 2 1)))
          :let [x (mod i size)
-               y (int (Math/ceil (quot i size)))]
+               y (int (Math/ceil (quot i size)))
+               tile (nth terrain i)]
          :when (rect/contain? x y rect)]
-     (-> (nth terrain i)
-         (assoc :x-position (* (dec x) consts/tile-size))
-         (assoc :y-position (* (dec y) consts/tile-size))))))
+     (assoc tile
+            :x-position (* (dec x) consts/tile-size)
+            :y-position (* (dec y) consts/tile-size)))))
 
 
 (defn render-terrain-tiles
   [batch terrain-tiles]
-  (mapv
-   (fn [tile] (render-tile batch tile))
-   terrain-tiles))
+  (doseq [tile terrain-tiles]
+    (render-tile batch tile)))

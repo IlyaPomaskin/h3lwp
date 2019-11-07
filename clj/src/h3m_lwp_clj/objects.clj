@@ -71,16 +71,14 @@
 
 (defn render-objects
   [batch objects]
-  (mapv
-   (fn [{get-frame :get-frame
+  (doseq [{get-frame :get-frame
          x-position :x-position
-         y-position :y-position}]
-     (.draw
-      batch
-      (get-frame)
-      x-position
-      y-position))
-   objects))
+         y-position :y-position} objects]
+    (.draw
+     batch
+     (get-frame)
+     x-position
+     y-position)))
 
 
 (defn get-random-resource
