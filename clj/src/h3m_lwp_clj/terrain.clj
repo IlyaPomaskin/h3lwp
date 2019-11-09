@@ -23,32 +23,40 @@
 
 (defn render-tile
   [batch tile]
-  (.add
-   batch
-   (create-terrain-texture-region
-    (assets/get-terrain (tile->filename tile :terrain) (:terrain-image-index tile))
-    (bit-test (:mirror-config tile) 0)
-    (bit-test (:mirror-config tile) 1))
-   (float (:x-position tile))
-   (float (:y-position tile)))
-  (when (pos? (:river tile))
+  (let [{mirror-config :mirror-config
+         x-position :x-position
+         y-position :y-position
+         river :river
+         road :road
+         terrain-image-index :terrain-image-index
+         river-image-index :river-image-index
+         road-image-index :road-image-index} tile]
     (.add
      batch
      (create-terrain-texture-region
-      (assets/get-terrain (tile->filename tile :river) (:river-image-index tile))
-      (bit-test (:mirror-config tile) 2)
-      (bit-test (:mirror-config tile) 3))
-     (float (:x-position tile))
-     (float (:y-position tile))))
-  (when (pos? (:road tile))
-    (.add
-     batch
-     (create-terrain-texture-region
-      (assets/get-terrain (tile->filename tile :road) (:road-image-index tile))
-      (bit-test (:mirror-config tile) 4)
-      (bit-test (:mirror-config tile) 5))
-     (float (:x-position tile))
-     (float (:y-position tile)))))
+      (assets/get-terrain (tile->filename tile :terrain) terrain-image-index)
+      (bit-test mirror-config 0)
+      (bit-test mirror-config 1))
+     (float x-position)
+     (float y-position))
+    (when (pos? river)
+      (.add
+       batch
+       (create-terrain-texture-region
+        (assets/get-terrain (tile->filename tile :river) river-image-index)
+        (bit-test mirror-config 2)
+        (bit-test mirror-config 3))
+       (float x-position)
+       (float y-position)))
+    (when (pos? road)
+      (.add
+       batch
+       (create-terrain-texture-region
+        (assets/get-terrain (tile->filename tile :road) road-image-index)
+        (bit-test mirror-config 4)
+        (bit-test mirror-config 5))
+       (float x-position)
+       (float y-position)))))
 
 
 (defn get-visible-tiles
