@@ -18,7 +18,7 @@
 
 
 (def update-rect-interval (* 60 5))
-(def sprite-render-interval (long 180))
+(def sprite-render-interval 180)
 (def scale-factor 2)
 
 
@@ -97,7 +97,7 @@
 
 (defn -render
   [^ApplicationAdapter this]
-  (Thread/sleep sprite-render-interval)
+  (Thread/sleep (long sprite-render-interval))
   (doto Gdx/gl
     (.glClearColor 0 0 0 0)
     (.glEnable GL20/GL_BLEND)
