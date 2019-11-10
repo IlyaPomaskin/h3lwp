@@ -28,7 +28,7 @@
 (def cache-id (atom nil))
 (def camera (atom nil))
 (def rect (atom {}))
-(def objects (atom []))
+(def visible-objects (atom []))
 
 
 (defn create-camera
@@ -50,7 +50,7 @@
 
 (defn rect-watcher
   [next-rect]
-  (reset! objects (objects/get-visible-objects next-rect @h3m-map))
+  (reset! visible-objects (objects/get-visible-objects next-rect @h3m-map))
   (update-terrain-cache next-rect)
   (.set (.position @camera)
         (* consts/tile-size
@@ -116,7 +116,7 @@
     (.setProjectionMatrix (.-projection @camera))
     (.enableBlending)
     (.begin)
-    (objects/render-objects @objects)
+    (objects/render-objects @visible-objects)
     (.end)))
 
 
