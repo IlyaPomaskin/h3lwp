@@ -19,6 +19,7 @@
 
 (def update-rect-interval (* 60 5))
 (def sprite-render-interval (long 180))
+(def scale-factor 2)
 
 
 (def h3m-map (atom nil))
@@ -68,8 +69,7 @@
 
 (defn -create
   [^ApplicationAdapter this]
-  (let [scale-factor 2
-        screen-width (/ (.getWidth (Gdx/graphics)) scale-factor)
+  (let [screen-width (/ (.getWidth (Gdx/graphics)) scale-factor)
         screen-height (/ (.getHeight (Gdx/graphics)) scale-factor)]
     (reset! h3m-map (-> Gdx/files
                         (.internal "maps/invasion.h3m")
