@@ -1,7 +1,8 @@
 (ns h3m-lwp-clj.core
   (:import [com.badlogic.gdx ApplicationAdapter Game Gdx Graphics Screen]
            [com.badlogic.gdx.graphics Texture Color GL20 OrthographicCamera]
-           [com.badlogic.gdx.graphics.g2d BitmapFont SpriteBatch SpriteCache TextureRegion])
+           [com.badlogic.gdx.graphics.g2d BitmapFont SpriteBatch SpriteCache TextureRegion]
+           [com.badlogic.gdx.utils Timer Timer$Task])
   (:require
    [h3m-parser.core :as h3m]
    [h3m-lwp-clj.assets :as assets]
@@ -16,13 +17,16 @@
  :extends com.badlogic.gdx.ApplicationAdapter)
 
 
+(def update-rect-interval (* 60 5))
+(def sprite-render-interval (long 180))
+
+
 (def h3m-map (atom nil))
 (def batch (atom nil))
 (def cache (atom nil))
 (def cache-id (atom nil))
 (def camera (atom nil))
 (def rect (atom {}))
-(def terrain-tiles (atom []))
 (def objects (atom []))
 
 
@@ -32,6 +36,34 @@
     (set! (.-zoom camera) (/ 1.0 scale-factor))
     (.setToOrtho camera true)
     camera))
+
+
+(defn update-terrain-cache
+  [next-rect]
+  (doto @cache
+    (.beginCache)
+    (terrain/render-terrain-tiles
+     (terrain/get-visible-tiles next-rect @h3m-map)))
+  (reset! cache-id (.endCache @cache)))
+
+
+(defn rect-watcher
+  [next-rect]
+  (reset! objects (objects/get-visible-objects next-rect @h3m-map))
+  (update-terrain-cache next-rect)
+  (.set (.position @camera)
+        (* consts/tile-size
+           (+ (:x1 next-rect)
+              (quot (- (:x2 next-rect)
+                       (:x1 next-rect))
+                    2)))
+        (* consts/tile-size
+           (+ (:y1 next-rect)
+              (quot (- (:y2 next-rect)
+                       (:y1 next-rect))
+                    2)))
+        0)
+  (println @rect))
 
 
 (defn -create
@@ -45,51 +77,38 @@
     (reset! batch (new SpriteBatch))
     (reset! cache (new SpriteCache))
     (reset! camera (create-camera screen-width screen-height scale-factor))
-    (add-watch
-     rect
-     :watcher
-     (fn [_ _ _ next-rect]
-       (reset! terrain-tiles (terrain/get-visible-tiles next-rect @h3m-map))
-       (reset! objects (objects/get-visible-objects next-rect @h3m-map))
-       (doto @cache
-         (.beginCache)
-         (terrain/render-terrain-tiles @terrain-tiles))
-       (reset! cache-id (.endCache @cache))
-       (.set (.position @camera)
-             (* consts/tile-size
-                (+ (:x1 next-rect)
-                   (quot (- (:x2 next-rect)
-                            (:x1 next-rect))
-                         2)))
-             (* consts/tile-size
-                (+ (:y1 next-rect)
-                   (quot (- (:y2 next-rect)
-                            (:y1 next-rect))
-                         2)))
-             0)
-       (println @rect)))
+    (add-watch rect :watcher #(rect-watcher %4))
     (.finishLoading assets/manager)
-    (reset! rect (rect/get-random
-                  (:size @h3m-map)
-                  screen-width
-                  screen-height))))
+    (.scheduleTask
+     (new Timer)
+     (proxy [Timer$Task] []
+       (run []
+         (reset!
+          rect
+          (rect/get-random
+           (:size @h3m-map)
+           screen-width
+           screen-height))))
+     (float 0)
+     (float update-rect-interval))))
 
 
 (defn -render
   [^ApplicationAdapter this]
-  (Thread/sleep (long 180))
+  (Thread/sleep sprite-render-interval)
   (doto Gdx/gl
     (.glClearColor 0 0 0 0)
     (.glEnable GL20/GL_BLEND)
     (.glBlendFunc GL20/GL_SRC_ALPHA GL20/GL_ONE_MINUS_SRC_ALPHA)
     (.glClear GL20/GL_COLOR_BUFFER_BIT))
   (.update @camera)
-  (doto @cache
-    (.setTransformMatrix (.-view @camera))
-    (.setProjectionMatrix (.-projection @camera))
-    (.begin)
-    (.draw @cache-id)
-    (.end))
+  (when @cache-id
+    (doto @cache
+      (.setTransformMatrix (.-view @camera))
+      (.setProjectionMatrix (.-projection @camera))
+      (.begin)
+      (.draw @cache-id)
+      (.end)))
   (doto @batch
     (.setTransformMatrix (.-view @camera))
     (.setProjectionMatrix (.-projection @camera))
