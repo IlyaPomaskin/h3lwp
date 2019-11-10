@@ -70,10 +70,12 @@
   [^ApplicationAdapter this]
   (let [scale-factor 2
         screen-width (/ (.getWidth (Gdx/graphics)) scale-factor)
-        screen-height (/ (.getHeight (Gdx/graphics)) scale-factor)
-        map-file (.read (.internal (Gdx/files) "maps/invasion.h3m"))]
-    (reset! h3m-map (h3m/parse-file map-file))
-    (swap! h3m-map #(objects/sort-map-objects %))
+        screen-height (/ (.getHeight (Gdx/graphics)) scale-factor)]
+    (reset! h3m-map (-> Gdx/files
+                        (.internal "maps/invasion.h3m")
+                        (.read)
+                        h3m/parse-file
+                        objects/sort-map-objects))
     (reset! batch (new SpriteBatch))
     (reset! cache (new SpriteCache))
     (reset! camera (create-camera screen-width screen-height scale-factor))
