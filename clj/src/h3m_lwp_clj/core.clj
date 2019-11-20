@@ -40,11 +40,11 @@
 (defn update-terrain-cache
   [next-rect]
   (let [^SpriteCache cache (deref cache)]
-    (doto cache
-      (.clear)
-      (.beginCache)
-      (terrain/render-terrain-tiles
-       (terrain/get-visible-tiles next-rect @h3m-map)))
+    (.clear cache)
+    (.beginCache cache)
+    (terrain/render-terrain-tiles
+     cache
+     (terrain/get-visible-tiles next-rect @h3m-map))
     (reset! cache-id (.endCache cache))))
 
 
