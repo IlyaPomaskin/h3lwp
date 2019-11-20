@@ -73,9 +73,7 @@
     (reset! h3m-map (-> Gdx/files
                         (.internal "maps/invasion.h3m")
                         (.read)
-                        h3m/parse-file
-                        ; (.readString)
-                        ; (read-string)
+                        (h3m/parse-file)
                         (objects/sort-map-objects)))
     (reset! batch (new SpriteBatch))
     (reset! cache (new SpriteCache))
