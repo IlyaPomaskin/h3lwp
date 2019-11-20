@@ -41,6 +41,7 @@
   [next-rect]
   (let [^SpriteCache cache (deref cache)]
     (doto cache
+      (.clear)
       (.beginCache)
       (terrain/render-terrain-tiles
        (terrain/get-visible-tiles next-rect @h3m-map)))
