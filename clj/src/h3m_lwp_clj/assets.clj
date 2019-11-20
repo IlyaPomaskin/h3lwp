@@ -1,42 +1,37 @@
 (ns h3m-lwp-clj.assets
   (:import [com.badlogic.gdx.graphics Texture]
-           [com.badlogic.gdx.graphics.g2d TextureAtlas Animation]
+           [com.badlogic.gdx.graphics.g2d TextureAtlas Animation TextureRegion]
            [com.badlogic.gdx.assets AssetManager]
-           [com.badlogic.gdx.assets.loaders TextureAtlasLoader TextureAtlasLoader$TextureAtlasParameter]))
+           [com.badlogic.gdx.assets.loaders TextureAtlasLoader TextureAtlasLoader$TextureAtlasParameter]
+           [com.badlogic.gdx.utils Array]))
 
 
-(def terrains-atlas "sprites/terrains.atlas")
-(def object-atlas "sprites/mapObjects.atlas")
+(def ^String terrains-atlas "sprites/terrains.atlas")
+(def ^String object-atlas "sprites/mapObjects.atlas")
 
 
-(def manager
+(def ^AssetManager manager
   (doto (new AssetManager)
     (.load terrains-atlas TextureAtlas (new TextureAtlasLoader$TextureAtlasParameter true))
-    (.load object-atlas TextureAtlas (new TextureAtlasLoader$TextureAtlasParameter true))
-    (Texture/setAssetManager)))
+    (.load object-atlas TextureAtlas (new TextureAtlasLoader$TextureAtlasParameter true))))
 
 
-(defn get-object-
+(defn get-object
+  ^Array
   [name]
-  (let [frames (-> manager
-                   (.get object-atlas)
-                   (.findRegions name))]
+  (let [^TextureAtlas atlas (.get manager object-atlas)
+        ^Array frames (.findRegions atlas name)]
     (if (zero? (.size frames))
       (do
         (println "Sprite not found:" name)
-        (get-object- "empty"))
+        (get-object "empty"))
       frames)))
 
 
-(def get-object (memoize get-object-))
-
-
-(defn get-terrain-
+(defn get-terrain
+  ^TextureRegion
   [name index]
-  (-> manager
-      (.get terrains-atlas)
-      (.findRegions name)
-      (.get index)))
-
-
-(def get-terrain (memoize get-terrain-))
+  (let [^TextureAtlas atlas (.get manager terrains-atlas)
+        ^Array regions (.findRegions atlas name)
+        terrain (.get regions index)]
+    terrain))

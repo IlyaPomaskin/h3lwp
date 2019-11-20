@@ -1,6 +1,6 @@
 (ns h3m-lwp-clj.terrain
   (:import [com.badlogic.gdx.graphics Texture]
-           [com.badlogic.gdx.graphics.g2d TextureRegion])
+           [com.badlogic.gdx.graphics.g2d SpriteCache TextureRegion])
   (:require [h3m-lwp-clj.assets :as assets]
             [h3m-lwp-clj.rect :as rect]
             [h3m-lwp-clj.consts :as consts]))
@@ -11,17 +11,15 @@
   (get-in consts/terrain [part (get tile part)]))
 
 
-(defn create-terrain-texture-region-
-  [images-list flip-x flip-y]
+(defn create-terrain-texture-region
+  ^TextureRegion
+  [^TextureRegion images-list flip-x flip-y]
   (doto (new TextureRegion images-list)
     (.flip flip-x flip-y)))
 
 
-(def create-terrain-texture-region (memoize create-terrain-texture-region-))
-
-
 (defn render-tile
-  [batch tile]
+  [^SpriteCache batch tile]
   (let [{mirror-config :mirror-config
          x-position :x-position
          y-position :y-position

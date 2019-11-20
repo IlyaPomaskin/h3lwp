@@ -1,4 +1,6 @@
 (ns h3m-lwp-clj.objects
+  (:import [com.badlogic.gdx.graphics.g2d SpriteBatch TextureRegion]
+           [com.badlogic.gdx.utils Array])
   (:require [h3m-lwp-clj.assets :as assets]
             [h3m-lwp-clj.rect :as rect]
             [h3m-lwp-clj.consts :as consts]))
@@ -52,33 +54,29 @@
       (clojure.string/replace #"\.def" "")))
 
 
-(defn create-object-
+(defn create-object
   [name]
-  (let [frames (assets/get-object name)
-        frames-count (.size frames)]
-    (if (> frames-count 1)
-      (let [current-frame (atom (rand-int frames-count))]
-        (fn []
-          (swap! current-frame #(if (= %1 (dec frames-count))
-                                  0
-                                  (inc %1)))
-          (.get frames @current-frame)))
-      (fn [] (.get frames 0)))))
-
-
-(def create-object (memoize create-object-))
+  (let [^Array frames (assets/get-object name)
+        frames-count (.size frames)
+        current-frame (volatile! (rand-int frames-count))]
+    (fn []
+      (when (> frames-count 1)
+        (vswap! current-frame #(if (= %1 (dec frames-count))
+                                 0
+                                 (inc %1))))
+      (.get frames @current-frame))))
 
 
 (defn render-objects
-  [batch objects]
+  [^SpriteBatch batch objects]
   (doseq [{get-frame :get-frame
            x-position :x-position
            y-position :y-position} objects]
     (.draw
      batch
-     (get-frame)
-     x-position
-     y-position)))
+     ^TextureRegion (get-frame)
+     (float x-position)
+     (float y-position))))
 
 
 (defn get-random-resource
@@ -168,10 +166,11 @@
        (pmap #(assoc %1 :def (nth defs (:def-index %))))
        (pmap #(replace-random-item %1))
        (pmap #(let [get-frame (create-object (def->filename (:def %)))
+                    ^TextureRegion frame (get-frame)
                     x-position (float (- (* consts/tile-size (:x %))
-                                         (.getRegionWidth (get-frame))))
+                                         (.getRegionWidth frame)))
                     y-position (float (- (* consts/tile-size (:y %))
-                                         (.getRegionHeight (get-frame))))]
+                                         (.getRegionHeight frame)))]
                 {:get-frame get-frame
                  :x-position x-position
                  :y-position y-position}))))
