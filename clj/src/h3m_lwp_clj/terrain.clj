@@ -1,7 +1,6 @@
 (ns h3m-lwp-clj.terrain
-  (:import [com.badlogic.gdx ApplicationAdapter Game Gdx Graphics Screen]
-           [com.badlogic.gdx.graphics Texture Color GL20 OrthographicCamera]
-           [com.badlogic.gdx.graphics.g2d BitmapFont SpriteBatch SpriteCache TextureRegion])
+  (:import [com.badlogic.gdx.graphics Texture]
+           [com.badlogic.gdx.graphics.g2d TextureRegion])
   (:require [h3m-lwp-clj.assets :as assets]
             [h3m-lwp-clj.rect :as rect]
             [h3m-lwp-clj.consts :as consts]))

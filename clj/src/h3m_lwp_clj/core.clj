@@ -1,7 +1,7 @@
 (ns h3m-lwp-clj.core
-  (:import [com.badlogic.gdx ApplicationAdapter Game Gdx Graphics Screen]
-           [com.badlogic.gdx.graphics Texture Color GL20 OrthographicCamera]
-           [com.badlogic.gdx.graphics.g2d BitmapFont SpriteBatch SpriteCache TextureRegion]
+  (:import [com.badlogic.gdx ApplicationAdapter Gdx]
+           [com.badlogic.gdx.graphics Texture GL20 OrthographicCamera]
+           [com.badlogic.gdx.graphics.g2d SpriteBatch SpriteCache]
            [com.badlogic.gdx.utils Timer Timer$Task])
   (:require
    [h3m-parser.core :as h3m]
