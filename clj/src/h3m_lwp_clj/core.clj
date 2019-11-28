@@ -1,5 +1,5 @@
 (ns h3m-lwp-clj.core
-  (:import [com.badlogic.gdx ApplicationAdapter Gdx]
+  (:import [com.badlogic.gdx ApplicationAdapter Gdx InputProcessor Application$ApplicationType]
            [com.badlogic.gdx.graphics Texture GL20 OrthographicCamera]
            [com.badlogic.gdx.graphics.g2d SpriteBatch]
            [com.badlogic.gdx.utils Timer Timer$Task])
@@ -55,6 +55,38 @@
   (println @rect))
 
 
+(defn update-rect
+  [screen-width screen-height]
+  (reset!
+   rect
+   (rect/get-random (:size @h3m-map) screen-width screen-height)))
+
+
+(def input-processor-proxy
+  (proxy [InputProcessor] []
+    (keyDown [keycode] true)
+    (keyTyped [keycode] true)
+    (keyUp [keycode] true)
+    (mouseMoved [x y] true)
+    (scrolled [amount] true)
+    (touchDown [^Integer screen-x ^Integer screen-y ^Integer pointer ^Integer button] true)
+    (touchUp
+      [^Integer screen-x ^Integer screen-y ^Integer pointer ^Integer button]
+      (when (= (.getType (Gdx/app)) (Application$ApplicationType/Desktop))
+        (let [screen-width (/ (.getWidth (Gdx/graphics)) scale-factor)
+              screen-height (/ (.getHeight (Gdx/graphics)) scale-factor)]
+          (update-rect screen-width screen-height)))
+      true)
+    (touchDragged
+      [^Integer screen-x ^Integer screen-y ^Integer pointer]
+      (when (= (.getType (Gdx/app)) (Application$ApplicationType/Desktop))
+        (.translate
+         ^OrthographicCamera @camera
+         (.getDeltaX (Gdx/input))
+         (.getDeltaY (Gdx/input))))
+      true)))
+
+
 (defn -create
   [^ApplicationAdapter _]
   (let [screen-width (/ (.getWidth (Gdx/graphics)) scale-factor)
@@ -66,19 +98,14 @@
                         (objects/sort-map-objects)))
     (reset! batch (new SpriteBatch))
     (reset! camera (create-camera screen-width screen-height scale-factor))
+    (.setInputProcessor (Gdx/input) input-processor-proxy)
     (add-watch rect :watcher #(rect-watcher %4))
     (Texture/setAssetManager assets/manager)
     (.finishLoading assets/manager)
     (.scheduleTask
      (new Timer)
      (proxy [Timer$Task] []
-       (run []
-         (reset!
-          rect
-          (rect/get-random
-           (:size @h3m-map)
-           screen-width
-           screen-height))))
+       (run [] (update-rect screen-width screen-height)))
      (float 0)
      (float update-rect-interval))))
 
