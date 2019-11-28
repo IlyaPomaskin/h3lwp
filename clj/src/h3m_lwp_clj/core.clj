@@ -15,7 +15,7 @@
    :extends com.badlogic.gdx.ApplicationAdapter))
 
 
-(def update-rect-interval (* 60 5))
+(def update-rect-interval (* 60 15))
 (def sprite-render-interval 180)
 (def scale-factor 2)
 
