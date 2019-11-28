@@ -1,6 +1,5 @@
 (ns h3m-lwp-clj.terrain
-  (:import [com.badlogic.gdx.graphics Texture]
-           [com.badlogic.gdx.graphics.g2d SpriteCache TextureRegion])
+  (:import [com.badlogic.gdx.graphics.g2d SpriteCache TextureRegion])
   (:require [h3m-lwp-clj.assets :as assets]
             [h3m-lwp-clj.rect :as rect]
             [h3m-lwp-clj.consts :as consts]))
