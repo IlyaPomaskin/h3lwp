@@ -54,19 +54,6 @@
       (clojure.string/replace #"\.def" "")))
 
 
-(defn create-object
-  [name]
-  (let [^Array frames (assets/get-object name)
-        frames-count (.size frames)
-        current-frame (volatile! (rand-int frames-count))]
-    (fn []
-      (when (> frames-count 1)
-        (vswap! current-frame #(if (= %1 (dec frames-count))
-                                 0
-                                 (inc %1))))
-      (.get frames @current-frame))))
-
-
 (defn render-objects
   [^SpriteBatch batch objects]
   (doseq [{get-frame :get-frame
@@ -165,7 +152,8 @@
                       (rect/contain? (:x %) (:y %) rect)))
        (pmap #(assoc %1 :def (nth defs (:def-index %))))
        (pmap #(replace-random-item %1))
-       (pmap #(let [get-frame (create-object (def->filename (:def %)))
+       (pmap #(let [object-frames (assets/get-object (def->filename (:def %)))
+                    get-frame (assets/create-sprite object-frames)
                     ^TextureRegion frame (get-frame)
                     x-position (float (- (* consts/tile-size (:x %))
                                          (.getRegionWidth frame)))

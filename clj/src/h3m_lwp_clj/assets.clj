@@ -32,6 +32,21 @@
   ^TextureRegion
   [name index]
   (let [^TextureAtlas atlas (.get manager terrains-atlas)
-        ^Array regions (.findRegions atlas name)
-        terrain (.get regions index)]
-    terrain))
+        ^Array frames (.findRegions atlas (format "%s_%02d" name index))]
+    (if (zero? (.size frames))
+      (do
+        (println "Terrain not found:" name index)
+        (get-object "empty"))
+      frames)))
+
+
+(defn create-sprite
+  [^Array frames]
+  (let [frames-count (.size frames)
+        current-frame (volatile! (rand-int frames-count))]
+    (fn []
+      (when (> frames-count 1)
+        (vswap! current-frame #(if (= %1 (dec frames-count))
+                                 0
+                                 (inc %1))))
+      (.get frames @current-frame))))
