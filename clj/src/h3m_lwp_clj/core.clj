@@ -1,7 +1,7 @@
 (ns h3m-lwp-clj.core
   (:import [com.badlogic.gdx ApplicationAdapter Gdx]
            [com.badlogic.gdx.graphics Texture GL20 OrthographicCamera]
-           [com.badlogic.gdx.graphics.g2d SpriteBatch SpriteCache]
+           [com.badlogic.gdx.graphics.g2d SpriteBatch]
            [com.badlogic.gdx.utils Timer Timer$Task])
   (:require
    [h3m-parser.core :as h3m]
@@ -22,11 +22,10 @@
 
 (def h3m-map (atom nil))
 (def batch (atom nil))
-(def cache (atom nil))
-(def cache-id (atom nil))
 (def camera (atom nil))
 (def rect (atom {}))
 (def visible-objects (atom []))
+(def terrain-tiles (atom []))
 
 
 (defn create-camera
@@ -37,21 +36,10 @@
     camera))
 
 
-(defn update-terrain-cache
-  [next-rect]
-  (let [^SpriteCache cache (deref cache)]
-    (.clear cache)
-    (.beginCache cache)
-    (terrain/render-terrain-tiles
-     cache
-     (terrain/get-visible-tiles next-rect @h3m-map))
-    (reset! cache-id (.endCache cache))))
-
-
 (defn rect-watcher
   [next-rect]
   (reset! visible-objects (objects/get-visible-objects next-rect @h3m-map))
-  (update-terrain-cache next-rect)
+  (reset! terrain-tiles (terrain/get-visible-tiles next-rect @h3m-map))
   (.set (.position ^OrthographicCamera @camera)
         (* consts/tile-size
            (+ (:x1 next-rect)
@@ -77,7 +65,6 @@
                         (h3m/parse-file)
                         (objects/sort-map-objects)))
     (reset! batch (new SpriteBatch))
-    (reset! cache (new SpriteCache))
     (reset! camera (create-camera screen-width screen-height scale-factor))
     (add-watch rect :watcher #(rect-watcher %4))
     (Texture/setAssetManager assets/manager)
@@ -99,7 +86,6 @@
 (defn -render
   [^ApplicationAdapter _]
   (let [^OrthographicCamera camera (deref camera)
-        ^SpriteCache cache (deref cache)
         ^SpriteBatch batch (deref batch)]
     (Thread/sleep (long sprite-render-interval))
     (doto Gdx/gl
@@ -108,18 +94,12 @@
       (.glBlendFunc GL20/GL_SRC_ALPHA GL20/GL_ONE_MINUS_SRC_ALPHA)
       (.glClear GL20/GL_COLOR_BUFFER_BIT))
     (.update camera)
-    (when @cache-id
-      (doto cache
-        (.setTransformMatrix (.-view camera))
-        (.setProjectionMatrix (.-projection camera))
-        (.begin)
-        (.draw @cache-id)
-        (.end)))
     (doto batch
       (.setTransformMatrix (.-view camera))
       (.setProjectionMatrix (.-projection camera))
       (.enableBlending)
       (.begin)
+      (terrain/render-terrain-tiles @terrain-tiles)
       (objects/render-objects @visible-objects)
       (.end))))
 
