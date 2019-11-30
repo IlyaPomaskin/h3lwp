@@ -62,9 +62,29 @@
    (rect/get-random (:size @h3m-map) screen-width screen-height)))
 
 
+(defn is-desktop?
+  []
+  (= (.getType (Gdx/app))
+     (Application$ApplicationType/Desktop)))
+
+
 (def input-processor-proxy
   (proxy [InputProcessor] []
-    (keyDown [keycode] true)
+    (keyDown
+      [keycode]
+      (when (is-desktop?)
+        (case keycode
+          69  (set! (.-zoom ^OrthographicCamera @camera) (+ (.-zoom ^OrthographicCamera @camera) 0.1))
+          70  (set! (.-zoom ^OrthographicCamera @camera) (- (.-zoom ^OrthographicCamera @camera) 0.1))
+          19  (.translate ^OrthographicCamera @camera 0 -3 0)
+          20  (.translate ^OrthographicCamera @camera 0 3 0)
+          21  (.translate ^OrthographicCamera @camera -3 0 0)
+          22  (.translate ^OrthographicCamera @camera 3 0 0)
+          62  (let [screen-width (/ (.getWidth (Gdx/graphics)) scale-factor)
+                    screen-height (/ (.getHeight (Gdx/graphics)) scale-factor)]
+                (update-rect screen-width screen-height))
+          nil))
+      true)
     (keyTyped [keycode] true)
     (keyUp [keycode] true)
     (mouseMoved [x y] true)
@@ -72,14 +92,14 @@
     (touchDown [^Integer screen-x ^Integer screen-y ^Integer pointer ^Integer button] true)
     (touchUp
       [^Integer screen-x ^Integer screen-y ^Integer pointer ^Integer button]
-      (when (= (.getType (Gdx/app)) (Application$ApplicationType/Desktop))
+      (when (is-desktop?)
         (let [screen-width (/ (.getWidth (Gdx/graphics)) scale-factor)
               screen-height (/ (.getHeight (Gdx/graphics)) scale-factor)]
           (update-rect screen-width screen-height)))
       true)
     (touchDragged
       [^Integer screen-x ^Integer screen-y ^Integer pointer]
-      (when (= (.getType (Gdx/app)) (Application$ApplicationType/Desktop))
+      (when (is-desktop?)
         (.translate
          ^OrthographicCamera @camera
          (.getDeltaX (Gdx/input))
