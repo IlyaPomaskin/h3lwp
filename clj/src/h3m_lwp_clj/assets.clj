@@ -32,7 +32,7 @@
   ^TextureRegion
   [name index]
   (let [^TextureAtlas atlas (.get manager terrains-atlas)
-        ^Array frames (.findRegions atlas (format "%s_%02d" name index))]
+        ^Array frames (.findRegions atlas (format "%s/%02d" name index))]
     (if (zero? (.size frames))
       (do
         (println "Terrain not found:" name index)
