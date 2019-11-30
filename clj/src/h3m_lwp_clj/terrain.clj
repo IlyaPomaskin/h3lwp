@@ -87,17 +87,20 @@
               :render-terrain (assets/create-sprite
                                (assets/get-terrain
                                 (tile->filename tile :terrain)
-                                terrain-image-index))
+                                terrain-image-index)
+                               false)
               :render-river (when (pos? river)
                               (assets/create-sprite
                                (assets/get-terrain
                                 (tile->filename tile :river)
-                                river-image-index)))
+                                river-image-index)
+                               false))
               :render-road (when (pos? road)
                              (assets/create-sprite
                               (assets/get-terrain
                                (tile->filename tile :road)
-                               road-image-index))))))))
+                               road-image-index)
+                              false)))))))
 
 
 (defn render-terrain-tiles

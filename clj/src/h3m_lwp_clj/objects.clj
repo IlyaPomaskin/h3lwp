@@ -153,7 +153,7 @@
        (pmap #(assoc %1 :def (nth defs (:def-index %))))
        (pmap #(replace-random-item %1))
        (pmap #(let [object-frames (assets/get-object (def->filename (:def %)))
-                    get-frame (assets/create-sprite object-frames)
+                    get-frame (assets/create-sprite object-frames true)
                     ^TextureRegion frame (get-frame)
                     x-position (float (- (* consts/tile-size (:x %))
                                          (.getRegionWidth frame)))

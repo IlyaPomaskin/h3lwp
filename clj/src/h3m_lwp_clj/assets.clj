@@ -41,9 +41,12 @@
 
 
 (defn create-sprite
-  [^Array frames]
+  [^Array frames random-start?]
   (let [frames-count (.size frames)
-        current-frame (volatile! (rand-int frames-count))]
+        initial-frame (if random-start?
+                        (rand-int frames-count)
+                        0)
+        current-frame (volatile! initial-frame)]
     (fn []
       (when (> frames-count 1)
         (vswap! current-frame #(if (= %1 (dec frames-count))
