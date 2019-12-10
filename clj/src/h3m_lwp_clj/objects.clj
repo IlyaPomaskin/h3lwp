@@ -93,11 +93,14 @@
 
 (defn get-random-town
   ([]
-   (get-random-town (rand-nth (keys consts/town)) (pos? (rand-int 1))))
-  ([fort?]
-   (get-random-town (rand-nth (keys consts/town)) fort?))
-  ([faction fort?]
-   (get (if fort? consts/town consts/village) faction)))
+   (get-random-town (rand-nth (keys consts/town))))
+  ([faction]
+   (let [fort? (pos? (rand-int 1))
+         factions-def (if fort? consts/town consts/village)
+         factions-def-keys (keys factions-def)
+         default-faction (nth factions-def-keys 0)
+         key (nth factions-def-keys (or faction 0) default-faction)]
+     (get factions-def key))))
 
 
 (defn get-random-artifact
@@ -134,7 +137,7 @@
 
      :random-resource (get-random-resource)
 
-     :random-town (get-random-town (:class-sub-id object) true)
+     :random-town (get-random-town (:class-sub-id object))
 
      :random-dwelling (get-random-dwelling (rand-int (:max object)))
      :random-dwelling-lvl (get-random-dwelling)
