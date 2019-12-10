@@ -10,6 +10,8 @@
   :global-vars {clojure.core/*warn-on-reflection* true}
   :aot :all
   :main h3m-lwp-clj.desktop
+  :repl-options {:init-ns h3m-lwp-clj.desktop
+                 :init (main-repl)}
   :target-path "target/%s"
   :source-paths ["src"]
   :profiles

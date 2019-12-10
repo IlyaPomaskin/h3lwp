@@ -8,3 +8,7 @@
     (set! (.-height config) 1136)
     (set! (.-width config) 640)
     (new LwjglApplication (new LwpCore) config)))
+
+(defn main-repl
+  []
+  (new LwjglApplication (new LwpCore)))
