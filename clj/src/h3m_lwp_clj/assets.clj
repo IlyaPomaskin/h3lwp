@@ -29,7 +29,7 @@
 
 
 (defn get-terrain
-  ^TextureRegion
+  ^Array
   [name index]
   (let [^TextureAtlas atlas (.get manager terrains-atlas)
         ^Array frames (.findRegions atlas (format "%s/%02d" name index))]
