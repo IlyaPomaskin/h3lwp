@@ -9,7 +9,7 @@
   :javac-options ["-target" "1.7" "-source" "1.7" "-Xlint:-options"]
   :global-vars {clojure.core/*warn-on-reflection* true}
   :aot :all
-  :main h3m-lwp-clj.core
+  :main h3m-lwp-clj.desktop
   :target-path "target/%s"
   :source-paths ["src"]
   :profiles
