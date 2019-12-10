@@ -11,12 +11,15 @@
   :aot :all
   :main h3m-lwp-clj.desktop
   :repl-options {:init-ns h3m-lwp-clj.desktop
-                 :init (main-repl)}
+                 :init (main-repl)
+                ;  :nrepl-middleware [h3m-lwp-clj.repl/mw]
+                 }
   :target-path "target/%s"
   :source-paths ["src"]
   :profiles
   {:provided {:dependencies
-              [[com.badlogicgames.gdx/gdx "1.9.6"]
+              [[nrepl "0.6.0"]
+               [com.badlogicgames.gdx/gdx "1.9.6"]
                [com.badlogicgames.gdx/gdx-backend-lwjgl "1.9.6"]
                [com.badlogicgames.gdx/gdx-platform "1.9.6" :classifier "natives-desktop"]]}
    :uberjar {:uberjar-name "clj-render-standalone.jar"}})
