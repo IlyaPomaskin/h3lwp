@@ -1,6 +1,6 @@
 (ns h3m-lwp-clj.assets
   (:import [com.badlogic.gdx.graphics]
-           [com.badlogic.gdx.graphics.g2d TextureAtlas TextureRegion]
+           [com.badlogic.gdx.graphics.g2d TextureAtlas]
            [com.badlogic.gdx.assets AssetManager]
            [com.badlogic.gdx.assets.loaders TextureAtlasLoader$TextureAtlasParameter]
            [com.badlogic.gdx.utils Array]))

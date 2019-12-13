@@ -37,16 +37,6 @@
       :else -1)))
 
 
-(defn sort-map-objects
-  [h3m-map]
-  (update-in
-   h3m-map
-   [:objects]
-   #(->> %
-         (sort (create-compare-objects h3m-map))
-         (reverse))))
-
-
 (defn def->filename
   [def]
   (-> (get def :sprite-name)
@@ -147,21 +137,24 @@
 
 
 (defn get-visible-objects
-  [rect
-   {objects :objects
-    defs :defs}]
-  (->> objects
+  [rect h3m-map]
+  (->> (:objects h3m-map)
        (filterv #(and (zero? (:z %))
-                      (rect/contain? (:x %) (:y %) rect)))
-       (pmap #(assoc %1 :def (nth defs (:def-index %))))
+                      ; (rect/contain? (:x %) (:y %) rect)
+                      ))
+       (pmap #(assoc %1 :def (nth (:defs h3m-map) (:def-index %))))
+       (sort (create-compare-objects h3m-map))
+       (reverse)
        (pmap #(replace-random-item %1))
        (pmap #(let [object-frames (assets/get-object (def->filename (:def %)))
                     get-frame (assets/create-sprite object-frames true)
                     ^TextureRegion frame (get-frame)
-                    x-position (float (- (* consts/tile-size (:x %))
-                                         (.getRegionWidth frame)))
-                    y-position (float (- (* consts/tile-size (:y %))
-                                         (.getRegionHeight frame)))]
+                    x-position (float (+ consts/tile-size
+                                         (- (* consts/tile-size (:x %))
+                                            (.getRegionWidth frame))))
+                    y-position (float (+ consts/tile-size
+                                         (- (* consts/tile-size (:y %))
+                                            (.getRegionHeight frame))))]
                 {:get-frame get-frame
                  :x-position x-position
                  :y-position y-position}))))
