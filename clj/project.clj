@@ -11,9 +11,7 @@
   :aot :all
   :main h3m-lwp-clj.desktop
   :repl-options {:init-ns h3m-lwp-clj.desktop
-                 :init (main-repl)
-                ;  :nrepl-middleware [h3m-lwp-clj.repl/mw]
-                 }
+                 :init (main-repl)}
   :target-path "target/%s"
   :source-paths ["src"]
   :profiles
