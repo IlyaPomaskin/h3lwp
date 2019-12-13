@@ -55,7 +55,7 @@
 
 (defn rect-watcher
   [next-rect]
-  (reset! visible-objects (objects/get-visible-objects next-rect @h3m-map))
+  (reset! visible-objects (objects/get-visible-objects @h3m-map))
   (.set (.position ^OrthographicCamera @camera)
         (* consts/tile-size
            (+ (:x1 next-rect)
@@ -137,7 +137,7 @@
   (reset! batch (new SpriteBatch))
   (reset! camera (create-camera scale-factor))
   (reset! terrain-renderer (terrain/create-renderer @h3m-map))
-  (reset! visible-objects (objects/get-visible-objects nil @h3m-map))
+  (reset! visible-objects (objects/get-visible-objects @h3m-map))
   (comment
     (add-watch rect :watcher #(rect-watcher %4))
     (.scheduleTask

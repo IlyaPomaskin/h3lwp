@@ -7,34 +7,32 @@
 
 
 (defn get-placement-order
-  [h3m-map object]
-  (get-in h3m-map [:defs (:def-index object) :placement-order]))
+  [object]
+  (get-in object [:def :placement-order]))
 
 
-(defn is-def-visitable
-  [h3m-map object]
+(defn def-visitable?
+  [object]
   (= [0 0]
-     (get-in h3m-map [:defs (:def-index object) :active-cells])))
+     (get-in object [:def :active-cells])))
 
 
 ; TODO rewrite
-(defn create-compare-objects
-  [h3m-map]
-  (fn
-    [a b]
-    (cond
-      (not= (get-placement-order h3m-map a)
-            (get-placement-order h3m-map b)) (if (>= (get-placement-order h3m-map a)
-                                                     (get-placement-order h3m-map b)) 1 -1)
-      (not= (:y a) (:y b)) (if (>= (:y a) (:y b)) -1 1)
-      (and (not= (:object a) :hero) (= (:object b) :hero)) 1
-      (and (not= (:object b) :hero) (= (:object a) :hero)) -1
-      (and (false? (is-def-visitable h3m-map a))
-           (true? (is-def-visitable h3m-map b))) -1
-      (and (false? (is-def-visitable h3m-map b))
-           (true? (is-def-visitable h3m-map a))) 1
-      (<= (:x a) (:x b)) 1
-      :else -1)))
+(defn compare-objects
+  [a b]
+  (cond
+    (not= (get-placement-order a)
+          (get-placement-order b)) (if (>= (get-placement-order a)
+                                           (get-placement-order b)) 1 -1)
+    (not= (:y a) (:y b)) (if (>= (:y a) (:y b)) -1 1)
+    (and (not= (:object a) :hero) (= (:object b) :hero)) 1
+    (and (not= (:object b) :hero) (= (:object a) :hero)) -1
+    (and (false? (def-visitable? a))
+         (true? (def-visitable? b))) -1
+    (and (false? (def-visitable? b))
+         (true? (def-visitable? a))) 1
+    (<= (:x a) (:x b)) 1
+    :else -1))
 
 
 (defn def->filename
@@ -57,13 +55,11 @@
 
 
 (defn get-visible-objects
-  [rect h3m-map]
+  [h3m-map]
   (->> (:objects h3m-map)
-       (filterv #(and (zero? (:z %))
-                      ; (rect/contain? (:x %) (:y %) rect)
-                      ))
+       (filterv #(zero? (:z %)))
        (pmap #(assoc %1 :def (nth (:defs h3m-map) (:def-index %))))
-       (sort (create-compare-objects h3m-map))
+       (sort compare-objects)
        (reverse)
        (pmap #(random/replace-random-objects %1))
        (pmap #(let [object-frames (assets/get-object (def->filename (:def %)))
