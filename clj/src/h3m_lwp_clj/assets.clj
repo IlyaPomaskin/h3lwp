@@ -29,18 +29,3 @@
 
 (def get-object (create-atlas-getter object-atlas))
 (def get-terrain (create-atlas-getter terrains-atlas))
-
-
-(defn create-sprite
-  [^Array frames random-start?]
-  (let [frames-count (.size frames)
-        initial-frame (if random-start?
-                        (rand-int frames-count)
-                        0)
-        current-frame (volatile! initial-frame)]
-    (fn []
-      (when (> frames-count 1)
-        (vswap! current-frame #(if (= %1 (dec frames-count))
-                                 0
-                                 (inc %1))))
-      (.get frames @current-frame))))
