@@ -2,6 +2,7 @@
   (:import [com.badlogic.gdx.maps.tiled TiledMap TiledMapTileLayer TiledMapTileLayer$Cell]
            [com.badlogic.gdx.maps.tiled.tiles AnimatedTiledMapTile StaticTiledMapTile]
            [com.badlogic.gdx.maps.tiled.renderers OrthogonalTiledMapRenderer]
+           [com.badlogic.gdx.graphics.g2d TextureRegion]
            [com.badlogic.gdx.utils Array])
   (:require [h3m-lwp-clj.assets :as assets]
             [h3m-lwp-clj.consts :as consts]
@@ -21,7 +22,9 @@
   (new
    AnimatedTiledMapTile
    (float 0.180)
-   (utils/map-libgdx-array #(new StaticTiledMapTile %1) frames)))
+   (utils/map-libgdx-array
+    (fn [frame] (new StaticTiledMapTile ^TextureRegion frame))
+    frames)))
 
 
 (defn create-tile [tile type]
@@ -43,7 +46,7 @@
   (let [terrain-layer (new TiledMapTileLayer size size consts/tile-size consts/tile-size)
         road-layer (new TiledMapTileLayer size size consts/tile-size consts/tile-size)
         river-layer (new TiledMapTileLayer size size consts/tile-size consts/tile-size)]
-    (doall
+    (dorun
      (for [x (range 0 size)
            y (range 0 size)
            :let [index (+ (* size y) x)
@@ -62,7 +65,7 @@
 (defn create-tiled-map
   [layers]
   (let [tiled-map (new TiledMap)]
-    (doall
+    (dorun
      (for [layer layers]
        (.add (.getLayers tiled-map) layer)))
     tiled-map))
