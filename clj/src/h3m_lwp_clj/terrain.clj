@@ -26,8 +26,8 @@
 
 (defn create-tile [tile type]
   (let [mirror-config (get tile :mirror-config)
-        flip-x (bit-test mirror-config (get-in consts/tile-size [type :flip-x]))
-        flip-y (bit-test mirror-config (get-in consts/tile-size [type :flip-y]))]
+        flip-x (bit-test mirror-config (get-in consts/tile-types [type :flip-x]))
+        flip-y (bit-test mirror-config (get-in consts/tile-types [type :flip-y]))]
     (doto (new TiledMapTileLayer$Cell)
       (.setTile
        (frames->animated-tile
