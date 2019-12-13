@@ -1,13 +1,15 @@
 (ns h3m-lwp-clj.core
   (:import [com.badlogic.gdx ApplicationAdapter Gdx InputProcessor Application$ApplicationType]
            [com.badlogic.gdx.graphics Texture GL20 OrthographicCamera]
-           [com.badlogic.gdx.graphics.g2d]
+           [com.badlogic.gdx.maps.tiled.renderers OrthogonalTiledMapRenderer]
            [com.badlogic.gdx.utils Timer Timer$Task])
   (:require
    [h3m-parser.core :as h3m]
    [h3m-lwp-clj.assets :as assets]
    [h3m-lwp-clj.terrain :as terrain]
-   [h3m-lwp-clj.objects :as objects])
+   [h3m-lwp-clj.objects :as objects]
+   [h3m-lwp-clj.rect :as rect]
+   [h3m-lwp-clj.consts :as consts])
   (:gen-class
    :name h3m.LwpCore
    :extends com.badlogic.gdx.ApplicationAdapter))
@@ -29,8 +31,7 @@
               (println (.printStackTrace e#)))))))))
 
 
-(def update-rect-interval (* 60 15))
-(def sprite-render-interval 180)
+(def camera-position-update-interval (* 60 15))
 (def scale-factor 2)
 
 
@@ -49,6 +50,18 @@
     camera))
 
 
+(defn set-random-camera-position
+  [^OrthographicCamera camera map-size]
+  (let [box (rect/get-camera-rect camera)
+        x-offset (Math/floor (/ (:width box) 2))
+        y-offset (Math/floor (/ (:height box) 2))
+        next-x (* consts/tile-size
+                  (+ x-offset (rand-int (- map-size (:width box)))))
+        next-y (* consts/tile-size
+                  (+ y-offset (rand-int (- map-size (:height box)))))]
+    (.set (.position camera) next-x next-y 0)))
+
+
 (defn is-desktop?
   []
   (= (.getType (Gdx/app))
@@ -60,16 +73,14 @@
     (keyDown
       [keycode]
       (when (is-desktop?)
-        (case keycode
-          69  (set! (.-zoom ^OrthographicCamera @camera) (+ (.-zoom ^OrthographicCamera @camera) 0.1))
-          70  (set! (.-zoom ^OrthographicCamera @camera) (- (.-zoom ^OrthographicCamera @camera) 0.1))
-          19  (.translate ^OrthographicCamera @camera 0 -3 0)
-          20  (.translate ^OrthographicCamera @camera 0 3 0)
-          21  (.translate ^OrthographicCamera @camera -3 0 0)
-          22  (.translate ^OrthographicCamera @camera 3 0 0)
-          62  (let [screen-width (/ (.getWidth (Gdx/graphics)) scale-factor)
-                    screen-height (/ (.getHeight (Gdx/graphics)) scale-factor)]
-                (update-rect screen-width screen-height))
+        (case (int keycode)
+          69 (set! (.-zoom ^OrthographicCamera @camera) (+ (.-zoom ^OrthographicCamera @camera) 0.1))
+          70 (set! (.-zoom ^OrthographicCamera @camera) (- (.-zoom ^OrthographicCamera @camera) 0.1))
+          19 (.translate ^OrthographicCamera @camera 0 (- consts/tile-size) 0)
+          20 (.translate ^OrthographicCamera @camera 0 consts/tile-size 0)
+          21 (.translate ^OrthographicCamera @camera (- consts/tile-size) 0 0)
+          22 (.translate ^OrthographicCamera @camera consts/tile-size 0 0)
+          62 (set-random-camera-position @camera (:size @h3m-map))
           nil))
       true)
     (keyTyped [keycode] true)
@@ -79,10 +90,6 @@
     (touchDown [^Integer screen-x ^Integer screen-y ^Integer pointer ^Integer button] true)
     (touchUp
       [^Integer screen-x ^Integer screen-y ^Integer pointer ^Integer button]
-      (when (is-desktop?)
-        (let [screen-width (/ (.getWidth (Gdx/graphics)) scale-factor)
-              screen-height (/ (.getHeight (Gdx/graphics)) scale-factor)]
-          (update-rect screen-width screen-height)))
       true)
     (touchDragged
       [^Integer screen-x ^Integer screen-y ^Integer pointer]
@@ -96,28 +103,18 @@
 
 (defn -create
   [^ApplicationAdapter _]
-  (.setInputProcessor (Gdx/input) input-processor)
-  (Texture/setAssetManager assets/manager)
   (.finishLoading assets/manager)
-  
-  (reset!
-   h3m-map
-   (-> Gdx/files
-       (.internal "maps/arr.h3m")
-       (.read)
-       (h3m/parse-file)))
+  (.setInputProcessor (Gdx/input) input-processor)
+  (reset! h3m-map (h3m/parse-file (.read (.internal Gdx/files "maps/arr.h3m"))))
   (reset! camera (create-camera scale-factor))
   (reset! terrain-renderer (terrain/create-renderer @h3m-map))
-  (reset! objects-renderer (objects/create-renderer @h3m-map)))
-
-
-(comment
+  (reset! objects-renderer (objects/create-renderer @h3m-map))
   (.scheduleTask
    (new Timer)
    (proxy [Timer$Task] []
-     (run [] (update-rect screen-width screen-height)))
+     (run [] (set-random-camera-position @camera (:size @h3m-map))))
    (float 0)
-   (float update-rect-interval)))
+   (float camera-position-update-interval)))
 
 
 (comment
@@ -131,14 +128,15 @@
 
 (defn -render
   [^ApplicationAdapter _]
-  (doto Gdx/gl
-    (.glClearColor 0 0 0 0)
-    (.glEnable GL20/GL_BLEND)
-    (.glBlendFunc GL20/GL_SRC_ALPHA GL20/GL_ONE_MINUS_SRC_ALPHA)
-    (.glClear GL20/GL_COLOR_BUFFER_BIT))
-  (.update @camera)
-  (doto @terrain-renderer
-    (.setView @camera)
-    (.render))
-  (@objects-renderer @camera))
+  (let [^OrthographicCamera camera (deref camera)
+        terrain-renderer ^OrthogonalTiledMapRenderer (deref terrain-renderer)
+        objects-renderer (deref objects-renderer)]
+    (doto Gdx/gl
+      (.glClearColor 0 0 0 0)
+      (.glClear GL20/GL_COLOR_BUFFER_BIT))
+    (.update camera)
+    (doto terrain-renderer
+      (.setView camera)
+      (.render))
+    (objects-renderer camera)))
 
