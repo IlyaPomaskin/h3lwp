@@ -9,8 +9,11 @@
 
 
 (defn tile->filename
-  [tile part]
-  (get-in consts/terrain [part (get tile part)]))
+  [tile type]
+  (let
+   [tile-def-name (get-in consts/tile-types [type :names (get tile type)])
+    def-image-index (get tile (get-in consts/tile-types [type :index]))]
+    (format "%s/%02d" tile-def-name def-image-index)))
 
 
 (defn frames->animated-tile
@@ -21,34 +24,15 @@
    (utils/map-libgdx-array #(new StaticTiledMapTile %1) frames)))
 
 
-(defn tile->settings
-  [type]
-  (case type
-    :terrain {:index :terrain-image-index
-              :flip-x 0
-              :flip-y 1}
-    :river {:index :river-image-index
-            :flip-x 2
-            :flip-y 3}
-    :road {:index :road-image-index
-           :flip-x 4
-           :flip-y 5}
-    nil))
-
-
 (defn create-tile [tile type]
-  (let [{mirror-config :mirror-config} tile
-        {image-index-field :index
-         flip-x-field :flip-x
-         flip-y-field :flip-y} (tile->settings type)
-        flip-x (bit-test mirror-config flip-x-field)
-        flip-y (bit-test mirror-config flip-y-field)]
+  (let [mirror-config (get tile :mirror-config)
+        flip-x (bit-test mirror-config (get-in consts/tile-size [type :flip-x]))
+        flip-y (bit-test mirror-config (get-in consts/tile-size [type :flip-y]))]
     (doto (new TiledMapTileLayer$Cell)
       (.setTile
        (frames->animated-tile
         (assets/get-terrain
-         (tile->filename tile :terrain)
-         (get tile image-index-field))))
+         (tile->filename tile type))))
       (.setFlipHorizontally flip-x)
       (.setFlipVertically flip-y))))
 

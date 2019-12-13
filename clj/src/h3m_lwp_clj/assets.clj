@@ -16,28 +16,19 @@
     (.load object-atlas TextureAtlas (new TextureAtlasLoader$TextureAtlasParameter true))))
 
 
-(defn get-object
-  ^Array
-  [name]
-  (let [^TextureAtlas atlas (.get manager object-atlas)
-        ^Array frames (.findRegions atlas name)]
-    (if (zero? (.size frames))
-      (do
-        (println "Sprite not found:" name)
-        (get-object "empty"))
+(defn create-atlas-getter
+  [^String atlas-name]
+  (fn [^String region-name]
+    ^Array
+    (let [^TextureAtlas atlas (.get manager atlas-name)
+          ^Array frames (.findRegions atlas region-name)]
+      (when (zero? (.size frames))
+        (throw (new Exception (format "Region %s not found in atlas %s %s" region-name atlas-name))))
       frames)))
 
 
-(defn get-terrain
-  ^Array
-  [name index]
-  (let [^TextureAtlas atlas (.get manager terrains-atlas)
-        ^Array frames (.findRegions atlas (format "%s/%02d" name index))]
-    (if (zero? (.size frames))
-      (do
-        (println "Terrain not found:" name index)
-        (get-object "empty"))
-      frames)))
+(def get-object (create-atlas-getter object-atlas))
+(def get-terrain (create-atlas-getter terrains-atlas))
 
 
 (defn create-sprite

@@ -4,27 +4,33 @@
 (def tile-size 32)
 
 
-(def terrain
-  {:terrain
-   {0 "dirttl"
-    1 "sandtl"
-    2 "grastl"
-    3 "snowtl"
-    4 "swmptl"
-    5 "rougtl"
-    6 "subbtl"
-    7 "lavatl"
-    8 "watrtl"
-    9 "rocktl"}
-   :river
-   {1 "clrrvr"
-    2 "icyrvr"
-    3 "mudrvr"
-    4 "lavrvr"}
-   :road
-   {1 "dirtrd"
-    2 "gravrd"
-    3 "cobbrd"}})
+(def tile-types
+  {:terrain {:index :terrain-image-index
+             :flip-x 0
+             :flip-y 1
+             :names {0 "dirttl"
+                     1 "sandtl"
+                     2 "grastl"
+                     3 "snowtl"
+                     4 "swmptl"
+                     5 "rougtl"
+                     6 "subbtl"
+                     7 "lavatl"
+                     8 "watrtl"
+                     9 "rocktl"}}
+   :river {:index :river-image-index
+           :flip-x 2
+           :flip-y 3
+           :names {1 "clrrvr"
+                   2 "icyrvr"
+                   3 "mudrvr"
+                   4 "lavrvr"}}
+   :road {:index :road-image-index
+          :flip-x 4
+          :flip-y 5
+          :names {1 "dirtrd"
+                  2 "gravrd"
+                  3 "cobbrd"}}})
 
 
 (def resource
@@ -255,9 +261,7 @@
    :dungeon "avcdunx0.def"
    :stronghold "avcstrx0.def"
    :fortress "avcftrx0.def"
-   :conflux "avchforx.def"
-;    :random "avcrand0.def"
-   })
+   :conflux "avchforx.def"})
 
 
 (def village
@@ -269,6 +273,4 @@
    :dungeon "avcdung0.def"
    :stronghold "avcstro0.def"
    :fortress "avcftrt0.def"
-   :conflux "avchfor0.def"
-;    :random "avcrand0.def"
-   })
+   :conflux "avchfor0.def"})
