@@ -1,6 +1,6 @@
 (ns h3m-lwp-clj.core
   (:import [com.badlogic.gdx ApplicationAdapter Gdx InputProcessor Application$ApplicationType]
-           [com.badlogic.gdx.graphics Texture GL20 OrthographicCamera]
+           [com.badlogic.gdx.graphics GL20 OrthographicCamera]
            [com.badlogic.gdx.maps.tiled.renderers OrthogonalTiledMapRenderer]
            [com.badlogic.gdx.utils Timer Timer$Task])
   (:require
@@ -88,9 +88,7 @@
     (mouseMoved [x y] true)
     (scrolled [amount] true)
     (touchDown [^Integer screen-x ^Integer screen-y ^Integer pointer ^Integer button] true)
-    (touchUp
-      [^Integer screen-x ^Integer screen-y ^Integer pointer ^Integer button]
-      true)
+    (touchUp [^Integer screen-x ^Integer screen-y ^Integer pointer ^Integer button] true)
     (touchDragged
       [^Integer screen-x ^Integer screen-y ^Integer pointer]
       (when (is-desktop?)
