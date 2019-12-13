@@ -21,7 +21,7 @@
   [^Array frames]
   (new
    AnimatedTiledMapTile
-   (float 0.180)
+   (float consts/animation-interval)
    (utils/map-libgdx-array
     (fn [frame] (new StaticTiledMapTile ^TextureRegion frame))
     frames)))

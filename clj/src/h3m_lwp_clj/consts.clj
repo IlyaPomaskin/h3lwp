@@ -1,6 +1,9 @@
 (ns h3m-lwp-clj.consts)
 
 
+(def animation-interval 0.180)
+
+
 (def tile-size 32)
 
 
