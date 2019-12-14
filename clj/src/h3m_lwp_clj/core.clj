@@ -78,8 +78,9 @@
        (let [pressed? (fn [key _] (.isKeyPressed (Gdx/input) key))
              ^OrthographicCamera camera (deref camera)]
          (condp pressed? keycode
-           Input$Keys/MINUS (set! (.-zoom camera) (- (.-zoom camera) 0.1))
-           Input$Keys/PLUS (set! (.-zoom camera) (+ (.-zoom camera) 0.1))
+           Input$Keys/NUM_0 (set! (.-zoom camera) 1)
+           Input$Keys/EQUALS (set! (.-zoom camera) (- (.-zoom camera) 0.1))
+           Input$Keys/MINUS (set! (.-zoom camera) (+ (.-zoom camera) 0.1))
            Input$Keys/UP (.translate camera 0 (- consts/tile-size) 0)
            Input$Keys/DOWN (.translate camera 0 consts/tile-size 0)
            Input$Keys/LEFT (.translate camera (- consts/tile-size) 0 0)
