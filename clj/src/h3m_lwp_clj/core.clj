@@ -2,7 +2,8 @@
   (:import [com.badlogic.gdx ApplicationAdapter Gdx InputProcessor Application$ApplicationType]
            [com.badlogic.gdx.graphics GL20 OrthographicCamera]
            [com.badlogic.gdx.maps.tiled.renderers OrthogonalTiledMapRenderer]
-           [com.badlogic.gdx.utils Timer Timer$Task])
+           [com.badlogic.gdx.utils Timer Timer$Task]
+           [com.badlogic.gdx Input$Keys])
   (:require
    [h3m-parser.core :as h3m]
    [h3m-lwp-clj.assets :as assets]
@@ -70,20 +71,22 @@
 
 (def input-processor
   (proxy [InputProcessor] []
-    (keyDown
-      [keycode]
-      (when (is-desktop?)
-        (case (int keycode)
-          69 (set! (.-zoom ^OrthographicCamera @camera) (+ (.-zoom ^OrthographicCamera @camera) 0.1))
-          70 (set! (.-zoom ^OrthographicCamera @camera) (- (.-zoom ^OrthographicCamera @camera) 0.1))
-          19 (.translate ^OrthographicCamera @camera 0 (- consts/tile-size) 0)
-          20 (.translate ^OrthographicCamera @camera 0 consts/tile-size 0)
-          21 (.translate ^OrthographicCamera @camera (- consts/tile-size) 0 0)
-          22 (.translate ^OrthographicCamera @camera consts/tile-size 0 0)
-          62 (set-random-camera-position @camera (:size @h3m-map))
-          nil))
-      true)
-    (keyTyped [keycode] true)
+    (keyDown [keycode] true)
+    (keyTyped
+     [keycode]
+     (when (is-desktop?)
+       (let [pressed? (fn [key _] (.isKeyPressed (Gdx/input) key))
+             ^OrthographicCamera camera (deref camera)]
+         (condp pressed? keycode
+           Input$Keys/MINUS (set! (.-zoom camera) (- (.-zoom camera) 0.1))
+           Input$Keys/PLUS (set! (.-zoom camera) (+ (.-zoom camera) 0.1))
+           Input$Keys/UP (.translate camera 0 (- consts/tile-size) 0)
+           Input$Keys/DOWN (.translate camera 0 consts/tile-size 0)
+           Input$Keys/LEFT (.translate camera (- consts/tile-size) 0 0)
+           Input$Keys/RIGHT (.translate camera consts/tile-size 0 0)
+           Input$Keys/SPACE (set-random-camera-position camera (:size @h3m-map))
+           nil)
+         true)))
     (keyUp [keycode] true)
     (mouseMoved [x y] true)
     (scrolled [amount] true)
