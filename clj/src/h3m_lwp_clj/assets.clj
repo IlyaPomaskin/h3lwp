@@ -23,7 +23,7 @@
     (let [^TextureAtlas atlas (.get manager atlas-name)
           ^Array frames (.findRegions atlas region-name)]
       (when (zero? (.size frames))
-        (throw (new Exception (format "Region %s not found in atlas %s %s" region-name atlas-name))))
+        (throw (new Exception (format "Region %s not found in atlas %s" region-name atlas-name))))
       frames)))
 
 
