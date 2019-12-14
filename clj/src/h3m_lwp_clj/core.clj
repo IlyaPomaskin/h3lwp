@@ -33,7 +33,7 @@
 
 
 (def camera-position-update-interval (* 60 15))
-(def scale-factor 2)
+(def scale-factor 0.6)
 
 
 (defonce h3m-map (atom nil))
@@ -45,7 +45,7 @@
 (defn create-camera
   [scale-factor]
   (let [camera (new OrthographicCamera)]
-    (set! (.-zoom camera) (/ 1.0 scale-factor))
+    (set! (.-zoom camera) scale-factor)
     (.setToOrtho camera true)
     (.update camera)
     camera))
