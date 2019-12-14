@@ -50,6 +50,13 @@
       (+ 10 (rand-int 117))))))
 
 
+(defn get-random-hero
+  []
+  ; TODO
+  ; (format "ah%02d_e.def" (rand-int 18))
+  "empty")
+
+
 (defn replace-random-objects
   [object]
   (assoc-in
@@ -71,6 +78,7 @@
      :random-relic-art (get-random-artifact true)
      :random-resource (get-random-resource)
      :random-town (get-random-town (:class-sub-id object))
+     :random-hero (get-random-hero)
      :random-dwelling (get-random-dwelling (rand-int (:max object)))
      :random-dwelling-lvl (get-random-dwelling)
      :random-dwelling-faction (get-random-dwelling)
