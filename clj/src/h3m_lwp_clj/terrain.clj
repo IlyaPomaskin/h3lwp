@@ -53,10 +53,10 @@
                  tile (nth terrain index)]]
        (do
          (.setCell terrain-layer x y (create-tile tile :terrain))
-         (when (pos? (:road tile))
-           (.setCell road-layer x y (create-tile tile :road)))
          (when (pos? (:river tile))
-           (.setCell river-layer x y (create-tile tile :river))))))
+           (.setCell river-layer x y (create-tile tile :river)))
+         (when (pos? (:road tile))
+           (.setCell road-layer x y (create-tile tile :road))))))
     [terrain-layer
      road-layer
      river-layer]))
