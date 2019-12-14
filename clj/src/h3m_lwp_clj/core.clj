@@ -33,7 +33,7 @@
 
 
 (def camera-position-update-interval (* 60 15))
-(def scale-factor 0.6)
+(def scale-factor 0.5)
 
 
 (defonce h3m-map (atom nil))
