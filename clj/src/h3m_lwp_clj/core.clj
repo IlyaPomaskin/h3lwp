@@ -94,11 +94,9 @@
     (touchUp [^Integer screen-x ^Integer screen-y ^Integer pointer ^Integer button] true)
     (touchDragged
       [^Integer screen-x ^Integer screen-y ^Integer pointer]
-      (when (is-desktop?)
-        (.translate
-         ^OrthographicCamera @camera
-         (.getDeltaX (Gdx/input))
-         (.getDeltaY (Gdx/input))))
+      (let [^OrthographicCamera camera (deref camera)]
+        (when (is-desktop?)
+          (.translate camera (.getDeltaX (Gdx/input)) (.getDeltaY (Gdx/input)))))
       true)))
 
 
