@@ -83,7 +83,7 @@
 
 (defn get-visible-sprites
   [^OrthographicCamera camera sprites]
-  (let [rectangle (rect/get-camera-rect camera)]
+  (let [rectangle (rect/add (rect/get-camera-rect camera) 3)]
     (filterv
      #(rect/contain? (:x %) (:y %) rectangle)
      sprites)))

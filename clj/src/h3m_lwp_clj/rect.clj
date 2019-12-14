@@ -15,6 +15,15 @@
        (<= y y2)))
 
 
+(defn add [rect amount]
+  {:x1 (- (:x1 rect) amount)
+   :y1 (- (:y1 rect) amount)
+   :width (+ (:width rect) (* 2 amount))
+   :height (+ (:height rect) (* 2 amount))
+   :x2 (+ (:x2 rect) amount)
+   :y2 (+ (:y2 rect) amount)})
+
+
 (defn get-camera-rect [^OrthographicCamera camera]
   (let [width (* (.viewportWidth camera) (.zoom camera))
         height (* (.viewportHeight camera) (.zoom camera))
