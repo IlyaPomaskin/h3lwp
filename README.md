@@ -23,3 +23,4 @@ $ cd clj
 $ lein repl
 ```
 
+Use `repl` macro to execute code on main LibGDX thread.
