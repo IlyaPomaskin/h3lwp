@@ -17,7 +17,7 @@
   :profiles
   {:provided {:dependencies
               [[nrepl "0.6.0"]
-               [com.badlogicgames.gdx/gdx "1.9.6"]
-               [com.badlogicgames.gdx/gdx-backend-lwjgl "1.9.6"]
-               [com.badlogicgames.gdx/gdx-platform "1.9.6" :classifier "natives-desktop"]]}
+               [com.badlogicgames.gdx/gdx "1.9.10"]
+               [com.badlogicgames.gdx/gdx-backend-lwjgl "1.9.10"]
+               [com.badlogicgames.gdx/gdx-platform "1.9.10" :classifier "natives-desktop"]]}
    :uberjar {:uberjar-name "clj-render-standalone.jar"}})
