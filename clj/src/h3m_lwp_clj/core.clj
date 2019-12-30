@@ -5,7 +5,7 @@
            [com.badlogic.gdx.utils Timer Timer$Task]
            [com.badlogic.gdx Input$Keys])
   (:require
-   [h3m-parser.core :as h3m]
+   [h3m-parser.core :as h3m-parser]
    [h3m-lwp-clj.assets :as assets]
    [h3m-lwp-clj.terrain :as terrain]
    [h3m-lwp-clj.objects :as objects]
@@ -105,7 +105,7 @@
   [^ApplicationAdapter _]
   (.finishLoading assets/manager)
   (.setInputProcessor (Gdx/input) input-processor)
-  (reset! h3m-map (h3m/parse-file (.read (.internal Gdx/files "maps/invasion.h3m"))))
+  (reset! h3m-map (h3m-parser/parse-h3m (.read (.internal Gdx/files "maps/invasion.h3m"))))
   (reset! camera (create-camera scale-factor))
   (reset! terrain-renderer (terrain/create-renderer @h3m-map))
   (reset! objects-renderer (objects/create-renderer @h3m-map))
