@@ -4,29 +4,35 @@
    [h3m-parser.def :as def-file])
   (:import
    [com.badlogic.gdx Gdx]
-   [com.badlogic.gdx.graphics Texture Pixmap Pixmap$Format Color]
-   [com.badlogic.gdx.graphics.g2d TextureAtlas TextureAtlas$AtlasRegion PixmapPackerIO PixmapPackerIO$SaveParameters PixmapPacker PixmapPacker$GuillotineStrategy]
-   [java.io FileInputStream]))
+   [com.badlogic.gdx.graphics Pixmap Pixmap$Format Color]
+   [com.badlogic.gdx.graphics.g2d PixmapPackerIO PixmapPacker PixmapPacker$GuillotineStrategy]
+   [java.io BufferedInputStream FileInputStream]
+   [java.util.zip Inflater InflaterInputStream]))
+
+
+(defn get-def-stream-from-lod
+  [lod-def-info ^FileInputStream in]
+  (let [{size :size
+         compressed-size :compressed-size
+         offset :offset} lod-def-info]
+    (.position (.getChannel in) (long offset))
+    (if (pos? compressed-size)
+      (new InflaterInputStream in (new Inflater) compressed-size)
+      (new BufferedInputStream in size))))
 
 
 (defn parse-def-from-lod
   [lod-def-info in]
-  (try
-    (let [{name :name} lod-def-info
-          def-stream (h3m-parser/get-def-stream-from-lod lod-def-info in)
-          _ (println "parse" name)
-          def-info (h3m-parser/parse-def def-stream)
+  (let [{name :name} lod-def-info
+          def-stream (get-def-stream-from-lod lod-def-info in)
+          def-info (doall (h3m-parser/parse-def def-stream))
         ; TODO fix legacy check
           legacy? false ; (def-file/legacy? def-info def-stream uncompressed-size)
           ]
       (assoc
        def-info
        :legacy? legacy?
-       :name name))
-    (catch AssertionError e
-      (println lod-def-info)
-      (println "catch" e)
-      (throw (new Exception "fail")))))
+       :name name)))
 
 
 (defn lines->bytes [frame]
@@ -67,19 +73,13 @@
   (->> (h3m-parser/parse-lod lod-in)
        :files
        (filter #(= (:type %) item-type))
-      ;  (filter #(clojure.string/ends-with? (:name %) "ADVMWIND.def"))
        (map #(update % :name clojure.string/lower-case))
-       (filter #(clojure.string/ends-with? (:name %) "ava0013.def"))
        (filter #(clojure.string/ends-with? (:name %) ".def"))
-      ;  (drop 40)
-       (map #(do
-               (println (:name %))
-               (parse-def-from-lod % lod-in)))
-      ;  (filter #(clojure.string/starts-with? (:name %) "advmwind"))
+       (remove #(clojure.string/ends-with? (:name %) "arrow.def"))
+       (take 100)
+       (map #(parse-def-from-lod % lod-in))
        (remove #(:legacy? %))
-       (map map-def)
-       (take 50)
-       ))
+       (map map-def)))
 
 
 (defn make-palette [palette]
@@ -95,7 +95,7 @@
             6 [0 0 0 0x80]
             7 [0 0 0 0x40]
             item)))
-       (map #(Color/rgba4444
+       (map #(Color/rgba8888
               (float (/ (% 0) 255))
               (float (/ (% 1) 255))
               (float (/ (% 2) 255))
@@ -108,35 +108,22 @@
          full-width :full-width
          full-height :full-height
          data :data} frame
-        _ (println "image")
-        _ (println full-width full-height)
         image (doto (new Pixmap
                          (int full-width)
                          (int full-height)
-                         Pixmap$Format/RGBA4444)
+                         Pixmap$Format/RGBA8888)
                 (.setColor 0 0 0 0)
-                (.fill))
-        _ (println "pixels")
-        pixels (map #(nth palette %) data)]
+                (.fill))]
     (dorun
      (for [x (range 0 width)
            y (range 0 height)
            :let [palette-index (nth data (+ (* width y) x))
                  color (nth palette palette-index)]]
-       (try
-         (.drawPixel
-          image
-          (+ x (:x frame))
-          (+ y (:y frame))
-          color)
-         (catch Exception e
-           (println "fail")
-           (println color)
-           (println (+ (* width y) x))
-           (println (count pixels))
-           (println "pixel" (nth pixels (+ (* width y) x)))
-           (println e)
-           (throw e)))))
+       (.drawPixel
+        image
+        (+ x (:x frame))
+        (+ y (:y frame))
+        color)))
     image))
 
 
@@ -149,23 +136,20 @@
 
 
 (comment
-  (let [packer (new PixmapPacker 4096 4096 Pixmap$Format/RGBA4444 0 false (new PixmapPacker$GuillotineStrategy))
+  (let [packer (new PixmapPacker 1024 1024 Pixmap$Format/RGBA8888 0 false (new PixmapPacker$GuillotineStrategy))
         in (new FileInputStream (.file (.internal Gdx/files "Data/H3sprite.lod")))
-        defs (read-lod in (:map def-file/def-type))]
-    (dorun
-     (for [{name :name
-            palette :palette
-            frames :frames
-            order :order} defs
-           frame frames]
-       (let [region-name (format "%s__%d" name (:offset frame))
-             _ (println "pixmap" region-name)
-             pixmap (frame->pixmap (make-palette palette) frame)
-             _ (println "after" region-name)]
-         (println "pack" region-name)
-         (.pack packer region-name pixmap)
-         (.dispose ^Pixmap pixmap)
-         (println "assoc" region-name)
-         (assoc frame :pixmap pixmap))))
+        defs (time (read-lod in (:map def-file/def-type)))]
+    (time
+     (dorun
+      (for [{name :name
+             palette :palette
+             frames :frames
+             order :order} defs
+            frame frames]
+        (let [region-name (format "%s__%d" name (:offset frame))
+              pixmap ^Pixmap (frame->pixmap (make-palette palette) frame)]
+          ; (println "pack" region-name)
+          (time (.pack packer region-name pixmap))
+          (.dispose pixmap)))))
     (doto (new PixmapPackerIO)
-      (.save (.local Gdx/files "test2.atlas") packer))))
+      (.save (.local Gdx/files "test4.atlas") packer))))
