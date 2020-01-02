@@ -5,7 +5,7 @@
   (:import
    [com.badlogic.gdx Gdx]
    [com.badlogic.gdx.graphics Pixmap Pixmap$Format Color]
-   [com.badlogic.gdx.graphics.g2d PixmapPackerIO PixmapPacker PixmapPacker$GuillotineStrategy PixmapPacker$SkylineStrategy]
+   [com.badlogic.gdx.graphics.g2d PixmapPackerIO PixmapPacker]
    [java.io BufferedInputStream FileInputStream]
    [java.util.zip Inflater InflaterInputStream]))
 
@@ -38,9 +38,9 @@
 (defn lines->bytes [frame]
   (let [{lines :lines
          offsets :offsets} frame]
-    (mapcat
-      (fn [offset] (mapcat :data (get lines offset)))
-      offsets)))
+    (->> offsets
+         (mapcat (fn [offset] (mapcat :data (get lines offset))))
+         (vec))))
 
 
 (defn map-frame [frame]
@@ -74,12 +74,11 @@
        :files
        (filter #(= (:type %) item-type))
        (pmap #(update % :name clojure.string/lower-case))
-       (filter #(clojure.string/ends-with? (:name %) ".def"))
-       (remove #(clojure.string/ends-with? (:name %) "arrow.def"))
-       (take 100)
+       (filter #(clojure.string/ends-with? (:name %) ".def"))       
        (map #(parse-def-from-lod % lod-in))
        (remove #(:legacy? %))
-       (pmap map-def)))
+       (pmap map-def)
+       (vec)))
 
 
 (defn make-palette [palette]
@@ -99,7 +98,8 @@
               (float (/ (% 0) 255))
               (float (/ (% 1) 255))
               (float (/ (% 2) 255))
-              (float (/ (% 3) 255))))))
+              (float (/ (% 3) 255))))
+       (vec)))
 
 
 (defn frame->pixmap [palette frame]
@@ -114,18 +114,6 @@
                          Pixmap$Format/RGBA8888)
                 (.setColor 0 0 0 0)
                 (.fill))]
-    ; (dorun
-    ;  (pmap
-    ;   (fn [index]
-    ;     (let [y (quot index width)
-    ;           x (rem index width)
-    ;           color (nth palette (nth data index))]
-    ;       (.drawPixel
-    ;        image
-    ;        (+ x (:x frame))
-    ;        (+ y (:y frame))
-    ;        color)))
-    ;   (range 0 (count data))))
     (dorun
      (for [x (range 0 width)
            y (range 0 height)
@@ -139,18 +127,10 @@
     image))
 
 
-(defn find-index [fn coll]
-  (->> coll
-       (map-indexed vector)
-       (filter #(fn (second %)))
-       (take 1)
-       (map first)))
-
-
 (comment
-  (let [packer (new PixmapPacker 1024 1024 Pixmap$Format/RGBA8888 0 false)
-        in (new FileInputStream (.file (.internal Gdx/files "Data/H3sprite.lod")))
-        defs (doall (read-lod in (:map def-file/def-type)))]
+  (let [packer (new PixmapPacker 4096 4096 Pixmap$Format/RGBA8888 0 false)
+        in (new FileInputStream (.file (.internal Gdx/files "data/H3sprite.lod")))
+        defs (read-lod in (:map def-file/def-type))]
     (time
      (dorun
       (pmap
@@ -168,4 +148,4 @@
            frames)))
        defs)))
     (doto (new PixmapPackerIO)
-      (.save (.local Gdx/files "test6.atlas") packer))))
+      (.save (.local Gdx/files "test1.atlas") packer))))
