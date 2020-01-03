@@ -4,9 +4,10 @@
    [h3m-parser.def :as def-file])
   (:import
    [com.badlogic.gdx Gdx]
+   [com.badlogic.gdx.files FileHandle]
    [com.badlogic.gdx.graphics Pixmap Pixmap$Format Color]
-   [com.badlogic.gdx.graphics.g2d PixmapPackerIO PixmapPacker]
-   [java.io BufferedInputStream FileInputStream]
+   [com.badlogic.gdx.graphics.g2d PixmapPackerIO PixmapPackerIO$SaveParameters PixmapPacker]
+   [java.io File BufferedInputStream FileInputStream]
    [java.util.zip Inflater InflaterInputStream]))
 
 
@@ -69,12 +70,12 @@
       (assoc :order (get-in def-info [:groups 0 :offsets]))))
 
 
-(defn read-lod [^FileInputStream lod-in item-type]
+(defn read-lod [item-type ^FileInputStream lod-in]
   (->> (h3m-parser/parse-lod lod-in)
        :files
        (filter #(= (:type %) item-type))
        (pmap #(update % :name clojure.string/lower-case))
-       (filter #(clojure.string/ends-with? (:name %) ".def"))       
+       (filter #(clojure.string/ends-with? (:name %) ".def"))
        (map #(parse-def-from-lod % lod-in))
        (remove #(:legacy? %))
        (pmap map-def)
@@ -127,25 +128,45 @@
     image))
 
 
-(comment
-  (let [packer (new PixmapPacker 4096 4096 Pixmap$Format/RGBA8888 0 false)
-        in (new FileInputStream (.file (.internal Gdx/files "data/H3sprite.lod")))
-        defs (read-lod in (:map def-file/def-type))]
-    (time
-     (dorun
-      (pmap
-       (fn [{name :name
-             palette :palette
-             frames :frames
-             order :order}]
-         (dorun
-          (pmap
-           (fn [frame]
-             (let [region-name (format "%s__%d" name (:offset frame))
-                   pixmap ^Pixmap (frame->pixmap (make-palette palette) frame)]
-               (.pack packer region-name pixmap)
-               (.dispose pixmap)))
-           frames)))
-       defs)))
+(defn pack-defs [^PixmapPacker packer defs]
+  (dorun
+   (for [{name :name
+          palette :palette
+          frames :frames} defs
+         frame frames
+         :let [region-name (format "%s_%d" name (:offset frame))
+               pixmap ^Pixmap (frame->pixmap (make-palette palette) frame)]]
+     (do
+       (.pack packer region-name pixmap)
+       (.dispose pixmap)))))
+
+
+(defn save-packer [^PixmapPacker packer ^File out-file]
+  (let [save-parameters (new PixmapPackerIO$SaveParameters)]
+    (set! (.-useIndexes save-parameters) true)
     (doto (new PixmapPackerIO)
-      (.save (.local Gdx/files "test1.atlas") packer))))
+      (.save out-file packer save-parameters))))
+
+
+(defn save-defs-info [file-name defs]
+  (->> defs
+       (mapcat #(vector (:name %) (dissoc % :palette :frames)))
+       (apply hash-map)
+       (pr-str)
+       (spit file-name)))
+
+
+(defn parse-objects [^File lod-file ^FileHandle out-file defs-info-file-name]
+  (let [packer (new PixmapPacker 4096 4096 Pixmap$Format/RGBA8888 0 false)
+        defs (read-lod (:map def-file/def-type) (new FileInputStream lod-file))]
+    (pack-defs packer defs)
+    (save-defs-info defs-info-file-name defs)
+    (save-packer packer out-file)
+    (.dispose packer)))
+
+
+(comment
+  (parse-objects
+   (.file (.internal Gdx/files "data/H3sprite.lod"))
+   (.local Gdx/files "sprites/objects.atlas")
+   "sprites/objects.edn"))
