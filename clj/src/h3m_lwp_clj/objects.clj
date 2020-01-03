@@ -67,18 +67,14 @@
         offset-frame)))))
 
 
-(defn get-sprites
+(defn get-map-objects
   [h3m-map]
   (->> (:objects h3m-map)
        (filter #(zero? (:z %)))
        (pmap #(assoc % :def (nth (:defs h3m-map) (:def-index %))))
        (pmap random/replace-random-objects)
        (sort compare-objects)
-       (reverse)
-       (pmap #(hash-map
-               :render-sprite (create-sprite (assets/get-object (object->filename %)))
-               :x (inc (:x %))
-               :y (inc (:y %))))))
+       (reverse)))
 
 
 (defn get-visible-sprites
@@ -91,7 +87,7 @@
 
 (defn render-sprites
   [^SpriteBatch batch ^OrthographicCamera camera sprites]
-  (doall
+  (dorun
    (for [sprite (get-visible-sprites camera sprites)]
      (let [{render-sprite :render-sprite
             x :x
@@ -111,7 +107,13 @@
 (defn create-renderer
   [h3m-map]
   (let [batch (new SpriteBatch)
-        sprites (get-sprites h3m-map)]
+        objects (get-map-objects h3m-map)
+        sprites (pmap
+                 #(hash-map
+                   :render-sprite (create-sprite (assets/get-object (object->filename %)))
+                   :x (inc (:x %))
+                   :y (inc (:y %)))
+                 objects)]
     (fn render-objects [camera]
       (.setTransformMatrix batch (.-view ^OrthographicCamera camera))
       (.setProjectionMatrix batch (.-projection ^OrthographicCamera camera))
