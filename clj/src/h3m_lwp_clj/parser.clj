@@ -141,7 +141,7 @@
        (.dispose pixmap)))))
 
 
-(defn save-packer [^PixmapPacker packer ^File out-file]
+(defn save-packer [^PixmapPacker packer ^FileHandle out-file]
   (let [save-parameters (new PixmapPackerIO$SaveParameters)]
     (set! (.-useIndexes save-parameters) true)
     (doto (new PixmapPackerIO)
@@ -156,9 +156,9 @@
        (spit file-name)))
 
 
-(defn parse-objects [^File lod-file ^FileHandle out-file defs-info-file-name]
+(defn parse-objects [^FileHandle lod-file ^FileHandle out-file defs-info-file-name]
   (let [packer (new PixmapPacker 4096 4096 Pixmap$Format/RGBA8888 0 false)
-        defs (read-lod (:map def-file/def-type) (new FileInputStream lod-file))]
+        defs (read-lod (:map def-file/def-type) (new FileInputStream (.file lod-file)))]
     (pack-defs packer defs)
     (save-defs-info defs-info-file-name defs)
     (save-packer packer out-file)
@@ -167,6 +167,6 @@
 
 (comment
   (parse-objects
-   (.file (.internal Gdx/files "data/H3sprite.lod"))
+   (.internal Gdx/files "data/H3sprite.lod")
    (.local Gdx/files "sprites/objects.atlas")
    "sprites/objects.edn"))
