@@ -7,7 +7,7 @@
    [com.badlogic.gdx.files FileHandle]
    [com.badlogic.gdx.graphics Pixmap Pixmap$Format Color]
    [com.badlogic.gdx.graphics.g2d PixmapPackerIO PixmapPackerIO$SaveParameters PixmapPacker]
-   [java.io File BufferedInputStream FileInputStream]
+   [java.io BufferedInputStream FileInputStream]
    [java.util.zip Inflater InflaterInputStream]))
 
 
