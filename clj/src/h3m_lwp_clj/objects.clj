@@ -1,7 +1,7 @@
 (ns h3m-lwp-clj.objects
   (:import [com.badlogic.gdx.graphics.g2d SpriteBatch TextureRegion]
-           [com.badlogic.gdx.graphics OrthographicCamera]
-           [com.badlogic.gdx.utils Array TimeUtils])
+           [com.badlogic.gdx.graphics OrthographicCamera Texture Pixmap Pixmap$Format]
+           [com.badlogic.gdx.utils TimeUtils])
   (:require [h3m-lwp-clj.assets :as assets]
             [h3m-lwp-clj.rect :as rect]
             [h3m-lwp-clj.random :as random]
@@ -52,19 +52,32 @@
        frames-count))
 
 
-(defn create-sprite
-  [^Array frames]
-  (let [initial-time (TimeUtils/millis)
-        frames-count (.size frames)
+(defn create-sprite [object]
+  (let [filename (object->filename object)
+        sprite-info (assets/get-sprite-info filename)
+        {frames-order :order} sprite-info
+        frames (mapv #(assets/get-object-frame filename %) frames-order)
+        initial-time (TimeUtils/millis)
+        frames-count (count frames-order)
         offset-frame (rand-int frames-count)]
-    (fn render-sprite []
-      (.get
-       frames
-       (get-frame-index
-        initial-time
-        (TimeUtils/millis)
-        frames-count
-        offset-frame)))))
+    (if (nil? sprite-info)
+      (do
+        ; TODO
+        (println "NOT FOUND" filename)
+        (fn render-nil-sprite []
+          (new TextureRegion
+               (new Texture
+                    (doto (new Pixmap 1 1 Pixmap$Format/RGBA8888)
+                      (.setColor 0 0 0 0)
+                      (.fill))))))
+      (fn render-sprite []
+        (nth
+         frames
+         (get-frame-index
+          initial-time
+          (TimeUtils/millis)
+          frames-count
+          offset-frame))))))
 
 
 (defn get-map-objects
@@ -107,13 +120,12 @@
 (defn create-renderer
   [h3m-map]
   (let [batch (new SpriteBatch)
-        objects (get-map-objects h3m-map)
-        sprites (pmap
-                 #(hash-map
-                   :render-sprite (create-sprite (assets/get-object (object->filename %)))
-                   :x (inc (:x %))
-                   :y (inc (:y %)))
-                 objects)]
+        sprites (->> (get-map-objects h3m-map)
+                     (mapv
+                      #(hash-map
+                        :render-sprite (create-sprite %)
+                        :x (inc (:x %))
+                        :y (inc (:y %)))))]
     (fn render-objects [camera]
       (.setTransformMatrix batch (.-view ^OrthographicCamera camera))
       (.setProjectionMatrix batch (.-projection ^OrthographicCamera camera))
