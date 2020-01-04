@@ -107,7 +107,7 @@
   (.setInputProcessor (Gdx/input) input-processor)
   (reset! h3m-map (h3m-parser/parse-h3m (.read (.internal Gdx/files "maps/invasion.h3m"))))
   (reset! camera (create-camera scale-factor))
-  (reset! terrain-renderer (terrain/create-renderer @h3m-map))
+  ; (reset! terrain-renderer (terrain/create-renderer @h3m-map))
   (reset! objects-renderer (objects/create-renderer @h3m-map))
   (.scheduleTask
    (new Timer)
@@ -129,14 +129,14 @@
 (defn -render
   [^ApplicationAdapter _]
   (let [^OrthographicCamera camera (deref camera)
-        terrain-renderer ^OrthogonalTiledMapRenderer (deref terrain-renderer)
+        ; terrain-renderer ^OrthogonalTiledMapRenderer (deref terrain-renderer)
         objects-renderer (deref objects-renderer)]
     (doto Gdx/gl
       (.glClearColor 0 0 0 0)
       (.glClear GL20/GL_COLOR_BUFFER_BIT))
     (.update camera)
-    (doto terrain-renderer
-      (.setView camera)
-      (.render))
+    ; (doto terrain-renderer
+    ;   (.setView camera)
+    ;   (.render))
     (objects-renderer camera)))
 
