@@ -1,31 +1,41 @@
 (ns h3m-lwp-clj.assets
-  (:import [com.badlogic.gdx.graphics]
-           [com.badlogic.gdx.graphics.g2d TextureAtlas]
+  (:import [com.badlogic.gdx.graphics Texture]
+           [com.badlogic.gdx.graphics.g2d TextureAtlas TextureAtlas$AtlasRegion]
            [com.badlogic.gdx.assets AssetManager]
-           [com.badlogic.gdx.assets.loaders TextureAtlasLoader$TextureAtlasParameter]
-           [com.badlogic.gdx.utils Array]))
+           [com.badlogic.gdx.assets.loaders TextureAtlasLoader$TextureAtlasParameter]))
 
 
-(def ^String terrains-atlas "sprites/terrains.atlas")
-(def ^String object-atlas "sprites/mapObjects.atlas")
+(def ^String objects-atlas "sprites/objects.atlas")
+
+
+(defonce objects-info (atom {}))
 
 
 (def ^AssetManager manager
   (doto (new AssetManager)
-    (.load terrains-atlas TextureAtlas (new TextureAtlasLoader$TextureAtlasParameter true))
-    (.load object-atlas TextureAtlas (new TextureAtlasLoader$TextureAtlasParameter true))))
+    (.load objects-atlas TextureAtlas (new TextureAtlasLoader$TextureAtlasParameter true))))
 
 
-(defn create-atlas-getter
-  [^String atlas-name]
-  (fn [^String region-name]
-    ^Array
-    (let [^TextureAtlas atlas (.get manager atlas-name)
-          ^Array frames (.findRegions atlas region-name)]
-      (when (zero? (.size frames))
-        (throw (new Exception (format "Region %s not found in atlas %s" region-name atlas-name))))
-      frames)))
+(defn init []
+  (reset!
+   objects-info
+   (try
+     ; TODO AssetLoader?
+     (read-string (slurp "sprites/objects.edn"))
+     (catch Exception _
+       (println "Failed to read objects.edn")
+       {})))
+  (.finishLoading manager)
+  (Texture/setAssetManager manager))
 
 
-(def get-object (create-atlas-getter object-atlas))
-(def get-terrain (create-atlas-getter terrains-atlas))
+(defn get-object-frame [def-name offset]
+  (let [^TextureAtlas atlas (.get manager objects-atlas)
+        ^TextureAtlas$AtlasRegion frame (.findRegion atlas def-name offset)]
+    (when (nil? frame)
+      (throw (new Exception (format "def %s with offset %d not found in atlas" def-name offset))))
+    frame))
+
+
+(defn get-sprite-info [def-name]
+  (get @objects-info def-name))
