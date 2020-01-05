@@ -1,6 +1,6 @@
 (ns h3m-lwp-clj.assets
   (:import [com.badlogic.gdx.graphics Texture]
-           [com.badlogic.gdx.graphics.g2d TextureAtlas TextureAtlas$AtlasRegion]
+           [com.badlogic.gdx.graphics.g2d TextureRegion TextureAtlas TextureAtlas$AtlasRegion]
            [com.badlogic.gdx.assets AssetManager]
            [com.badlogic.gdx.assets.loaders TextureAtlasLoader$TextureAtlasParameter]))
 
@@ -30,6 +30,7 @@
 
 
 (defn get-object-frame [def-name offset]
+  ^TextureRegion
   (let [^TextureAtlas atlas (.get manager objects-atlas)
         ^TextureAtlas$AtlasRegion frame (.findRegion atlas def-name offset)]
     (when (nil? frame)
