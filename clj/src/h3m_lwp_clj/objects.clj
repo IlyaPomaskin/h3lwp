@@ -52,32 +52,42 @@
        frames-count))
 
 
-(defn create-sprite [object]
+(defn create-sprite [^SpriteBatch batch object]
   (let [filename (object->filename object)
         sprite-info (assets/get-sprite-info filename)
         {frames-order :order} sprite-info
         frames (mapv #(assets/get-object-frame filename %) frames-order)
         initial-time (TimeUtils/millis)
         frames-count (count frames-order)
-        offset-frame (rand-int frames-count)]
+        offset-frame (rand-int frames-count)
+        empty (new TextureRegion
+                   (new Texture
+                        (doto (new Pixmap 1 1 Pixmap$Format/RGBA8888)
+                          (.setColor 0 0 0 0)
+                          (.fill))))]
     (if (nil? sprite-info)
       (do
         ; TODO
         (println "NOT FOUND" filename)
-        (fn render-nil-sprite []
-          (new TextureRegion
-               (new Texture
-                    (doto (new Pixmap 1 1 Pixmap$Format/RGBA8888)
-                      (.setColor 0 0 0 0)
-                      (.fill))))))
+        (fn render-nil-sprite [] empty))
       (fn render-sprite []
-        (nth
-         frames
-         (get-frame-index
-          initial-time
-          (TimeUtils/millis)
-          frames-count
-          offset-frame))))))
+        (let [^TextureRegion
+              frame (nth
+                     frames
+                     (get-frame-index
+                      initial-time
+                      (TimeUtils/millis)
+                      frames-count
+                      offset-frame))]
+          (.draw
+           batch
+           frame
+           (float (- (* (inc (:x object)) consts/tile-size)
+                    ;  (.getRegionWidth frame)
+                     (:full-width sprite-info)))
+           (float (- (* (inc (:y object)) consts/tile-size)
+                    ;  (.getRegionHeight frame)
+                     (:full-height sprite-info)))))))))
 
 
 (defn get-map-objects
@@ -90,45 +100,31 @@
        (reverse)))
 
 
+; TODO memoize by camera position
 (defn get-visible-sprites
-  [^OrthographicCamera camera sprites]
+  [^OrthographicCamera camera objects]
   (let [rectangle (rect/add (rect/get-camera-rect camera) 3)]
-    (filterv
+    (filter
      #(rect/contain? (:x %) (:y %) rectangle)
-     sprites)))
-
-
-(defn render-sprites
-  [^SpriteBatch batch ^OrthographicCamera camera sprites]
-  (dorun
-   (for [sprite (get-visible-sprites camera sprites)]
-     (let [{render-sprite :render-sprite
-            x :x
-            y :y} sprite
-           ^TextureRegion frame (render-sprite)
-           x-position (float (- (* x consts/tile-size)
-                                (.getRegionWidth frame)))
-           y-position (float (- (* y consts/tile-size)
-                                (.getRegionHeight frame)))]
-       (.draw
-        batch
-        frame
-        x-position
-        y-position)))))
+     objects)))
 
 
 (defn create-renderer
   [h3m-map]
   (let [batch (new SpriteBatch)
         sprites (->> (get-map-objects h3m-map)
-                     (mapv
+                     (map
                       #(hash-map
-                        :render-sprite (create-sprite %)
+                        :render-sprite (create-sprite batch %)
                         :x (inc (:x %))
                         :y (inc (:y %)))))]
     (fn render-objects [camera]
       (.setTransformMatrix batch (.-view ^OrthographicCamera camera))
       (.setProjectionMatrix batch (.-projection ^OrthographicCamera camera))
       (.begin batch)
-      (render-sprites batch camera sprites)
+      (dorun
+       (->> sprites
+            (get-visible-sprites camera)
+            (map (fn [{render-sprite :render-sprite}]
+                   (render-sprite)))))
       (.end batch))))
