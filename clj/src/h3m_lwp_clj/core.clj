@@ -34,6 +34,7 @@
 
 (def camera-position-update-interval (* 60 15))
 (def scale-factor 0.5)
+(def render-interval 0.18)
 
 
 (defonce h3m-map (atom nil))
@@ -104,11 +105,18 @@
 (defn -create
   [^ApplicationAdapter _]
   (assets/init)
+  (.setContinuousRendering (Gdx/graphics) false)
   (.setInputProcessor (Gdx/input) input-processor)
   (reset! h3m-map (h3m-parser/parse-h3m (.read (.internal Gdx/files "maps/invasion.h3m"))))
   (reset! camera (create-camera scale-factor))
   ; (reset! terrain-renderer (terrain/create-renderer @h3m-map))
   (reset! objects-renderer (objects/create-renderer @h3m-map))
+  (.scheduleTask
+   (new Timer)
+   (proxy [Timer$Task] []
+     (run [] (.requestRendering (Gdx/graphics))))
+   (float 0)
+   (float render-interval))
   (.scheduleTask
    (new Timer)
    (proxy [Timer$Task] []
