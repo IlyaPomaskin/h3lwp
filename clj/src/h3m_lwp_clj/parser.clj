@@ -36,9 +36,13 @@
      :name name)))
 
 
-(defn lines->bytes [frame]
-  (let [{lines :lines
-         offsets :offsets} frame]
+(defn lines->bytes
+  [{lines :lines
+    offsets :offsets
+    data :data}
+   compression]
+  (if (= compression 0)
+    data
     (->> offsets
          (mapcat (fn [offset] (mapcat :data (get lines offset))))
          (vec))))
@@ -54,7 +58,7 @@
                     :y
                     :offset
                     :data])
-      (update :data lines->bytes)))
+      (update :data lines->bytes (:compression frame))))
 
 
 (defn map-def [def-info]
