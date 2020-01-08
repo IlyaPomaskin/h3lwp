@@ -51,8 +51,8 @@
          (when (pos? (:road tile))
            (.setCell road-layer x y (create-tile tile :road))))))
     [terrain-layer
-     road-layer
-     river-layer]))
+     river-layer
+     road-layer]))
 
 
 (defn create-tiled-map
