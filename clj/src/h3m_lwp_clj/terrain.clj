@@ -9,14 +9,6 @@
             [h3m-lwp-clj.utils :as utils]))
 
 
-(defn tile->filename
-  [tile type]
-  (let
-   [tile-def-name (get-in consts/tile-types [type :names (get tile type)])
-    def-image-index (get tile (get-in consts/tile-types [type :index]))]
-    (format "%s/%02d" tile-def-name def-image-index)))
-
-
 (defn frames->animated-tile
   [^Array frames]
   (new
@@ -34,8 +26,9 @@
     (doto (new TiledMapTileLayer$Cell)
       (.setTile
        (frames->animated-tile
-        (assets/get-terrain
-         (tile->filename tile type))))
+        (assets/get-terrain-sprite
+         (get-in consts/tile-types [type :names (get tile type)])
+         (get tile (get-in consts/tile-types [type :index])))))
       (.setFlipHorizontally flip-x)
       (.setFlipVertically flip-y))))
 
