@@ -13,3 +13,21 @@
           (recur (unchecked-inc index)))
         next-array))))
 
+
+(defn rotate-right [amount list]
+  (let [offset (rem amount (count list))
+        tail (take-last offset list)
+        head (drop-last offset list)]
+    (concat tail head)))
+
+
+(defn rotate-items [list from to amount]
+  (vec
+   (concat
+    (subvec list 0 from)
+    (rotate-right amount (subvec list from to))
+    (subvec list to))))
+
+
+(defn coll-includes? [item coll]
+  (some #(= % item) coll))
