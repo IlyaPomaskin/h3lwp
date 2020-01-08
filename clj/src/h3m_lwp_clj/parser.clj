@@ -233,7 +233,7 @@
    {name :name
     palette :palette
     frames :frames}]
-  (let [rotations (get rotations name [[0 0]])
+  (let [rotations (get rotations name)
         rotations-count (some->>
                          rotations
                          (map (fn [[from to]] (- to from)))
@@ -243,16 +243,18 @@
      (for [frame-index (range 0 (count frames))
            rotation-amount (range (or rotations-count 1))]
        (let [region-name (format
-                          "%s_%02d_%d"
+                          "%s/%02d_%d"
                           name
                           frame-index
                           rotation-amount)
              frame (nth frames frame-index)
-             rotated-palette (reduce
-                              (fn [acc [from to]]
-                                (utils/rotate-items acc from to rotation-amount))
-                              palette
-                              rotations)
+             rotated-palette (if (some? rotations)
+                               (reduce
+                                (fn [acc [from to]]
+                                  (utils/rotate-items acc from to rotation-amount))
+                                palette
+                                rotations)
+                               palette)
              pixmap ^Pixmap (frame->pixmap rotated-palette frame)]
          (.pack packer region-name pixmap)
          (.dispose pixmap))))))
