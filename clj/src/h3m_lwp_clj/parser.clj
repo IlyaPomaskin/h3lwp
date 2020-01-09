@@ -49,6 +49,27 @@
          (vec))))
 
 
+(defn make-palette [palette]
+  (->> palette
+       (pmap #(assoc % 3 0xff))
+       (map-indexed
+        (fn [index item]
+          (case (int index)
+            0 [0 0 0 0]
+            1 [0 0 0 0x40]
+            4 [0 0 0 0x80]
+            5 [0 0 0 0]
+            6 [0 0 0 0x80]
+            7 [0 0 0 0x40]
+            item)))
+       (pmap #(Color/rgba8888
+               (float (/ (% 0) 255))
+               (float (/ (% 1) 255))
+               (float (/ (% 2) 255))
+               (float (/ (% 3) 255))))
+       (vec)))
+
+
 (defn map-frame [frame]
   (-> frame
       (select-keys [:full-width
@@ -70,31 +91,11 @@
                     :full-height
                     :palette
                     :frames])
+      (update :palette make-palette)
       (update :name clojure.string/lower-case)
       (update :name clojure.string/replace #".def" "")
       (update :frames #(map map-frame %))
       (assoc :order (get-in def-info [:groups 0 :offsets]))))
-
-
-(defn make-palette [palette]
-  (->> palette
-       (map #(assoc % 3 0xff))
-       (map-indexed
-        (fn [index item]
-          (case (int index)
-            0 [0 0 0 0]
-            1 [0 0 0 0x40]
-            4 [0 0 0 0x80]
-            5 [0 0 0 0]
-            6 [0 0 0 0x80]
-            7 [0 0 0 0x40]
-            item)))
-       (map #(Color/rgba8888
-              (float (/ (% 0) 255))
-              (float (/ (% 1) 255))
-              (float (/ (% 2) 255))
-              (float (/ (% 3) 255))))
-       (vec)))
 
 
 (defn frame->pixmap [palette frame]
@@ -122,18 +123,22 @@
     image))
 
 
-(defn pack-def
+(defn pack-frame [packer palette frame region-name]
+  (let [pixmap ^Pixmap (frame->pixmap palette frame)]
+    (.pack packer region-name pixmap)
+    (.dispose pixmap)))
+
+
+(defn pack-def-without-rotation
   [^PixmapPacker packer
    {name :name
     palette :palette
     frames :frames}]
   (dorun
-   (for [frame frames
-         :let [region-name (format "%s_%d" name (:offset frame))
-               pixmap ^Pixmap (frame->pixmap (make-palette palette) frame)]]
-     (do
-       (.pack packer region-name pixmap)
-       (.dispose pixmap)))))
+   (map
+    (fn [frame]
+      (pack-frame packer palette frame (format "%s_%d" name (:offset frame))))
+    frames)))
 
 
 (defn save-packer [^PixmapPacker packer ^FileHandle out-file]
@@ -168,28 +173,21 @@
         rotations-count (some->>
                          rotations
                          (map (fn [[from to]] (- to from)))
-                         (apply max))
-        palette (make-palette palette)]
+                         (apply max))]
     (dorun
      (for [frame-index (range 0 (count frames))
            rotation-index (range (or rotations-count 1))]
        (let [frame (nth frames frame-index)
-             region-name (format
-                          "%s/%d_%d"
-                          name
-                          (:offset frame) ; frame-index
-                          rotation-index)
-             rotated-palette (if (some? rotations)
-                               (reduce
-                                (fn [acc [from to]]
-                                  (utils/rotate-items acc from to rotation-index))
-                                palette
-                                rotations)
-                               palette)
-             pixmap ^Pixmap (frame->pixmap rotated-palette frame)]
-         (.pack packer region-name pixmap)
-         (.dispose pixmap))))))
-
+             rotated-palette (reduce
+                              (fn [acc [from to]]
+                                (utils/rotate-items acc from to rotation-index))
+                              palette
+                              rotations)]
+         (pack-frame
+          packer
+          rotated-palette
+          frame
+          (format "%s/%d_%d" name (:offset frame) rotation-index)))))))
 
 
 (defn parse-all [^FileHandle lod-file ^FileHandle out-file defs-info-file-name]
@@ -208,7 +206,7 @@
       (pmap
        #(do
           (condp = (:type %)
-            def-map (pack-def packer %)
+            def-map (pack-def-without-rotation packer %)
             def-terrain (pack-def-with-rotation packer %))
           %))
       (save-defs-info defs-info-file-name)))
