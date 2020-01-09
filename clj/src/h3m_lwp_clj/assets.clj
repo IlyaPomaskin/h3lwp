@@ -30,6 +30,10 @@
   (Texture/setAssetManager manager))
 
 
+(defn get-sprite-info [def-name]
+  (get @objects-info def-name))
+
+
 (defn get-object-frame [def-name offset]
   ^TextureRegion
   (let [^TextureAtlas atlas (.get manager objects-atlas)
@@ -42,12 +46,11 @@
 (defn get-terrain-sprite [def-name index]
   ^Array
   (let [^TextureAtlas atlas (.get manager objects-atlas)
-        region-name (format "%s/%02d" def-name index)
+        sprite-info (get-sprite-info def-name)
+        {frames-order :order} sprite-info
+        offset (nth frames-order index)
+        region-name (format "%s/%d" def-name offset)
         ^Array frames (.findRegions atlas region-name)]
     (when (.isEmpty frames)
       (throw (new Exception (format "def %s with index %d not found in atlas" def-name index))))
     frames))
-
-
-(defn get-sprite-info [def-name]
-  (get @objects-info def-name))

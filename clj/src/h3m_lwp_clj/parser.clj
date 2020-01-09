@@ -205,12 +205,12 @@
                                 (apply max))
                palette (make-palette palette)]
          frame-index (range 0 (count frames))
-         rotation-amount (range (or rotations-count 1))]
+         rotation-index (range (or rotations-count 1))]
      (let [region-name (format
                         "%s_%02d_%d"
                         name
                         frame-index
-                        rotation-amount)
+                        rotation-index)
            frame (nth frames frame-index)
            rotated-palette (reduce
                             (fn [acc [from to]]
@@ -218,7 +218,7 @@
                                acc
                                from
                                to
-                               rotation-amount))
+                               rotation-index))
                             palette
                             rotations)
            pixmap ^Pixmap (frame->pixmap
@@ -239,19 +239,19 @@
                          (map (fn [[from to]] (- to from)))
                          (apply max))
         palette (make-palette palette)]
-    (doall
+    (dorun
      (for [frame-index (range 0 (count frames))
-           rotation-amount (range (or rotations-count 1))]
-       (let [region-name (format
-                          "%s/%02d_%d"
+           rotation-index (range (or rotations-count 1))]
+       (let [frame (nth frames frame-index)
+             region-name (format
+                          "%s/%d_%d"
                           name
-                          frame-index
-                          rotation-amount)
-             frame (nth frames frame-index)
+                          (:offset frame) ; frame-index
+                          rotation-index) 
              rotated-palette (if (some? rotations)
                                (reduce
                                 (fn [acc [from to]]
-                                  (utils/rotate-items acc from to rotation-amount))
+                                  (utils/rotate-items acc from to rotation-index))
                                 palette
                                 rotations)
                                palette)
@@ -295,10 +295,11 @@
 
 
 (comment
-  (parse-all
-   (.internal Gdx/files "data/H3sprite.lod")
-   (.local Gdx/files "sprites/all.atlas")
-   "sprites/all.edn"))
+  (time
+   (parse-all
+    (.internal Gdx/files "data/H3sprite.lod")
+    (.local Gdx/files "sprites/all.atlas")
+    "sprites/all.edn")))
 
 
 (comment
