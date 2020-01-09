@@ -94,7 +94,7 @@
       (update :palette make-palette)
       (update :name clojure.string/lower-case)
       (update :name clojure.string/replace #".def" "")
-      (update :frames #(map map-frame %))
+      (update :frames #(doall (pmap map-frame %)))
       (assoc :order (get-in def-info [:groups 0 :offsets]))))
 
 
@@ -135,7 +135,7 @@
     palette :palette
     frames :frames}]
   (dorun
-   (map
+   (pmap
     (fn [frame]
       (pack-frame packer palette frame (format "%s_%d" name (:offset frame))))
     frames)))
@@ -175,19 +175,16 @@
                          (map (fn [[from to]] (- to from)))
                          (apply max))]
     (dorun
-     (for [frame-index (range 0 (count frames))
+     (for [frame frames
            rotation-index (range (or rotations-count 1))]
-       (let [frame (nth frames frame-index)
-             rotated-palette (reduce
-                              (fn [acc [from to]]
-                                (utils/rotate-items acc from to rotation-index))
-                              palette
-                              rotations)]
-         (pack-frame
-          packer
-          rotated-palette
-          frame
-          (format "%s/%d_%d" name (:offset frame) rotation-index)))))))
+       (pack-frame
+        packer
+        (reduce
+         (fn [acc [from to]] (utils/rotate-items acc from to rotation-index))
+         palette
+         rotations)
+        frame
+        (format "%s/%d_%d" name (:offset frame) rotation-index))))))
 
 
 (defn parse-all [^FileHandle lod-file ^FileHandle out-file defs-info-file-name]
