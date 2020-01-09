@@ -70,22 +70,10 @@
                     :full-height
                     :palette
                     :frames])
-      (update :name clojure.string/replace #".def" "")
       (update :name clojure.string/lower-case)
+      (update :name clojure.string/replace #".def" "")
       (update :frames #(map map-frame %))
       (assoc :order (get-in def-info [:groups 0 :offsets]))))
-
-
-(defn read-lod [item-types ^FileInputStream lod-in]
-  (->> (h3m-parser/parse-lod lod-in)
-       :files
-       (filter #(contains? item-types (:type %)))
-       (pmap #(update % :name clojure.string/lower-case))
-       (filter #(clojure.string/ends-with? (:name %) ".def"))
-       (map #(parse-def-from-lod % lod-in))
-       (remove #(:legacy? %))
-       (pmap map-def)
-       (vec)))
 
 
 (defn make-palette [palette]
@@ -134,19 +122,6 @@
     image))
 
 
-(defn pack-defs [^PixmapPacker packer defs]
-  (dorun
-   (for [{name :name
-          palette :palette
-          frames :frames} defs
-         frame frames
-         :let [region-name (format "%s_%d" name (:offset frame))
-               pixmap ^Pixmap (frame->pixmap (make-palette palette) frame)]]
-     (do
-       (.pack packer region-name pixmap)
-       (.dispose pixmap)))))
-
-
 (defn pack-def
   [^PixmapPacker packer
    {name :name
@@ -176,56 +151,12 @@
        (spit file-name)))
 
 
-(defn parse-objects [^FileHandle lod-file ^FileHandle out-file defs-info-file-name]
-  (let [packer (new PixmapPacker 4096 4096 Pixmap$Format/RGBA8888 0 false)
-        defs (read-lod [(:map def-file/def-type)] (new FileInputStream (.file lod-file)))]
-    (pack-defs packer defs)
-    (save-defs-info defs-info-file-name defs)
-    (save-packer packer out-file)
-    (.dispose packer)))
-
-
 (def rotations
   {"clrrvr" [[183 195] [195 201]]
    "mudrvr" [[183 189] [240 246]]
    "watrtl" [[229 241] [242 254]]
    "lavatl" [[246 254]]
    "lavrvr" [[240 248]]})
-
-
-(defn pack-defs-with-rotation [^PixmapPacker packer defs]
-  (doall
-   (for [{name :name
-          palette :palette
-          frames :frames} defs
-         :let [rotations (get rotations name [[0 0]])
-               rotations-count (some->>
-                                rotations
-                                (map (fn [[from to]] (- to from)))
-                                (apply max))
-               palette (make-palette palette)]
-         frame-index (range 0 (count frames))
-         rotation-index (range (or rotations-count 1))]
-     (let [region-name (format
-                        "%s_%02d_%d"
-                        name
-                        frame-index
-                        rotation-index)
-           frame (nth frames frame-index)
-           rotated-palette (reduce
-                            (fn [acc [from to]]
-                              (utils/rotate-items
-                               acc
-                               from
-                               to
-                               rotation-index))
-                            palette
-                            rotations)
-           pixmap ^Pixmap (frame->pixmap
-                           rotated-palette
-                           frame)]
-       (.pack packer region-name pixmap)
-       (.dispose pixmap)))))
 
 
 (defn pack-def-with-rotation
@@ -247,7 +178,7 @@
                           "%s/%d_%d"
                           name
                           (:offset frame) ; frame-index
-                          rotation-index) 
+                          rotation-index)
              rotated-palette (if (some? rotations)
                                (reduce
                                 (fn [acc [from to]]
@@ -260,14 +191,6 @@
          (.dispose pixmap))))))
 
 
-(defn parse-terrains [^FileHandle lod-file ^FileHandle out-file defs-info-file-name]
-  (let [packer (new PixmapPacker 2048 2048 Pixmap$Format/RGBA8888 0 false)
-        defs (read-lod [(:terrain def-file/def-type)] (new FileInputStream (.file lod-file)))]
-    (pack-defs-with-rotation packer defs)
-    (save-defs-info defs-info-file-name defs)
-    (save-packer packer out-file)
-    (.dispose packer)))
-
 
 (defn parse-all [^FileHandle lod-file ^FileHandle out-file defs-info-file-name]
   (let [packer (new PixmapPacker 4096 4096 Pixmap$Format/RGBA8888 0 false)
@@ -278,8 +201,7 @@
      (->>
       (:files (h3m-parser/parse-lod in))
       (filter #(utils/coll-includes? (:type %) [def-map def-terrain]))
-      (pmap #(update % :name clojure.string/lower-case))
-      (filter #(clojure.string/ends-with? (:name %) ".def"))
+      (filter #(re-matches #"(?i).*\.def" (:name %)))
       (map #(parse-def-from-lod % in))
       (remove #(:legacy? %))
       (pmap map-def)
@@ -300,17 +222,3 @@
     (.internal Gdx/files "data/H3sprite.lod")
     (.local Gdx/files "sprites/all.atlas")
     "sprites/all.edn")))
-
-
-(comment
-  (parse-terrains
-   (.internal Gdx/files "data/H3sprite.lod")
-   (.local Gdx/files "sprites/terrains.atlas")
-   "sprites/terrains.edn"))
-
-
-(comment
-  (parse-objects
-   (.internal Gdx/files "data/H3sprite.lod")
-   (.local Gdx/files "sprites/objects.atlas")
-   "sprites/objects.edn"))
