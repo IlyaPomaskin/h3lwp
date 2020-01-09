@@ -6,6 +6,7 @@
            [com.badlogic.gdx Input$Keys])
   (:require
    [h3m-parser.core :as h3m-parser]
+   [h3m-lwp-clj.parser :as parser]
    [h3m-lwp-clj.assets :as assets]
    [h3m-lwp-clj.terrain :as terrain]
    [h3m-lwp-clj.objects :as objects]
@@ -74,21 +75,21 @@
   (proxy [InputProcessor] []
     (keyDown [keycode] true)
     (keyTyped
-     [keycode]
-     (when (is-desktop?)
-       (let [pressed? (fn [key _] (.isKeyPressed (Gdx/input) key))
-             ^OrthographicCamera camera (deref camera)]
-         (condp pressed? keycode
-           Input$Keys/NUM_0 (set! (.-zoom camera) 1)
-           Input$Keys/EQUALS (set! (.-zoom camera) (- (.-zoom camera) 0.1))
-           Input$Keys/MINUS (set! (.-zoom camera) (+ (.-zoom camera) 0.1))
-           Input$Keys/UP (.translate camera 0 (- consts/tile-size) 0)
-           Input$Keys/DOWN (.translate camera 0 consts/tile-size 0)
-           Input$Keys/LEFT (.translate camera (- consts/tile-size) 0 0)
-           Input$Keys/RIGHT (.translate camera consts/tile-size 0 0)
-           Input$Keys/SPACE (set-random-camera-position camera (:size @h3m-map))
-           nil)
-         true)))
+      [keycode]
+      (when (is-desktop?)
+        (let [pressed? (fn [key _] (.isKeyPressed (Gdx/input) key))
+              ^OrthographicCamera camera (deref camera)]
+          (condp pressed? keycode
+            Input$Keys/NUM_0 (set! (.-zoom camera) 1)
+            Input$Keys/EQUALS (set! (.-zoom camera) (- (.-zoom camera) 0.1))
+            Input$Keys/MINUS (set! (.-zoom camera) (+ (.-zoom camera) 0.1))
+            Input$Keys/UP (.translate camera 0 (- consts/tile-size) 0)
+            Input$Keys/DOWN (.translate camera 0 consts/tile-size 0)
+            Input$Keys/LEFT (.translate camera (- consts/tile-size) 0 0)
+            Input$Keys/RIGHT (.translate camera consts/tile-size 0 0)
+            Input$Keys/SPACE (set-random-camera-position camera (:size @h3m-map))
+            nil)
+          true)))
     (keyUp [keycode] true)
     (mouseMoved [x y] true)
     (scrolled [amount] true)
@@ -104,6 +105,11 @@
 
 (defn -create
   [^ApplicationAdapter _]
+  (time
+   (parser/parse-defs
+    (.internal Gdx/files "data/H3sprite.lod")
+    (.local Gdx/files "sprites/all.atlas")
+    "sprites/all.edn"))
   (assets/init)
   (.setContinuousRendering (Gdx/graphics) false)
   (.setInputProcessor (Gdx/input) input-processor)

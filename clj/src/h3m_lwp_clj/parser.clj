@@ -141,21 +141,6 @@
     frames)))
 
 
-(defn save-packer [^PixmapPacker packer ^FileHandle out-file]
-  (let [save-parameters (new PixmapPackerIO$SaveParameters)]
-    (set! (.-useIndexes save-parameters) true)
-    (doto (new PixmapPackerIO)
-      (.save out-file packer save-parameters))))
-
-
-(defn save-defs-info [file-name defs]
-  (->> defs
-       (mapcat #(vector (:name %) (dissoc % :palette :frames)))
-       (apply hash-map)
-       (pr-str)
-       (spit file-name)))
-
-
 (def rotations
   {"clrrvr" [[183 195] [195 201]]
    "mudrvr" [[183 189] [240 246]]
@@ -187,7 +172,23 @@
         (format "%s/%d_%d" name (:offset frame) rotation-index))))))
 
 
-(defn parse-all [^FileHandle lod-file ^FileHandle out-file defs-info-file-name]
+(defn save-packer [^PixmapPacker packer ^FileHandle out-file]
+  (let [save-parameters (new PixmapPackerIO$SaveParameters)]
+    (set! (.-useIndexes save-parameters) true)
+    (doto (new PixmapPackerIO)
+      (.save out-file packer save-parameters))))
+
+
+(defn save-defs-info [file-name defs]
+  (->> defs
+       (mapcat #(vector (:name %) (dissoc % :palette :frames)))
+       (apply hash-map)
+       (pr-str)
+       (spit file-name)))
+
+
+(defn parse-defs
+  [^FileHandle lod-file ^FileHandle out-file defs-info-file-name]
   (let [packer (new PixmapPacker 4096 4096 Pixmap$Format/RGBA8888 0 false)
         in (new FileInputStream (.file lod-file))
         def-map (:map def-file/def-type)
@@ -209,11 +210,3 @@
       (save-defs-info defs-info-file-name)))
     (save-packer packer out-file)
     (.dispose packer)))
-
-
-(comment
-  (time
-   (parse-all
-    (.internal Gdx/files "data/H3sprite.lod")
-    (.local Gdx/files "sprites/all.atlas")
-    "sprites/all.edn")))
