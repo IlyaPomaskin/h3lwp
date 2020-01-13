@@ -66,6 +66,10 @@
 
 (defn create-renderer
   [h3m-map]
-  (new
-   OrthogonalTiledMapRenderer
-   (create-tiled-map (create-layers h3m-map))))
+  (let [renderer (new
+                  OrthogonalTiledMapRenderer
+                  (create-tiled-map (create-layers h3m-map)))]
+    (fn [camera]
+      (doto renderer
+        (.setView camera)
+        (.render)))))

@@ -143,14 +143,12 @@
 (defn -render
   [^ApplicationAdapter _]
   (let [^OrthographicCamera camera (deref camera)
-        terrain-renderer ^OrthogonalTiledMapRenderer (deref terrain-renderer)
+        terrain-renderer (deref terrain-renderer)
         objects-renderer (deref objects-renderer)]
     (doto Gdx/gl
       (.glClearColor 0 0 0 0)
       (.glClear GL20/GL_COLOR_BUFFER_BIT))
     (.update camera)
-    (doto terrain-renderer
-      (.setView camera)
-      (.render))
+    (terrain-renderer camera)
     (objects-renderer camera)))
 
