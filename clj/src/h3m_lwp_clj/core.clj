@@ -1,9 +1,8 @@
 (ns h3m-lwp-clj.core
-  (:import [com.badlogic.gdx ApplicationAdapter Gdx InputProcessor Application$ApplicationType]
-           [com.badlogic.gdx.graphics GL20 OrthographicCamera]
-           [com.badlogic.gdx.maps.tiled.renderers OrthogonalTiledMapRenderer]
-           [com.badlogic.gdx.utils Timer Timer$Task]
-           [com.badlogic.gdx Input$Keys])
+  (:import
+   [com.badlogic.gdx ApplicationAdapter Gdx]
+   [com.badlogic.gdx.graphics GL20 OrthographicCamera]
+   [com.badlogic.gdx.utils Timer Timer$Task])
   (:require
    [h3m-parser.core :as h3m-parser]
    [h3m-lwp-clj.parser :as parser]
@@ -11,7 +10,8 @@
    [h3m-lwp-clj.terrain :as terrain]
    [h3m-lwp-clj.objects :as objects]
    [h3m-lwp-clj.rect :as rect]
-   [h3m-lwp-clj.consts :as consts])
+   [h3m-lwp-clj.consts :as consts]
+   [h3m-lwp-clj.input-processor :as input-processor])
   (:gen-class
    :name h3m.LwpCore
    :extends com.badlogic.gdx.ApplicationAdapter))
@@ -65,44 +65,6 @@
     (.set (.position camera) next-x next-y 0)))
 
 
-(defn is-desktop?
-  []
-  (= (.getType (Gdx/app))
-     (Application$ApplicationType/Desktop)))
-
-
-(def input-processor
-  (proxy [InputProcessor] []
-    (keyDown [keycode] true)
-    (keyTyped
-      [keycode]
-      (when (is-desktop?)
-        (let [pressed? (fn [key _] (.isKeyPressed (Gdx/input) key))
-              ^OrthographicCamera camera (deref camera)]
-          (condp pressed? keycode
-            Input$Keys/NUM_0 (set! (.-zoom camera) 1)
-            Input$Keys/EQUALS (set! (.-zoom camera) (- (.-zoom camera) 0.1))
-            Input$Keys/MINUS (set! (.-zoom camera) (+ (.-zoom camera) 0.1))
-            Input$Keys/UP (.translate camera 0 (- consts/tile-size) 0)
-            Input$Keys/DOWN (.translate camera 0 consts/tile-size 0)
-            Input$Keys/LEFT (.translate camera (- consts/tile-size) 0 0)
-            Input$Keys/RIGHT (.translate camera consts/tile-size 0 0)
-            Input$Keys/SPACE (set-random-camera-position camera (:size @h3m-map))
-            nil)
-          true)))
-    (keyUp [keycode] true)
-    (mouseMoved [x y] true)
-    (scrolled [amount] true)
-    (touchDown [^Integer screen-x ^Integer screen-y ^Integer pointer ^Integer button] true)
-    (touchUp [^Integer screen-x ^Integer screen-y ^Integer pointer ^Integer button] true)
-    (touchDragged
-      [^Integer screen-x ^Integer screen-y ^Integer pointer]
-      (let [^OrthographicCamera camera (deref camera)]
-        (when (is-desktop?)
-          (.translate camera (.getDeltaX (Gdx/input)) (.getDeltaY (Gdx/input)))))
-      true)))
-
-
 (defn -create
   [^ApplicationAdapter _]
   (time
@@ -112,7 +74,7 @@
     "sprites/all.edn"))
   (assets/init)
   (.setContinuousRendering (Gdx/graphics) false)
-  (.setInputProcessor (Gdx/input) input-processor)
+  (.setInputProcessor (Gdx/input) (input-processor/create @camera))
   (reset! h3m-map (h3m-parser/parse-h3m (.read (.internal Gdx/files "maps/invasion.h3m"))))
   (reset! camera (create-camera scale-factor))
   (reset! terrain-renderer (terrain/create-renderer @h3m-map))
