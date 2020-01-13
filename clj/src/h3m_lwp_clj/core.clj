@@ -106,7 +106,7 @@
 (defn -create
   [^ApplicationAdapter _]
   (time
-   (parser/parse-defs
+   (parser/parse-map-sprites
     (.internal Gdx/files "data/H3sprite.lod")
     (.local Gdx/files "sprites/all.atlas")
     "sprites/all.edn"))

@@ -27,7 +27,12 @@
   [lod-def-info in]
   (let [{name :name} lod-def-info
         def-stream (get-def-stream-from-lod lod-def-info in)
-        def-info (h3m-parser/parse-def def-stream)
+        def-info (try
+                   (h3m-parser/parse-def def-stream)
+                   (catch java.io.EOFException eof
+                     (println "eof fail" name))
+                   (catch AssertionError e
+                     (println "failed parse" name)))
         ; TODO fix legacy check
         legacy? false ; (def-file/legacy? def-info def-stream uncompressed-size)
         ]
@@ -187,7 +192,7 @@
        (spit file-name)))
 
 
-(defn parse-defs
+(defn parse-map-sprites
   [^FileHandle lod-file ^FileHandle out-file defs-info-file-name]
   (let [packer (new PixmapPacker 4096 4096 Pixmap$Format/RGBA8888 0 false)
         in (new FileInputStream (.file lod-file))
