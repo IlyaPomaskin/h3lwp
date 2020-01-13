@@ -4,7 +4,6 @@
    [h3m-parser.def :as def-file]
    [h3m-lwp-clj.utils :as utils])
   (:import
-   [com.badlogic.gdx Gdx]
    [com.badlogic.gdx.files FileHandle]
    [com.badlogic.gdx.graphics Pixmap Pixmap$Format Color]
    [com.badlogic.gdx.graphics.g2d PixmapPackerIO PixmapPackerIO$SaveParameters PixmapPacker]

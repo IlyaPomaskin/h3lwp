@@ -1,7 +1,9 @@
 (ns h3m-lwp-clj.rect
-  (:import [com.badlogic.gdx.graphics OrthographicCamera]
-           [com.badlogic.gdx.math Rectangle])
-  (:require [h3m-lwp-clj.consts :as consts]))
+  (:import
+   [com.badlogic.gdx.graphics OrthographicCamera]
+   [com.badlogic.gdx.math Rectangle])
+  (:require
+   [h3m-lwp-clj.consts :as consts]))
 
 
 (defn contain?

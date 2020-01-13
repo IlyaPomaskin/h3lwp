@@ -1,12 +1,14 @@
 (ns h3m-lwp-clj.terrain
-  (:import [com.badlogic.gdx.maps.tiled TiledMap TiledMapTileLayer TiledMapTileLayer$Cell]
-           [com.badlogic.gdx.maps.tiled.tiles AnimatedTiledMapTile StaticTiledMapTile]
-           [com.badlogic.gdx.maps.tiled.renderers OrthogonalTiledMapRenderer]
-           [com.badlogic.gdx.graphics.g2d TextureRegion]
-           [com.badlogic.gdx.utils Array])
-  (:require [h3m-lwp-clj.assets :as assets]
-            [h3m-lwp-clj.consts :as consts]
-            [h3m-lwp-clj.utils :as utils]))
+  (:import
+   [com.badlogic.gdx.maps.tiled TiledMap TiledMapTileLayer TiledMapTileLayer$Cell]
+   [com.badlogic.gdx.maps.tiled.tiles AnimatedTiledMapTile StaticTiledMapTile]
+   [com.badlogic.gdx.maps.tiled.renderers OrthogonalTiledMapRenderer]
+   [com.badlogic.gdx.graphics.g2d TextureRegion]
+   [com.badlogic.gdx.utils Array])
+  (:require
+   [h3m-lwp-clj.assets :as assets]
+   [h3m-lwp-clj.consts :as consts]
+   [h3m-lwp-clj.utils :as utils]))
 
 
 (defn frames->animated-tile

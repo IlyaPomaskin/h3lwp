@@ -1,5 +1,6 @@
 (ns h3m-lwp-clj.utils
-  (:import [com.badlogic.gdx.utils Array]))
+  (:import
+   [com.badlogic.gdx.utils Array]))
 
 
 (defn map-libgdx-array

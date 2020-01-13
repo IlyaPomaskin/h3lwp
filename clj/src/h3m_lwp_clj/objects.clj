@@ -1,11 +1,13 @@
 (ns h3m-lwp-clj.objects
-  (:import [com.badlogic.gdx.graphics.g2d SpriteBatch TextureRegion]
-           [com.badlogic.gdx.graphics OrthographicCamera Texture Pixmap Pixmap$Format]
-           [com.badlogic.gdx.utils TimeUtils])
-  (:require [h3m-lwp-clj.assets :as assets]
-            [h3m-lwp-clj.rect :as rect]
-            [h3m-lwp-clj.random :as random]
-            [h3m-lwp-clj.consts :as consts]))
+  (:import
+   [com.badlogic.gdx.graphics.g2d SpriteBatch TextureRegion]
+   [com.badlogic.gdx.graphics OrthographicCamera]
+   [com.badlogic.gdx.utils TimeUtils])
+  (:require
+   [h3m-lwp-clj.assets :as assets]
+   [h3m-lwp-clj.rect :as rect]
+   [h3m-lwp-clj.random :as random]
+   [h3m-lwp-clj.consts :as consts]))
 
 
 (defn get-placement-order
