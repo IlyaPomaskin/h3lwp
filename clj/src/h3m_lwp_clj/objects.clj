@@ -110,9 +110,9 @@
                         :render-sprite (create-sprite batch %)
                         :x (inc (:x %))
                         :y (inc (:y %)))))]
-    (fn render-objects [camera]
-      (.setTransformMatrix batch (.-view ^OrthographicCamera camera))
-      (.setProjectionMatrix batch (.-projection ^OrthographicCamera camera))
+    (fn render-objects [^OrthographicCamera camera]
+      (.setTransformMatrix batch (.-view camera))
+      (.setProjectionMatrix batch (.-projection camera))
       (.begin batch)
       (dorun
        (->> sprites
