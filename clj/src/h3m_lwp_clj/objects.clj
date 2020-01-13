@@ -59,17 +59,11 @@
         frames (mapv #(assets/get-object-frame filename %) frames-order)
         initial-time (TimeUtils/millis)
         frames-count (count frames-order)
-        offset-frame (rand-int frames-count)
-        empty (new TextureRegion
-                   (new Texture
-                        (doto (new Pixmap 1 1 Pixmap$Format/RGBA8888)
-                          (.setColor 0 0 0 0)
-                          (.fill))))]
+        offset-frame (rand-int frames-count)]
     (if (nil? sprite-info)
       (do
-        ; TODO
         (println "NOT FOUND" filename)
-        (fn render-nil-sprite [] empty))
+        (fn render-nil-sprite [] nil))
       (fn render-sprite []
         (let [^TextureRegion
               frame (nth
@@ -83,10 +77,8 @@
            batch
            frame
            (float (- (* (inc (:x object)) consts/tile-size)
-                    ;  (.getRegionWidth frame)
                      (:full-width sprite-info)))
            (float (- (* (inc (:y object)) consts/tile-size)
-                    ;  (.getRegionHeight frame)
                      (:full-height sprite-info)))))))))
 
 
