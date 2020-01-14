@@ -9,8 +9,7 @@
    [h3m-lwp-clj.assets :as assets]
    [h3m-lwp-clj.terrain :as terrain]
    [h3m-lwp-clj.objects :as objects]
-   [h3m-lwp-clj.rect :as rect]
-   [h3m-lwp-clj.consts :as consts]
+   [h3m-lwp-clj.orth-camera :as orth-camera]
    [h3m-lwp-clj.input-processor :as input-processor])
   (:gen-class
    :name h3m.LwpCore
@@ -44,27 +43,6 @@
 (defonce objects-renderer (atom nil))
 
 
-(defn create-camera
-  [scale-factor]
-  (let [camera (new OrthographicCamera)]
-    (set! (.-zoom camera) scale-factor)
-    (.setToOrtho camera true)
-    (.update camera)
-    camera))
-
-
-(defn set-random-camera-position
-  [^OrthographicCamera camera map-size]
-  (let [box (rect/get-camera-rect camera)
-        x-offset (Math/floor (/ (:width box) 2))
-        y-offset (Math/floor (/ (:height box) 2))
-        next-x (* consts/tile-size
-                  (+ x-offset (rand-int (- map-size (:width box)))))
-        next-y (* consts/tile-size
-                  (+ y-offset (rand-int (- map-size (:height box)))))]
-    (.set (.position camera) next-x next-y 0)))
-
-
 (defn -create
   [^ApplicationAdapter _]
   (time
@@ -73,12 +51,12 @@
     (.local Gdx/files "sprites/all.atlas")
     "sprites/all.edn"))
   (assets/init)
-  (.setContinuousRendering (Gdx/graphics) false)
-  (.setInputProcessor (Gdx/input) (input-processor/create @camera))
   (reset! h3m-map (h3m-parser/parse-h3m (.read (.internal Gdx/files "maps/invasion.h3m"))))
-  (reset! camera (create-camera scale-factor))
+  (reset! camera (orth-camera/create scale-factor))
   (reset! terrain-renderer (terrain/create-renderer @h3m-map))
   (reset! objects-renderer (objects/create-renderer @h3m-map))
+  (.setContinuousRendering (Gdx/graphics) false)
+  (.setInputProcessor (Gdx/input) (input-processor/create @camera (:size @h3m-map)))
   (.scheduleTask
    (new Timer)
    (proxy [Timer$Task] []
@@ -88,7 +66,7 @@
   (.scheduleTask
    (new Timer)
    (proxy [Timer$Task] []
-     (run [] (set-random-camera-position @camera (:size @h3m-map))))
+     (run [] (orth-camera/set-random-position @camera (:size @h3m-map))))
    (float 0)
    (float camera-position-update-interval)))
 

@@ -5,7 +5,8 @@
    [com.badlogic.gdx.utils TimeUtils])
   (:require
    [h3m-lwp-clj.assets :as assets]
-   [h3m-lwp-clj.rect :as rect]
+   [h3m-lwp-clj.utils :as utils]
+   [h3m-lwp-clj.orth-camera :as orth-camera]
    [h3m-lwp-clj.random :as random]
    [h3m-lwp-clj.consts :as consts]))
 
@@ -97,9 +98,9 @@
 ; TODO memoize by camera position
 (defn get-visible-sprites
   [^OrthographicCamera camera objects]
-  (let [rectangle (rect/add (rect/get-camera-rect camera) 3)]
+  (let [rectangle (utils/rect-increase (orth-camera/get-rect camera) 3)]
     (filter
-     #(rect/contain? (:x %) (:y %) rectangle)
+     #(utils/rect-contain? (:x %) (:y %) rectangle)
      objects)))
 
 

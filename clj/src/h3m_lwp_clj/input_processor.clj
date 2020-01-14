@@ -4,6 +4,7 @@
    [com.badlogic.gdx.graphics OrthographicCamera]
    [com.badlogic.gdx Input$Keys])
   (:require
+   [h3m-lwp-clj.orth-camera :as orth-camera]
    [h3m-lwp-clj.consts :as consts]))
 
 
@@ -19,7 +20,7 @@
 
 
 (defn create
-  [^OrthographicCamera camera]
+  [^OrthographicCamera camera map-size]
   (proxy [InputProcessor] []
     (keyDown [keycode] true)
     (keyTyped
@@ -33,7 +34,7 @@
           Input$Keys/DOWN (.translate camera 0 consts/tile-size 0)
           Input$Keys/LEFT (.translate camera (- consts/tile-size) 0 0)
           Input$Keys/RIGHT (.translate camera consts/tile-size 0 0)
-          Input$Keys/SPACE (set-random-camera-position camera (:size @h3m-map))
+          Input$Keys/SPACE (orth-camera/set-random-position camera map-size)
           nil))
       true)
     (keyUp [keycode] true)
