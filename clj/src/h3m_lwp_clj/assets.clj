@@ -1,5 +1,6 @@
 (ns h3m-lwp-clj.assets
   (:import
+   [com.badlogic.gdx Gdx]
    [com.badlogic.gdx.graphics Texture]
    [com.badlogic.gdx.graphics.g2d TextureRegion TextureAtlas TextureAtlas$AtlasRegion]
    [com.badlogic.gdx.assets AssetManager]
@@ -21,12 +22,16 @@
 (defn init []
   (reset!
    objects-info
-   (try
+;   (try
      ; TODO AssetLoader?
-     (read-string (slurp "sprites/all.edn"))
-     (catch Exception _
-       (println "Failed to read all.edn")
-       {})))
+   (->> "sprites/all.edn"
+        (.internal Gdx/files)
+        (.read)
+        (slurp)
+        (read-string)))
+;     (catch Exception _
+;       (println "Failed to read all.edn")
+;       {})))
   (.finishLoading manager)
   (Texture/setAssetManager manager))
 
