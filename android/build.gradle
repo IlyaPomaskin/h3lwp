@@ -1,6 +1,6 @@
 android {
     buildToolsVersion '28.0.3'
-    compileSdkVersion 19
+    compileSdkVersion 28
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
@@ -20,8 +20,8 @@ android {
     }
     defaultConfig {
         applicationId "com.heroes3.livewallpaper"
-        minSdkVersion 19
-        targetSdkVersion 19
+        minSdkVersion 28
+        targetSdkVersion 28
     }
 }
 
