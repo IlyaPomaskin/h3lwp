@@ -3,4 +3,4 @@
     xmlns:android="http://schemas.android.com/apk/res/android"  
     android:thumbnail="@drawable/ic_launcher"
     android:description="@string/description"
-    android:settingsActivity="com.mypackage.LivewallpaperSettings"/>
+    android:settingsActivity="com.heroes3.livewallpaper.SettingsActivity"/>
