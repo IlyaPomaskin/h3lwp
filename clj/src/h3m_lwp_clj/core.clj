@@ -5,6 +5,7 @@
    [com.badlogic.gdx.utils Timer Timer$Task])
   (:require
    [h3m-parser.core :as h3m-parser]
+   [h3m-lwp-clj.consts :as consts]
    [h3m-lwp-clj.parser :as parser]
    [h3m-lwp-clj.assets :as assets]
    [h3m-lwp-clj.terrain :as terrain]
@@ -34,7 +35,6 @@
 
 (def camera-position-update-interval (* 60 15))
 (def scale-factor 0.5)
-(def render-interval 0.18)
 
 
 (defonce h3m-map (atom nil))
@@ -62,7 +62,7 @@
    (proxy [Timer$Task] []
      (run [] (.requestRendering (Gdx/graphics))))
    (float 0)
-   (float render-interval))
+   (float consts/animation-interval))
   (.scheduleTask
    (new Timer)
    (proxy [Timer$Task] []
