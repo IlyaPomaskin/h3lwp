@@ -14,37 +14,29 @@
   ~ limitations under the License.
   -->
 
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory app:title="@string/messages_header">
+    <PreferenceCategory
+        app:title="@string/settings_header"
+        app:key="wallpaper_preferences">
+        <Preference
+            android:key="select_lod"
+            android:title="Select H3sprite.lod" />
 
-        <EditTextPreference
-            app:key="signature"
-            app:title="@string/signature_title"
+        <DropDownPreference
+            android:key="@string/update_frequency"
+            android:title="Map update frequency"
+            app:entries="@array/update_frequency"
+            app:entryValues="@array/update_frequency_values"
             app:useSimpleSummaryProvider="true" />
 
-        <ListPreference
-            app:defaultValue="reply"
-            app:entries="@array/reply_entries"
-            app:entryValues="@array/reply_values"
-            app:key="reply"
-            app:title="@string/reply_title"
+        <DropDownPreference
+            android:key="camera_scale"
+            android:title="Scale"
+            app:entries="@array/scale"
+            app:entryValues="@array/scale_values"
             app:useSimpleSummaryProvider="true" />
-
-    </PreferenceCategory>
-
-    <PreferenceCategory app:title="@string/sync_header">
-
-        <SwitchPreferenceCompat
-            app:key="sync"
-            app:title="@string/sync_title" />
-
-        <SwitchPreferenceCompat
-            app:dependency="sync"
-            app:key="attachment"
-            app:summaryOff="@string/attachment_summary_off"
-            app:summaryOn="@string/attachment_summary_on"
-            app:title="@string/attachment_title" />
 
     </PreferenceCategory>
 
