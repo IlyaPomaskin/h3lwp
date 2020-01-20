@@ -48,8 +48,8 @@
   (time
    (parser/parse-map-sprites
     (.internal Gdx/files "data/H3sprite.lod")
-    (.local Gdx/files "sprites/all.atlas")
-    "sprites/all.edn"))
+    (.local Gdx/files consts/atlas-file-name)
+    (.local Gdx/files consts/edn-file-name)))
   (assets/init)
   (reset! h3m-map (h3m-parser/parse-h3m (.read (.internal Gdx/files "maps/invasion.h3m"))))
   (reset! camera (orth-camera/create scale-factor))

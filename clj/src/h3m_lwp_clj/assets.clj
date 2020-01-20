@@ -5,10 +5,9 @@
    [com.badlogic.gdx.graphics.g2d TextureRegion TextureAtlas TextureAtlas$AtlasRegion]
    [com.badlogic.gdx.assets AssetManager]
    [com.badlogic.gdx.assets.loaders TextureAtlasLoader$TextureAtlasParameter]
-   [com.badlogic.gdx.utils Array]))
-
-
-(def ^String objects-atlas "sprites/all.atlas")
+   [com.badlogic.gdx.utils Array])
+  (:require
+    [h3m-lwp-clj.consts :as consts]))
 
 
 (defonce objects-info (atom {}))
@@ -16,7 +15,10 @@
 
 (def ^AssetManager manager
   (doto (new AssetManager)
-    (.load objects-atlas TextureAtlas (new TextureAtlasLoader$TextureAtlasParameter true))))
+    (.load
+      ^String consts/atlas-file-name
+      TextureAtlas
+      (new TextureAtlasLoader$TextureAtlasParameter true))))
 
 
 (defn init []
@@ -24,7 +26,7 @@
    objects-info
 ;   (try
      ; TODO AssetLoader?
-   (->> "sprites/all.edn"
+   (->> consts/edn-file-name
         (.internal Gdx/files)
         (.read)
         (slurp)

@@ -183,16 +183,16 @@
       (.save out-file packer save-parameters))))
 
 
-(defn save-defs-info [file-name defs]
-  (->> defs
-       (mapcat #(vector (:name %) (dissoc % :palette :frames)))
-       (apply hash-map)
-       (pr-str)
-       (spit file-name)))
+(defn save-defs-info [^FileHandle info-file defs]
+  (let [edn-string (->> defs
+                        (mapcat #(vector (:name %) (dissoc % :palette :frames)))
+                        (apply hash-map)
+                        (pr-str))]
+    (.writeString info-file edn-string false)))
 
 
 (defn parse-map-sprites
-  [^FileHandle lod-file ^FileHandle out-file defs-info-file-name]
+  [^FileHandle lod-file ^FileHandle out-file ^FileHandle info-file]
   (let [packer (new PixmapPacker 4096 4096 Pixmap$Format/RGBA8888 0 false)
         in (new FileInputStream (.file lod-file))
         def-map (:map def-file/def-type)
@@ -211,6 +211,6 @@
             def-map (pack-def-without-rotation packer %)
             def-terrain (pack-def-with-rotation packer %))
           %))
-      (save-defs-info defs-info-file-name)))
+      (save-defs-info info-file)))
     (save-packer packer out-file)
     (.dispose packer)))
