@@ -25,7 +25,7 @@
             android:title="Select H3sprite.lod" />
 
         <DropDownPreference
-            android:key="@string/update_frequency"
+            android:key="update_frequency"
             android:title="Map update frequency"
             app:entries="@array/update_frequency"
             app:entryValues="@array/update_frequency_values"

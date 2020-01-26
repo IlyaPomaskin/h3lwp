@@ -12,8 +12,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
-import java.util.Map;
-
 import static android.content.Intent.CATEGORY_OPENABLE;
 import static android.content.Intent.EXTRA_LOCAL_ONLY;
 
@@ -36,12 +34,35 @@ public class SettingsActivity extends AppCompatActivity {
 
         SharedPreferences prefs = getSharedPreferences("wallpaper_preferences", Context.MODE_PRIVATE);
 
-
-        String updateFrequency = prefs.getString(
-            getString(R.string.update_frequency),
-            null
-        );
+        String updateFrequency = prefs.getString("update_frequency", null);
         System.out.println("FREQ: " + updateFrequency);
+    }
+
+    protected void handleLodFileSelect(Intent data) {
+        Uri uri = data.getData();
+        if (uri == null) {
+            return;
+        }
+
+        String uriPath = uri.getPath();
+        if (uriPath == null) {
+            return;
+        }
+
+        boolean isCorrectFile = uriPath.toLowerCase().endsWith("h3sprite.lod");
+        if (!isCorrectFile) {
+            Toast
+                .makeText(
+                    this,
+                    "Incorrect file selected",
+                    Toast.LENGTH_LONG
+                )
+                .show();
+            return;
+        }
+
+        String filePath = uriPath.substring(uriPath.indexOf(":") + 1);
+        System.out.println("SELECTED FILE: " + filePath);
     }
 
     @Override
@@ -50,30 +71,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         System.out.println("ON ACTIVITY RESULT: " + requestCode + " : " + resultCode);
         if (/*requestCode == PICK_FILE_RESULT_CODE && */resultCode == RESULT_OK) {
-            Uri uri = data.getData();
-            if (uri == null) {
-                return;
-            }
-
-            String uriPath = uri.getPath();
-            if (uriPath == null) {
-                return;
-            }
-
-            boolean isCorrectFile = uriPath.toLowerCase().endsWith("h3sprite.lod");
-            if (!isCorrectFile) {
-                Toast
-                    .makeText(
-                        this,
-                        "Incorrect file selected",
-                        Toast.LENGTH_LONG
-                    )
-                    .show();
-                return;
-            }
-
-            String filePath = uriPath.substring(uriPath.indexOf(":") + 1);
-            System.out.println("SELECTED FILE: " + filePath);
+            handleLodFileSelect(data);
         }
     }
 
@@ -86,10 +84,11 @@ public class SettingsActivity extends AppCompatActivity {
             if (selectLodItem != null) {
                 selectLodItem.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                     public boolean onPreferenceClick(Preference preference) {
-                        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                        intent.setType("application/octet-stream");
-                        intent.addCategory(CATEGORY_OPENABLE);
-                        intent.putExtra(EXTRA_LOCAL_ONLY, true);
+                        Intent intent = new Intent(Intent.ACTION_GET_CONTENT)
+                            .setType("application/octet-stream")
+                            .addCategory(CATEGORY_OPENABLE)
+                            .putExtra(EXTRA_LOCAL_ONLY, true);
+
                         startActivityForResult(
                             Intent.createChooser(intent, "Select file"),
                             PICK_FILE_RESULT_CODE
