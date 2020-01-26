@@ -44,7 +44,7 @@
 
 (defn get-object-frame [def-name offset]
   ^TextureRegion
-  (let [^TextureAtlas atlas (.get manager objects-atlas)
+  (let [^TextureAtlas atlas (.get manager consts/atlas-file-name)
         ^TextureAtlas$AtlasRegion frame (.findRegion atlas def-name offset)]
     (when (nil? frame)
       (throw (new Exception (format "def %s with offset %d not found in atlas" def-name offset))))
@@ -53,7 +53,7 @@
 
 (defn get-terrain-sprite [def-name index]
   ^Array
-  (let [^TextureAtlas atlas (.get manager objects-atlas)
+  (let [^TextureAtlas atlas (.get manager consts/atlas-file-name)
         sprite-info (get-sprite-info def-name)
         {frames-order :order} sprite-info
         offset (nth frames-order index)
