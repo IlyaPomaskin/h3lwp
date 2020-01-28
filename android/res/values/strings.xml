@@ -3,7 +3,4 @@
 
     <string name="app_name">Heroes 3 Live Wallpaper</string>
     <string name="description">Description</string>
-
-    <string name="settings_title">Wallpaper preferences</string>
-    <string name="settings_header">Wallpaper preferences</string>
 </resources>
