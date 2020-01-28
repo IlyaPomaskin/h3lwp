@@ -12,7 +12,7 @@
   "To use this app you need h3sprite.lod file")
 
 
-(defn create
+(defn create-renderer
   [on-file-select-click-fn selected-file-path]
   (let [stage (new Stage (new ScreenViewport))
         skin (new Skin (.internal Gdx/files "sprites/skin/uiskin.json"))

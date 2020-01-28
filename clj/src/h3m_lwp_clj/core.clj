@@ -5,6 +5,7 @@
    [com.badlogic.gdx.utils Timer Timer$Task])
   (:require
    [h3m-parser.core :as h3m-parser]
+   [h3m-lwp-clj.settings :as settings]
    [h3m-lwp-clj.consts :as consts]
    [h3m-lwp-clj.parser :as parser]
    [h3m-lwp-clj.assets :as assets]
@@ -14,7 +15,9 @@
    [h3m-lwp-clj.input-processor :as input-processor])
   (:gen-class
    :name h3m.LwpCore
-   :extends com.badlogic.gdx.ApplicationAdapter))
+   :extends com.badlogic.gdx.ApplicationAdapter
+   :methods [[onFileSelectClick [Runnable] void]
+             [setFilePath [String] void]]))
 
 
 (defmacro repl
@@ -41,22 +44,26 @@
 (defonce camera (atom nil))
 (defonce terrain-renderer (atom nil))
 (defonce objects-renderer (atom nil))
+(defonce settings-renderer (atom nil))
+(defonce on-file-select-click-fn (atom (fn [] (println "UNSET FN"))))
+(defonce selected-file-path (atom ""))
 
 
 (defn -create
   [^ApplicationAdapter _]
-  (time
-   (parser/parse-map-sprites
-    (.internal Gdx/files "data/H3sprite.lod")
-    (.local Gdx/files consts/atlas-file-name)
-    (.local Gdx/files consts/edn-file-name)))
+  #_(time
+     (parser/parse-map-sprites
+      (.internal Gdx/files "data/H3sprite.lod")
+      (.local Gdx/files consts/atlas-file-name)
+      (.local Gdx/files consts/edn-file-name)))
   (assets/init)
   (reset! h3m-map (h3m-parser/parse-h3m (.read (.internal Gdx/files "maps/invasion.h3m"))))
   (reset! camera (orth-camera/create scale-factor))
   (reset! terrain-renderer (terrain/create-renderer @h3m-map))
   (reset! objects-renderer (objects/create-renderer @h3m-map))
+  (reset! settings-renderer (settings/create-renderer on-file-select-click-fn selected-file-path))
   (.setContinuousRendering (Gdx/graphics) false)
-  (.setInputProcessor (Gdx/input) (input-processor/create @camera (:size @h3m-map)))
+  #_(.setInputProcessor (Gdx/input) (input-processor/create @camera (:size @h3m-map)))
   (.scheduleTask
    (new Timer)
    (proxy [Timer$Task] []
@@ -71,24 +78,26 @@
    (float camera-position-update-interval)))
 
 
-(comment
-  (repl
-   (reset! terrain-renderer (terrain/create-renderer @h3m-map))))
+(defn -onFileSelectClick
+  [^ApplicationAdapter _ ^Runnable callback]
+  (reset! on-file-select-click-fn (fn [] (.run callback))))
 
-(comment
-  (repl
-   (reset! objects-renderer (objects/create-renderer @h3m-map))))
+
+(defn -setFilePath
+  [^ApplicationAdapter _ ^String path]
+  (reset! selected-file-path path))
 
 
 (defn -render
   [^ApplicationAdapter _]
   (let [^OrthographicCamera camera (deref camera)
-        terrain-renderer (deref terrain-renderer)
-        objects-renderer (deref objects-renderer)]
+        ;terrain-renderer (deref terrain-renderer)
+        ;objects-renderer (deref objects-renderer)
+        ]
     (doto Gdx/gl
       (.glClearColor 0 0 0 0)
       (.glClear GL20/GL_COLOR_BUFFER_BIT))
     (.update camera)
-    (terrain-renderer camera)
-    (objects-renderer camera)))
-
+    ;(terrain-renderer camera)
+    ;(objects-renderer camera)
+    (@settings-renderer)))
