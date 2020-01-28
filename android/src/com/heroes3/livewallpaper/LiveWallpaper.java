@@ -10,12 +10,12 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.badlogic.gdx.backends.android.AndroidLiveWallpaperService;
 
-import h3m.LwpCore;
+import com.heroes3.livewallpaper.clojure.LiveWallpaperEngine;
 
 public class LiveWallpaper extends AndroidLiveWallpaperService {
     static String INTENT_NAME = "selectedFile";
     static String INTENT_EXTRA_NAME = "message";
-    private LwpCore app;
+    private LiveWallpaperEngine app;
     private LiveWallpaper instance = this;
     private BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
@@ -33,7 +33,7 @@ public class LiveWallpaper extends AndroidLiveWallpaperService {
             .getInstance(this)
             .registerReceiver(receiver, new IntentFilter(INTENT_NAME));
 
-        app = new h3m.LwpCore();
+        app = new LiveWallpaperEngine();
         app.onFileSelectClick(new Runnable() {
             @Override
             public void run() {

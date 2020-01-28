@@ -14,7 +14,7 @@
    [h3m-lwp-clj.orth-camera :as orth-camera]
    [h3m-lwp-clj.input-processor :as input-processor])
   (:gen-class
-   :name h3m.LwpCore
+   :name com.heroes3.livewallpaper.clojure.LiveWallpaperEngine
    :extends com.badlogic.gdx.ApplicationAdapter
    :methods [[onFileSelectClick [Runnable] void]
              [setFilePath [String] void]]))
