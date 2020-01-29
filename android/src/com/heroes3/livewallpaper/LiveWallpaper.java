@@ -33,10 +33,6 @@ public class LiveWallpaper extends AndroidLiveWallpaperService {
     public void onCreateApplication() {
         super.onCreateApplication();
 
-        LocalBroadcastManager
-            .getInstance(this)
-            .registerReceiver(receiver, new IntentFilter(INTENT_NAME));
-
         app = new LiveWallpaperEngine();
         app.onFileSelectClick(new Runnable() {
             @Override
@@ -46,6 +42,10 @@ public class LiveWallpaper extends AndroidLiveWallpaperService {
                 startActivity(intent);
             }
         });
+
+        LocalBroadcastManager
+            .getInstance(this)
+            .registerReceiver(receiver, new IntentFilter(INTENT_NAME));
 
         AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
         config.useAccelerometer = false;
