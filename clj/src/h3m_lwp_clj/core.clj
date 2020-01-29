@@ -17,7 +17,8 @@
    :name com.heroes3.livewallpaper.clojure.LiveWallpaperEngine
    :extends com.badlogic.gdx.ApplicationAdapter
    :methods [[onFileSelectClick [Runnable] void]
-             [setFilePath [String] void]]))
+             [setFilePath [String] void]
+             [setIsPreview [Boolean] void]]))
 
 
 (defmacro repl
@@ -47,6 +48,7 @@
 (defonce settings-renderer (atom nil))
 (defonce on-file-select-click-fn (atom (fn [] (println "UNSET FN"))))
 (defonce selected-file-path (atom ""))
+(defonce is-preview (atom true))
 
 
 (defn -create
@@ -61,7 +63,7 @@
   (reset! camera (orth-camera/create scale-factor))
   (reset! terrain-renderer (terrain/create-renderer @h3m-map))
   (reset! objects-renderer (objects/create-renderer @h3m-map))
-  (reset! settings-renderer (settings/create-renderer on-file-select-click-fn selected-file-path))
+  (reset! settings-renderer (settings/create-renderer on-file-select-click-fn selected-file-path is-preview))
   (.setContinuousRendering (Gdx/graphics) false)
   #_(.setInputProcessor (Gdx/input) (input-processor/create @camera (:size @h3m-map)))
   (.scheduleTask
@@ -86,6 +88,11 @@
 (defn -setFilePath
   [^ApplicationAdapter _ ^String path]
   (reset! selected-file-path path))
+
+
+(defn -setIsPreview
+  [^ApplicationAdapter _ ^Boolean is-preview?]
+  (reset! is-preview is-preview?))
 
 
 (defn -render

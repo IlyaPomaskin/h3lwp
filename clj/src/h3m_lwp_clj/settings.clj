@@ -13,7 +13,7 @@
 
 
 (defn create-renderer
-  [on-file-select-click-fn selected-file-path]
+  [on-file-select-click-fn selected-file-path is-preview]
   (let [stage (new Stage (new ScreenViewport))
         skin (new Skin (.internal Gdx/files "sprites/skin/uiskin.json"))
         label (doto (new Label instruction skin)
@@ -22,6 +22,9 @@
         file-path-label (doto (new Label "path:" skin)
                           (.setWrap true)
                           (.setAlignment Align/center))
+        is-preview-label (doto (new Label (format "is preview: %b" @is-preview) skin)
+                           (.setWrap true)
+                           (.setAlignment Align/center))
         on-click-listener (proxy [ChangeListener] []
                             (changed
                               [^ChangeListener$ChangeEvent event ^Actor actor]
@@ -46,6 +49,8 @@
                 (.row)
                 (.add file-path-label)
                 (.row)
+                (.add is-preview-label)
+                (.row)
                 (.pack)
                 (.setWidth 300)
                 (.setHeight 300)
@@ -62,7 +67,12 @@
      selected-file-path
      :watcher
      (fn [_ _ _ new-state]
-       (.setText file-path-label (clojure.string/join " " ["path:" new-state]))))
+       (.setText file-path-label (format "path: %s" new-state))))
+    (add-watch
+     is-preview
+     :watcher
+     (fn [_ _ _ new-state]
+       (.setText is-preview-label (format "is preview: %b" new-state))))
     (fn render-stage []
       (doto stage
         (.act (min (.getDeltaTime Gdx/graphics) (float (/ 1 30))))
