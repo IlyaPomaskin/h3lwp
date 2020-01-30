@@ -34,27 +34,19 @@
 (defonce on-file-select-click-fn (atom (fn [] (println "UNSET FN"))))
 (defonce selected-file-path (atom ""))
 (defonce is-preview (atom true))
-(defonce renderer (atom nil))
 
 
 (add-watch
  is-preview
  :renderer-switch
  (fn [_ _ _ next-value]
-   (reset!
-    renderer
-    (if next-value
-      @settings-renderer
-      @wallpaper-renderer))))
-
-
-(add-watch
- renderer
- :renderer-switch
- (fn [_ _ prev-renderer next-renderer]
-   (when prev-renderer
-     (.stop prev-renderer))
-   (.start next-renderer)))
+   (if (true? next-value)
+     (do
+       (.stop @wallpaper-renderer)
+       (.start @settings-renderer))
+     (do
+       (.stop @settings-renderer)
+       (.start @wallpaper-renderer)))))
 
 
 (defn -create
@@ -73,7 +65,7 @@
   (doto Gdx/gl
     (.glClearColor 0 0 0 0)
     (.glClear GL20/GL_COLOR_BUFFER_BIT))
-  (.render @renderer))
+  (.render (if @is-preview @settings-renderer @wallpaper-renderer)))
 
 
 (defn -onFileSelectClick
