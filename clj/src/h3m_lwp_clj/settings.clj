@@ -15,7 +15,7 @@
 
 
 (defn create-renderer
-  [on-file-select-click-fn selected-file-path is-preview]
+  [on-file-select-click-fn selected-file-path]
   (let [stage (new Stage (new ScreenViewport))
         skin (new Skin (.internal Gdx/files "sprites/skin/uiskin.json"))
         label (doto (new Label instruction skin)
@@ -24,13 +24,10 @@
         file-path-label (doto (new Label "path:" skin)
                           (.setWrap true)
                           (.setAlignment Align/center))
-        is-preview-label (doto (new Label (format "is preview: %b" @is-preview) skin)
-                           (.setWrap true)
-                           (.setAlignment Align/center))
+        set-file-path-text #(.setText file-path-label (format "path: %s" %))
         on-click-listener (proxy [ChangeListener] []
                             (changed
                               [^ChangeListener$ChangeEvent event ^Actor actor]
-                              (println "CLICKED11")
                               (@on-file-select-click-fn)))
         button (doto (new TextButton "Select file" skin "default")
                  (.addListener on-click-listener))
@@ -51,8 +48,6 @@
                 (.row)
                 (.add file-path-label)
                 (.row)
-                (.add is-preview-label)
-                (.row)
                 (.pack)
                 (.setWidth 300)
                 (.setHeight 300)
@@ -68,18 +63,11 @@
       (start
         [this]
         (.setInputProcessor (Gdx/input) stage)
-        (add-watch
-         selected-file-path
-         :settings-update
-         #(.setText file-path-label (format "path: %s" %4)))
-        (add-watch
-         is-preview
-         :settings-update
-         #(.setText is-preview-label (format "is preview: %b" %4))))
+        (add-watch selected-file-path :settings-update #(set-file-path-text %4))
+        (set-file-path-text @selected-file-path))
       (stop
         [this]
-        (remove-watch selected-file-path :settings-update)
-        (remove-watch is-preview :settings-update))
+        (remove-watch selected-file-path :settings-update))
       (render
         [this]
         (doto stage

@@ -65,8 +65,7 @@
       (.local Gdx/files consts/atlas-file-name)
       (.local Gdx/files consts/edn-file-name)))
   (reset! wallpaper-renderer (wallpaper/create-renderer))
-  (reset! settings-renderer (settings/create-renderer on-file-select-click-fn selected-file-path is-preview))
-  (reset! is-preview true))
+  (reset! settings-renderer (settings/create-renderer on-file-select-click-fn selected-file-path)))
 
 
 (defn -render
