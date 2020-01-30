@@ -11,6 +11,16 @@
    [java.util.zip Inflater InflaterInputStream]))
 
 
+(def rotations
+  {"clrrvr" [[183 195] [195 201]]
+   "mudrvr" [[183 189] [240 246]]
+   "watrtl" [[229 241] [242 254]]
+   "lavatl" [[246 254]]
+   "lavrvr" [[240 248]]})
+(def def-map (:map def-file/def-type))
+(def def-terrain (:terrain def-file/def-type))
+
+
 (defn get-def-stream-from-lod
   [lod-def-info ^FileInputStream in]
   (let [{size :size
@@ -102,33 +112,27 @@
       (assoc :order (get-in def-info [:groups 0 :offsets]))))
 
 
-(defn frame->pixmap [palette frame]
+(defn fill-pixmap [^Pixmap pixmap palette frame]
   (let [{width :width
          height :height
-         full-width :full-width
-         full-height :full-height
-         data :data} frame
-        image (doto (new Pixmap
-                         (int full-width)
-                         (int full-height)
-                         Pixmap$Format/RGBA8888)
-                (.setColor 0 0 0 0)
-                (.fill))]
+         frame-x :x
+         frame-y :y
+         data :data} frame]
     (dorun
      (for [x (range 0 width)
            y (range 0 height)
            :let [palette-index (nth data (+ (* width y) x))
                  color (nth palette palette-index)]]
-       (.drawPixel
-        image
-        (+ x (:x frame))
-        (+ y (:y frame))
-        color)))
-    image))
+       (.drawPixel pixmap (+ x frame-x) (+ y frame-y) color)))))
 
 
-(defn pack-frame [packer palette frame region-name]
-  (let [pixmap ^Pixmap (frame->pixmap palette frame)]
+(defn pack-frame [^PixmapPacker packer palette frame region-name]
+  (let [{full-width :full-width
+         full-height :full-height} frame
+        ^Pixmap pixmap (doto (new Pixmap full-width full-height Pixmap$Format/RGBA8888)
+                         (.setColor 0 0 0 0)
+                         (.fill))]
+    (fill-pixmap pixmap palette frame)
     (.pack packer region-name pixmap)
     (.dispose pixmap)))
 
@@ -143,14 +147,6 @@
     (fn [frame]
       (pack-frame packer palette frame (format "%s_%d" name (:offset frame))))
     frames)))
-
-
-(def rotations
-  {"clrrvr" [[183 195] [195 201]]
-   "mudrvr" [[183 189] [240 246]]
-   "watrtl" [[229 241] [242 254]]
-   "lavatl" [[246 254]]
-   "lavrvr" [[240 248]]})
 
 
 (defn pack-def-with-rotation
@@ -179,38 +175,47 @@
 (defn save-packer [^PixmapPacker packer ^FileHandle out-file]
   (let [save-parameters (new PixmapPackerIO$SaveParameters)]
     (set! (.-useIndexes save-parameters) true)
-    (doto (new PixmapPackerIO)
-      (.save out-file packer save-parameters))))
+    (.save (new PixmapPackerIO) out-file packer save-parameters)))
 
 
 (defn save-defs-info [^FileHandle info-file defs]
-  (let [edn-string (->> defs
-                        (mapcat #(vector (:name %) (dissoc % :palette :frames)))
-                        (apply hash-map)
-                        (pr-str))]
-    (.writeString info-file edn-string false)))
+  (.writeString
+   info-file
+   (->> defs
+        (mapcat #(vector (:name %) (dissoc % :palette :frames)))
+        (apply hash-map)
+        (pr-str))
+   false))
+
+
+(defn get-lod-files-list
+  [^FileInputStream lod-file]
+  (doall
+   (->>
+    (:files (h3m-parser/parse-lod lod-file))
+    (filter #(utils/coll-includes? (:type %) [def-map def-terrain]))
+    (filter #(re-matches #"(?i).*\.def" (:name %))))))
 
 
 (defn parse-map-sprites
-  [^FileHandle lod-file ^FileHandle out-file ^FileHandle info-file]
-  (let [packer (new PixmapPacker 4096 4096 Pixmap$Format/RGBA8888 0 false)
-        in (new FileInputStream (.file lod-file))
-        def-map (:map def-file/def-type)
-        def-terrain (:terrain def-file/def-type)]
+  [lod-files-list
+   ^FileInputStream lod-file
+   ^FileHandle out-file
+   ^FileHandle info-file
+   callback]
+  (let [packer (new PixmapPacker 4096 4096 Pixmap$Format/RGBA8888 0 false)]
     (dorun
      (->>
-      (:files (h3m-parser/parse-lod in))
-      (filter #(utils/coll-includes? (:type %) [def-map def-terrain]))
-      (filter #(re-matches #"(?i).*\.def" (:name %)))
-      (map #(parse-def-from-lod % in))
-      (remove #(:legacy? %))
-      (pmap map-def)
-      (pmap
-       #(do
-          (condp = (:type %)
-            def-map (pack-def-without-rotation packer %)
-            def-terrain (pack-def-with-rotation packer %))
-          %))
+      lod-files-list
+      (map
+       (comp
+        #(do (callback %) %)
+        #(do (condp = (:type %)
+               def-map (pack-def-without-rotation packer %)
+               def-terrain (pack-def-with-rotation packer %))
+             %)
+        #(map-def %)
+        #(parse-def-from-lod % lod-file)))
       (save-defs-info info-file)))
     (save-packer packer out-file)
     (.dispose packer)))
