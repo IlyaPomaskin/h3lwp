@@ -51,11 +51,6 @@
 
 (defn -create
   [^ApplicationAdapter _]
-  #_(time
-     (parser/parse-map-sprites
-      (.internal Gdx/files "data/H3sprite.lod")
-      (.local Gdx/files consts/atlas-file-name)
-      (.local Gdx/files consts/edn-file-name)))
   (reset! wallpaper-renderer (wallpaper/create-renderer))
   (reset! settings-renderer (settings/create-renderer on-file-select-click-fn selected-file-path)))
 
