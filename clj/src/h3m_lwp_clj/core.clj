@@ -33,7 +33,7 @@
 (defonce settings-renderer (atom nil))
 (defonce on-file-select-click-fn (atom (fn [] (println "UNSET FN"))))
 (defonce selected-file-path (atom ""))
-(defonce is-preview (atom true))
+(defonce is-preview (atom nil))
 
 
 (add-watch
@@ -65,7 +65,8 @@
   (doto Gdx/gl
     (.glClearColor 0 0 0 0)
     (.glClear GL20/GL_COLOR_BUFFER_BIT))
-  (.render (if @is-preview @settings-renderer @wallpaper-renderer)))
+  (when (some? @is-preview)
+    (.render (if @is-preview @settings-renderer @wallpaper-renderer))))
 
 
 (defn -onFileSelectClick
