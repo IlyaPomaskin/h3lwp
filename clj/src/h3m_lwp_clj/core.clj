@@ -1,18 +1,10 @@
 (ns h3m-lwp-clj.core
   (:import
    [com.badlogic.gdx ApplicationAdapter Gdx]
-   [com.badlogic.gdx.graphics GL20 OrthographicCamera]
-   [com.badlogic.gdx.utils Timer Timer$Task])
+   [com.badlogic.gdx.graphics GL20])
   (:require
-   [h3m-parser.core :as h3m-parser]
    [h3m-lwp-clj.settings :as settings]
-   [h3m-lwp-clj.consts :as consts]
-   [h3m-lwp-clj.parser :as parser]
-   [h3m-lwp-clj.assets :as assets]
-   [h3m-lwp-clj.terrain :as terrain]
-   [h3m-lwp-clj.objects :as objects]
-   [h3m-lwp-clj.orth-camera :as orth-camera]
-   [h3m-lwp-clj.input-processor :as input-processor])
+   [h3m-lwp-clj.wallpaper :as wallpaper])
   (:gen-class
    :name com.heroes3.livewallpaper.clojure.LiveWallpaperEngine
    :extends com.badlogic.gdx.ApplicationAdapter
@@ -37,18 +29,32 @@
               (println (.printStackTrace e#)))))))))
 
 
-(def camera-position-update-interval (* 60 15))
-(def scale-factor 0.5)
-
-
-(defonce h3m-map (atom nil))
-(defonce camera (atom nil))
-(defonce terrain-renderer (atom nil))
-(defonce objects-renderer (atom nil))
+(defonce wallpaper-renderer (atom nil))
 (defonce settings-renderer (atom nil))
 (defonce on-file-select-click-fn (atom (fn [] (println "UNSET FN"))))
 (defonce selected-file-path (atom ""))
 (defonce is-preview (atom true))
+(defonce renderer (atom nil))
+
+
+(add-watch
+ is-preview
+ :renderer-switch
+ (fn [_ _ _ next-value]
+   (reset!
+    renderer
+    (if next-value
+      @settings-renderer
+      @wallpaper-renderer))))
+
+
+(add-watch
+ renderer
+ :renderer-switch
+ (fn [_ _ prev-renderer next-renderer]
+   (when prev-renderer
+     (.stop prev-renderer))
+   (.start next-renderer)))
 
 
 (defn -create
@@ -58,26 +64,17 @@
       (.internal Gdx/files "data/H3sprite.lod")
       (.local Gdx/files consts/atlas-file-name)
       (.local Gdx/files consts/edn-file-name)))
-  (assets/init)
-  (reset! h3m-map (h3m-parser/parse-h3m (.read (.internal Gdx/files "maps/invasion.h3m"))))
-  (reset! camera (orth-camera/create scale-factor))
-  (reset! terrain-renderer (terrain/create-renderer @h3m-map))
-  (reset! objects-renderer (objects/create-renderer @h3m-map))
+  (reset! wallpaper-renderer (wallpaper/create-renderer))
   (reset! settings-renderer (settings/create-renderer on-file-select-click-fn selected-file-path is-preview))
-  (.setContinuousRendering (Gdx/graphics) false)
-  #_(.setInputProcessor (Gdx/input) (input-processor/create @camera (:size @h3m-map)))
-  (.scheduleTask
-   (new Timer)
-   (proxy [Timer$Task] []
-     (run [] (.requestRendering (Gdx/graphics))))
-   (float 0)
-   (float consts/animation-interval))
-  (.scheduleTask
-   (new Timer)
-   (proxy [Timer$Task] []
-     (run [] (orth-camera/set-random-position @camera (:size @h3m-map))))
-   (float 0)
-   (float camera-position-update-interval)))
+  (reset! is-preview true))
+
+
+(defn -render
+  [^ApplicationAdapter _]
+  (doto Gdx/gl
+    (.glClearColor 0 0 0 0)
+    (.glClear GL20/GL_COLOR_BUFFER_BIT))
+  (.render @renderer))
 
 
 (defn -onFileSelectClick
@@ -93,18 +90,3 @@
 (defn -setIsPreview
   [^ApplicationAdapter _ ^Boolean is-preview?]
   (reset! is-preview is-preview?))
-
-
-(defn -render
-  [^ApplicationAdapter _]
-  (let [^OrthographicCamera camera (deref camera)
-        ;terrain-renderer (deref terrain-renderer)
-        ;objects-renderer (deref objects-renderer)
-        ]
-    (doto Gdx/gl
-      (.glClearColor 0 0 0 0)
-      (.glClear GL20/GL_COLOR_BUFFER_BIT))
-    (.update camera)
-    ;(terrain-renderer camera)
-    ;(objects-renderer camera)
-    (@settings-renderer)))

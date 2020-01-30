@@ -5,7 +5,9 @@
    [com.badlogic.gdx.scenes.scene2d Stage Actor]
    [com.badlogic.gdx.scenes.scene2d.ui Skin Label Table TextButton]
    [com.badlogic.gdx.scenes.scene2d.utils ChangeListener ChangeListener$ChangeEvent]
-   [com.badlogic.gdx.utils Align]))
+   [com.badlogic.gdx.utils Align])
+  (:require
+   [h3m-lwp-clj.protocol :as protocol]))
 
 
 (def ^String instruction
@@ -62,18 +64,24 @@
                        (float (- (/ (.getHeight stage) 2)
                                  (/ (.getHeight t) 2))))))]
     (.addActor stage table)
-    (.setInputProcessor (Gdx/input) stage)
-    (add-watch
-     selected-file-path
-     :watcher
-     (fn [_ _ _ new-state]
-       (.setText file-path-label (format "path: %s" new-state))))
-    (add-watch
-     is-preview
-     :watcher
-     (fn [_ _ _ new-state]
-       (.setText is-preview-label (format "is preview: %b" new-state))))
-    (fn render-stage []
-      (doto stage
-        (.act (min (.getDeltaTime Gdx/graphics) (float (/ 1 30))))
-        (.draw)))))
+    (reify protocol/Renderer
+      (start
+        [this]
+        (.setInputProcessor (Gdx/input) stage)
+        (add-watch
+         selected-file-path
+         :settings-update
+         #(.setText file-path-label (format "path: %s" %4)))
+        (add-watch
+         is-preview
+         :settings-update
+         #(.setText is-preview-label (format "is preview: %b" %4))))
+      (stop
+        [this]
+        (remove-watch selected-file-path :settings-update)
+        (remove-watch is-preview :settings-update))
+      (render
+        [this]
+        (doto stage
+          (.act (min (.getDeltaTime Gdx/graphics) (float (/ 1 30))))
+          (.draw))))))
