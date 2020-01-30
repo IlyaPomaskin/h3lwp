@@ -1,8 +1,13 @@
 (ns h3m-lwp-clj.desktop
   (:import
-   [com.badlogic.gdx.backends.lwjgl LwjglApplication LwjglApplicationConfiguration]
+   [com.badlogic.gdx.backends.lwjgl LwjglApplication]
+   [com.badlogic.gdx.utils Timer Timer$Task]
    [com.heroes3.livewallpaper.clojure LiveWallpaperEngine]
    [java.awt FileDialog Frame]))
+
+
+(def is-preview-timeout (float 3))
+
 
 
 (def ^FileDialog file-chooser
@@ -31,7 +36,12 @@
 
 (defn -main []
   (let [engine (create-engine)]
-    (doto (new LwjglApplication engine)
-      (.postRunnable
-       (reify Runnable
-         (run [_] (.setIsPreview engine true)))))))
+    (new LwjglApplication engine)
+    (.scheduleTask
+     (new Timer)
+     (proxy [Timer$Task] []
+       (run []
+         (.setIsPreview engine true)))
+     is-preview-timeout)))
+
+
