@@ -54,7 +54,7 @@
       [this]
       (.start ^Timer @timer)
       (.setContinuousRendering (Gdx/graphics) false)
-      (.setInputProcessor (Gdx/input) camera-controller))
+      (.setInputProcessor (Gdx/input) @camera-controller))
     (stop
       [this]
       (.stop ^Timer @timer)
