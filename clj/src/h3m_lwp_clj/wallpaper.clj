@@ -22,6 +22,7 @@
 (defonce terrain-renderer (atom nil))
 (defonce objects-renderer (atom nil))
 (defonce timer (atom []))
+(defonce camera-controller (atom nil))
 
 
 (defn create-renderer
@@ -29,6 +30,7 @@
   (assets/init)
   (reset! h3m-map (h3m-parser/parse-h3m (.read (.internal Gdx/files "maps/invasion.h3m"))))
   (reset! camera (orth-camera/create scale-factor))
+  (reset! camera-controller (input-processor/create @camera (:size @h3m-map)))
   (reset! terrain-renderer (terrain/create-renderer @h3m-map))
   (reset! objects-renderer (objects/create-renderer @h3m-map))
   (reset!
@@ -52,7 +54,7 @@
       [this]
       (.start ^Timer @timer)
       (.setContinuousRendering (Gdx/graphics) false)
-      (.setInputProcessor (Gdx/input) (input-processor/create @camera (:size @h3m-map))))
+      (.setInputProcessor (Gdx/input) camera-controller))
     (stop
       [this]
       (.stop ^Timer @timer)
