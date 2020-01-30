@@ -1,7 +1,6 @@
 (ns h3m-lwp-clj.wallpaper
   (:import
    [com.badlogic.gdx Gdx]
-   [com.badlogic.gdx.graphics OrthographicCamera]
    [com.badlogic.gdx.utils Timer Timer$Task])
   (:require
    [h3m-parser.core :as h3m-parser]
@@ -60,9 +59,6 @@
       (.setContinuousRendering (Gdx/graphics) true))
     (render
       [this]
-      (let [^OrthographicCamera camera (deref camera)
-            terrain-renderer (deref terrain-renderer)
-            objects-renderer (deref objects-renderer)]
-        (.update camera)
-        (terrain-renderer camera)
-        (objects-renderer camera)))))
+      (.update @camera)
+      (@terrain-renderer @camera)
+      (@objects-renderer @camera))))
