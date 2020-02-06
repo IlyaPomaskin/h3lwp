@@ -8,7 +8,8 @@
    [h3m-lwp-clj.utils :as utils]
    [h3m-lwp-clj.orth-camera :as orth-camera]
    [h3m-lwp-clj.random :as random]
-   [h3m-lwp-clj.consts :as consts]))
+   [h3m-lwp-clj.consts :as consts]
+   [clojure.string :as string]))
 
 
 (defn get-placement-order
@@ -43,8 +44,8 @@
 (defn object->filename
   [object]
   (-> (get-in object [:def :sprite-name])
-      (clojure.string/lower-case)
-      (clojure.string/replace #"\.def" "")))
+      (string/lower-case)
+      (string/replace #"\.def" "")))
 
 
 (defn get-frame-index

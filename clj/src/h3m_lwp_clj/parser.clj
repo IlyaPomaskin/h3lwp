@@ -2,7 +2,8 @@
   (:require
    [h3m-parser.core :as h3m-parser]
    [h3m-parser.def :as def-file]
-   [h3m-lwp-clj.utils :as utils])
+   [h3m-lwp-clj.utils :as utils]
+   [clojure.string :as string])
   (:import
    [com.badlogic.gdx.files FileHandle]
    [com.badlogic.gdx.graphics Pixmap Pixmap$Format Color]
@@ -38,9 +39,9 @@
         def-stream (get-def-stream-from-lod lod-def-info in)
         def-info (try
                    (h3m-parser/parse-def def-stream)
-                   (catch java.io.EOFException eof
+                   (catch java.io.EOFException _
                      (println "eof fail" name))
-                   (catch AssertionError e
+                   (catch AssertionError _
                      (println "failed parse" name)))
         ; TODO fix legacy check
         legacy? false ; (def-file/legacy? def-info def-stream uncompressed-size)
@@ -106,8 +107,8 @@
                     :palette
                     :frames])
       (update :palette make-palette)
-      (update :name clojure.string/lower-case)
-      (update :name clojure.string/replace #".def" "")
+      (update :name string/lower-case)
+      (update :name string/replace #".def" "")
       (update :frames #(doall (pmap map-frame %)))
       (assoc :order (get-in def-info [:groups 0 :offsets]))))
 
