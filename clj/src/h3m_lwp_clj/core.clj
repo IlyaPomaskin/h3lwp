@@ -60,8 +60,9 @@
   (doto Gdx/gl
     (.glClearColor 0 0 0 0)
     (.glClear GL20/GL_COLOR_BUFFER_BIT))
-  (when (some? @is-preview)
-    (.render (if @is-preview @settings-renderer @wallpaper-renderer))))
+  (.render @wallpaper-renderer)
+  (when (true? @is-preview)
+    (.render @settings-renderer)))
 
 
 (defn -onFileSelectClick
