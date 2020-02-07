@@ -58,16 +58,14 @@
 
 (defn create-sprite [^SpriteBatch batch object]
   (let [filename (object->filename object)
-        sprite-info (assets/get-sprite-info filename)
-        {frames-order :order} sprite-info
-        frames (mapv #(assets/get-object-frame filename %) frames-order)
+        {frames :frames
+         full-width :full-width
+         full-height :full-height} (assets/get-map-object-frames filename)
         initial-time (TimeUtils/millis)
-        frames-count (count frames-order)
+        frames-count (count frames)
         offset-frame (rand-int frames-count)]
-    (if (nil? sprite-info)
-      (do
-        (println "NOT FOUND" filename)
-        (fn render-nil-sprite [] nil))
+    (if (empty? frames)
+      (fn render-nil-sprite [] nil)
       (fn render-sprite []
         (let [^TextureRegion
               frame (nth
@@ -80,10 +78,12 @@
           (.draw
            batch
            frame
-           (float (- (* (inc (:x object)) consts/tile-size)
-                     (:full-width sprite-info)))
-           (float (- (* (inc (:y object)) consts/tile-size)
-                     (:full-height sprite-info)))))))))
+           (float (- (* (inc (:x object))
+                        consts/tile-size)
+                     full-width))
+           (float (- (* (inc (:y object))
+                        consts/tile-size)
+                     full-height))))))))
 
 
 (defn get-map-objects

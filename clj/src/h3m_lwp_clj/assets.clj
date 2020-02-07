@@ -39,7 +39,10 @@
 
 
 (defn get-sprite-info [def-name]
-  (get @objects-info def-name))
+  (let [sprite-info (get @objects-info def-name)]
+    (when (nil? sprite-info)
+      (println (format "Sprite info for %s not found" def-name)))
+    sprite-info))
 
 
 (defn get-empty-texture-region-
@@ -59,9 +62,21 @@
         ^TextureAtlas$AtlasRegion frame (.findRegion atlas def-name offset)]
     (if (nil? frame)
       (do
-        (format "def %s with offset %d not found in atlas" def-name offset)
+        (println (format "def %s with offset %d not found in atlas" def-name offset))
         (get-empty-texture-region))
       frame)))
+
+
+(defn get-map-object-frames
+  [filename]
+  (let [{frames-order :order
+         full-width :full-width
+         full-height :full-height
+         :or {frames-order []}} (get-sprite-info filename)
+        frames (mapv #(get-object-frame filename %) frames-order)]
+    {:full-width full-width
+     :full-height full-height
+     :frames frames}))
 
 
 (defn get-empty-terrain-sprite-
