@@ -22,36 +22,6 @@
 (def def-terrain (:terrain def-file/def-type))
 
 
-(defn get-def-stream-from-lod
-  [lod-def-info ^FileInputStream in]
-  (let [{size :size
-         compressed-size :compressed-size
-         offset :offset} lod-def-info]
-    (.position (.getChannel in) (long offset))
-    (if (pos? compressed-size)
-      (new InflaterInputStream in (new Inflater) compressed-size)
-      (new BufferedInputStream in size))))
-
-
-(defn parse-def-from-lod
-  [lod-def-info in]
-  (let [{name :name} lod-def-info
-        def-stream (get-def-stream-from-lod lod-def-info in)
-        def-info (try
-                   (h3m-parser/parse-def def-stream)
-                   (catch java.io.EOFException _
-                     (println "eof fail" name))
-                   (catch AssertionError _
-                     (println "failed parse" name)))
-        ; TODO fix legacy check
-        legacy? false ; (def-file/legacy? def-info def-stream uncompressed-size)
-        ]
-    (assoc
-     def-info
-     :legacy? legacy?
-     :name name)))
-
-
 (defn lines->bytes
   [{lines :lines
     offsets :offsets
@@ -113,6 +83,35 @@
       (assoc :order (get-in def-info [:groups 0 :offsets]))))
 
 
+(defn get-def-stream-from-lod
+  [lod-def-info ^FileInputStream in]
+  (let [{size :size
+         compressed-size :compressed-size
+         offset :offset} lod-def-info]
+    (.position (.getChannel in) (long offset))
+    (if (pos? compressed-size)
+      (new InflaterInputStream in (new Inflater) compressed-size)
+      (new BufferedInputStream in size))))
+
+
+(defn parse-def-from-lod
+  [lod-def-info in]
+  (let [{name :name} lod-def-info
+        def-stream (get-def-stream-from-lod lod-def-info in)
+        def-info (try
+                   (h3m-parser/parse-def def-stream)
+                   (catch java.io.EOFException _
+                     (println "eof fail" name))
+                   (catch AssertionError _
+                     (println "failed parse" name)))
+        ; TODO fix legacy check
+        legacy? false ; (def-file/legacy? def-info def-stream uncompressed-size)
+        ]
+    (-> def-info
+        (assoc :legacy? legacy? :name name)
+        (map-def))))
+
+
 (defn fill-pixmap [^Pixmap pixmap palette frame]
   (let [{width :width
          height :height
@@ -138,7 +137,7 @@
     (.dispose pixmap)))
 
 
-(defn pack-def-without-rotation
+(defn pack-map-object
   [^PixmapPacker packer
    {name :name
     palette :palette
@@ -150,7 +149,7 @@
     frames)))
 
 
-(defn pack-def-with-rotation
+(defn pack-terrain
   [^PixmapPacker packer
    {name :name
     palette :palette
@@ -173,13 +172,24 @@
         (format "%s/%d_%d" name (:offset frame) rotation-index))))))
 
 
+(defn pack-defs
+  [defs packer callback]
+  (dorun
+   (for [def-info defs]
+     (do
+       (condp = (:type def-info)
+         def-map (pack-map-object packer def-info)
+         def-terrain (pack-terrain packer def-info))
+       (callback def-info)))))
+
+
 (defn save-packer [^PixmapPacker packer ^FileHandle out-file]
   (let [save-parameters (new PixmapPackerIO$SaveParameters)]
     (set! (.-useIndexes save-parameters) true)
     (.save (new PixmapPackerIO) out-file packer save-parameters)))
 
 
-(defn save-defs-info [^FileHandle info-file defs]
+(defn save-defs-info [defs ^FileHandle info-file]
   (.writeString
    info-file
    (->> defs
@@ -201,22 +211,12 @@
 (defn parse-map-sprites
   [lod-files-list
    ^FileInputStream lod-file
-   ^FileHandle out-file
+   ^FileHandle atlas-file
    ^FileHandle info-file
    callback]
-  (let [packer (new PixmapPacker 4096 4096 Pixmap$Format/RGBA8888 0 false)]
-    (dorun
-     (->>
-      lod-files-list
-      (map
-       (comp
-        #(do (callback %) %)
-        #(do (condp = (:type %)
-               def-map (pack-def-without-rotation packer %)
-               def-terrain (pack-def-with-rotation packer %))
-             %)
-        #(map-def %)
-        #(parse-def-from-lod % lod-file)))
-      (save-defs-info info-file)))
-    (save-packer packer out-file)
+  (let [packer (new PixmapPacker 4096 4096 Pixmap$Format/RGBA8888 0 false)
+        defs (map #(parse-def-from-lod % lod-file) lod-files-list)]
+    (pack-defs defs packer callback)
+    (save-defs-info defs info-file)
+    (save-packer packer atlas-file)
     (.dispose packer)))
