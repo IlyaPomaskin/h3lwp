@@ -14,27 +14,30 @@
 
 
 (def ^AssetManager manager
-  (doto (new AssetManager)
-    (.load
-      ^String consts/atlas-file-name
-      TextureAtlas
-      (new TextureAtlasLoader$TextureAtlasParameter true))))
+  (new AssetManager))
+
+
+(defn ready? []
+  (->> consts/edn-file-name
+       (.internal Gdx/files)
+       (.exists)))
 
 
 (defn init []
-  (reset!
-   objects-info
-;   (try
-     ; TODO AssetLoader?
-   (->> consts/edn-file-name
-        (.internal Gdx/files)
-        (.read)
-        (slurp)
-        (read-string)))
-;     (catch Exception _
-;       (println "Failed to read all.edn")
-;       {})))
-  (.finishLoading manager)
+  (when (ready?)
+    (reset!
+     objects-info
+     (->> consts/edn-file-name
+          (.internal Gdx/files)
+          (.read)
+          (slurp)
+          (read-string)))
+    (.load
+     manager
+     ^String consts/atlas-file-name
+     TextureAtlas
+     (new TextureAtlasLoader$TextureAtlasParameter true))
+    (.finishLoading manager))
   (Texture/setAssetManager manager))
 
 
