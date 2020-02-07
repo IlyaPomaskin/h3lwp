@@ -1,8 +1,8 @@
 (ns h3m-lwp-clj.consts)
 
 
-(def atlas-file-name "sprites/all.atlas")
-(def edn-file-name "sprites/all.edn")
+(def ^String atlas-file-name "sprites/all.atlas")
+(def ^String edn-file-name "sprites/all.edn")
 
 
 (def animation-interval 0.180)
