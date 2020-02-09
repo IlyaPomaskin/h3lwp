@@ -9,7 +9,6 @@
    [com.badlogic.gdx.utils Align]
    [java.io FileInputStream])
   (:require
-   [h3m-lwp-clj.protocol :as protocol]
    [h3m-lwp-clj.consts :as consts]
    [h3m-lwp-clj.parser :as parser]))
 
@@ -19,7 +18,7 @@
 
 
 (defn create-renderer
-  [on-file-select-click-fn selected-file-path]
+  [state]
   (let [stage (new Stage (new ScreenViewport))
         skin (new Skin (.internal Gdx/files "sprites/skin/uiskin.json"))
         label (doto (new Label instruction skin)
@@ -28,7 +27,7 @@
         on-click-listener (proxy [ChangeListener] []
                             (changed
                               [^ChangeListener$ChangeEvent event ^Actor actor]
-                              (@on-file-select-click-fn)))
+                              (:on-file-select-click @state)))
         button (doto (new TextButton "Select file" skin "default")
                  (.addListener on-click-listener))
         file-path-label (doto (new Label "path:" skin)
@@ -57,6 +56,7 @@
                (fn [_] (.setValue progress-bar (inc (.getValue progress-bar)))))
               (.setDisabled button false))
             true))]
+    (add-watch state :settings-update #(set-file-path-text (:selected-file %4)))
     (.addActor
      stage
      (doto (new Table skin)
@@ -88,16 +88,7 @@
                         (/ (.getWidth t) 2)))
               (float (- (/ (.getHeight stage) 2)
                         (/ (.getHeight t) 2)))))))
-    (reify protocol/Renderer
-      (start
-        [this]
-        (.setInputProcessor (Gdx/input) stage)
-        (add-watch selected-file-path :settings-update #(set-file-path-text %4)))
-      (stop
-        [this]
-        (remove-watch selected-file-path :settings-update))
-      (render
-        [this]
-        (doto stage
-          (.act (min (.getDeltaTime Gdx/graphics) (float (/ 1 30))))
-          (.draw))))))
+    (fn []
+      (doto stage
+        (.act (min (.getDeltaTime Gdx/graphics) (float (/ 1 30))))
+        (.draw)))))

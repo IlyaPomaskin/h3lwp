@@ -1,6 +1,6 @@
 (ns h3m-lwp-clj.core
   (:import
-   [com.badlogic.gdx ApplicationAdapter Gdx]
+   [com.badlogic.gdx InputMultiplexer ApplicationAdapter Gdx]
    [com.badlogic.gdx.graphics GL20])
   (:require
    [h3m-lwp-clj.settings :as settings]
@@ -29,30 +29,31 @@
               (println (.printStackTrace e#)))))))))
 
 
-(defonce wallpaper-renderer (atom nil))
-(defonce settings-renderer (atom nil))
-(defonce on-file-select-click-fn (atom (fn [] (println "UNSET FN"))))
-(defonce selected-file-path (atom ""))
-(defonce is-preview (atom nil))
-
-
-(add-watch
- is-preview
- :renderer-switch
- (fn [_ _ _ next-value]
-   (if (true? next-value)
-     (do
-       (.stop @wallpaper-renderer)
-       (.start @settings-renderer))
-     (do
-       (.stop @settings-renderer)
-       (.start @wallpaper-renderer)))))
+(defonce state
+  (atom {:wallpaper-renderer nil
+         :settings-renderer nil
+         :is-preview true}))
+(defonce settings
+  (atom {:on-file-select-click nil
+         :selected-file ""
+         :progress-bar-length 0
+         :progress-bar-value 0}))
 
 
 (defn -create
   [^ApplicationAdapter _]
-  (reset! wallpaper-renderer (wallpaper/create-renderer))
-  (reset! settings-renderer (settings/create-renderer on-file-select-click-fn selected-file-path)))
+  (let [wp (wallpaper/create-renderer)
+        st (settings/create-renderer settings)]
+    (swap!
+     state
+     assoc
+     :wallpaper-renderer wp
+     :settings-renderer st)
+    (.setInputProcessor
+     (Gdx/input)
+     (doto (new InputMultiplexer)
+       (.addProcessor (st))
+       (.addProcessor (wp))))))
 
 
 (defn -render
@@ -60,21 +61,24 @@
   (doto Gdx/gl
     (.glClearColor 0 0 0 0)
     (.glClear GL20/GL_COLOR_BUFFER_BIT))
-  (.render @wallpaper-renderer)
-  (when (true? @is-preview)
-    (.render @settings-renderer)))
+  (let [{is-preview :is-preview
+         wallpaper-renderer :wallpaper-renderer
+         settings-renderer :settings-renderer} @state]
+    (wallpaper-renderer)
+    (when (true? is-preview)
+      (settings-renderer))))
 
 
 (defn -onFileSelectClick
   [^ApplicationAdapter _ ^Runnable callback]
-  (reset! on-file-select-click-fn (fn [] (.run callback))))
+  (swap! settings assoc :on-file-select-click (fn [] (.run callback))))
 
 
 (defn -setFilePath
   [^ApplicationAdapter _ ^String path]
-  (reset! selected-file-path path))
+  (swap! settings assoc :selected-file path))
 
 
 (defn -setIsPreview
   [^ApplicationAdapter _ ^Boolean is-preview?]
-  (reset! is-preview is-preview?))
+  (swap! state assoc :is-preview is-preview?))
