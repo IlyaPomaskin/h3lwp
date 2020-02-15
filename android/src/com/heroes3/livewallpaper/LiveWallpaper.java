@@ -21,7 +21,7 @@ public class LiveWallpaper extends AndroidLiveWallpaperService {
         @Override
         public void onReceive(Context context, Intent intent) {
             String filePath = intent.getStringExtra(INTENT_EXTRA_NAME);
-            app.setFilePath(filePath);
+            app.selectFile(filePath);
         }
     };
 

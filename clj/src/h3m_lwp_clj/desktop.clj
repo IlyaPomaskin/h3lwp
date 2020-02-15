@@ -9,7 +9,6 @@
 (def is-preview-timeout (float 3))
 
 
-
 (def ^FileDialog file-chooser
   (doto (new FileDialog (new Frame))
     (.setMode  FileDialog/LOAD)
@@ -30,7 +29,8 @@
          (let [file (.getFile file-chooser)
                directory (.getDirectory file-chooser)
                file-path (format "%s%s" directory file)]
-           (.setFilePath engine file-path)))))
+           (when (and (some? file) (some? directory))
+             (.selectFile engine file-path))))))
     engine))
 
 

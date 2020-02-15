@@ -1,15 +1,18 @@
 (ns h3m-lwp-clj.core
   (:import
    [com.badlogic.gdx InputMultiplexer ApplicationAdapter Gdx]
-   [com.badlogic.gdx.graphics GL20])
+   [com.badlogic.gdx.graphics GL20]
+   [java.io FileInputStream])
   (:require
    [h3m-lwp-clj.settings :as settings]
-   [h3m-lwp-clj.wallpaper :as wallpaper])
+   [h3m-lwp-clj.wallpaper :as wallpaper]
+   [h3m-lwp-clj.consts :as consts]
+   [h3m-lwp-clj.parser :as parser])
   (:gen-class
    :name com.heroes3.livewallpaper.clojure.LiveWallpaperEngine
    :extends com.badlogic.gdx.ApplicationAdapter
    :methods [[onFileSelectClick [Runnable] void]
-             [setFilePath [String] void]
+             [selectFile [String] void]
              [setIsPreview [Boolean] void]]))
 
 
@@ -74,9 +77,23 @@
   (swap! settings assoc :on-file-select-click (fn [] (.run callback))))
 
 
-(defn -setFilePath
+(defn -selectFile
   [^ApplicationAdapter _ ^String path]
-  (swap! settings assoc :selected-file path))
+  (let [lod-file (new FileInputStream (.file (.absolute Gdx/files path)))
+        list (parser/get-lod-files-list lod-file)]
+    (future
+      (swap!
+       settings
+       assoc
+       :selected-file path
+       :progress-bar-length (count list)
+       :progress-bar-value 0)
+      (parser/parse-map-sprites
+       list
+       lod-file
+       (.local Gdx/files consts/atlas-file-name)
+       (.local Gdx/files consts/edn-file-name)
+       (fn [_] (swap! settings update-in [:progress-bar-value] inc))))))
 
 
 (defn -setIsPreview

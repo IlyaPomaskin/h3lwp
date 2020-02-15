@@ -2,15 +2,10 @@
   (:import
    [com.badlogic.gdx Gdx]
    [com.badlogic.gdx.utils.viewport ScreenViewport]
-   [com.badlogic.gdx.scenes.scene2d Stage Actor]
-   [com.badlogic.gdx.scenes.scene2d.ui
-    Skin Label Table TextButton ProgressBar]
-   [com.badlogic.gdx.scenes.scene2d.utils ChangeListener ChangeListener$ChangeEvent]
-   [com.badlogic.gdx.utils Align]
-   [java.io FileInputStream])
-  (:require
-   [h3m-lwp-clj.consts :as consts]
-   [h3m-lwp-clj.parser :as parser]))
+   [com.badlogic.gdx.scenes.scene2d Stage Touchable InputEvent]
+   [com.badlogic.gdx.scenes.scene2d.ui Skin Label Table TextButton ProgressBar]
+   [com.badlogic.gdx.scenes.scene2d.utils ClickListener]
+   [com.badlogic.gdx.utils Align]))
 
 
 (def ^String instruction
@@ -24,39 +19,36 @@
         label (doto (new Label instruction skin)
                 (.setWrap true)
                 (.setAlignment Align/center))
-        on-click-listener (proxy [ChangeListener] []
-                            (changed
-                              [^ChangeListener$ChangeEvent event ^Actor actor]
-                              (:on-file-select-click @state)))
+        on-click-listener (proxy [ClickListener] []
+                            (clicked
+                              [^InputEvent event ^Float x ^Float y]
+                              (let [callback (:on-file-select-click @state)]
+                                (when (fn? callback)
+                                  (callback)))))
         button (doto (new TextButton "Select file" skin "default")
                  (.addListener on-click-listener))
-        file-path-label (doto (new Label "path:" skin)
-                          (.setWrap true)
-                          (.setAlignment Align/center))
-        progress-bar (doto (new ProgressBar (float 0) (float 100) (float 1) false skin)
+        progress-bar (doto (new ProgressBar (float 0) (float 0) (float 1) false skin)
                        (.setAnimateDuration (float 1))
                        (.setVisible false)
-                       (.setWidth 500))
-        set-file-path-text
-        (fn [path]
-          (.setText file-path-label (format "path: %s" path))
-          (.setDisabled button true)
-          (let [lod-file (new FileInputStream (.file (.absolute Gdx/files path)))
-                list (parser/get-lod-files-list lod-file)]
-            (doto progress-bar
-              (.setRange (float 0) (float (count list)))
-              (.setValue (float 0))
-              (.setVisible true))
-            (future
-              (parser/parse-map-sprites
-               list
-               lod-file
-               (.local Gdx/files consts/atlas-file-name)
-               (.local Gdx/files consts/edn-file-name)
-               (fn [_] (.setValue progress-bar (inc (.getValue progress-bar)))))
-              (.setDisabled button false))
-            true))]
-    (add-watch state :settings-update #(set-file-path-text (:selected-file %4)))
+                       (.setWidth 500))]
+    (add-watch
+     state
+     :state-change
+     (fn [_ _ _ next-value]
+       (let [progress-bar-length (:progress-bar-length next-value)
+             progress-bar-value (:progress-bar-value next-value)
+             in-progress? (not= progress-bar-length progress-bar-value)
+             done? (and (not= 0 progress-bar-length) (not in-progress?))]
+         (println "UPDATE" progress-bar-length progress-bar-value)
+         (doto progress-bar
+           (.setRange (float 0) (float progress-bar-length))
+           (.setValue (float progress-bar-value))
+           (.setVisible true))
+         (doto button
+           (.setText (if in-progress? "Parsing..." "Select file"))
+           (.setTouchable (if in-progress? Touchable/disabled Touchable/enabled))
+           (.setDisabled in-progress?)
+           (.setChecked in-progress?)))))
     (.addActor
      stage
      (doto (new Table skin)
@@ -73,8 +65,6 @@
        (.add label)
        (.row)
        (.add button)
-       (.row)
-       (.add file-path-label)
        (.row)
        (.add progress-bar)
        (.row)
