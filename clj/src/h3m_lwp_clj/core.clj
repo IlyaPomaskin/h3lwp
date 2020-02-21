@@ -7,29 +7,14 @@
    [h3m-lwp-clj.settings :as settings]
    [h3m-lwp-clj.wallpaper :as wallpaper]
    [h3m-lwp-clj.consts :as consts]
-   [h3m-lwp-clj.parser :as parser])
+   [h3m-lwp-clj.parser :as parser]
+   [h3m-lwp-clj.repl :as repl])
   (:gen-class
    :name com.heroes3.livewallpaper.clojure.LiveWallpaperEngine
    :extends com.badlogic.gdx.ApplicationAdapter
    :methods [[onFileSelectClick [Runnable] void]
              [selectFile [String] void]
              [setIsPreview [Boolean] void]]))
-
-
-(defmacro repl
-  [body]
-  `(.postRunnable
-    Gdx/app
-    (reify Runnable
-      (run [_]
-        (try
-          ~body
-          (catch
-           Exception
-           e#
-            (do
-              (println (str "repl exception: " (.getMessage e#)))
-              (println (.printStackTrace e#)))))))))
 
 
 (defonce state
@@ -54,9 +39,11 @@
      :settings-renderer st)
     (.setInputProcessor
      (Gdx/input)
-     (doto (new InputMultiplexer)
-       (.addProcessor (st))
-       (.addProcessor (wp))))))
+     (st)
+    ;  (doto (new InputMultiplexer)
+    ;    (.addProcessor (st))
+    ;    (.addProcessor (wp)))
+     )))
 
 
 (defn -render
@@ -93,7 +80,13 @@
        lod-file
        (.local Gdx/files consts/atlas-file-name)
        (.local Gdx/files consts/edn-file-name)
-       (fn [_] (swap! settings update-in [:progress-bar-value] inc))))))
+       (fn [_] (swap! settings update-in [:progress-bar-value] inc))
+       (fn [] (repl/repl
+               (swap!
+                state
+                assoc
+                :wallpaper-renderer
+                (wallpaper/create-renderer))))))))
 
 
 (defn -setIsPreview

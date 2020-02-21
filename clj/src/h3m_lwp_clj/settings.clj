@@ -34,12 +34,17 @@
     (add-watch
      state
      :state-change
-     (fn [_ _ _ next-value]
-       (let [progress-bar-length (:progress-bar-length next-value)
-             progress-bar-value (:progress-bar-value next-value)
-             in-progress? (not= progress-bar-length progress-bar-value)
-             done? (and (not= 0 progress-bar-length) (not in-progress?))]
-         (println "UPDATE" progress-bar-length progress-bar-value)
+     (fn [_ _ prev-state next-state]
+       (let [{progress-bar-length :progress-bar-length
+              progress-bar-value :progress-bar-value} next-state
+             prev-progress-bar-value (:progress-bar-value prev-state)
+             in-progress? (and
+                           (pos? progress-bar-length)
+                           (not= progress-bar-length progress-bar-value))
+             done? (and
+                    (pos? progress-bar-length)
+                    (= progress-bar-length progress-bar-value)
+                    (not= prev-progress-bar-value progress-bar-value))]
          (doto progress-bar
            (.setRange (float 0) (float progress-bar-length))
            (.setValue (float progress-bar-value))
@@ -47,8 +52,13 @@
          (doto button
            (.setText (if in-progress? "Parsing..." "Select file"))
            (.setTouchable (if in-progress? Touchable/disabled Touchable/enabled))
-           (.setDisabled in-progress?)
-           (.setChecked in-progress?)))))
+           (.setDisabled in-progress?))
+         (when done?
+           (.setVisible progress-bar false)
+           (doto button
+             (.setText "Done!")
+             (.setTouchable Touchable/disabled)
+             (.setDisabled true))))))
     (.addActor
      stage
      (doto (new Table skin)

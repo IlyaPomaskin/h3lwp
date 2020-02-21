@@ -213,10 +213,12 @@
    ^FileInputStream lod-file
    ^FileHandle atlas-file
    ^FileHandle info-file
-   callback]
+   item-callback
+   done-callback]
   (let [packer (new PixmapPacker 4096 4096 Pixmap$Format/RGBA8888 0 false)
         defs (map #(parse-def-from-lod % lod-file) lod-files-list)]
-    (pack-defs defs packer callback)
+    (pack-defs defs packer item-callback)
     (save-defs-info defs info-file)
     (save-packer packer atlas-file)
-    (.dispose packer)))
+    (.dispose packer)
+    (done-callback)))

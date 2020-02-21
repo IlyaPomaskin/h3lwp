@@ -19,11 +19,12 @@
 
 (defn ready? []
   (->> consts/edn-file-name
-       (.internal Gdx/files)
+       (.local Gdx/files)
        (.exists)))
 
 
 (defn init []
+  (Texture/setAssetManager manager)
   (when (ready?)
     (reset!
      objects-info
@@ -32,13 +33,13 @@
           (.read)
           (slurp)
           (read-string)))
-    (.load
-     manager
-     ^String consts/atlas-file-name
-     TextureAtlas
-     (new TextureAtlasLoader$TextureAtlasParameter true))
-    (.finishLoading manager))
-  (Texture/setAssetManager manager))
+    (doto manager
+      (.load
+       consts/atlas-file-name
+       TextureAtlas
+       (new TextureAtlasLoader$TextureAtlasParameter true))
+      (.finishLoadingAsset consts/atlas-file-name)
+      (.finishLoading))))
 
 
 (defn get-sprite-info [def-name]
@@ -90,11 +91,11 @@
 
 
 (defn load-terrain-sprite [def-name index]
-  (let [^TextureAtlas atlas (.get manager consts/atlas-file-name)
-        sprite-info (get-sprite-info def-name)
+  (let [sprite-info (get-sprite-info def-name)
         {frames-order :order} sprite-info
         offset (nth frames-order index)
         region-name (format "%s/%d" def-name offset)
+        ^TextureAtlas atlas (.get manager consts/atlas-file-name)
         ^Array frames (.findRegions atlas region-name)]
     (if (.isEmpty frames)
       (do
