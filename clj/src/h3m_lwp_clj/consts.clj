@@ -1,13 +1,9 @@
 (ns h3m-lwp-clj.consts)
 
-
+(def ^String settings-name "Settings")
 (def ^String atlas-file-name "sprites/all.atlas")
 (def ^String edn-file-name "sprites/all.edn")
-
-
 (def animation-interval 0.180)
-
-
 (def tile-size 32)
 
 

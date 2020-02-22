@@ -16,25 +16,43 @@
              [setIsPreview [Boolean] void]]))
 
 
+(defn set-pref [name value]
+  (-> (.getPreferences Gdx/app consts/settings-name)
+      (.putFloat name value)
+      (.flush)))
+
+
+(defn get-pref [name]
+  (.getFloat (.getPreferences Gdx/app consts/settings-name) name))
+
+
 (defonce state
   (atom {:wallpaper-renderer nil
          :settings-renderer nil
          :is-preview true}))
+
+
 (defonce settings
   (atom {:on-file-select-click nil
          :progress-bar-length 0
-         :progress-bar-value 0}))
+         :progress-bar-value 0
+         :on-scale-change
+         (fn [value]
+           (set-pref "scale" (float value))
+           (swap! settings assoc :scale value))
+         :scale 0.5
+         :update-position-interval (* 60 15)}))
 
 
 (defn -create
   [^ApplicationAdapter _]
-  (let [wp (wallpaper/create-renderer)
+  (swap! settings assoc
+         :scale (get-pref "scale"))
+  (let [wp (wallpaper/create-renderer settings)
         st (settings/create-renderer settings)]
-    (swap!
-     state
-     assoc
-     :wallpaper-renderer wp
-     :settings-renderer st)
+    (swap! state assoc
+           :wallpaper-renderer wp
+           :settings-renderer st)
     (.setInputProcessor
      (Gdx/input)
      (doto (new InputMultiplexer)
@@ -77,7 +95,7 @@
         (reify Runnable
           (run [_]
             (swap! state assoc
-                   :wallpaper-renderer (wallpaper/create-renderer)))))))))
+                   :wallpaper-renderer (wallpaper/create-renderer settings)))))))))
 
 
 (defn -setIsPreview

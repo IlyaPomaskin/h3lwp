@@ -2,9 +2,10 @@
   (:import
    [com.badlogic.gdx Gdx]
    [com.badlogic.gdx.utils.viewport ScreenViewport]
-   [com.badlogic.gdx.scenes.scene2d Stage Touchable InputEvent]
-   [com.badlogic.gdx.scenes.scene2d.ui Skin Label Table TextButton ProgressBar]
-   [com.badlogic.gdx.scenes.scene2d.utils ClickListener]
+   [com.badlogic.gdx.graphics Color]
+   [com.badlogic.gdx.scenes.scene2d Actor Stage Touchable InputEvent]
+   [com.badlogic.gdx.scenes.scene2d.ui Slider Skin Label Table TextButton ProgressBar ProgressBar$ProgressBarStyle]
+   [com.badlogic.gdx.scenes.scene2d.utils ClickListener ChangeListener ChangeListener$ChangeEvent]
    [com.badlogic.gdx.utils Align]))
 
 
@@ -13,31 +14,53 @@
 
 
 (defn create-renderer
-  [state]
-  (let [stage (new Stage (new ScreenViewport))
+  [settings]
+  (let [{on-scale-change :on-scale-change
+         on-file-select-click :on-file-select-click
+         scale :scale} @settings
+        stage (new Stage (new ScreenViewport))
         skin (new Skin (.internal Gdx/files "sprites/skin/uiskin.json"))
-        label (doto (new Label instruction skin)
-                (.setWrap true)
-                (.setAlignment Align/center))
-        on-click-listener (proxy [ClickListener] []
-                            (clicked
-                              [^InputEvent event ^Float x ^Float y]
-                              (let [callback (:on-file-select-click @state)]
-                                (when (fn? callback)
-                                  (callback)))))
-        button (doto (new TextButton "Select file" skin "default")
-                 (.addListener on-click-listener))
-        progress-bar (doto (new ProgressBar (float 0) (float 0) (float 1) false skin)
-                       (.setAnimateDuration (float 1))
-                       (.setVisible false)
-                       (.setWidth 500))]
+
+        on-click-listener
+        (proxy [ClickListener] []
+          (clicked
+            [^InputEvent event ^Float x ^Float y]
+            (on-file-select-click)))
+
+        button
+        (doto (new TextButton "Select file" skin "default")
+          (.addListener on-click-listener))
+
+        progress-bar-style
+        (new
+         ProgressBar$ProgressBarStyle
+         (.newDrawable skin "default-slider" Color/BLACK)
+         (.newDrawable skin "default-slider" Color/WHITE))
+        _ (set!
+           (.-knobBefore progress-bar-style)
+           (.newDrawable skin "default-slider" Color/WHITE))
+
+        progress-bar
+        (doto (new ProgressBar (float 0) (float 0) (float 1) false progress-bar-style)
+          (.setAnimateDuration (float 1))
+          (.setVisible false))
+
+        scale-slider
+        (doto (new Slider (float 0.5) (float 1.0) (float 0.5) false skin)
+          (.setValue scale)
+          (.addListener
+           (proxy [ChangeListener] []
+             (changed
+               [^ChangeListener$ChangeEvent event ^Actor actor]
+               (on-scale-change (.getValue actor))))))]
     (add-watch
-     state
-     :state-change
-     (fn [_ _ prev-state next-state]
+     settings
+     :settings-change
+     (fn [_ _ prev-settings next-settings]
        (let [{progress-bar-length :progress-bar-length
-              progress-bar-value :progress-bar-value} next-state
-             prev-progress-bar-value (:progress-bar-value prev-state)
+              progress-bar-value :progress-bar-value
+              scale :scale} next-settings
+             prev-progress-bar-value (:progress-bar-value prev-settings)
              in-progress? (and
                            (pos? progress-bar-length)
                            (not= progress-bar-length progress-bar-value))
@@ -58,7 +81,8 @@
            (doto button
              (.setText "Done!")
              (.setTouchable Touchable/disabled)
-             (.setDisabled true))))))
+             (.setDisabled true)))
+         (.setValue scale-slider scale))))
     (.addActor
      stage
      (doto (new Table skin)
@@ -72,11 +96,21 @@
                  (.row)
                  (.fill)
                  (.expandX)))
-       (.add label)
+       (.add
+        (doto (new Label instruction skin)
+          (.setWrap true)
+          (.setAlignment Align/center)))
        (.row)
        (.add button)
        (.row)
        (.add progress-bar)
+       (.row)
+       (.add
+        (doto (new Label "Select scale" skin)
+          (.setWrap true)
+          (.setAlignment Align/center)))
+       (.row)
+       (.add scale-slider)
        (.row)
        (.pack)
        (.setWidth 300)

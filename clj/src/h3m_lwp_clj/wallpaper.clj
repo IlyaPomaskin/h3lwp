@@ -11,26 +11,31 @@
    [h3m-lwp-clj.input-processor :as input-processor]))
 
 
-(def camera-position-update-interval (* 60 15))
-(def scale-factor 0.5)
-
-
 (defn create-renderer
-  []
+  [settings]
   (assets/init)
-  (let [h3m-map (h3m-parser/parse-h3m (.read (.internal Gdx/files "maps/invasion.h3m")))
-        camera (orth-camera/create scale-factor)
+  (let [{scale :scale
+         update-position-interval :update-position-interval} @settings
+        h3m-map (h3m-parser/parse-h3m (.read (.internal Gdx/files "maps/invasion.h3m")))
+        camera (orth-camera/create)
         camera-controller (input-processor/create camera (:size h3m-map))
         terrain-renderer (terrain/create-renderer h3m-map)
         objects-renderer (objects/create-renderer h3m-map)]
-    (doto (new Timer)
-      (.scheduleTask
-       (proxy [Timer$Task] []
-         (run [] (do
-                   (orth-camera/set-random-position camera (:size h3m-map))
-                   (.update camera))))
-       (float 0)
-       (float camera-position-update-interval)))
+    (set! (.-zoom camera) scale)
+    (add-watch
+     settings
+     :scale-change
+     (fn [_ _ _ next-settings]
+       (set! (.-zoom camera) (:scale next-settings))))
+    (.scheduleTask
+     (new Timer)
+     (proxy [Timer$Task] []
+       (run []
+         (do
+           (orth-camera/set-random-position camera (:size h3m-map))
+           (.update camera))))
+     (float 0)
+     (float update-position-interval))
     (fn []
       (.update camera)
       (terrain-renderer camera)
