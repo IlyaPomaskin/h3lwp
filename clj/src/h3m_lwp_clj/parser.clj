@@ -98,12 +98,7 @@
   [lod-def-info in]
   (let [{name :name} lod-def-info
         def-stream (get-def-stream-from-lod lod-def-info in)
-        def-info (try
-                   (h3m-parser/parse-def def-stream)
-                   (catch java.io.EOFException _
-                     (println "eof fail" name))
-                   (catch AssertionError _
-                     (println "failed parse" name)))
+        def-info (h3m-parser/parse-def def-stream)
         ; TODO fix legacy check
         legacy? false ; (def-file/legacy? def-info def-stream uncompressed-size)
         ]
@@ -173,14 +168,16 @@
 
 
 (defn pack-defs
-  [defs packer callback]
-  (dorun
-   (for [def-info defs]
-     (do
-       (condp = (:type def-info)
-         def-map (pack-map-object packer def-info)
-         def-terrain (pack-terrain packer def-info))
-       (callback def-info)))))
+  [defs packer items-count callback]
+  (loop [item-index 0]
+    (let [def-info (nth defs item-index)]
+      (condp = (:type def-info)
+        def-map (pack-map-object packer def-info)
+        def-terrain (pack-terrain packer def-info))
+      (callback items-count item-index)
+      (if (= items-count item-index)
+        nil
+        (recur (inc item-index))))))
 
 
 (defn save-packer [^PixmapPacker packer ^FileHandle out-file]
@@ -209,15 +206,16 @@
 
 
 (defn parse-map-sprites
-  [lod-files-list
-   ^FileInputStream lod-file
+  [^FileInputStream lod-file
    ^FileHandle atlas-file
    ^FileHandle info-file
    item-callback
    done-callback]
   (let [packer (new PixmapPacker 4096 4096 Pixmap$Format/RGBA8888 0 false)
+        lod-files-list (get-lod-files-list lod-file)
+        files-count (dec (count lod-files-list))
         defs (map #(parse-def-from-lod % lod-file) lod-files-list)]
-    (pack-defs defs packer item-callback)
+    (pack-defs defs packer files-count item-callback)
     (save-defs-info defs info-file)
     (save-packer packer atlas-file)
     (.dispose packer)

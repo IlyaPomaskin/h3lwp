@@ -22,7 +22,6 @@
          :is-preview true}))
 (defonce settings
   (atom {:on-file-select-click nil
-         :selected-file ""
          :progress-bar-length 0
          :progress-bar-value 0}))
 
@@ -63,30 +62,22 @@
 
 (defn -selectFile
   [^ApplicationAdapter _ ^String path]
-  (let [lod-file (new FileInputStream (.file (.absolute Gdx/files path)))
-        list (parser/get-lod-files-list lod-file)]
-    (future
-      (swap!
-       settings
-       assoc
-       :selected-file path
-       :progress-bar-length (count list)
-       :progress-bar-value 0)
-      (parser/parse-map-sprites
-       list
-       lod-file
-       (.local Gdx/files consts/atlas-file-name)
-       (.local Gdx/files consts/edn-file-name)
-       (fn [_] (swap! settings update-in [:progress-bar-value] inc))
-       (fn []
-         (.postRunnable
-          Gdx/app
-          (reify Runnable
-            (run [_]
-              (swap!
-               state
-               assoc
-               :wallpaper-renderer (wallpaper/create-renderer))))))))))
+  (future
+    (parser/parse-map-sprites
+     (new FileInputStream (.file (.absolute Gdx/files path)))
+     (.local Gdx/files consts/atlas-file-name)
+     (.local Gdx/files consts/edn-file-name)
+     (fn [length index]
+       (swap! settings assoc
+              :progress-bar-length length
+              :progress-bar-value index))
+     (fn []
+       (.postRunnable
+        Gdx/app
+        (reify Runnable
+          (run [_]
+            (swap! state assoc
+                   :wallpaper-renderer (wallpaper/create-renderer)))))))))
 
 
 (defn -setIsPreview
