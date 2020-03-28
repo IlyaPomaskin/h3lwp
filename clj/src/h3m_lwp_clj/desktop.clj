@@ -38,12 +38,13 @@
 
 
 (defn delete-h3-sprites []
-  (let [files (-> "../android/assets/sprites/h3/"
-                  (io/file)
-                  (.listFiles)
-                  (vec))]
-    (for [file files]
-      (.delete ^File file))))
+  (->> "../android/assets/sprites/h3/"
+       (io/file)
+       (.listFiles)
+       (vec)
+       (mapv
+        (fn [^File file]
+          (.delete file)))))
 
 
 (defn -main []
@@ -56,5 +57,3 @@
        (run []
          (.setIsPreview engine true)))
      is-preview-timeout)))
-
-
