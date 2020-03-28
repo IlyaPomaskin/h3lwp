@@ -23,16 +23,27 @@
    :y2 (+ (:y2 rect) amount)})
 
 
+(defn reduce-libgdx-array
+  ^Array
+  [reduce-fn initial-value ^Array array]
+  (loop [acc initial-value
+         index 0]
+    (if (< index (.size array))
+      (recur
+       (reduce-fn acc (.get array index))
+       (unchecked-inc index))
+      acc)))
+
+
 (defn map-libgdx-array
   ^Array
-  [fn ^Array array]
-  (let [next-array (new Array)]
-    (loop [index 0]
-      (if (< index (.size array))
-        (do
-          (.add next-array (fn (.get array index)))
-          (recur (unchecked-inc index)))
-        next-array))))
+  [map-fn ^Array array]
+  (reduce-libgdx-array
+   (fn [^Array acc item]
+     (.add acc (map-fn item))
+     acc)
+   (new Array)
+   array))
 
 
 (defn rotate-right [amount list]
