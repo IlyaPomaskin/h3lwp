@@ -1,9 +1,12 @@
 (ns h3m-lwp-clj.desktop
+  (:require
+   [clojure.java.io :as io])
   (:import
    [com.badlogic.gdx.backends.lwjgl LwjglApplication]
    [com.badlogic.gdx.utils Timer Timer$Task]
    [com.heroes3.livewallpaper.clojure LiveWallpaperEngine]
-   [java.awt FileDialog Frame]))
+   [java.awt FileDialog Frame]
+   [java.io File]))
 
 
 (def is-preview-timeout (float 3))
@@ -34,7 +37,17 @@
     engine))
 
 
+(defn delete-h3-sprites []
+  (let [files (-> "../android/assets/sprites/h3/"
+                  (io/file)
+                  (.listFiles)
+                  (vec))]
+    (for [file files]
+      (.delete ^File file))))
+
+
 (defn -main []
+  (delete-h3-sprites)
   (let [engine (create-engine)]
     (new LwjglApplication engine)
     (.scheduleTask
