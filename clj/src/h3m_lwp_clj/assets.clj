@@ -7,7 +7,8 @@
    [com.badlogic.gdx.assets.loaders TextureAtlasLoader$TextureAtlasParameter]
    [com.badlogic.gdx.utils Array])
   (:require
-   [h3m-lwp-clj.consts :as consts]))
+   [h3m-lwp-clj.consts :as consts]
+   [clojure.string :as string]))
 
 
 (defonce objects-info (atom {}))
@@ -23,16 +24,21 @@
        (.exists)))
 
 
+(defn load-objects-info
+  []
+  (reset!
+   objects-info
+   (->> consts/edn-file-name
+        (.internal Gdx/files)
+        (.read)
+        (slurp)
+        (read-string))))
+
+
 (defn init []
   (Texture/setAssetManager manager)
   (when (ready?)
-    (reset!
-     objects-info
-     (->> consts/edn-file-name
-          (.internal Gdx/files)
-          (.read)
-          (slurp)
-          (read-string)))
+    (load-objects-info)
     (doto manager
       (.load
        consts/atlas-file-name
@@ -109,3 +115,40 @@
   (if (true? (.isLoaded manager consts/atlas-file-name))
     (load-terrain-sprite def-name index)
     (get-empty-terrain-sprite)))
+
+
+(defn file-exists?
+  [file-path]
+  (->> file-path
+       (.local Gdx/files)
+       (.exists)))
+
+
+(defn get-objects-info-count
+  []
+  (count @objects-info))
+
+
+(defn get-uniq-atlas-regions-count
+  []
+  (let [atlas ^TextureAtlas (.get manager consts/atlas-file-name)
+        regions ^Array (.getRegions atlas)
+        regions-names (map
+                       #(string/replace
+                         (.-name ^TextureAtlas$AtlasRegion %1)
+                         #"\/\d+"
+                         "")
+                       regions)
+        uniq-regions (set regions-names)]
+    (count uniq-regions)))
+
+
+(defn assets-ready?
+  []
+  (and
+   (file-exists? consts/edn-file-name)
+   (file-exists? consts/atlas-file-name)
+   (= (get-objects-info-count)
+      (get-uniq-atlas-regions-count))
+   (> (get-objects-info-count)
+      1300)))

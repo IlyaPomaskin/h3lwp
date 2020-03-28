@@ -7,6 +7,7 @@
    [h3m-lwp-clj.settings :as settings]
    [h3m-lwp-clj.wallpaper :as wallpaper]
    [h3m-lwp-clj.consts :as consts]
+   [h3m-lwp-clj.assets :as assets]
    [h3m-lwp-clj.parser :as parser])
   (:gen-class
    :name com.heroes3.livewallpaper.clojure.LiveWallpaperEngine
@@ -29,7 +30,7 @@
 (defonce state
   (atom {:wallpaper-renderer nil
          :settings-renderer nil
-         :is-preview true}))
+         :is-preview false}))
 
 
 (defonce settings
@@ -52,7 +53,8 @@
         st (settings/create-renderer settings)]
     (swap! state assoc
            :wallpaper-renderer wp
-           :settings-renderer st)
+           :settings-renderer st
+           :is-preview (not (assets/assets-ready?)))
     (.setInputProcessor
      (Gdx/input)
      (doto (new InputMultiplexer)
@@ -65,9 +67,9 @@
   (doto Gdx/gl
     (.glClearColor 0 0 0 0)
     (.glClear GL20/GL_COLOR_BUFFER_BIT))
-  (let [{is-preview :is-preview
-         wallpaper-renderer :wallpaper-renderer
-         settings-renderer :settings-renderer} @state]
+  (let [{wallpaper-renderer :wallpaper-renderer
+         settings-renderer :settings-renderer
+         is-preview :is-preview} @state]
     (wallpaper-renderer)
     (when (true? is-preview)
       (settings-renderer))))
@@ -100,4 +102,5 @@
 
 (defn -setIsPreview
   [^ApplicationAdapter _ ^Boolean is-preview?]
-  (swap! state assoc :is-preview is-preview?))
+  ;; (swap! state assoc :is-preview is-preview?)
+  )
