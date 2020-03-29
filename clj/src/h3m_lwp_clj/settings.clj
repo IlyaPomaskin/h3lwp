@@ -3,7 +3,7 @@
    [com.badlogic.gdx Gdx]
    [com.badlogic.gdx.utils.viewport ScreenViewport]
    [com.badlogic.gdx.graphics Color]
-   [com.badlogic.gdx.scenes.scene2d Actor Stage Touchable InputEvent]
+   [com.badlogic.gdx.scenes.scene2d Stage Touchable InputEvent]
    [com.badlogic.gdx.scenes.scene2d.ui Slider Skin Label Table TextButton ProgressBar ProgressBar$ProgressBarStyle]
    [com.badlogic.gdx.scenes.scene2d.utils ClickListener ChangeListener ChangeListener$ChangeEvent]
    [com.badlogic.gdx.utils Align]))
@@ -51,7 +51,7 @@
           (.addListener
            (proxy [ChangeListener] []
              (changed
-               [^ChangeListener$ChangeEvent event ^Actor actor]
+               [^ChangeListener$ChangeEvent event ^Slider actor]
                (on-scale-change (.getValue actor))))))]
     (add-watch
      settings
