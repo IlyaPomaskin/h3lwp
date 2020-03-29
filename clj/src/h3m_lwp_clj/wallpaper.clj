@@ -17,7 +17,6 @@
         camera-controller (input-processor/create camera (:size h3m-map))
         terrain-renderer (terrain/create-renderer h3m-map)
         objects-renderer (objects/create-renderer h3m-map)]
-    (orth-camera/subscribe-to-scale camera settings :scale)
     (orth-camera/set-camera-updation-timer camera (:size h3m-map) position-update-interval)
     (fn []
       (terrain-renderer camera)

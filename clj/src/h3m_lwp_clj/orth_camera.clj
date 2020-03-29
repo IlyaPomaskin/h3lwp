@@ -58,13 +58,3 @@
          (.update ^OrthographicCamera camera))))
    (float 0)
    (float position-update-interval)))
-
-
-(defn subscribe-to-scale
-  [^OrthographicCamera camera settings-atom getter-fn]
-  (set! (.-zoom camera) (getter-fn @settings-atom))
-  (add-watch
-   settings-atom
-   :scale-change
-   (fn [_ _ _ next-settings]
-     (set! (.-zoom camera) (getter-fn next-settings)))))

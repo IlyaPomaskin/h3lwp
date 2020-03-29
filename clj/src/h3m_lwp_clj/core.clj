@@ -16,16 +16,6 @@
              [selectFile [String] void]]))
 
 
-(defn set-pref [name value]
-  (-> (.getPreferences Gdx/app consts/settings-name)
-      (.putFloat name value)
-      (.flush)))
-
-
-(defn get-pref [name]
-  (.getFloat (.getPreferences Gdx/app consts/settings-name) name))
-
-
 (defonce state
   (atom {:renderer nil}))
 
@@ -34,11 +24,6 @@
   (atom {:on-file-select-click nil
          :progress-bar-length 0
          :progress-bar-value 0
-         :on-scale-change
-         (fn [value]
-           (set-pref "scale" (float value))
-           (swap! settings assoc :scale value))
-         :scale 0.5
          :position-update-interval (* 60 15)}))
 
 
@@ -50,7 +35,6 @@
 
 (defn -create
   [^ApplicationAdapter _]
-  (swap! settings assoc :scale (get-pref "scale"))
   (assets/init)
   (if (assets/assets-ready?)
     (set-renderer (wallpaper/create-renderer settings))

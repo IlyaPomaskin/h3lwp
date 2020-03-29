@@ -4,8 +4,8 @@
    [com.badlogic.gdx.utils.viewport ScreenViewport]
    [com.badlogic.gdx.graphics Color]
    [com.badlogic.gdx.scenes.scene2d Stage Touchable InputEvent]
-   [com.badlogic.gdx.scenes.scene2d.ui Slider Skin Label Table TextButton ProgressBar ProgressBar$ProgressBarStyle]
-   [com.badlogic.gdx.scenes.scene2d.utils ClickListener ChangeListener ChangeListener$ChangeEvent]
+   [com.badlogic.gdx.scenes.scene2d.ui Skin Label Table TextButton ProgressBar ProgressBar$ProgressBarStyle]
+   [com.badlogic.gdx.scenes.scene2d.utils ClickListener]
    [com.badlogic.gdx.utils Align]))
 
 
@@ -15,9 +15,7 @@
 
 (defn create-renderer
   [settings]
-  (let [{on-scale-change :on-scale-change
-         on-file-select-click :on-file-select-click
-         scale :scale} @settings
+  (let [{on-file-select-click :on-file-select-click} @settings
         stage (new Stage (new ScreenViewport))
         skin (new Skin (.internal Gdx/files "sprites/skin/uiskin.json"))
 
@@ -43,23 +41,13 @@
         progress-bar
         (doto (new ProgressBar (float 0) (float 0) (float 1) false progress-bar-style)
           (.setAnimateDuration (float 1))
-          (.setVisible false))
-
-        scale-slider
-        (doto (new Slider (float 0.5) (float 1.0) (float 0.5) false skin)
-          (.setValue scale)
-          (.addListener
-           (proxy [ChangeListener] []
-             (changed
-               [^ChangeListener$ChangeEvent event ^Slider actor]
-               (on-scale-change (.getValue actor))))))]
+          (.setVisible false))]
     (add-watch
      settings
      :settings-change
      (fn [_ _ prev-settings next-settings]
        (let [{progress-bar-length :progress-bar-length
-              progress-bar-value :progress-bar-value
-              scale :scale} next-settings
+              progress-bar-value :progress-bar-value} next-settings
              prev-progress-bar-value (:progress-bar-value prev-settings)
              in-progress? (and
                            (pos? progress-bar-length)
@@ -81,8 +69,7 @@
            (doto button
              (.setText "Done!")
              (.setTouchable Touchable/disabled)
-             (.setDisabled true)))
-         (.setValue scale-slider scale))))
+             (.setDisabled true))))))
     (.addActor
      stage
      (doto (new Table skin)
@@ -104,13 +91,6 @@
        (.add button)
        (.row)
        (.add progress-bar)
-       (.row)
-       (.add
-        (doto (new Label "Select scale" skin)
-          (.setWrap true)
-          (.setAlignment Align/center)))
-       (.row)
-       (.add scale-slider)
        (.row)
        (.pack)
        (.setWidth 300)
