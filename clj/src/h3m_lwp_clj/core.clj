@@ -86,4 +86,7 @@
        (.postRunnable
         Gdx/app
         (reify Runnable
-          (run [_] (set-renderer (wallpaper/create-renderer settings)))))))))
+          (run
+            [_]
+            (assets/init)
+            (set-renderer (wallpaper/create-renderer settings)))))))))
