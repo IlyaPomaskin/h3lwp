@@ -115,8 +115,7 @@
                         :x (inc (:x %))
                         :y (inc (:y %)))))]
     (fn render-objects [^OrthographicCamera camera]
-      (.setTransformMatrix batch (.-view camera))
-      (.setProjectionMatrix batch (.-projection camera))
+      (.setProjectionMatrix batch (.-combined camera))
       (.update camera)
       (.begin batch)
       (dorun

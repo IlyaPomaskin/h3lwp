@@ -6,12 +6,6 @@
    [h3m-lwp-clj.consts :as consts]))
 
 
-(defn create []
-  (doto (new OrthographicCamera)
-    (.setToOrtho true)
-    (.update)))
-
-
 (defn get-rect [^OrthographicCamera camera]
   (let [width (* (.viewportWidth camera) (.zoom camera))
         height (* (.viewportHeight camera) (.zoom camera))

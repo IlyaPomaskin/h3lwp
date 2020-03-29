@@ -2,6 +2,7 @@
   (:import
    [com.badlogic.gdx ApplicationAdapter Gdx]
    [com.badlogic.gdx.graphics GL20]
+   [com.badlogic.gdx.utils.viewport ScreenViewport]
    [java.io FileInputStream])
   (:require
    [h3m-lwp-clj.settings :as settings]
@@ -27,6 +28,9 @@
          :position-update-interval (* 60 15)}))
 
 
+(defonce viewport (new ScreenViewport))
+
+
 (defn set-renderer
   [renderer]
   (swap! state assoc :renderer renderer)
@@ -37,15 +41,18 @@
   [^ApplicationAdapter _]
   (assets/init)
   (if (assets/assets-ready?)
-    (set-renderer (wallpaper/create-renderer settings))
-    (set-renderer (settings/create-renderer settings))))
+    (set-renderer (wallpaper/create-renderer settings viewport))
+    (set-renderer (settings/create-renderer settings viewport))))
+
+
+(defn -resize
+  [^ApplicationAdapter _ ^long width ^long height]
+  (.update ^ScreenViewport viewport width height false))
 
 
 (defn -render
   [^ApplicationAdapter _]
-  (doto Gdx/gl
-    (.glClearColor 0 0 0 0)
-    (.glClear GL20/GL_COLOR_BUFFER_BIT))
+  (.glClear Gdx/gl GL20/GL_COLOR_BUFFER_BIT)
   (let [{renderer :renderer} @state]
     (renderer)))
 
@@ -73,4 +80,4 @@
           (run
             [_]
             (assets/init)
-            (set-renderer (wallpaper/create-renderer settings)))))))))
+            (set-renderer (wallpaper/create-renderer settings viewport)))))))))

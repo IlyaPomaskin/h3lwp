@@ -1,7 +1,7 @@
 (ns h3m-lwp-clj.settings
   (:import
    [com.badlogic.gdx Gdx]
-   [com.badlogic.gdx.utils.viewport ScreenViewport]
+   [com.badlogic.gdx.utils.viewport Viewport]
    [com.badlogic.gdx.graphics Color]
    [com.badlogic.gdx.scenes.scene2d Stage Touchable InputEvent]
    [com.badlogic.gdx.scenes.scene2d.ui Skin Label Table TextButton ProgressBar ProgressBar$ProgressBarStyle]
@@ -13,11 +13,8 @@
   "To use this app you must provide files from your copy of the game
   The only supported version is Heroes of Might and Magic 3: Shadow of the Death")
 (def ^String gog-url "https://www.gog.com/game/heroes_of_might_and_magic_3_complete_edition")
-(def ^String buy-at-gog
-  "If you dont have a copy
-   buy at GOG.com")
 (def ^String open-gog-text
-  "Open GOG.com")
+  "Buy game on GOG.com")
 (def ^String select-button-text "Select h3sprite.lod")
 
 
@@ -54,9 +51,9 @@
 
 
 (defn create-renderer
-  [settings]
-  (let [{on-file-select-click :on-file-select-click} @settings
-        stage (new Stage (new ScreenViewport))
+  [settings-atom ^Viewport viewport]
+  (let [{on-file-select-click :on-file-select-click} @settings-atom
+        stage (new Stage viewport)
         skin (new Skin (.internal Gdx/files "sprites/skin/uiskin.json"))
 
         instructions-label
@@ -97,7 +94,7 @@
         (doto (new ProgressBar (float 0) (float 0) (float 1) false progress-bar-style)
           (.setAnimateDuration (float 1))
           (.setVisible false))]
-    (set-settings-handler settings button progress-bar)
+    (set-settings-handler settings-atom button progress-bar)
     (.addActor
      stage
      (doto (new Table skin)
@@ -129,6 +126,7 @@
        (.pack)
        (.setFillParent true)))
     (fn []
+      (.apply viewport true)
       (doto stage
         (.act (min (.getDeltaTime Gdx/graphics) (float (/ 1 30))))
         (.draw)))))
