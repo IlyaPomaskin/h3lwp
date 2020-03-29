@@ -10,7 +10,47 @@
 
 
 (def ^String instruction
-  "To use this app you need h3sprite.lod file")
+  "To use this app you must provide files from your copy of the game
+  The only supported version is Heroes of Might and Magic 3: Shadow of the Death")
+(def ^String gog-url "https://www.gog.com/game/heroes_of_might_and_magic_3_complete_edition")
+(def ^String buy-at-gog
+  "If you dont have a copy
+   buy at GOG.com")
+(def ^String open-gog-text
+  "Open GOG.com")
+(def ^String select-button-text "Select h3sprite.lod")
+
+
+(defn set-settings-handler
+  [settings-atom ^TextButton button ^ProgressBar progress-bar]
+  (add-watch
+   settings-atom
+   :settings-change
+   (fn [_ _ prev-settings next-settings]
+     (let [{progress-bar-length :progress-bar-length
+            progress-bar-value :progress-bar-value} next-settings
+           prev-progress-bar-value (:progress-bar-value prev-settings)
+           in-progress? (and
+                         (pos? progress-bar-length)
+                         (not= progress-bar-length progress-bar-value))
+           done? (and
+                  (pos? progress-bar-length)
+                  (= progress-bar-length progress-bar-value)
+                  (not= prev-progress-bar-value progress-bar-value))]
+       (doto progress-bar
+         (.setRange (float 0) (float progress-bar-length))
+         (.setValue (float progress-bar-value))
+         (.setVisible true))
+       (doto button
+         (.setText (if in-progress? "Parsing..." select-button-text))
+         (.setTouchable (if in-progress? Touchable/disabled Touchable/enabled))
+         (.setDisabled in-progress?))
+       (when done?
+         (.setVisible progress-bar false)
+         (doto button
+           (.setText "Done!")
+           (.setTouchable Touchable/disabled)
+           (.setDisabled true)))))))
 
 
 (defn create-renderer
@@ -19,6 +59,21 @@
         stage (new Stage (new ScreenViewport))
         skin (new Skin (.internal Gdx/files "sprites/skin/uiskin.json"))
 
+        instructions-label
+        (doto (new Label instruction skin)
+          (.setWrap true)
+          (.setAlignment Align/center))
+
+        gog-click-handler
+        (proxy [ClickListener] []
+          (clicked
+            [^InputEvent event ^Float x ^Float y]
+            (.openURI Gdx/net gog-url)))
+
+        gog-button
+        (doto (new TextButton "Open GOG.com" skin "default")
+          (.addListener gog-click-handler))
+
         on-click-listener
         (proxy [ClickListener] []
           (clicked
@@ -26,14 +81,14 @@
             (on-file-select-click)))
 
         button
-        (doto (new TextButton "Select file" skin "default")
+        (doto (new TextButton select-button-text skin "default")
           (.addListener on-click-listener))
 
         progress-bar-style
         (new
          ProgressBar$ProgressBarStyle
-         (.newDrawable skin "default-slider" Color/BLACK)
-         (.newDrawable skin "default-slider" Color/WHITE))
+         (.newDrawable skin "default-slider" (new Color))
+         (.newDrawable skin "default-slider" (new Color)))
         _ (set!
            (.-knobBefore progress-bar-style)
            (.newDrawable skin "default-slider" Color/WHITE))
@@ -42,34 +97,7 @@
         (doto (new ProgressBar (float 0) (float 0) (float 1) false progress-bar-style)
           (.setAnimateDuration (float 1))
           (.setVisible false))]
-    (add-watch
-     settings
-     :settings-change
-     (fn [_ _ prev-settings next-settings]
-       (let [{progress-bar-length :progress-bar-length
-              progress-bar-value :progress-bar-value} next-settings
-             prev-progress-bar-value (:progress-bar-value prev-settings)
-             in-progress? (and
-                           (pos? progress-bar-length)
-                           (not= progress-bar-length progress-bar-value))
-             done? (and
-                    (pos? progress-bar-length)
-                    (= progress-bar-length progress-bar-value)
-                    (not= prev-progress-bar-value progress-bar-value))]
-         (doto progress-bar
-           (.setRange (float 0) (float progress-bar-length))
-           (.setValue (float progress-bar-value))
-           (.setVisible true))
-         (doto button
-           (.setText (if in-progress? "Parsing..." "Select file"))
-           (.setTouchable (if in-progress? Touchable/disabled Touchable/enabled))
-           (.setDisabled in-progress?))
-         (when done?
-           (.setVisible progress-bar false)
-           (doto button
-             (.setText "Done!")
-             (.setTouchable Touchable/disabled)
-             (.setDisabled true))))))
+    (set-settings-handler settings button progress-bar)
     (.addActor
      stage
      (doto (new Table skin)
@@ -77,31 +105,29 @@
        (as-> t
              (-> t
                  (.defaults)
-                 (.spaceBottom (float 10))))
+                 (.spaceBottom (float 10))
+                 (.padLeft (float 30))
+                 (.padRight (float 30))))
        (as-> t
              (-> t
                  (.row)
                  (.fill)
                  (.expandX)))
-       (.add
-        (doto (new Label instruction skin)
-          (.setWrap true)
-          (.setAlignment Align/center)))
+       (.add instructions-label)
+       (.row)
+       (.add gog-button)
        (.row)
        (.add button)
-       (.row)
+       (as-> t
+             (-> t
+                 (.row)
+                 (.fill)
+                ;;  (.expandX)
+                 (.height (float 30))))
        (.add progress-bar)
        (.row)
        (.pack)
-       (.setWidth 300)
-       (.setHeight 300)
-       (as-> t
-             (.setPosition
-              t
-              (float (- (/ (.getWidth stage) 2)
-                        (/ (.getWidth t) 2)))
-              (float (- (/ (.getHeight stage) 2)
-                        (/ (.getHeight t) 2)))))))
+       (.setFillParent true)))
     (fn []
       (doto stage
         (.act (min (.getDeltaTime Gdx/graphics) (float (/ 1 30))))
