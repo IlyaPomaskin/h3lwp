@@ -53,8 +53,6 @@
    (new Timer)
    (proxy [Timer$Task] []
      (run []
-       (do
-         (set-random-position camera map-size)
-         (.update ^OrthographicCamera camera))))
+       (set-random-position camera map-size)))
    (float 0)
    (float position-update-interval)))
