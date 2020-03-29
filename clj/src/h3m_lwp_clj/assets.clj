@@ -14,12 +14,13 @@
 (defonce objects-info (atom {}))
 
 
-(def ^AssetManager manager
+(def ^AssetManager asset-manager
   (new AssetManager))
 
 
-(defn ready? []
-  (->> consts/edn-file-name
+(defn file-exists?
+  [file-path]
+  (->> file-path
        (.local Gdx/files)
        (.exists)))
 
@@ -35,11 +36,13 @@
         (read-string))))
 
 
-(defn init []
-  (Texture/setAssetManager manager)
-  (when (ready?)
-    (load-objects-info)
-    (doto manager
+(defn init
+  []
+  (Texture/setAssetManager asset-manager)
+  (when (file-exists? consts/edn-file-name)
+    (load-objects-info))
+  (when (file-exists? consts/atlas-file-name)
+    (doto asset-manager
       (.load
        consts/atlas-file-name
        TextureAtlas
@@ -48,7 +51,8 @@
       (.finishLoading))))
 
 
-(defn get-sprite-info [def-name]
+(defn get-sprite-info
+  [def-name]
   (let [sprite-info (get @objects-info def-name)]
     (when (nil? sprite-info)
       (println (format "Sprite info for %s not found" def-name)))
@@ -66,9 +70,10 @@
 (def get-empty-texture-region (memoize get-empty-texture-region-))
 
 
-(defn get-object-frame [def-name offset]
+(defn get-object-frame
+  [def-name offset]
   ^TextureRegion
-  (let [^TextureAtlas atlas (.get manager consts/atlas-file-name)
+  (let [^TextureAtlas atlas (.get asset-manager consts/atlas-file-name)
         ^TextureAtlas$AtlasRegion frame (.findRegion atlas def-name offset)]
     (if (nil? frame)
       (do
@@ -96,12 +101,13 @@
 (def get-empty-terrain-sprite (memoize get-empty-terrain-sprite-))
 
 
-(defn load-terrain-sprite [def-name index]
+(defn load-terrain-sprite
+  [def-name index]
   (let [sprite-info (get-sprite-info def-name)
         {frames-order :order} sprite-info
         offset (nth frames-order index)
         region-name (format "%s/%d" def-name offset)
-        ^TextureAtlas atlas (.get manager consts/atlas-file-name)
+        ^TextureAtlas atlas (.get asset-manager consts/atlas-file-name)
         ^Array frames (.findRegions atlas region-name)]
     (if (.isEmpty frames)
       (do
@@ -110,18 +116,12 @@
       frames)))
 
 
-(defn get-terrain-sprite [def-name index]
+(defn get-terrain-sprite
+  [def-name index]
   ^Array
-  (if (true? (.isLoaded manager consts/atlas-file-name))
+  (if (true? (.isLoaded asset-manager consts/atlas-file-name))
     (load-terrain-sprite def-name index)
     (get-empty-terrain-sprite)))
-
-
-(defn file-exists?
-  [file-path]
-  (->> file-path
-       (.local Gdx/files)
-       (.exists)))
 
 
 (defn get-objects-info-count
@@ -131,7 +131,7 @@
 
 (defn get-uniq-atlas-regions-count
   []
-  (let [atlas ^TextureAtlas (.get manager consts/atlas-file-name)
+  (let [atlas ^TextureAtlas (.get asset-manager consts/atlas-file-name)
         regions ^Array (.getRegions atlas)
         regions-names (map
                        #(string/replace
@@ -148,7 +148,8 @@
   (and
    (file-exists? consts/edn-file-name)
    (file-exists? consts/atlas-file-name)
-   (= (get-objects-info-count)
-      (get-uniq-atlas-regions-count))
+   (true? (.isLoaded asset-manager consts/atlas-file-name))
    (> (get-objects-info-count)
-      1300)))
+      consts/minimal-lod-objects-count)
+   (= (get-objects-info-count)
+      (get-uniq-atlas-regions-count))))
