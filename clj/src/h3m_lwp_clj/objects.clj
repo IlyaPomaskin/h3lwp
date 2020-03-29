@@ -96,13 +96,30 @@
        (reverse)))
 
 
-; TODO memoize by camera position
-(defn get-visible-sprites
+(defonce get-visible-sprites-cache (atom {:x nil :y nil :objects []}))
+
+
+(defn get-visible-sprites-
   [^OrthographicCamera camera objects]
   (let [rectangle (utils/rect-increase (orth-camera/get-rect camera) 3)]
     (filter
      #(utils/rect-contain? (:x %) (:y %) rectangle)
      objects)))
+
+
+(defn get-visible-sprites
+  [^OrthographicCamera camera objects]
+  (let [x (.x (.position camera))
+        y (.y (.position camera))
+        {prev-x :x
+         prev-y :y} @get-visible-sprites-cache]
+    (when (or (not= x prev-x) (not= y prev-y))
+      (println "update cache")
+      (swap! get-visible-sprites-cache assoc
+             :x x
+             :y y
+             :objects (get-visible-sprites- camera objects)))
+    (:objects @get-visible-sprites-cache)))
 
 
 (defn create-renderer
