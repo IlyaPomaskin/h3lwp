@@ -30,7 +30,7 @@
 (defonce state
   (atom {:wallpaper-renderer nil
          :settings-renderer nil
-         :is-preview false}))
+         :assets-ready false}))
 
 
 (defonce settings
@@ -54,7 +54,7 @@
     (swap! state assoc
            :wallpaper-renderer wp
            :settings-renderer st
-           :is-preview (not (assets/assets-ready?)))
+           :assets-ready (not (assets/assets-ready?)))
     (.setInputProcessor
      (Gdx/input)
      (doto (new InputMultiplexer)
@@ -69,9 +69,9 @@
     (.glClear GL20/GL_COLOR_BUFFER_BIT))
   (let [{wallpaper-renderer :wallpaper-renderer
          settings-renderer :settings-renderer
-         is-preview :is-preview} @state]
-    (wallpaper-renderer)
-    (when (true? is-preview)
+         assets-ready :assets-ready} @state]
+    (if (true? assets-ready)
+      (wallpaper-renderer)
       (settings-renderer))))
 
 
@@ -102,5 +102,5 @@
 
 (defn -setIsPreview
   [^ApplicationAdapter _ ^Boolean is-preview?]
-  ;; (swap! state assoc :is-preview is-preview?)
+  ;; (swap! state assoc :assets-ready is-preview?)
   )
