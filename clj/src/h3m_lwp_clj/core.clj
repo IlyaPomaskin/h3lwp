@@ -1,6 +1,6 @@
 (ns h3m-lwp-clj.core
   (:import
-   [com.badlogic.gdx InputMultiplexer ApplicationAdapter Gdx]
+   [com.badlogic.gdx ApplicationAdapter Gdx]
    [com.badlogic.gdx.graphics GL20]
    [java.io FileInputStream])
   (:require
@@ -27,9 +27,7 @@
 
 
 (defonce state
-  (atom {:wallpaper-renderer nil
-         :settings-renderer nil
-         :assets-ready false}))
+  (atom {:renderer nil}))
 
 
 (defonce settings
@@ -44,21 +42,19 @@
          :update-position-interval (* 60 15)}))
 
 
+(defn set-renderer
+  [renderer]
+  (swap! state assoc :renderer renderer)
+  (.setInputProcessor (Gdx/input) (renderer)))
+
+
 (defn -create
   [^ApplicationAdapter _]
-  (swap! settings assoc
-         :scale (get-pref "scale"))
-  (let [wp (wallpaper/create-renderer settings)
-        st (settings/create-renderer settings)]
-    (swap! state assoc
-           :wallpaper-renderer wp
-           :settings-renderer st
-           :assets-ready (not (assets/assets-ready?)))
-    (.setInputProcessor
-     (Gdx/input)
-     (doto (new InputMultiplexer)
-       (.addProcessor (st))
-       (.addProcessor (wp))))))
+  (swap! settings assoc :scale (get-pref "scale"))
+  (assets/init)
+  (if (assets/assets-ready?)
+    (set-renderer (wallpaper/create-renderer settings))
+    (set-renderer (settings/create-renderer settings))))
 
 
 (defn -render
@@ -66,12 +62,8 @@
   (doto Gdx/gl
     (.glClearColor 0 0 0 0)
     (.glClear GL20/GL_COLOR_BUFFER_BIT))
-  (let [{wallpaper-renderer :wallpaper-renderer
-         settings-renderer :settings-renderer
-         assets-ready :assets-ready} @state]
-    (if (true? assets-ready)
-      (wallpaper-renderer)
-      (settings-renderer))))
+  (let [{renderer :renderer} @state]
+    (renderer)))
 
 
 (defn -setFileSelectHandler
@@ -94,7 +86,4 @@
        (.postRunnable
         Gdx/app
         (reify Runnable
-          (run [_]
-            (swap! state assoc
-                   :wallpaper-renderer (wallpaper/create-renderer settings)))))))))
-
+          (run [_] (set-renderer (wallpaper/create-renderer settings)))))))))

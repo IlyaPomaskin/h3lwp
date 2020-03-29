@@ -4,7 +4,6 @@
    [com.badlogic.gdx.utils Timer Timer$Task])
   (:require
    [h3m-parser.core :as h3m-parser]
-   [h3m-lwp-clj.assets :as assets]
    [h3m-lwp-clj.terrain :as terrain]
    [h3m-lwp-clj.objects :as objects]
    [h3m-lwp-clj.orth-camera :as orth-camera]
@@ -13,7 +12,6 @@
 
 (defn create-renderer
   [settings]
-  (assets/init)
   (let [{scale :scale
          update-position-interval :update-position-interval} @settings
         h3m-map (h3m-parser/parse-h3m (.read (.internal Gdx/files "maps/invasion.h3m")))
