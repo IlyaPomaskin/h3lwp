@@ -12,9 +12,8 @@
   (:gen-class
    :name com.heroes3.livewallpaper.clojure.LiveWallpaperEngine
    :extends com.badlogic.gdx.ApplicationAdapter
-   :methods [[onFileSelectClick [Runnable] void]
-             [selectFile [String] void]
-             [setIsPreview [Boolean] void]]))
+   :methods [[setFileSelectHandler [Runnable] void]
+             [selectFile [String] void]]))
 
 
 (defn set-pref [name value]
@@ -75,9 +74,9 @@
       (settings-renderer))))
 
 
-(defn -onFileSelectClick
-  [^ApplicationAdapter _ ^Runnable callback]
-  (swap! settings assoc :on-file-select-click (fn [] (.run callback))))
+(defn -setFileSelectHandler
+  [^ApplicationAdapter _ ^Runnable file-select-handler]
+  (swap! settings assoc :on-file-select-click (fn [] (.run file-select-handler))))
 
 
 (defn -selectFile
@@ -99,8 +98,3 @@
             (swap! state assoc
                    :wallpaper-renderer (wallpaper/create-renderer settings)))))))))
 
-
-(defn -setIsPreview
-  [^ApplicationAdapter _ ^Boolean is-preview?]
-  ;; (swap! state assoc :assets-ready is-preview?)
-  )

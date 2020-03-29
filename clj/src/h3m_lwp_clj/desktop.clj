@@ -3,13 +3,9 @@
    [clojure.java.io :as io])
   (:import
    [com.badlogic.gdx.backends.lwjgl LwjglApplication]
-   [com.badlogic.gdx.utils Timer Timer$Task]
    [com.heroes3.livewallpaper.clojure LiveWallpaperEngine]
    [java.awt FileDialog Frame]
    [java.io File]))
-
-
-(def is-preview-timeout (float 3))
 
 
 (def ^FileDialog file-chooser
@@ -23,7 +19,7 @@
   ^LiveWallpaperEngine
   []
   (let [engine (new LiveWallpaperEngine)]
-    (.onFileSelectClick
+    (.setFileSelectHandler
      engine
      (reify
        Runnable
@@ -50,10 +46,4 @@
 (defn -main []
   (delete-h3-sprites)
   (let [engine (create-engine)]
-    (new LwjglApplication engine)
-    (.scheduleTask
-     (new Timer)
-     (proxy [Timer$Task] []
-       (run []
-         (.setIsPreview engine true)))
-     is-preview-timeout)))
+    (new LwjglApplication engine)))

@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.view.SurfaceHolder;
 
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -26,7 +25,7 @@ public class LiveWallpaper extends AndroidLiveWallpaperService {
     };
 
     public Engine onCreateEngine() {
-        return new CustomEngine();
+        return new AndroidWallpaperEngine();
     }
 
     @Override
@@ -34,7 +33,7 @@ public class LiveWallpaper extends AndroidLiveWallpaperService {
         super.onCreateApplication();
 
         app = new LiveWallpaperEngine();
-        app.onFileSelectClick(new Runnable() {
+        app.setFileSelectHandler(new Runnable() {
             @Override
             public void run() {
                 Intent intent = new Intent(instance, FileSelectorActivity.class);
@@ -52,13 +51,5 @@ public class LiveWallpaper extends AndroidLiveWallpaperService {
         config.useCompass = false;
 
         initialize(app, config);
-    }
-
-    class CustomEngine extends AndroidWallpaperEngine {
-        @Override
-        public void onSurfaceCreated(SurfaceHolder holder) {
-            super.onSurfaceCreated(holder);
-            app.setIsPreview(isPreview());
-        }
     }
 }
