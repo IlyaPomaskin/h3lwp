@@ -117,6 +117,7 @@
     (fn render-objects [^OrthographicCamera camera]
       (.setTransformMatrix batch (.-view camera))
       (.setProjectionMatrix batch (.-projection camera))
+      (.update camera)
       (.begin batch)
       (dorun
        (->> sprites

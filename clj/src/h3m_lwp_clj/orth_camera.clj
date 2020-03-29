@@ -1,7 +1,7 @@
 (ns h3m-lwp-clj.orth-camera
   (:import
    [com.badlogic.gdx.graphics OrthographicCamera]
-   [com.badlogic.gdx.math Rectangle])
+   [com.badlogic.gdx.utils Timer Timer$Task])
   (:require
    [h3m-lwp-clj.consts :as consts]))
 
@@ -35,14 +35,6 @@
      :y2 (+ y1-tile height-tile)}))
 
 
-(defn get-rectangle [^OrthographicCamera camera]
-  (let [{x1 :x1
-         y1 :y1
-         width :width
-         height :height} (get-rect camera)]
-    (new Rectangle x1 y1 width height)))
-
-
 (defn set-random-position
   [^OrthographicCamera camera map-size]
   (let [box (get-rect camera)
@@ -53,3 +45,26 @@
         next-y (* consts/tile-size
                   (+ y-offset (rand-int (- map-size (:height box)))))]
     (.set (.position camera) next-x next-y 0)))
+
+
+(defn set-camera-updation-timer
+  [^OrthographicCamera camera map-size position-update-interval]
+  (.scheduleTask
+   (new Timer)
+   (proxy [Timer$Task] []
+     (run []
+       (do
+         (set-random-position camera map-size)
+         (.update ^OrthographicCamera camera))))
+   (float 0)
+   (float position-update-interval)))
+
+
+(defn subscribe-to-scale
+  [^OrthographicCamera camera settings-atom getter-fn]
+  (set! (.-zoom camera) (getter-fn @settings-atom))
+  (add-watch
+   settings-atom
+   :scale-change
+   (fn [_ _ _ next-settings]
+     (set! (.-zoom camera) (getter-fn next-settings)))))

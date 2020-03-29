@@ -1,7 +1,6 @@
 (ns h3m-lwp-clj.wallpaper
   (:import
-   [com.badlogic.gdx Gdx]
-   [com.badlogic.gdx.utils Timer Timer$Task])
+   [com.badlogic.gdx Gdx])
   (:require
    [h3m-parser.core :as h3m-parser]
    [h3m-lwp-clj.terrain :as terrain]
@@ -12,30 +11,15 @@
 
 (defn create-renderer
   [settings]
-  (let [{scale :scale
-         update-position-interval :update-position-interval} @settings
+  (let [{position-update-interval :position-update-interval} @settings
         h3m-map (h3m-parser/parse-h3m (.read (.internal Gdx/files "maps/invasion.h3m")))
         camera (orth-camera/create)
         camera-controller (input-processor/create camera (:size h3m-map))
         terrain-renderer (terrain/create-renderer h3m-map)
         objects-renderer (objects/create-renderer h3m-map)]
-    (set! (.-zoom camera) scale)
-    (add-watch
-     settings
-     :scale-change
-     (fn [_ _ _ next-settings]
-       (set! (.-zoom camera) (:scale next-settings))))
-    (.scheduleTask
-     (new Timer)
-     (proxy [Timer$Task] []
-       (run []
-         (do
-           (orth-camera/set-random-position camera (:size h3m-map))
-           (.update camera))))
-     (float 0)
-     (float update-position-interval))
+    (orth-camera/subscribe-to-scale camera settings :scale)
+    (orth-camera/set-camera-updation-timer camera (:size h3m-map) position-update-interval)
     (fn []
-      (.update camera)
       (terrain-renderer camera)
       (objects-renderer camera)
       camera-controller)))

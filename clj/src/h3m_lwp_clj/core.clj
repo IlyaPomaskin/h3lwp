@@ -39,7 +39,7 @@
            (set-pref "scale" (float value))
            (swap! settings assoc :scale value))
          :scale 0.5
-         :update-position-interval (* 60 15)}))
+         :position-update-interval (* 60 15)}))
 
 
 (defn set-renderer
