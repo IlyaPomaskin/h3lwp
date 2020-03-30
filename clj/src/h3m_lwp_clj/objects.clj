@@ -114,7 +114,6 @@
         {prev-x :x
          prev-y :y} @get-visible-sprites-cache]
     (when (or (not= x prev-x) (not= y prev-y))
-      (println "update cache")
       (swap! get-visible-sprites-cache assoc
              :x x
              :y y
