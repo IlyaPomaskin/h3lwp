@@ -124,7 +124,7 @@
 (defn pack-frame [^PixmapPacker packer palette frame region-name]
   (let [{full-width :full-width
          full-height :full-height} frame
-        ^Pixmap pixmap (doto (new Pixmap full-width full-height Pixmap$Format/RGBA8888)
+        ^Pixmap pixmap (doto (new Pixmap (int full-width) (int full-height) Pixmap$Format/RGBA8888)
                          (.setColor 0 0 0 0)
                          (.fill))]
     (fill-pixmap pixmap palette frame)
