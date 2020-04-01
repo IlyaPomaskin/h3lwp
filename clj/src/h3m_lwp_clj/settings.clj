@@ -2,52 +2,53 @@
   (:import
    [com.badlogic.gdx Gdx]
    [com.badlogic.gdx.utils.viewport Viewport]
-   [com.badlogic.gdx.graphics Color]
-   [com.badlogic.gdx.scenes.scene2d Stage Touchable InputEvent]
-   [com.badlogic.gdx.scenes.scene2d.ui Skin Label Table TextButton ProgressBar ProgressBar$ProgressBarStyle]
+   [com.badlogic.gdx.scenes.scene2d Stage InputEvent]
+   [com.badlogic.gdx.scenes.scene2d.ui Skin Label TextButton VerticalGroup]
    [com.badlogic.gdx.scenes.scene2d.utils ClickListener]
    [com.badlogic.gdx.utils Align]))
 
 
 (def ^String instruction
-  "To use this app you must provide files from your copy of the game
-  The only supported version is Heroes of Might and Magic 3: Shadow of the Death")
+  "To use this app you must provide files from your copy of Heroes of Might and Magic 3: Shadow of the Death")
 (def ^String gog-url "https://www.gog.com/game/heroes_of_might_and_magic_3_complete_edition")
 (def ^String open-gog-text
   "Buy game on GOG.com")
 (def ^String select-button-text "Select h3sprite.lod")
 
 
+(defn in-progress?
+  [{progress-bar-length :progress-bar-length
+    progress-bar-value :progress-bar-value}]
+  (and
+   (pos? progress-bar-length)
+   (not= progress-bar-length progress-bar-value)))
+
+
+(defn progress-percents
+  [{progress-bar-length :progress-bar-length
+    progress-bar-value :progress-bar-value}]
+  (int
+   (* (/ progress-bar-value
+         progress-bar-length)
+      100)))
+
+
 (defn set-settings-handler
-  [settings-atom ^TextButton button ^ProgressBar progress-bar]
+  [settings-atom ^TextButton button ^Label progress-label]
   (add-watch
    settings-atom
    :settings-change
    (fn [_ _ prev-settings next-settings]
-     (let [{progress-bar-length :progress-bar-length
-            progress-bar-value :progress-bar-value} next-settings
-           prev-progress-bar-value (:progress-bar-value prev-settings)
-           in-progress? (and
-                         (pos? progress-bar-length)
-                         (not= progress-bar-length progress-bar-value))
-           done? (and
-                  (pos? progress-bar-length)
-                  (= progress-bar-length progress-bar-value)
-                  (not= prev-progress-bar-value progress-bar-value))]
-       (doto progress-bar
-         (.setRange (float 0) (float progress-bar-length))
-         (.setValue (float progress-bar-value))
-         (.setVisible true))
-       (doto button
-         (.setText (if in-progress? "Parsing..." select-button-text))
-         (.setTouchable (if in-progress? Touchable/disabled Touchable/enabled))
-         (.setDisabled in-progress?))
+     (let [prev-in-progress? (in-progress? prev-settings)
+           next-in-progress? (in-progress? next-settings)
+           done? (and prev-in-progress? (not next-in-progress?))]
+       (when next-in-progress?
+         (.setVisible button false)
+         (.setText
+          progress-label
+          (format "Parsing: %d%%" (progress-percents next-settings))))
        (when done?
-         (.setVisible progress-bar false)
-         (doto button
-           (.setText "Done!")
-           (.setTouchable Touchable/disabled)
-           (.setDisabled true)))))))
+         (.setText progress-label "Loading..."))))))
 
 
 (defn create-renderer
@@ -81,49 +82,22 @@
         (doto (new TextButton select-button-text skin "default")
           (.addListener on-click-listener))
 
-        progress-bar-style
-        (new
-         ProgressBar$ProgressBarStyle
-         (.newDrawable skin "default-slider" (new Color))
-         (.newDrawable skin "default-slider" (new Color)))
-        _ (set!
-           (.-knobBefore progress-bar-style)
-           (.newDrawable skin "default-slider" Color/WHITE))
-
-        progress-bar
-        (doto (new ProgressBar (float 0) (float 0) (float 1) false progress-bar-style)
-          (.setAnimateDuration (float 1))
-          (.setVisible false))]
-    (set-settings-handler settings-atom button progress-bar)
+        progress-label
+        (doto (new Label "" skin)
+          (.setWrap false)
+          (.setAlignment Align/center))]
+    (set-settings-handler settings-atom button progress-label)
     (.addActor
      stage
-     (doto (new Table skin)
-       (.debug)
-       (as-> t
-             (-> t
-                 (.defaults)
-                 (.spaceBottom (float 10))
-                 (.padLeft (float 30))
-                 (.padRight (float 30))))
-       (as-> t
-             (-> t
-                 (.row)
-                 (.fill)
-                 (.expandX)))
-       (.add instructions-label)
-       (.row)
-       (.add gog-button)
-       (.row)
-       (.add button)
-       (as-> t
-             (-> t
-                 (.row)
-                 (.fill)
-                ;;  (.expandX)
-                 (.height (float 30))))
-       (.add progress-bar)
-       (.row)
-       (.pack)
+     (doto (new VerticalGroup)
+       (.center)
+       (.grow)
+       (.space 10)
+       (.pad 30)
+       (.addActor instructions-label)
+       (.addActor gog-button)
+       (.addActor button)
+       (.addActor progress-label)
        (.setFillParent true)))
     (fn []
       (.apply viewport true)
