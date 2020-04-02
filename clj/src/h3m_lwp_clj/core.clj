@@ -17,8 +17,7 @@
              [selectFile [String] void]]))
 
 
-(defonce state
-  (atom {:renderer nil}))
+(defonce renderer (atom nil))
 
 
 (defonce settings
@@ -32,9 +31,9 @@
 
 
 (defn set-renderer
-  [renderer]
-  (swap! state assoc :renderer renderer)
-  (.setInputProcessor (Gdx/input) (renderer)))
+  [next-renderer]
+  (reset! renderer next-renderer)
+  (.setInputProcessor (Gdx/input) (next-renderer)))
 
 
 (defn -create
@@ -53,8 +52,7 @@
 (defn -render
   [^ApplicationAdapter _]
   (.glClear Gdx/gl GL20/GL_COLOR_BUFFER_BIT)
-  (let [{renderer :renderer} @state]
-    (renderer)))
+  (@renderer))
 
 
 (defn -setFileSelectHandler
