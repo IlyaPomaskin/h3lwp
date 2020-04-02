@@ -34,16 +34,23 @@
 
 
 (defn set-settings-handler
-  [settings-atom ^TextButton button ^Label progress-label]
+  [settings-atom
+   ^VerticalGroup buttons-group
+   ^TextButton select-button
+   ^Label progress-label]
+  (remove-watch settings-atom :settings-change)
   (add-watch
    settings-atom
    :settings-change
    (fn [_ _ prev-settings next-settings]
      (let [prev-in-progress? (in-progress? prev-settings)
            next-in-progress? (in-progress? next-settings)
+           start? (and (not prev-in-progress?) next-in-progress?)
            done? (and prev-in-progress? (not next-in-progress?))]
+       (when start?
+         (.swapActor buttons-group select-button progress-label)
+         (.setVisible select-button false))
        (when next-in-progress?
-         (.setVisible button false)
          (.setText
           progress-label
           (format "Parsing: %d%%" (progress-percents next-settings))))
@@ -78,27 +85,40 @@
             [^InputEvent event ^Float x ^Float y]
             (on-file-select-click)))
 
-        button
+        select-button
         (doto (new TextButton select-button-text skin "default")
           (.addListener on-click-listener))
 
         progress-label
         (doto (new Label "" skin)
           (.setWrap false)
-          (.setAlignment Align/center))]
-    (set-settings-handler settings-atom button progress-label)
+          (.setAlignment Align/center))
+
+        instructions-group
+        (doto (new VerticalGroup)
+          (.grow)
+          (.pad 20)
+          (.addActor instructions-label))
+
+        buttons-group
+        (doto (new VerticalGroup)
+          (.space 10)
+          (.addActor gog-button)
+          (.addActor select-button)
+          (.addActor progress-label))]
+    (set-settings-handler
+     settings-atom
+     buttons-group
+     select-button
+     progress-label)
     (.addActor
      stage
      (doto (new VerticalGroup)
+       (.setFillParent true)
        (.center)
        (.grow)
-       (.space 10)
-       (.pad 30)
-       (.addActor instructions-label)
-       (.addActor gog-button)
-       (.addActor button)
-       (.addActor progress-label)
-       (.setFillParent true)))
+       (.addActor instructions-group)
+       (.addActor buttons-group)))
     (fn []
       (.apply viewport true)
       (doto stage
