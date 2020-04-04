@@ -39,8 +39,9 @@
   [{size :size
     terrain :terrain}]
   (let [terrain-layer (new TiledMapTileLayer size size consts/tile-size consts/tile-size)
-        road-layer (new TiledMapTileLayer size size consts/tile-size consts/tile-size)
-        river-layer (new TiledMapTileLayer size size consts/tile-size consts/tile-size)]
+        river-layer (new TiledMapTileLayer size size consts/tile-size consts/tile-size)
+        road-layer (new TiledMapTileLayer size size consts/tile-size consts/tile-size)]
+    (.setOffsetY road-layer (- (/ consts/tile-size 2)))
     (dorun
      (for [x (range 0 size)
            y (range 0 size)
