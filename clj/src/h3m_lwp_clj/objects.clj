@@ -1,7 +1,7 @@
 (ns h3m-lwp-clj.objects
   (:import
-   [com.badlogic.gdx.graphics.g2d SpriteBatch TextureRegion]
    [com.badlogic.gdx.graphics OrthographicCamera]
+   [com.badlogic.gdx.graphics.g2d SpriteBatch TextureRegion]
    [com.badlogic.gdx.utils TimeUtils])
   (:require
    [h3m-lwp-clj.assets :as assets]
@@ -101,13 +101,12 @@
 
 
 (defn create-renderer
-  [h3m-map]
-  (let [batch (new SpriteBatch)]
-    (fn render-objects [^OrthographicCamera camera]
-      (.setProjectionMatrix batch (.-combined camera))
-      (.update camera)
-      (.begin batch)
-      (mapv
-       (fn [render-sprite] (render-sprite batch))
-       (get-map-objects h3m-map camera))
-      (.end batch))))
+  [^SpriteBatch batch ^OrthographicCamera camera h3m-map]
+  (fn render-objects []
+    (.setProjectionMatrix batch (.-combined camera))
+    (.update camera)
+    (.begin batch)
+    (mapv
+     (fn [render-sprite] (render-sprite batch))
+     (get-map-objects h3m-map camera))
+    (.end batch)))

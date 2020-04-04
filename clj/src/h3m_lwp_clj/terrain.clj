@@ -1,9 +1,10 @@
 (ns h3m-lwp-clj.terrain
   (:import
+   [com.badlogic.gdx.graphics OrthographicCamera]
+   [com.badlogic.gdx.graphics.g2d SpriteBatch TextureRegion]
    [com.badlogic.gdx.maps.tiled TiledMap TiledMapTileLayer TiledMapTileLayer$Cell]
    [com.badlogic.gdx.maps.tiled.tiles AnimatedTiledMapTile StaticTiledMapTile]
    [com.badlogic.gdx.maps.tiled.renderers OrthogonalTiledMapRenderer]
-   [com.badlogic.gdx.graphics.g2d TextureRegion]
    [com.badlogic.gdx.utils Array])
   (:require
    [h3m-lwp-clj.assets :as assets]
@@ -68,11 +69,11 @@
 
 
 (defn create-renderer
-  [h3m-map]
-  (let [renderer (new
-                  OrthogonalTiledMapRenderer
-                  (create-tiled-map (create-layers h3m-map)))]
-    (fn [camera]
+  [^SpriteBatch batch ^OrthographicCamera camera h3m-map]
+  (let [layers (create-layers h3m-map)
+        ^TiledMap tiled-map (create-tiled-map layers)
+        renderer (new OrthogonalTiledMapRenderer tiled-map batch)]
+    (fn []
       (doto renderer
         (.setView camera)
         (.render)))))

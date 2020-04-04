@@ -1,10 +1,10 @@
 (ns h3m-lwp-clj.settings
   (:import
    [com.badlogic.gdx Gdx]
-   [com.badlogic.gdx.utils.viewport Viewport]
    [com.badlogic.gdx.scenes.scene2d Stage InputEvent]
    [com.badlogic.gdx.scenes.scene2d.ui Skin Label TextButton VerticalGroup]
    [com.badlogic.gdx.scenes.scene2d.utils ClickListener]
+   [com.badlogic.gdx.utils.viewport Viewport]
    [com.badlogic.gdx.utils Align]))
 
 
@@ -119,6 +119,7 @@
        (.grow)
        (.addActor instructions-group)
        (.addActor buttons-group)))
+    (.setInputProcessor (Gdx/input) stage)
     (fn []
       (.apply viewport true)
       (doto stage

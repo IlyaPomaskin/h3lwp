@@ -1,5 +1,7 @@
 (ns h3m-lwp-clj.wallpaper
   (:import
+   [com.badlogic.gdx Gdx]
+   [com.badlogic.gdx.graphics.g2d SpriteBatch]
    [com.badlogic.gdx.graphics OrthographicCamera]
    [com.badlogic.gdx.utils.viewport Viewport])
   (:require
@@ -14,11 +16,12 @@
   (let [{position-update-interval :position-update-interval} @settings-atom
         camera ^OrthographicCamera (.getCamera viewport)
         camera-controller (input-processor/create camera (:size h3m-map))
-        terrain-renderer (terrain/create-renderer h3m-map)
-        objects-renderer (objects/create-renderer h3m-map)]
+        batch ^SpriteBatch (new SpriteBatch)
+        terrain-renderer (terrain/create-renderer batch camera h3m-map)
+        objects-renderer (objects/create-renderer batch camera h3m-map)]
     (orth-camera/set-camera-updation-timer camera (:size h3m-map) position-update-interval)
     (.setToOrtho camera true)
+    (.setInputProcessor (Gdx/input) camera-controller)
     (fn []
-      (terrain-renderer camera)
-      (objects-renderer camera)
-      camera-controller)))
+      (terrain-renderer)
+      (objects-renderer))))

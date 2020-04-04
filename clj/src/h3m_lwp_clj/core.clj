@@ -29,12 +29,6 @@
 (defonce viewport (new ScreenViewport))
 
 
-(defn set-renderer
-  [next-renderer]
-  (reset! renderer next-renderer)
-  (.setInputProcessor (Gdx/input) (next-renderer)))
-
-
 (defn -create
   [^ApplicationAdapter _]
   (assets/init)
@@ -44,9 +38,11 @@
         (.internal Gdx/files)
         (.read)
         (parser/parse-map)))
-  (if (assets/assets-ready?)
-    (set-renderer (wallpaper/create-renderer settings viewport @h3m-map))
-    (set-renderer (settings/create-renderer settings viewport))))
+  (reset!
+   renderer
+   (if (assets/assets-ready?)
+     (wallpaper/create-renderer settings viewport @h3m-map)
+     (settings/create-renderer settings viewport))))
 
 
 (defn -resize
@@ -83,4 +79,4 @@
           (run
             [_]
             (assets/init)
-            (set-renderer (wallpaper/create-renderer settings viewport @h3m-map)))))))))
+            (reset! renderer (wallpaper/create-renderer settings viewport @h3m-map)))))))))
