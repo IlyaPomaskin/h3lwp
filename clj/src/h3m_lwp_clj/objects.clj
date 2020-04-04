@@ -77,14 +77,13 @@
 (defn get-map-objects-
   [h3m-map ^OrthographicCamera camera]
   (let [rectangle (utils/rect-increase (orth-camera/get-rect camera) 3)]
-    (doall
-     (->> (:objects h3m-map)
-          (filter
-           #(and
-             (utils/rect-contain? (:x %) (:y %) rectangle)
-             (zero? (:z %))))
-          (sort compare-objects)
-          (map create-sprite)))))
+    (->> (:objects h3m-map)
+         (filter
+          #(and
+            (utils/rect-contain? (:x %) (:y %) rectangle)
+            (zero? (:z %))))
+         (sort compare-objects)
+         (mapv create-sprite))))
 
 
 (defn get-map-objects

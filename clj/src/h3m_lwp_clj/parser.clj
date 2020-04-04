@@ -36,24 +36,28 @@
 
 
 (defn make-palette [palette]
-  (->> palette
-       (pmap #(assoc % 3 0xff))
-       (map-indexed
-        (fn [index item]
-          (case (int index)
-            0 [0 0 0 0]
-            1 [0 0 0 0x40]
-            4 [0 0 0 0x80]
-            5 [0x80 0x80 0x80 0xff]
-            6 [0 0 0 0x80]
-            7 [0 0 0 0x40]
-            item)))
-       (pmap #(Color/rgba8888
-               (float (/ (% 0) 255))
-               (float (/ (% 1) 255))
-               (float (/ (% 2) 255))
-               (float (/ (% 3) 255))))
-       (vec)))
+  (let [set-default-alpha
+        (mapv #(assoc % 3 0xff) palette)
+
+        preset-palette
+        (assoc
+         set-default-alpha
+         0 [0 0 0 0]
+         1 [0 0 0 0x40]
+         4 [0 0 0 0x80]
+         5 [0x80 0x80 0x80 0xff]
+         6 [0 0 0 0x80]
+         7 [0 0 0 0x40])
+
+        colored-palette
+        (mapv
+         #(Color/rgba8888
+           (float (/ (% 0) 255))
+           (float (/ (% 1) 255))
+           (float (/ (% 2) 255))
+           (float (/ (% 3) 255)))
+         preset-palette)]
+    colored-palette))
 
 
 (defn map-frame [frame]
@@ -80,7 +84,7 @@
       (update :palette make-palette)
       (update :name string/lower-case)
       (update :name string/replace #".def" "")
-      (update :frames #(doall (pmap map-frame %)))
+      (update :frames #(map map-frame %))
       (assoc :order (get-in def-info [:groups 0 :offsets]))))
 
 
@@ -169,7 +173,7 @@
 
 
 (defn pack-defs
-  [defs packer items-count callback]
+  [packer defs items-count callback]
   (loop [item-index 0]
     (let [def-info (nth defs item-index)]
       (condp = (:type def-info)
@@ -199,11 +203,11 @@
 
 (defn get-lod-files-list
   [^FileInputStream lod-file]
-  (doall
-   (->>
-    (:files (h3m-parser/parse-lod lod-file))
-    (filter #(utils/coll-includes? (:type %) [def-map def-terrain]))
-    (filter #(re-matches #"(?i).*\.def" (:name %))))))
+  (->> lod-file
+       (h3m-parser/parse-lod)
+       :files
+       (filter #(utils/coll-includes? (:type %) [def-map def-terrain]))
+       (filter #(re-matches #"(?i).*\.def" (:name %)))))
 
 
 (defn parse-map-sprites
@@ -216,10 +220,10 @@
         lod-files-list (get-lod-files-list lod-file)
         files-count (dec (count lod-files-list))
         defs (map #(parse-def-from-lod % lod-file) lod-files-list)]
-    (pack-defs defs packer files-count item-callback)
-    (save-defs-info defs info-file)
+    (pack-defs packer defs files-count item-callback)
     (save-packer packer atlas-file)
     (.dispose packer)
+    (save-defs-info defs info-file)
     (done-callback)))
 
 
