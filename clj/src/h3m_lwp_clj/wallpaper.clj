@@ -1,10 +1,8 @@
 (ns h3m-lwp-clj.wallpaper
   (:import
-   [com.badlogic.gdx Gdx]
    [com.badlogic.gdx.graphics OrthographicCamera]
    [com.badlogic.gdx.utils.viewport Viewport])
   (:require
-   [h3m-lwp-clj.parser :as parser]
    [h3m-lwp-clj.terrain :as terrain]
    [h3m-lwp-clj.objects :as objects]
    [h3m-lwp-clj.orth-camera :as orth-camera]

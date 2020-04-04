@@ -7,7 +7,6 @@
    [h3m-lwp-clj.assets :as assets]
    [h3m-lwp-clj.utils :as utils]
    [h3m-lwp-clj.orth-camera :as orth-camera]
-   [h3m-lwp-clj.random :as random]
    [h3m-lwp-clj.consts :as consts]
    [clojure.string :as string]))
 
