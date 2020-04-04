@@ -2,7 +2,7 @@
   (:require
    [clojure.java.io :as io])
   (:import
-   [com.badlogic.gdx.backends.lwjgl LwjglApplication]
+   [com.badlogic.gdx.backends.lwjgl LwjglApplication LwjglApplicationConfiguration]
    [com.heroes3.livewallpaper.clojure LiveWallpaperEngine]
    [java.awt FileDialog Frame]
    [java.io File]))
@@ -43,7 +43,16 @@
           (.delete file)))))
 
 
+(def config (new LwjglApplicationConfiguration))
+(set! (.-backgroundFPS config) 5)
+(set! (.-foregroundFPS config) 5)
+(set! (.-x config) 0)
+(set! (.-y config) 0)
+(set! (.-width config) 426)
+(set! (.-height config) 500)
+
+
 (defn -main []
   (delete-h3-sprites)
   (let [engine (create-engine)]
-    (new LwjglApplication engine)))
+    (new LwjglApplication engine config)))
