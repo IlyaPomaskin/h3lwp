@@ -12,9 +12,8 @@
 
 
 (defn create-renderer
-  [settings-atom ^Viewport viewport]
+  [settings-atom ^Viewport viewport h3m-map]
   (let [{position-update-interval :position-update-interval} @settings-atom
-        h3m-map (parser/parse-map (.read (.internal Gdx/files "maps/invasion.h3m")))
         camera ^OrthographicCamera (.getCamera viewport)
         camera-controller (input-processor/create camera (:size h3m-map))
         terrain-renderer (terrain/create-renderer h3m-map)

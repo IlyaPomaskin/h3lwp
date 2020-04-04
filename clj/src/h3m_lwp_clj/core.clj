@@ -18,8 +18,7 @@
 
 
 (defonce renderer (atom nil))
-
-
+(defonce h3m-map (atom nil))
 (defonce settings
   (atom {:on-file-select-click nil
          :progress-bar-length 0
@@ -39,8 +38,14 @@
 (defn -create
   [^ApplicationAdapter _]
   (assets/init)
+  (reset!
+   h3m-map
+   (->> "maps/invasion.h3m"
+        (.internal Gdx/files)
+        (.read)
+        (parser/parse-map)))
   (if (assets/assets-ready?)
-    (set-renderer (wallpaper/create-renderer settings viewport))
+    (set-renderer (wallpaper/create-renderer settings viewport @h3m-map))
     (set-renderer (settings/create-renderer settings viewport))))
 
 
@@ -78,4 +83,4 @@
           (run
             [_]
             (assets/init)
-            (set-renderer (wallpaper/create-renderer settings viewport)))))))))
+            (set-renderer (wallpaper/create-renderer settings viewport @h3m-map)))))))))
