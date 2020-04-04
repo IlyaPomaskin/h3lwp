@@ -4,7 +4,7 @@
    [com.badlogic.gdx.graphics OrthographicCamera]
    [com.badlogic.gdx.utils.viewport Viewport])
   (:require
-   [h3m-parser.core :as h3m-parser]
+   [h3m-lwp-clj.parser :as parser]
    [h3m-lwp-clj.terrain :as terrain]
    [h3m-lwp-clj.objects :as objects]
    [h3m-lwp-clj.orth-camera :as orth-camera]
@@ -14,7 +14,7 @@
 (defn create-renderer
   [settings-atom ^Viewport viewport]
   (let [{position-update-interval :position-update-interval} @settings-atom
-        h3m-map (h3m-parser/parse-h3m (.read (.internal Gdx/files "maps/invasion.h3m")))
+        h3m-map (parser/parse-map (.read (.internal Gdx/files "maps/invasion.h3m")))
         camera ^OrthographicCamera (.getCamera viewport)
         camera-controller (input-processor/create camera (:size h3m-map))
         terrain-renderer (terrain/create-renderer h3m-map)

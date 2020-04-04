@@ -3,12 +3,13 @@
    [h3m-parser.core :as h3m-parser]
    [h3m-parser.def :as def-file]
    [h3m-lwp-clj.utils :as utils]
+   [h3m-lwp-clj.random :as random]
    [clojure.string :as string])
   (:import
    [com.badlogic.gdx.files FileHandle]
    [com.badlogic.gdx.graphics Pixmap Pixmap$Format Color]
    [com.badlogic.gdx.graphics.g2d PixmapPackerIO PixmapPackerIO$SaveParameters PixmapPacker]
-   [java.io BufferedInputStream FileInputStream]
+   [java.io BufferedInputStream FileInputStream InputStream]
    [java.util.zip Inflater InflaterInputStream]))
 
 
@@ -220,3 +221,14 @@
     (save-packer packer atlas-file)
     (.dispose packer)
     (done-callback)))
+
+
+(defn parse-map [^InputStream file]
+  (let [h3m-map (h3m-parser/parse-h3m file)]
+    (update
+     h3m-map
+     :objects
+     (fn [objects]
+       (->> objects
+            (map #(assoc % :def (nth (:defs h3m-map) (:def-index %))))
+            (map random/replace-random-objects))))))

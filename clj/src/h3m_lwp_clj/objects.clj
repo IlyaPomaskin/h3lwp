@@ -53,8 +53,6 @@
 
 (defn create-sprite [object]
   (let [filename (object->filename object)
-        {x :x
-         y :y} object
         {frames :frames
          full-width :full-width
          full-height :full-height} (assets/get-map-object-frames filename)
@@ -62,70 +60,56 @@
         frames-count (count frames)
         offset-frame (rand-int frames-count)]
     (if (empty? frames)
-      {:x x
-       :y y
-       :render-sprite
-       (fn render-nil-sprite [_] nil)}
-      {:x x
-       :y y
-       :render-sprite
-       (fn render-sprite [^SpriteBatch batch]
-         (.draw
-          batch
-          ^TextureRegion (nth frames (get-frame-index initial-time frames-count offset-frame))
-          (float (- (* (inc x) consts/tile-size)
-                    full-width))
-          (float (- (* (inc y) consts/tile-size)
-                    full-height))))})))
+      (fn render-nil-sprite [_] nil)
+      (fn render-sprite [^SpriteBatch batch]
+        (.draw
+         batch
+         ^TextureRegion (nth frames (get-frame-index initial-time frames-count offset-frame))
+         (float (- (* (inc (:x object)) consts/tile-size)
+                   full-width))
+         (float (- (* (inc (:y object)) consts/tile-size)
+                   full-height)))))))
+
+
+(defonce get-map-objects-cache
+  (atom {:x nil :y nil :objects []}))
+
+
+(defn get-map-objects-
+  [h3m-map ^OrthographicCamera camera]
+  (let [rectangle (utils/rect-increase (orth-camera/get-rect camera) 3)]
+    (doall
+     (->> (:objects h3m-map)
+          (filter
+           #(and
+             (utils/rect-contain? (:x %) (:y %) rectangle)
+             (zero? (:z %))))
+          (sort compare-objects)
+          (map create-sprite)))))
 
 
 (defn get-map-objects
-  [h3m-map]
-  (doall
-   (->> (:objects h3m-map)
-        (filter #(zero? (:z %)))
-        (pmap #(assoc % :def (nth (:defs h3m-map) (:def-index %))))
-        (pmap random/replace-random-objects)
-        (sort compare-objects)
-        ;; (reverse)
-        (pmap create-sprite))))
-
-
-(defonce get-visible-sprites-cache (atom {:x nil :y nil :objects []}))
-
-
-(defn get-visible-sprites-
-  [^OrthographicCamera camera objects]
-  (let [rectangle (utils/rect-increase (orth-camera/get-rect camera) 3)]
-    (filter
-     #(utils/rect-contain? (:x %) (:y %) rectangle)
-     objects)))
-
-
-(defn get-visible-sprites
-  [^OrthographicCamera camera objects]
-  (let [x (.x (.position camera))
-        y (.y (.position camera))
+  [h3m-map ^OrthographicCamera camera]
+  (let [current-x (.x (.position camera))
+        current-y (.y (.position camera))
         {prev-x :x
-         prev-y :y} @get-visible-sprites-cache]
-    (when (or (not= x prev-x) (not= y prev-y))
-      (swap! get-visible-sprites-cache assoc
-             :x x
-             :y y
-             :objects (get-visible-sprites- camera objects)))
-    (:objects @get-visible-sprites-cache)))
+         prev-y :y} @get-map-objects-cache]
+    (when (or (not= current-x prev-x) (not= current-y prev-y))
+      (swap! get-map-objects-cache assoc
+             :x current-x
+             :y current-y
+             :objects (get-map-objects- h3m-map camera)))
+    (:objects @get-map-objects-cache)))
 
 
 (defn create-renderer
   [h3m-map]
-  (let [batch (new SpriteBatch)
-        sprites (get-map-objects h3m-map)]
+  (let [batch (new SpriteBatch)]
     (fn render-objects [^OrthographicCamera camera]
       (.setProjectionMatrix batch (.-combined camera))
       (.update camera)
       (.begin batch)
-      (->> sprites
-           (get-visible-sprites camera)
-           (mapv (fn [{render-sprite :render-sprite}]
-                   (render-sprite batch))))
+      (mapv
+       (fn [render-sprite] (render-sprite batch))
+       (get-map-objects h3m-map camera))
       (.end batch))))
