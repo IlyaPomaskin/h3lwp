@@ -44,8 +44,8 @@
 
 
 (def config (new LwjglApplicationConfiguration))
-(set! (.-backgroundFPS config) 5)
-(set! (.-foregroundFPS config) 5)
+(set! (.-backgroundFPS config) 60)
+(set! (.-foregroundFPS config) 60)
 (set! (.-x config) 0)
 (set! (.-y config) 0)
 (set! (.-width config) 426)
