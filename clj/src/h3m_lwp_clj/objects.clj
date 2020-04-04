@@ -12,7 +12,7 @@
    [clojure.string :as string]))
 
 
-(defn get-placement-order
+(defn get-order
   [object]
   (get-in object [:def :placement-order]))
 
@@ -23,22 +23,17 @@
      (get-in object [:def :active-cells])))
 
 
-; TODO rewrite
 (defn compare-objects
   [a b]
   (cond
-    (not= (get-placement-order a)
-          (get-placement-order b)) (if (>= (get-placement-order a)
-                                           (get-placement-order b)) 1 -1)
-    (not= (:y a) (:y b)) (if (>= (:y a) (:y b)) -1 1)
-    (and (not= (:object a) :hero) (= (:object b) :hero)) 1
-    (and (not= (:object b) :hero) (= (:object a) :hero)) -1
-    (and (false? (def-visitable? a))
-         (true? (def-visitable? b))) -1
-    (and (false? (def-visitable? b))
-         (true? (def-visitable? a))) 1
-    (<= (:x a) (:x b)) 1
-    :else -1))
+    (not= (get-order a) (get-order b)) (> (get-order a) (get-order b))
+    (not= (:y a) (:y b)) (< (:y a) (:y b))
+    (and (not= (:object a) :hero) (= (:object b) :hero)) true
+    (and (not= (:object b) :hero) (= (:object a) :hero)) false
+    (and (not (def-visitable? a)) (def-visitable? b)) false
+    (and (not (def-visitable? b)) (def-visitable? a)) true
+    (< (:x a) (:x b)) false
+    :else false))
 
 
 (defn object->filename
