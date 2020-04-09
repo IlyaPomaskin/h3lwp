@@ -11,7 +11,6 @@
    [h3m-lwp-clj.wallpaper :as wallpaper]
    [h3m-lwp-clj.consts :as consts]
    [h3m-lwp-clj.assets :as assets]
-   [h3m-lwp-clj.parser :as parser]
    [h3m-lwp-clj.random :as random])
   (:gen-class
    :name com.heroes3.livewallpaper.clojure.LiveWallpaperEngine
