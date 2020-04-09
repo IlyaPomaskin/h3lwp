@@ -1,7 +1,7 @@
 (ns h3m-lwp-clj.objects
   (:import
    [com.badlogic.gdx.graphics OrthographicCamera]
-   [com.badlogic.gdx.graphics.g2d SpriteBatch TextureRegion]
+   [com.badlogic.gdx.graphics.g2d SpriteBatch TextureAtlas$AtlasRegion]
    [com.badlogic.gdx.utils TimeUtils])
   (:require
    [h3m-lwp-clj.assets :as assets]
@@ -60,7 +60,7 @@
       (fn render-nil-sprite [_] nil)
       (fn render-sprite [^SpriteBatch batch]
         (let [frame-index (get-frame-index initial-time frames-count offset-frame)
-              frame ^TextureRegion (nth frames frame-index)]
+              frame ^TextureAtlas$AtlasRegion (nth frames frame-index)]
           (.draw
            batch
            frame
