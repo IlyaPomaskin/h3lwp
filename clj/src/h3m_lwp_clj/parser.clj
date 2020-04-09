@@ -52,10 +52,10 @@
         colored-palette
         (mapv
          #(Color/rgba8888
-           (float (/ (% 0) 255))
-           (float (/ (% 1) 255))
-           (float (/ (% 2) 255))
-           (float (/ (% 3) 255)))
+           (/ (% 0) 255)
+           (/ (% 1) 255)
+           (/ (% 2) 255)
+           (/ (% 3) 255))
          preset-palette)]
     colored-palette))
 
@@ -174,15 +174,14 @@
 
 (defn pack-defs
   [packer defs items-count callback]
-  (loop [item-index 0]
-    (let [def-info (nth defs item-index)]
+  (dorun
+   (map-indexed
+    (fn [item-index def-info]
       (condp = (:type def-info)
         def-map (pack-map-object packer def-info)
         def-terrain (pack-terrain packer def-info))
-      (callback items-count item-index)
-      (if (= items-count item-index)
-        nil
-        (recur (inc item-index))))))
+      (callback items-count item-index))
+    defs)))
 
 
 (defn save-packer [^PixmapPacker packer ^FileHandle out-file]
