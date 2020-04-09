@@ -43,7 +43,7 @@
           (.delete file)))))
 
 
-(def config (new LwjglApplicationConfiguration))
+(def ^LwjglApplicationConfiguration config (new LwjglApplicationConfiguration))
 (set! (.-backgroundFPS config) 60)
 (set! (.-foregroundFPS config) 60)
 (set! (.-x config) 0)
