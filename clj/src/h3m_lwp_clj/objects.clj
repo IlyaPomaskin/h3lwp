@@ -42,38 +42,50 @@
       (string/replace #"\.def" "")))
 
 
-(defn get-frame-index
-  [initial-time frames-count offset-frame]
-  (mod (+ (quot (- (TimeUtils/millis) initial-time)
-                (* 1000 consts/animation-interval))
-          offset-frame)
-       frames-count))
-
-
-(defn create-sprite [object]
-  (let [filename (object->filename object)
-        frames (assets/get-map-object-frames filename)
-        initial-time (TimeUtils/millis)
+(defn create-frame-getter
+  [frames]
+  (let [initial-time (TimeUtils/millis)
         frames-count (count frames)
-        offset-frame (rand-int frames-count)]
+        frame-offset (rand-int frames-count)]
+    (fn frame-getter
+      ^TextureAtlas$AtlasRegion
+      []
+      (nth
+       frames
+       (mod (+ (quot (- (TimeUtils/millis) initial-time)
+                     (* 1000 consts/animation-interval))
+               frame-offset)
+            frames-count)))))
+
+
+(defn get-frame-x
+  [map-object ^TextureAtlas$AtlasRegion frame]
+  (+ (- (* (inc (:x map-object)) consts/tile-size)
+        (.-originalWidth frame))
+     (.-offsetX frame)))
+
+
+(defn get-frame-y
+  [map-object ^TextureAtlas$AtlasRegion frame]
+  (+ (- (* (inc (:y map-object)) consts/tile-size)
+        (.-originalHeight frame))
+     (.-offsetY frame)))
+
+
+(defn create-sprite
+  [map-object]
+  (let [def-name (object->filename map-object)
+        frames (assets/get-map-object-frames def-name)
+        get-frame (create-frame-getter frames)]
     (if (empty? frames)
       (fn render-nil-sprite [_] nil)
       (fn render-sprite [^SpriteBatch batch]
-        (let [frame-index (get-frame-index initial-time frames-count offset-frame)
-              frame ^TextureAtlas$AtlasRegion (nth frames frame-index)]
+        (let [^TextureAtlas$AtlasRegion frame (get-frame)]
           (.draw
            batch
            frame
-           (float
-            (+
-             (- (* (inc (:x object)) consts/tile-size)
-                (.-originalWidth frame))
-             (.-offsetX frame)))
-           (float
-            (+
-             (- (* (inc (:y object)) consts/tile-size)
-                (.-originalHeight frame))
-             (.-offsetY frame)))))))))
+           (float (get-frame-x map-object frame))
+           (float (get-frame-y map-object frame))))))))
 
 
 (defonce get-map-objects-cache
@@ -108,7 +120,6 @@
 
 (defn create-renderer
   [^SpriteBatch batch ^OrthographicCamera camera h3m-map]
-  ; (println (:objects h3m-map))
   (fn render-objects []
     (.setProjectionMatrix batch (.-combined camera))
     (.update camera)
