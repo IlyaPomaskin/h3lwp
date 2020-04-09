@@ -1,8 +1,5 @@
 package com.heroes3.livewallpaper.AssetsParser;
 
-// import com.google.gson.GsonBuilder;
-
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.PixmapIO;
@@ -15,10 +12,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.concurrent.Callable;
-import java.util.function.Function;
+import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
-import java.util.zip.InflaterInputStream;
 
 public class Main {
     static byte[] transparent = new byte[]{
@@ -42,17 +37,17 @@ public class Main {
         0, 0, 0
     };
 
-    static ByteArrayInputStream getLodFileContent(FileInputStream lodStream, Lod.File lodFile) throws IOException {
+    static ByteArrayInputStream getLodFileContent(FileInputStream lodStream, Lod.File lodFile) throws IOException, DataFormatException {
         lodStream.getChannel().position(lodFile.offset);
         byte[] fileContent = new byte[lodFile.size];
 
         if (lodFile.compressedSize > 0) {
-            InflaterInputStream packedData = new InflaterInputStream(
-                lodStream,
-                new Inflater(),
-                lodFile.compressedSize
-            );
-            packedData.read(fileContent);
+            byte[] packedData = new byte[lodFile.compressedSize];
+            lodStream.read(packedData);
+            Inflater inf = new Inflater();
+            inf.setInput(packedData);
+            inf.inflate(fileContent);
+            inf.end();
         } else {
             lodStream.read(fileContent);
         }
@@ -187,6 +182,8 @@ public class Main {
             );
 
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (DataFormatException e) {
             e.printStackTrace();
         }
 
