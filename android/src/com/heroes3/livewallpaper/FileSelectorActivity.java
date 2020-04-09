@@ -29,31 +29,18 @@ public class FileSelectorActivity extends AppCompatActivity {
         );
     }
 
-    protected void handleLodFileSelect(Intent data) {
+    protected String getFilePath(Intent data) {
         Uri uri = data.getData();
         if (uri == null) {
-            return;
+            return "";
         }
 
         String uriPath = uri.getPath();
         if (uriPath == null) {
-            return;
+            return "";
         }
 
-        boolean isCorrectFile = uriPath.toLowerCase().endsWith("h3sprite.lod");
-        if (!isCorrectFile) {
-            Toast
-                .makeText(
-                    this,
-                    "Incorrect file selected",
-                    Toast.LENGTH_LONG
-                )
-                .show();
-            return;
-        }
-
-        String filePath = uriPath.substring(uriPath.indexOf(":") + 1);
-        sendFilePath(filePath);
+        return uriPath.substring(uriPath.indexOf(":") + 1);
     }
 
     protected void sendFilePath(String filePath) {
@@ -69,7 +56,21 @@ public class FileSelectorActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == PICK_FILE_RESULT_CODE && resultCode == RESULT_OK) {
-            handleLodFileSelect(data);
+            String filePath = getFilePath(data);
+            boolean isCorrectFile = filePath.toLowerCase().endsWith("h3sprite.lod");
+
+            if (isCorrectFile) {
+                sendFilePath(filePath);
+            } else {
+                Toast
+                    .makeText(
+                        this,
+                        "Incorrect file selected",
+                        Toast.LENGTH_LONG
+                    )
+                    .show();
+            }
+
             finish();
         }
     }
