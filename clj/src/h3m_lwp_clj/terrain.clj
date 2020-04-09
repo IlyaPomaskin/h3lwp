@@ -1,7 +1,7 @@
 (ns h3m-lwp-clj.terrain
   (:import
    [com.badlogic.gdx.graphics OrthographicCamera]
-   [com.badlogic.gdx.graphics.g2d SpriteBatch TextureRegion]
+   [com.badlogic.gdx.graphics.g2d SpriteBatch TextureAtlas$AtlasRegion]
    [com.badlogic.gdx.maps.tiled TiledMap TiledMapTileLayer TiledMapTileLayer$Cell]
    [com.badlogic.gdx.maps.tiled.tiles AnimatedTiledMapTile StaticTiledMapTile]
    [com.badlogic.gdx.maps.tiled.renderers OrthogonalTiledMapRenderer]
@@ -18,7 +18,10 @@
    AnimatedTiledMapTile
    (float consts/animation-interval)
    (utils/map-libgdx-array
-    (fn [frame] (new StaticTiledMapTile ^TextureRegion frame))
+    (fn [^TextureAtlas$AtlasRegion frame]
+      (doto (new StaticTiledMapTile frame)
+        (.setOffsetY (.-offsetY frame))
+        (.setOffsetX (.-offsetX frame))))
     frames)))
 
 
@@ -60,6 +63,7 @@
 
 
 (defn create-tiled-map
+  ^TiledMap
   [layers]
   (let [tiled-map (new TiledMap)]
     (dorun
@@ -71,7 +75,7 @@
 (defn create-renderer
   [^SpriteBatch batch ^OrthographicCamera camera h3m-map]
   (let [layers (create-layers h3m-map)
-        ^TiledMap tiled-map (create-tiled-map layers)
+        tiled-map (create-tiled-map layers)
         renderer (new OrthogonalTiledMapRenderer tiled-map batch)]
     (fn []
       (doto renderer

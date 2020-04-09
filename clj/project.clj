@@ -14,6 +14,7 @@
                  :init (-main)}
   :target-path "target/%s"
   :source-paths ["src"]
+  :java-source-paths ["../core/src"]
   :profiles
   {:provided {:dependencies
               [[nrepl "0.6.0"]

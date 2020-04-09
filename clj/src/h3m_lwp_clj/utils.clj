@@ -24,7 +24,6 @@
 
 
 (defn reduce-libgdx-array
-  ^Array
   [reduce-fn initial-value ^Array array]
   (loop [acc initial-value
          index 0]

@@ -52,22 +52,28 @@
 
 (defn create-sprite [object]
   (let [filename (object->filename object)
-        {frames :frames
-         full-width :full-width
-         full-height :full-height} (assets/get-map-object-frames filename)
+        frames (assets/get-map-object-frames filename)
         initial-time (TimeUtils/millis)
         frames-count (count frames)
         offset-frame (rand-int frames-count)]
     (if (empty? frames)
       (fn render-nil-sprite [_] nil)
       (fn render-sprite [^SpriteBatch batch]
-        (.draw
-         batch
-         ^TextureRegion (nth frames (get-frame-index initial-time frames-count offset-frame))
-         (float (- (* (inc (:x object)) consts/tile-size)
-                   full-width))
-         (float (- (* (inc (:y object)) consts/tile-size)
-                   full-height)))))))
+        (let [frame-index (get-frame-index initial-time frames-count offset-frame)
+              frame ^TextureRegion (nth frames frame-index)]
+          (.draw
+           batch
+           frame
+           (float
+            (+
+             (- (* (inc (:x object)) consts/tile-size)
+                (.-originalWidth frame))
+             (.-offsetX frame)))
+           (float
+            (+
+             (- (* (inc (:y object)) consts/tile-size)
+                (.-originalHeight frame))
+             (.-offsetY frame)))))))))
 
 
 (defonce get-map-objects-cache
@@ -102,6 +108,7 @@
 
 (defn create-renderer
   [^SpriteBatch batch ^OrthographicCamera camera h3m-map]
+  ; (println (:objects h3m-map))
   (fn render-objects []
     (.setProjectionMatrix batch (.-combined camera))
     (.update camera)

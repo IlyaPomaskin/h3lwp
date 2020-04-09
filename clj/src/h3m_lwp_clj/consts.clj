@@ -2,7 +2,6 @@
 
 (def ^String settings-name "Settings")
 (def ^String atlas-file-name "sprites/h3/all.atlas")
-(def ^String edn-file-name "sprites/h3/all.edn")
 (def animation-interval 0.180)
 (def tile-size 32)
 (def minimal-lod-objects-count 1300)

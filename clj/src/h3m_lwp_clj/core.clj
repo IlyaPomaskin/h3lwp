@@ -3,13 +3,16 @@
    [com.badlogic.gdx ApplicationAdapter Gdx]
    [com.badlogic.gdx.graphics GL20]
    [com.badlogic.gdx.utils.viewport ScreenViewport]
-   [java.io FileInputStream])
+   [com.heroes3.livewallpaper.AssetsParser Main]
+   [java.io InputStream])
   (:require
+   [h3m-parser.core :as h3m-parser]
    [h3m-lwp-clj.settings :as settings]
    [h3m-lwp-clj.wallpaper :as wallpaper]
    [h3m-lwp-clj.consts :as consts]
    [h3m-lwp-clj.assets :as assets]
-   [h3m-lwp-clj.parser :as parser])
+   [h3m-lwp-clj.parser :as parser]
+   [h3m-lwp-clj.random :as random])
   (:gen-class
    :name com.heroes3.livewallpaper.clojure.LiveWallpaperEngine
    :extends com.badlogic.gdx.ApplicationAdapter
@@ -29,15 +32,23 @@
 (defonce viewport (new ScreenViewport))
 
 
+(defn parse-map [^InputStream file]
+  (let [h3m-map (h3m-parser/parse-h3m file)]
+    (update
+     h3m-map
+     :objects
+     (fn [objects]
+       (->> objects
+            (map #(assoc % :def (nth (:defs h3m-map) (:def-index %))))
+            (map random/replace-random-objects))))))
+
+
 (defn -create
   [^ApplicationAdapter _]
   (assets/init)
   (reset!
    h3m-map
-   (->> "maps/invasion.h3m"
-        (.internal Gdx/files)
-        (.read)
-        (parser/parse-map)))
+   (parse-map (.read (.internal Gdx/files "maps/test.h3m"))))
   (reset!
    renderer
    (if (assets/assets-ready?)
@@ -64,19 +75,21 @@
 (defn -selectFile
   [^ApplicationAdapter _ ^String path]
   (future
-    (parser/parse-map-sprites
-     (new FileInputStream (.file (.absolute Gdx/files path)))
-     (.local Gdx/files consts/atlas-file-name)
-     (.local Gdx/files consts/edn-file-name)
-     (fn [length index]
-       (swap! settings assoc
-              :progress-bar-length length
-              :progress-bar-value index))
-     (fn []
+    (time
+     (try
+       (Main/parseAtlas
+        (.absolute Gdx/files path)
+        (.local Gdx/files consts/atlas-file-name))
+        ;  TODO
+        ;  (fn [length index]
+        ;    (swap! settings assoc
+        ;           :progress-bar-length length
+        ;           :progress-bar-value index))
        (.postRunnable
         Gdx/app
         (reify Runnable
           (run
             [_]
             (assets/init)
-            (reset! renderer (wallpaper/create-renderer settings viewport @h3m-map)))))))))
+            (reset! renderer (wallpaper/create-renderer settings viewport @h3m-map)))))
+       (catch Exception e (println e))))))
