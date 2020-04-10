@@ -7,8 +7,7 @@
    [com.badlogic.gdx.assets.loaders TextureAtlasLoader$TextureAtlasParameter]
    [com.badlogic.gdx.utils Array])
   (:require
-   [h3m-lwp-clj.consts :as consts]
-   [h3m-lwp-clj.utils :as utils]))
+   [h3m-lwp-clj.consts :as consts]))
 
 
 (def ^AssetManager asset-manager

@@ -60,14 +60,14 @@
 
 (defn get-frame-x
   [map-object ^TextureAtlas$AtlasRegion frame]
-  (- (* (+ 2 (:x map-object)) consts/tile-size)
+  (- (* (inc (:x map-object)) consts/tile-size)
      (.-packedWidth frame)
      (.-offsetX frame)))
 
 
 (defn get-frame-y
   [map-object ^TextureAtlas$AtlasRegion frame]
-  (- (* (+ 2 (:y map-object)) consts/tile-size)
+  (- (* (inc (:y map-object)) consts/tile-size)
      (.-packedHeight frame)
      (.-offsetY frame)))
 
