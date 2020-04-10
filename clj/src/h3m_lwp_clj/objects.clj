@@ -2,7 +2,7 @@
   (:import
    [com.badlogic.gdx.graphics OrthographicCamera]
    [com.badlogic.gdx.graphics.g2d SpriteBatch TextureAtlas$AtlasRegion]
-   [com.badlogic.gdx.utils TimeUtils])
+   [com.badlogic.gdx.utils Array TimeUtils])
   (:require
    [h3m-lwp-clj.assets :as assets]
    [h3m-lwp-clj.utils :as utils]
@@ -43,14 +43,14 @@
 
 
 (defn create-frame-getter
-  [frames]
+  [^Array frames]
   (let [initial-time (TimeUtils/millis)
-        frames-count (count frames)
+        frames-count (.-size frames)
         frame-offset (rand-int frames-count)]
     (fn frame-getter
       ^TextureAtlas$AtlasRegion
       []
-      (nth
+      (.get
        frames
        (mod (+ (quot (- (TimeUtils/millis) initial-time)
                      (* 1000 consts/animation-interval))
@@ -60,24 +60,24 @@
 
 (defn get-frame-x
   [map-object ^TextureAtlas$AtlasRegion frame]
-  (+ (- (* (inc (:x map-object)) consts/tile-size)
-        (.-originalWidth frame))
+  (- (* (+ 2 (:x map-object)) consts/tile-size)
+     (.-packedWidth frame)
      (.-offsetX frame)))
 
 
 (defn get-frame-y
   [map-object ^TextureAtlas$AtlasRegion frame]
-  (+ (- (* (inc (:y map-object)) consts/tile-size)
-        (.-originalHeight frame))
+  (- (* (+ 2 (:y map-object)) consts/tile-size)
+     (.-packedHeight frame)
      (.-offsetY frame)))
 
 
 (defn create-sprite
   [map-object]
   (let [def-name (object->filename map-object)
-        frames (assets/get-map-object-frames def-name)
+        frames (assets/get-def-frames def-name)
         get-frame (create-frame-getter frames)]
-    (if (empty? frames)
+    (if (.isEmpty frames)
       (fn render-nil-sprite [_] nil)
       (fn render-sprite [^SpriteBatch batch]
         (let [^TextureAtlas$AtlasRegion frame (get-frame)]

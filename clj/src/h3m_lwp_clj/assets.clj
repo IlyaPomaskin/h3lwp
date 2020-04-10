@@ -45,19 +45,14 @@
     frames))
 
 
-(defn get-map-object-frames
-  [filename]
-  (utils/reduce-libgdx-array conj [] (get-def-frames filename)))
-
-
 (defn get-terrain-sprite
   ^Array
   [def-name index]
-  (let [terrain-frames (get-def-frames def-name)]
-    (if (.isEmpty terrain-frames)
-      terrain-frames
+  (let [frames (get-def-frames def-name)]
+    (if (.isEmpty frames)
+      frames
       (doto (new Array 1)
-        (.add (.get terrain-frames index))))))
+        (.add (.get frames index))))))
 
 
 (defn assets-ready?
