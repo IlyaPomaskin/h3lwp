@@ -1,7 +1,7 @@
 (ns h3m-lwp-clj.terrain
   (:import
-   [com.badlogic.gdx.graphics OrthographicCamera]
-   [com.badlogic.gdx.graphics.g2d SpriteBatch TextureAtlas$AtlasRegion]
+   [com.badlogic.gdx.graphics Texture Pixmap Pixmap$Format OrthographicCamera]
+   [com.badlogic.gdx.graphics.g2d TextureRegion SpriteBatch TextureAtlas$AtlasRegion]
    [com.badlogic.gdx.maps.tiled TiledMap TiledMapTileLayer TiledMapTileLayer$Cell]
    [com.badlogic.gdx.maps.tiled.tiles AnimatedTiledMapTile StaticTiledMapTile]
    [com.badlogic.gdx.maps.tiled.renderers OrthogonalTiledMapRenderer]
@@ -39,18 +39,39 @@
       (.setFlipVertically flip-y))))
 
 
+(defn create-debug-layer
+  [map-size]
+  (let [debug-layer (new TiledMapTileLayer map-size map-size consts/tile-size consts/tile-size)
+        debug-tile (->>
+                    (doto (new Pixmap 32 32 Pixmap$Format/RGBA8888)
+                      (.setColor (float 1) (float 0) (float 0) (float 0.5))
+                      (.drawRectangle 0 0 32 32)
+                      ;; (.drawLine 0 0 0 32)
+                      ;; (.drawLine 0 0 32 0)
+                      )
+                    (new Texture)
+                    (new TextureRegion)
+                    (new StaticTiledMapTile))
+        debug-cell (doto (new TiledMapTileLayer$Cell)
+                     (.setTile debug-tile))]
+    (dorun
+     (for [x (range 0 map-size)
+           y (range 0 map-size)]
+       (.setCell debug-layer x y debug-cell)))
+    debug-layer))
+
+
 (defn create-layers
-  [{size :size
-    terrain :terrain}]
-  (let [terrain-layer (new TiledMapTileLayer size size consts/tile-size consts/tile-size)
-        river-layer (new TiledMapTileLayer size size consts/tile-size consts/tile-size)
-        road-layer (new TiledMapTileLayer size size consts/tile-size consts/tile-size)]
+  [map-size terrain-tiles]
+  (let [terrain-layer (new TiledMapTileLayer map-size map-size consts/tile-size consts/tile-size)
+        river-layer (new TiledMapTileLayer map-size map-size consts/tile-size consts/tile-size)
+        road-layer (new TiledMapTileLayer map-size map-size consts/tile-size consts/tile-size)]
     (.setOffsetY road-layer (- (/ consts/tile-size 2)))
     (dorun
-     (for [x (range 0 size)
-           y (range 0 size)
-           :let [index (+ (* size y) x)
-                 tile (nth terrain index)]]
+     (for [x (range 0 map-size)
+           y (range 0 map-size)
+           :let [index (+ (* map-size y) x)
+                 tile (nth terrain-tiles index)]]
        (do
          (.setCell terrain-layer x y (create-tile tile :terrain))
          (when (pos? (:river tile))
@@ -74,7 +95,7 @@
 
 (defn create-renderer
   [^SpriteBatch batch ^OrthographicCamera camera h3m-map]
-  (let [layers (create-layers h3m-map)
+  (let [layers (create-layers (:size h3m-map) (:terrain h3m-map))
         tiled-map (create-tiled-map layers)
         renderer (new OrthogonalTiledMapRenderer tiled-map batch)]
     (fn []
