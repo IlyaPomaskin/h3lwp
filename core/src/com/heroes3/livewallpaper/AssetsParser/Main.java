@@ -156,10 +156,19 @@ public class Main {
                                     frame.data
                                 );
 
-                                frameRect = packer.pack(
-                                    frameName,
-                                    new Pixmap(pngData, 0, pngData.length)
-                                );
+                                Pixmap img = new Pixmap(pngData, 0, pngData.length);
+
+                                if (defFile.fileType == Lod.FileType.TERRAIN) {
+                                    Pixmap fullImage = new Pixmap(frame.fullWidth, frame.fullHeight, Pixmap.Format.RGBA8888);
+                                    fullImage.drawPixmap(img, frame.x, frame.y);
+                                    frame.x = 0;
+                                    frame.y = 0;
+                                    frame.width = frame.fullWidth;
+                                    frame.height = frame.fullHeight;
+                                    img = fullImage;
+                                }
+
+                                frameRect = packer.pack(frameName, img);
                             }
 
                             writeFrame(
