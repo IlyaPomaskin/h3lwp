@@ -1,8 +1,6 @@
 package com.heroes3.livewallpaper;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
+import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -11,7 +9,7 @@ import android.widget.Toast;
 import static android.content.Intent.CATEGORY_OPENABLE;
 import static android.content.Intent.EXTRA_LOCAL_ONLY;
 
-public class FileSelectorActivity extends AppCompatActivity {
+public class FileSelectorActivity extends Activity {
     private static final int PICK_FILE_RESULT_CODE = 1;
 
     @Override
@@ -46,9 +44,7 @@ public class FileSelectorActivity extends AppCompatActivity {
     protected void sendFilePath(String filePath) {
         Intent intent = new Intent(LiveWallpaper.INTENT_NAME);
         intent.putExtra(LiveWallpaper.INTENT_EXTRA_NAME, filePath);
-        LocalBroadcastManager
-            .getInstance(this)
-            .sendBroadcast(intent);
+        sendBroadcast(intent);
     }
 
     @Override

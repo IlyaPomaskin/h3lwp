@@ -5,8 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.badlogic.gdx.backends.android.AndroidLiveWallpaperService;
 import com.heroes3.livewallpaper.clojure.LiveWallpaperEngine;
@@ -42,9 +40,7 @@ public class LiveWallpaper extends AndroidLiveWallpaperService {
             }
         });
 
-        LocalBroadcastManager
-            .getInstance(this)
-            .registerReceiver(receiver, new IntentFilter(INTENT_NAME));
+        registerReceiver(receiver, new IntentFilter(INTENT_NAME));
 
         AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
         config.useAccelerometer = false;
