@@ -43,7 +43,7 @@
   [map-size]
   (let [debug-layer (new TiledMapTileLayer map-size map-size consts/tile-size consts/tile-size)
         debug-tile (->>
-                    (doto (new Pixmap 32 32 Pixmap$Format/RGBA8888)
+                    (doto (new Pixmap 32 32 Pixmap$Format/RGBA4444)
                       (.setColor (float 1) (float 0) (float 0) (float 0.5))
                       (.drawRectangle 0 0 32 32)
                       ;; (.drawLine 0 0 0 32)

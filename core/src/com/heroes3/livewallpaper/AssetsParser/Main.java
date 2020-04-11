@@ -118,7 +118,7 @@ public class Main {
             PixmapPacker packer = new PixmapPacker(
                 8192,
                 4096,
-                Pixmap.Format.RGBA8888,
+                Pixmap.Format.RGBA4444,
                 0,
                 false
             );
@@ -144,7 +144,6 @@ public class Main {
                         for (int frameIndex = 0; frameIndex < group.framesCount; frameIndex++) {
                             String frameName = group.filenames[frameIndex];
                             Def.Frame frame = group.frames[frameIndex];
-
                             Rectangle frameRect = packer.getRect(frameName);
                             if (frameRect == null) {
                                 PngWriter pngWrite = new PngWriter();
@@ -159,7 +158,7 @@ public class Main {
                                 Pixmap img = new Pixmap(pngData, 0, pngData.length);
 
                                 if (defFile.fileType == Lod.FileType.TERRAIN) {
-                                    Pixmap fullImage = new Pixmap(frame.fullWidth, frame.fullHeight, Pixmap.Format.RGBA8888);
+                                    Pixmap fullImage = new Pixmap(frame.fullWidth, frame.fullHeight, Pixmap.Format.RGBA4444);
                                     fullImage.drawPixmap(img, frame.x, frame.y);
                                     frame.x = 0;
                                     frame.y = 0;
