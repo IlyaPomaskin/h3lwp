@@ -1,6 +1,6 @@
 package com.heroes3.livewallpaper.AssetsParser;
 
-public class Def {
+class Def {
     int type;
     int fullWidth;
     int fullHeight;

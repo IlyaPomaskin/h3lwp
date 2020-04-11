@@ -1,16 +1,14 @@
 package com.heroes3.livewallpaper.AssetsParser;
 
-// import com.google.gson.GsonBuilder;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-public class DefReader {
-    protected Def def = new Def();
-    protected Reader rdr;
-    protected int streamLength;
+class DefReader {
+    private Def def = new Def();
+    private Reader rdr;
+    private int streamLength;
 
     Def read(InputStream in) throws IOException {
         rdr = new Reader(in);

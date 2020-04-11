@@ -4,10 +4,11 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.zip.CRC32;
+import java.util.zip.Deflater;
 import java.util.zip.DeflaterInputStream;
 
-public class PngWriter {
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
+class PngWriter {
+    private ByteArrayOutputStream out = new ByteArrayOutputStream();
 
     byte[] create(int width, int height, byte[] palette, byte[] transparent, byte[] data) throws IOException {
         out.write(new byte[]{-119, 80, 78, 71, 13, 10, 26, 10});

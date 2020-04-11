@@ -16,7 +16,7 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 public class Main {
-    static byte[] transparent = new byte[]{
+    private static byte[] transparent = new byte[]{
         (byte) 0x00,
         (byte) 0x40,
         (byte) 0x00,
@@ -26,7 +26,7 @@ public class Main {
         (byte) 0x80,
         (byte) 0x40
     };
-    static byte[] fixedPalette = new byte[]{
+    private static byte[] fixedPalette = new byte[]{
         0, 0, 0,
         0, 0, 0,
         0, 0, 0,

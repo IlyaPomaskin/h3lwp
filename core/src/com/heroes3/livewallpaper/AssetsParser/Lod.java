@@ -1,9 +1,8 @@
 package com.heroes3.livewallpaper.AssetsParser;
 
 import java.util.HashMap;
-import java.util.Map;
 
-public class Lod {
+class Lod {
     byte[] magic = new byte[8];
     int filesCount;
     byte[] unknown = new byte[80];
@@ -35,15 +34,15 @@ public class Lod {
             this.fileType = fileType;
         }
 
-        public Integer getUrl() {
+        public Integer getFileType() {
             return fileType;
         }
 
-        private static final Map<Integer, FileType> lookup = new HashMap();
+        private static final HashMap<Integer, FileType> lookup = new HashMap<Integer, FileType>();
 
         static {
             for (FileType env : FileType.values()) {
-                lookup.put(env.getUrl(), env);
+                lookup.put(env.getFileType(), env);
             }
         }
 

@@ -3,9 +3,9 @@ package com.heroes3.livewallpaper.AssetsParser;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class LodReader {
-    protected Lod lod = new Lod();
-    protected Reader rdr;
+class LodReader {
+    private Lod lod = new Lod();
+    private Reader rdr;
 
     Lod read(InputStream stream) throws IOException {
         rdr = new Reader(stream);
