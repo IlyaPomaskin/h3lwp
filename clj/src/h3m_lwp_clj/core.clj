@@ -45,15 +45,16 @@
 
 (defn -create
   [^ApplicationAdapter _]
-  (assets/init)
   (reset!
    h3m-map
-   (parse-map (.read (.internal Gdx/files "maps/test.h3m"))))
+   (parse-map (.read (.internal Gdx/files "maps/invasion.h3m"))))
   (reset!
    renderer
    (if (assets/assets-ready?)
      (wallpaper/create-renderer settings viewport @h3m-map)
-     (settings/create-renderer settings viewport))))
+     (do
+       (assets/init)
+       (settings/create-renderer settings viewport)))))
 
 
 (defn -resize
