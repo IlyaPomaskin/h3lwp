@@ -1,61 +1,90 @@
 (ns h3m-lwp-clj.settings
   (:import
    [com.badlogic.gdx Gdx]
-   [com.badlogic.gdx.scenes.scene2d Stage InputEvent]
-   [com.badlogic.gdx.scenes.scene2d.ui Skin Label TextButton VerticalGroup]
+   [com.badlogic.gdx.scenes.scene2d Stage InputEvent Touchable]
+   [com.badlogic.gdx.scenes.scene2d.ui Skin Label TextButton VerticalGroup TextButton$TextButtonStyle ScrollPane]
    [com.badlogic.gdx.scenes.scene2d.utils ClickListener]
    [com.badlogic.gdx.utils.viewport Viewport]
-   [com.badlogic.gdx.utils Align]))
+   [com.badlogic.gdx.utils Align]
+   (com.badlogic.gdx.graphics Color)))
 
 
 (def ^String instruction
-  "To use this app you must provide files from your copy of Heroes of Might and Magic 3: Shadow of the Death")
-(def ^String gog-url "https://www.gog.com/game/heroes_of_might_and_magic_3_complete_edition")
-(def ^String open-gog-text
-  "Buy game on GOG.com")
+  "To use this app you must provide files from your copy of \"Heroes of Might and Magic 3: Shadow of the Death\"")
+(def ^String permission-text
+  "Allow storage permissions in Android settings")
+(def ^String instructions-url "https://github.com/IlyaPomaskin/h3lwp")
 (def ^String select-button-text "Select h3sprite.lod")
 
 
-(defn in-progress?
-  [{progress-bar-length :progress-bar-length
-    progress-bar-value :progress-bar-value}]
-  (and
-   (pos? progress-bar-length)
-   (not= progress-bar-length progress-bar-value)))
+(defn create-disabled-button-style
+  [^Skin skin]
+  (let [default-button-style (.getStyle (new TextButton "" skin "default"))
+        disabled-button-style (new TextButton$TextButtonStyle default-button-style)
+        _ (set!
+           (.-up disabled-button-style)
+           (.newDrawable skin "default-round" Color/LIGHT_GRAY))]
+    disabled-button-style))
 
 
-(defn progress-percents
-  [{progress-bar-length :progress-bar-length
-    progress-bar-value :progress-bar-value}]
-  (int
-   (* (/ progress-bar-value
-         progress-bar-length)
-      100)))
+(defn create-pressed-button-style
+  [^Skin skin]
+  (let [default-button-style (.getStyle (new TextButton "" skin "default"))
+        pressed-button-style (new TextButton$TextButtonStyle default-button-style)
+        _ (set!
+           (.-up pressed-button-style)
+           (.-down pressed-button-style))]
+    pressed-button-style))
 
 
 (defn set-settings-handler
   [settings-atom
-   ^VerticalGroup buttons-group
+   ^Skin skin
    ^TextButton select-button
-   ^Label progress-label]
+   ^Label label]
   (remove-watch settings-atom :settings-change)
   (add-watch
    settings-atom
    :settings-change
    (fn [_ _ prev-settings next-settings]
-     (let [prev-in-progress? (in-progress? prev-settings)
-           next-in-progress? (in-progress? next-settings)
-           start? (and (not prev-in-progress?) next-in-progress?)
-           done? (and prev-in-progress? (not next-in-progress?))]
-       (when start?
-         (.swapActor buttons-group select-button progress-label)
-         (.setVisible select-button false))
-       (when next-in-progress?
-         (.setText
-          progress-label
-          (format "Parsing: %d%%" (progress-percents next-settings))))
-       (when done?
-         (.setText progress-label "Loading..."))))))
+     (let [{state :state
+            error :error} next-settings]
+
+       (when (not= (:state prev-settings)
+                   (:state next-settings))
+         (doto select-button
+           (.setStyle (.getStyle (new TextButton "" skin "default")))
+           (.setText select-button-text)
+           (.setTouchable Touchable/enabled))
+         (.setText label ""))
+
+       (condp = state
+         :wait
+         (doto select-button
+           (.setStyle (create-disabled-button-style skin))
+           (.setTouchable Touchable/disabled))
+
+         :no-storage-permission
+         (do
+           (doto select-button
+             (.setStyle (create-disabled-button-style skin))
+             (.setTouchable Touchable/disabled))
+           (.setVisible label true))
+
+         :parsing
+         (doto select-button
+           (.setStyle (create-pressed-button-style skin))
+           (.setTouchable Touchable/disabled)
+           (.setText "Parsing..."))
+
+         :loading
+         (doto select-button
+           (.setStyle (create-pressed-button-style skin))
+           (.setTouchable Touchable/disabled)
+           (.setText "Loading..."))
+
+         :error
+         (.setText label (format "Something went wrong\n%s" error)))))))
 
 
 (defn create-renderer
@@ -69,15 +98,15 @@
           (.setWrap true)
           (.setAlignment Align/center))
 
-        gog-click-handler
+        full-instructions-click-handler
         (proxy [ClickListener] []
           (clicked
             [^InputEvent event ^Float x ^Float y]
-            (.openURI Gdx/net gog-url)))
+            (.openURI Gdx/net instructions-url)))
 
-        gog-button
-        (doto (new TextButton "Open GOG.com" skin "default")
-          (.addListener gog-click-handler))
+        full-instructions-button
+        (doto (new TextButton "Open instructions" skin "default")
+          (.addListener full-instructions-click-handler))
 
         on-click-listener
         (proxy [ClickListener] []
@@ -89,9 +118,9 @@
         (doto (new TextButton select-button-text skin "default")
           (.addListener on-click-listener))
 
-        progress-label
+        status-label
         (doto (new Label "" skin)
-          (.setWrap false)
+          (.setWrap true)
           (.setAlignment Align/center))
 
         instructions-group
@@ -103,22 +132,20 @@
         buttons-group
         (doto (new VerticalGroup)
           (.space 10)
-          (.addActor gog-button)
+          (.addActor full-instructions-button)
           (.addActor select-button)
-          (.addActor progress-label))]
-    (set-settings-handler
-     settings-atom
-     buttons-group
-     select-button
-     progress-label)
+          (.addActor status-label))
+
+        groups
+        (doto (new VerticalGroup)
+          (.grow)
+          (.addActor instructions-group)
+          (.addActor buttons-group))]
+    (set-settings-handler settings-atom skin select-button status-label)
     (.addActor
      stage
-     (doto (new VerticalGroup)
-       (.setFillParent true)
-       (.center)
-       (.grow)
-       (.addActor instructions-group)
-       (.addActor buttons-group)))
+     (doto (new ScrollPane groups)
+       (.setFillParent true)))
     (.setInputProcessor (Gdx/input) stage)
     (fn []
       (.apply viewport true)

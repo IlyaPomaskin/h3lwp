@@ -6,12 +6,7 @@ import com.badlogic.gdx.graphics.PixmapIO;
 import com.badlogic.gdx.graphics.g2d.PixmapPacker;
 import com.badlogic.gdx.math.Rectangle;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
@@ -107,93 +102,92 @@ public class Main {
         writer.append(String.format("  index: %d\n", frameIndex));
     }
 
-    public static void parseAtlas(FileHandle lodFile, FileHandle atlasFile) {
-        try {
+    public static void parseAtlas(FileHandle lodFile, FileHandle atlasFile) throws IOException {
 //            byte[] content = Files.readAllBytes(Paths.get(lodPath));
 //            ByteArrayInputStream lodStream = new ByteArrayInputStream(content);
-            FileInputStream lodStream = new FileInputStream(lodFile.file());
-            LodReader lodReader = new LodReader();
-            Lod sprites = lodReader.read(new BufferedInputStream(lodStream));
+        FileInputStream lodStream = new FileInputStream(lodFile.file());
+        LodReader lodReader = new LodReader();
+        Lod sprites = lodReader.read(new BufferedInputStream(lodStream));
 
-            PixmapPacker packer = new PixmapPacker(
-                8192,
-                4096,
-                Pixmap.Format.RGBA4444,
-                0,
-                false
-            );
-            String pngFilename = atlasFile.nameWithoutExtension() + ".png";
-            Writer writer = atlasFile.writer(false);
-            writePageHeader(writer, pngFilename, packer);
+        PixmapPacker packer = new PixmapPacker(
+            8192,
+            8192,
+            Pixmap.Format.RGBA4444,
+            0,
+            false
+        );
+        String pngFilename = atlasFile.nameWithoutExtension() + ".png";
+        Writer writer = atlasFile.writer(false);
+        writePageHeader(writer, pngFilename, packer);
 
-            for (Lod.File defFile : sprites.files) {
-                if (!defFile.name.toLowerCase().endsWith(".def")) {
-                    continue;
-                }
+        for (Lod.File defFile : sprites.files) {
+            if (!defFile.name.toLowerCase().endsWith(".def")) {
+                continue;
+            }
 
-                if (defFile.fileType == Lod.FileType.MAP ||
-                    defFile.fileType == Lod.FileType.TERRAIN) {
-                    ByteArrayInputStream defContentStream = getLodFileContent(lodStream, defFile);
+            if (defFile.fileType == Lod.FileType.MAP ||
+                defFile.fileType == Lod.FileType.TERRAIN) {
 //                    saveDef("../defs/" + defFile.name, defContentStream);
 //                    System.out.printf("parse: %s\n", defFile.name);
 
-                    DefReader defReader = new DefReader();
-                    Def def = defReader.read(defContentStream);
-                    System.arraycopy(fixedPalette, 0, def.rawPalette, 0, fixedPalette.length);
-                    for (Def.Group group : def.groups) {
-                        for (int frameIndex = 0; frameIndex < group.framesCount; frameIndex++) {
-                            String frameName = group.filenames[frameIndex];
-                            Def.Frame frame = group.frames[frameIndex];
-                            Rectangle frameRect = packer.getRect(frameName);
-                            if (frameRect == null) {
-                                PngWriter pngWrite = new PngWriter();
-                                byte[] pngData = pngWrite.create(
-                                    frame.width,
-                                    frame.height,
-                                    def.rawPalette,
-                                    transparent,
-                                    frame.data
-                                );
+                ByteArrayInputStream defContentStream;
+                try {
+                    defContentStream = getLodFileContent(lodStream, defFile);
+                } catch (DataFormatException ex) {
+                    continue;
+                }
 
-                                Pixmap img = new Pixmap(pngData, 0, pngData.length);
+                DefReader defReader = new DefReader();
+                Def def = defReader.read(defContentStream);
+                System.arraycopy(fixedPalette, 0, def.rawPalette, 0, fixedPalette.length);
+                for (Def.Group group : def.groups) {
+                    for (int frameIndex = 0; frameIndex < group.framesCount; frameIndex++) {
+                        String frameName = group.filenames[frameIndex];
+                        Def.Frame frame = group.frames[frameIndex];
+                        Rectangle frameRect = packer.getRect(frameName);
+                        if (frameRect == null) {
+                            PngWriter pngWrite = new PngWriter();
+                            byte[] pngData = pngWrite.create(
+                                frame.width,
+                                frame.height,
+                                def.rawPalette,
+                                transparent,
+                                frame.data
+                            );
 
-                                if (defFile.fileType == Lod.FileType.TERRAIN) {
-                                    Pixmap fullImage = new Pixmap(frame.fullWidth, frame.fullHeight, Pixmap.Format.RGBA4444);
-                                    fullImage.drawPixmap(img, frame.x, frame.y);
-                                    frame.x = 0;
-                                    frame.y = 0;
-                                    frame.width = frame.fullWidth;
-                                    frame.height = frame.fullHeight;
-                                    img = fullImage;
-                                }
+                            Pixmap img = new Pixmap(pngData, 0, pngData.length);
 
-                                frameRect = packer.pack(frameName, img);
+                            if (defFile.fileType == Lod.FileType.TERRAIN) {
+                                Pixmap fullImage = new Pixmap(frame.fullWidth, frame.fullHeight, Pixmap.Format.RGBA4444);
+                                fullImage.drawPixmap(img, frame.x, frame.y);
+                                frame.x = 0;
+                                frame.y = 0;
+                                frame.width = frame.fullWidth;
+                                frame.height = frame.fullHeight;
+                                img = fullImage;
                             }
 
-                            writeFrame(
-                                writer,
-                                defFile.name.toLowerCase().replace(".def", ""),
-                                frameIndex,
-                                frameRect,
-                                frame
-                            );
+                            frameRect = packer.pack(frameName, img);
                         }
+
+                        writeFrame(
+                            writer,
+                            defFile.name.toLowerCase().replace(".def", ""),
+                            frameIndex,
+                            frameRect,
+                            frame
+                        );
                     }
                 }
             }
-
-            lodStream.close();
-            writer.close();
-            PixmapIO.writePNG(
-                atlasFile.sibling(pngFilename),
-                packer.getPages().get(0).getPixmap()
-            );
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (DataFormatException e) {
-            e.printStackTrace();
         }
+
+        lodStream.close();
+        writer.close();
+        PixmapIO.writePNG(
+            atlasFile.sibling(pngFilename),
+            packer.getPages().get(0).getPixmap()
+        );
 
         System.out.println("done");
     }

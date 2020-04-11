@@ -75,6 +75,10 @@ task run(type: Exec) {
     commandLine "$adb", 'shell', 'am', 'start', '-n', 'com.heroes3.livewallpaper/com.heroes3.livewallpaper.AndroidLauncher'
 }
 
+dependencies {
+    implementation 'androidx.core:core:1.2.0'
+}
+
 // sets up the Android Eclipse project, using the old Ant based build.
 eclipse {
     // need to specify Java source sets explicitly, SpringSource Gradle Eclipse plugin

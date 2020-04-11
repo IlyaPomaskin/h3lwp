@@ -1,9 +1,11 @@
 package com.heroes3.livewallpaper;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.badlogic.gdx.backends.android.AndroidLiveWallpaperService;
@@ -31,6 +33,12 @@ public class LiveWallpaper extends AndroidLiveWallpaperService {
         super.onCreateApplication();
 
         app = new LiveWallpaperEngine();
+
+        boolean hasStoragePermission = checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+        if (!hasStoragePermission) {
+            app.setStoragePermissionStatus(false);
+        }
+
         app.setFileSelectHandler(new Runnable() {
             @Override
             public void run() {
