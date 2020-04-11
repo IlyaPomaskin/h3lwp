@@ -45,10 +45,7 @@
         debug-tile (->>
                     (doto (new Pixmap 32 32 Pixmap$Format/RGBA4444)
                       (.setColor (float 1) (float 0) (float 0) (float 0.5))
-                      (.drawRectangle 0 0 32 32)
-                      ;; (.drawLine 0 0 0 32)
-                      ;; (.drawLine 0 0 32 0)
-                      )
+                      (.drawRectangle 0 0 32 32))
                     (new Texture)
                     (new TextureRegion)
                     (new StaticTiledMapTile))
