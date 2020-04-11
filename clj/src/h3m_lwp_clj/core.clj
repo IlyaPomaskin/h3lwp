@@ -92,3 +92,17 @@
             (assets/init)
             (reset! renderer (wallpaper/create-renderer settings viewport @h3m-map)))))
        (catch Exception e (println e))))))
+
+
+(comment
+  (.postRunnable
+   Gdx/app
+   (reify Runnable
+     (run
+       [_]
+       (reset!
+        renderer
+        (wallpaper/create-renderer
+         settings
+         viewport
+         @h3m-map))))))
