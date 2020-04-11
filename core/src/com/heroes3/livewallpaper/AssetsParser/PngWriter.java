@@ -30,7 +30,7 @@ class PngWriter {
         }
 
         byte[] input = scanlines.toByteArray();
-        byte[] output = new byte[input.length];
+        byte[] output = new byte[input.length + 100];
         Deflater deflater = new Deflater();
         deflater.setInput(input);
         deflater.finish();
