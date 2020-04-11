@@ -29,11 +29,14 @@ class PngWriter {
             );
         }
 
-        return new DeflaterInputStream(
-            new ByteArrayInputStream(
-                scanlines.toByteArray()
-            )
-        ).readAllBytes();
+        byte[] input = scanlines.toByteArray();
+        byte[] output = new byte[input.length];
+        Deflater deflater = new Deflater();
+        deflater.setInput(input);
+        deflater.finish();
+        deflater.deflate(output);
+        deflater.end();
+        return output;
     }
 
     private byte[] createIHDR(int width, int height) throws IOException {
