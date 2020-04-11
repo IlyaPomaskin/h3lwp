@@ -29,6 +29,7 @@
 
 
 (defonce viewport (new ScreenViewport))
+(.setUnitsPerPixel ^ScreenViewport viewport (float 0.5))
 
 
 (defn parse-map [^InputStream file]
