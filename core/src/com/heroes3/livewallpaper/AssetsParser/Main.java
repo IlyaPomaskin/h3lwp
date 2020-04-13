@@ -144,37 +144,35 @@ public class Main {
                     for (int frameIndex = 0; frameIndex < group.framesCount; frameIndex++) {
                         String frameName = group.filenames[frameIndex];
                         Def.Frame frame = group.frames[frameIndex];
-                        Rectangle frameRect = packer.getRect(frameName);
-                        if (frameRect == null) {
-                            PngWriter pngWrite = new PngWriter();
-                            byte[] pngData = pngWrite.create(
-                                frame.width,
-                                frame.height,
-                                def.rawPalette,
-                                transparent,
-                                frame.data
-                            );
+                        if (packer.getRect(frameName) != null) {
+                            continue;
+                        }
+                        PngWriter pngWrite = new PngWriter();
+                        byte[] pngData = pngWrite.create(
+                            frame.width,
+                            frame.height,
+                            def.rawPalette,
+                            transparent,
+                            frame.data
+                        );
 
-                            Pixmap img = new Pixmap(pngData, 0, pngData.length);
+                        Pixmap img = new Pixmap(pngData, 0, pngData.length);
 
-                            if (defFile.fileType == Lod.FileType.TERRAIN) {
-                                Pixmap fullImage = new Pixmap(frame.fullWidth, frame.fullHeight, Pixmap.Format.RGBA4444);
-                                fullImage.drawPixmap(img, frame.x, frame.y);
-                                frame.x = 0;
-                                frame.y = 0;
-                                frame.width = frame.fullWidth;
-                                frame.height = frame.fullHeight;
-                                img = fullImage;
-                            }
-
-                            frameRect = packer.pack(frameName, img);
+                        if (defFile.fileType == Lod.FileType.TERRAIN) {
+                            Pixmap fullImage = new Pixmap(frame.fullWidth, frame.fullHeight, Pixmap.Format.RGBA4444);
+                            fullImage.drawPixmap(img, frame.x, frame.y);
+                            frame.x = 0;
+                            frame.y = 0;
+                            frame.width = frame.fullWidth;
+                            frame.height = frame.fullHeight;
+                            img = fullImage;
                         }
 
                         writeFrame(
                             writer,
                             defFile.name.toLowerCase().replace(".def", ""),
                             frameIndex,
-                            frameRect,
+                            packer.pack(frameName, img),
                             frame
                         );
                     }
