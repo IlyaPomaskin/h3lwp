@@ -69,7 +69,9 @@
            (doto select-button
              (.setStyle (create-disabled-button-style skin))
              (.setTouchable Touchable/disabled))
-           (.setVisible label true))
+           (doto label
+             (.setText permission-text)
+             (.setVisible true)))
 
          :parsing
          (doto select-button
@@ -84,7 +86,7 @@
            (.setText "Loading..."))
 
          :error
-         (.setText label (format "Something went wrong\n%s" error)))))))
+         (.setText label (format "Something went wrong\n%s" (or error ""))))))))
 
 
 (defn create-renderer
