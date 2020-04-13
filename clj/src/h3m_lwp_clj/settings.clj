@@ -17,7 +17,7 @@
 (def ^String select-button-text "Select h3sprite.lod")
 
 
-(defn create-disabled-button-style
+(defn create-disabled-button-style-
   [^Skin skin]
   (let [default-button-style (.getStyle (new TextButton "" skin "default"))
         disabled-button-style (new TextButton$TextButtonStyle default-button-style)
@@ -25,9 +25,10 @@
            (.-up disabled-button-style)
            (.newDrawable skin "default-round" Color/LIGHT_GRAY))]
     disabled-button-style))
+(def create-disabled-button-style (memoize create-disabled-button-style-))
 
 
-(defn create-pressed-button-style
+(defn create-pressed-button-style-
   [^Skin skin]
   (let [default-button-style (.getStyle (new TextButton "" skin "default"))
         pressed-button-style (new TextButton$TextButtonStyle default-button-style)
@@ -35,58 +36,16 @@
            (.-up pressed-button-style)
            (.-down pressed-button-style))]
     pressed-button-style))
+(def create-pressed-button-style (memoize create-pressed-button-style-))
 
 
 (defn set-settings-handler
-  [settings-atom
-   ^Skin skin
-   ^TextButton select-button
-   ^Label label]
+  [widgets settings-atom]
+  (settings-handler widgets @settings-atom nil)
   (remove-watch settings-atom :settings-change)
-  (add-watch
-   settings-atom
-   :settings-change
-   (fn [_ _ prev-settings next-settings]
-     (let [{state :state
-            error :error} next-settings]
-
-       (when (not= (:state prev-settings)
-                   (:state next-settings))
-         (doto select-button
-           (.setStyle (.getStyle (new TextButton "" skin "default")))
-           (.setText select-button-text)
-           (.setTouchable Touchable/enabled))
-         (.setText label ""))
-
-       (condp = state
-         :wait
-         (doto select-button
-           (.setStyle (create-disabled-button-style skin))
-           (.setTouchable Touchable/disabled))
-
-         :no-storage-permission
-         (do
-           (doto select-button
-             (.setStyle (create-disabled-button-style skin))
-             (.setTouchable Touchable/disabled))
-           (doto label
-             (.setText permission-text)
-             (.setVisible true)))
-
-         :parsing
-         (doto select-button
-           (.setStyle (create-pressed-button-style skin))
-           (.setTouchable Touchable/disabled)
-           (.setText "Parsing..."))
-
-         :loading
-         (doto select-button
-           (.setStyle (create-pressed-button-style skin))
-           (.setTouchable Touchable/disabled)
-           (.setText "Loading..."))
-
-         :error
-         (.setText label (format "Something went wrong\n%s" (or error ""))))))))
+  (add-watch settings-atom :settings-change
+             (fn [_ _ prev-settings next-settings]
+               (settings-handler widgets next-settings prev-settings))))
 
 
 (defn create-renderer
