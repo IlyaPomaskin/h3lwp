@@ -25,10 +25,11 @@
 (defonce h3m-map (atom nil))
 (defonce settings
   (atom {:on-file-select-click     nil
-         :state                    :wait
+         :state                    :ready
          :error                    ""
          :position-update-interval (* 60 15)}))
-(defonce viewport (new ScreenViewport))
+(defonce viewport (doto (new ScreenViewport)
+                    (.setUnitsPerPixel (float 0.5))))
 
 
 (defn set-error
@@ -76,7 +77,7 @@
   [^ApplicationAdapter _ ^Runnable file-select-handler]
   (swap! settings assoc :on-file-select-click
          (fn []
-           (swap! settings assoc :state :wait :error "")
+           (swap! settings assoc :state :ready :error "")
            (.run file-select-handler))))
 
 
