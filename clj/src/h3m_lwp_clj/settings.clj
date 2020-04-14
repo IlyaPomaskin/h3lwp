@@ -39,6 +39,62 @@
 (def create-pressed-button-style (memoize create-pressed-button-style-))
 
 
+(defn create-default-button-style-
+  [^Skin skin]
+  (.getStyle (new TextButton "" skin "default")))
+(def create-default-button-style (memoize create-default-button-style-))
+
+
+(defn settings-handler
+  [{^Skin skin :skin
+    ^TextButton select-button :select-button
+    ^Label label :label} settings prev-settings]
+  (let [{state :state
+         error :error} settings]
+
+    (when (or (nil? prev-settings)
+              (not= (:state prev-settings)
+                    (:state settings)))
+      (doto select-button
+        (.setStyle (create-default-button-style skin))
+        (.setText select-button-text)
+        (.setTouchable Touchable/enabled))
+      (.setText label ""))
+
+    (println "state" state)
+    (println "error" error)
+
+    (condp = state
+      :ready
+      (doto select-button
+        (.setStyle (create-default-button-style skin))
+        (.setTouchable Touchable/enabled))
+
+      :no-storage-permission
+      (do
+        (doto select-button
+          (.setStyle (create-disabled-button-style skin))
+          (.setTouchable Touchable/disabled))
+        (doto label
+          (.setText permission-text)
+          (.setVisible true)))
+
+      :parsing
+      (doto select-button
+        (.setStyle (create-pressed-button-style skin))
+        (.setTouchable Touchable/disabled)
+        (.setText "Parsing..."))
+
+      :loading
+      (doto select-button
+        (.setStyle (create-pressed-button-style skin))
+        (.setTouchable Touchable/disabled)
+        (.setText "Loading..."))
+
+      :error
+      (.setText label (format "Something went wrong\n%s" (or error ""))))))
+
+
 (defn set-settings-handler
   [widgets settings-atom]
   (settings-handler widgets @settings-atom nil)
@@ -102,11 +158,15 @@
           (.grow)
           (.addActor instructions-group)
           (.addActor buttons-group))]
-    (set-settings-handler settings-atom skin select-button status-label)
+    (set-settings-handler
+      {:skin skin
+       :select-button select-button
+       :label status-label}
+      settings-atom)
     (.addActor
-     stage
-     (doto (new ScrollPane groups)
-       (.setFillParent true)))
+      stage
+      (doto (new ScrollPane groups)
+        (.setFillParent true)))
     (.setInputProcessor (Gdx/input) stage)
     (fn []
       (.apply viewport true)
