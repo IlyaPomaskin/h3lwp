@@ -13,7 +13,7 @@
 (def asset-manager (atom nil))
 
 
-(defn file-exists?
+(defn local-file-exists?
   [file-path]
   (->> file-path
        (.local Gdx/files)
@@ -23,33 +23,39 @@
 (defn assets-ready?
   []
   (and
-   (file-exists? consts/atlas-file-name)
-   (file-exists? consts/png-file-name)))
+   (local-file-exists? consts/atlas-file-name)
+   (local-file-exists? consts/png-file-name)))
 
 
 (defn load-atlas
   [^AssetManager asset-manager]
-  (doto asset-manager
-    (.load
-     consts/atlas-file-name
-     TextureAtlas
-     (new TextureAtlasLoader$TextureAtlasParameter true))
-    (.finishLoadingAsset consts/atlas-file-name)
-    (.finishLoading)))
+  (try
+    (doto asset-manager
+      (.load
+        consts/atlas-file-name
+        TextureAtlas
+        (new TextureAtlasLoader$TextureAtlasParameter true))
+      (.finishLoadingAsset consts/atlas-file-name)
+      (.finishLoading))
+    (catch Exception e nil)))
+
+
+(defn has-enough-sprites?
+  [^AssetManager asset-manager]
+  (let [^TextureAtlas atlas (.get asset-manager consts/atlas-file-name)
+        regions (.getRegions atlas)
+        assets-count (.-size regions)]
+    ; TODO check by defs used in map
+    (>= assets-count consts/minimal-lod-objects-count)))
 
 
 (defn validate-atlas
   [^AssetManager asset-manager]
-  (let [^TextureAtlas atlas (.get asset-manager consts/atlas-file-name)
-        regions (.getRegions atlas)
-        assets-count (.-size regions)
-        ; TODO check by defs used in map
-        enough-assets? (>= assets-count consts/minimal-lod-objects-count)]
-    (if (not enough-assets?)
-      (do
-        (.dispose asset-manager)
-        nil)
-      asset-manager)))
+  (if (not (has-enough-sprites? asset-manager))
+    (do
+      (.dispose asset-manager)
+      nil)
+    asset-manager))
 
 
 (defn try-load-atlas
