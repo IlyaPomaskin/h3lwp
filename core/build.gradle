@@ -1,4 +1,4 @@
-apply plugin: "java"
+apply plugin: "kotlin"
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
@@ -22,4 +22,5 @@ afterEvaluate {
 }
 dependencies {
     implementation files('libs/clj.jar')
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 }

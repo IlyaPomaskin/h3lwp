@@ -1,4 +1,6 @@
 buildscript {
+    ext.kotlinVersion = '1.3.71'
+
     repositories {
         jcenter()
         google()
@@ -8,6 +10,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.6.3'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
     }
 }
 
@@ -36,6 +39,7 @@ allprojects {
 
 project(":android") {
     apply plugin: "android"
+    apply plugin: "kotlin-android"
 
     configurations { natives }
 
@@ -51,18 +55,16 @@ project(":android") {
 }
 
 project(":core") {
-    apply plugin: "java"
-
+    apply plugin: "kotlin"
 
     dependencies {
-        compile files("libs/clj.jar")
+//        compile files("libs/clj.jar")
         implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
     }
 }
 
 project(":desktop") {
-    apply plugin: "java"
-
+    apply plugin: "kotlin"
 
     dependencies {
         implementation project(":core")
