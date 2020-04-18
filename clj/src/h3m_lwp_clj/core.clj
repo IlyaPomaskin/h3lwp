@@ -28,8 +28,7 @@
          :state                    :ready
          :error                    ""
          :position-update-interval (* 60 15)}))
-(defonce viewport (doto (new ScreenViewport)
-                    (.setUnitsPerPixel (float 0.5))))
+(defonce viewport (new ScreenViewport))
 
 
 (defn set-error
