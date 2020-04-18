@@ -48,5 +48,5 @@
    (proxy [Timer$Task] []
      (run []
        (set-random-position camera map-size)))
-   (float 0)
+   (float position-update-interval)
    (float position-update-interval)))

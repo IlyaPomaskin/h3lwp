@@ -20,6 +20,7 @@
         terrain-renderer (terrain/create-renderer batch camera h3m-map)
         objects-renderer (objects/create-renderer batch camera h3m-map)]
     (set! (.-zoom camera) (float 0.5))
+    (orth-camera/set-random-position camera (:size h3m-map))
     (orth-camera/set-camera-updation-timer camera (:size h3m-map) position-update-interval)
     (.setToOrtho camera true)
     (.setInputProcessor (Gdx/input) camera-controller)
