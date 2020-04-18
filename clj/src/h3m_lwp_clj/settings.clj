@@ -15,6 +15,7 @@
   "Allow storage permissions in Android settings")
 (def ^String instructions-url "https://github.com/IlyaPomaskin/h3lwp")
 (def ^String select-button-text "Select h3sprite.lod")
+(def ^String permission-button-text "Open app settings")
 
 
 (defn create-disabled-button-style-
@@ -48,6 +49,7 @@
 (defn settings-handler
   [{^Skin skin :skin
     ^TextButton select-button :select-button
+    ^TextButton permission-button :permission-button
     ^Label label :label} settings prev-settings]
   (let [{state :state
          error :error} settings]
@@ -75,6 +77,7 @@
         (doto select-button
           (.setStyle (create-disabled-button-style skin))
           (.setTouchable Touchable/disabled))
+        (.setVisible permission-button true)
         (doto label
           (.setText permission-text)
           (.setVisible true)))
@@ -106,7 +109,8 @@
 
 (defn create-renderer
   [settings-atom ^Viewport viewport]
-  (let [{on-file-select-click :on-file-select-click} @settings-atom
+  (let [{on-file-select-click :on-file-select-click
+         on-permission-click :on-permission-click} @settings-atom
         stage (new Stage viewport)
         skin (new Skin (.internal Gdx/files "sprites/skin/uiskin.json"))
 
@@ -135,6 +139,17 @@
         (doto (new TextButton select-button-text skin "default")
           (.addListener on-click-listener))
 
+        on-permission-click-listener
+        (proxy [ClickListener] []
+          (clicked
+            [^InputEvent event ^Float x ^Float y]
+            (on-permission-click)))
+
+        permission-button
+        (doto (new TextButton permission-button-text skin "default")
+          (.setVisible false)
+          (.addListener on-permission-click-listener))
+
         status-label
         (doto (new Label "" skin)
           (.setWrap true)
@@ -151,7 +166,8 @@
           (.space 10)
           (.addActor full-instructions-button)
           (.addActor select-button)
-          (.addActor status-label))
+          (.addActor status-label)
+          (.addActor permission-button))
 
         groups
         (doto (new VerticalGroup)
@@ -162,6 +178,7 @@
     (set-settings-handler
       {:skin skin
        :select-button select-button
+       :permission-button permission-button
        :label status-label}
       settings-atom)
     (.addActor

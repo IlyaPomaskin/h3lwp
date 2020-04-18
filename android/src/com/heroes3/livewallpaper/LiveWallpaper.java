@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.badlogic.gdx.backends.android.AndroidLiveWallpaperService;
@@ -28,16 +29,19 @@ public class LiveWallpaper extends AndroidLiveWallpaperService {
         return new AndroidWallpaperEngine();
     }
 
+    protected void checkStoragePermission() {
+        boolean hasStoragePermission = checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+        if (!hasStoragePermission) {
+            app.setStoragePermissionStatus(false);
+        }
+    }
+
     @Override
     public void onCreateApplication() {
         super.onCreateApplication();
 
         app = new LiveWallpaperEngine();
 
-        boolean hasStoragePermission = checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
-        if (!hasStoragePermission) {
-            app.setStoragePermissionStatus(false);
-        }
 
         app.setFileSelectHandler(new Runnable() {
             @Override
@@ -45,6 +49,17 @@ public class LiveWallpaper extends AndroidLiveWallpaperService {
                 Intent intent = new Intent(instance, FileSelectorActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
+            }
+        });
+
+        app.setEditPermissionHandler(new Runnable() {
+            @Override
+            public void run() {
+                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.addCategory(Intent.CATEGORY_DEFAULT);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
+                checkStoragePermission();
             }
         });
 

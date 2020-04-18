@@ -17,6 +17,7 @@
    :name com.heroes3.livewallpaper.clojure.LiveWallpaperEngine
    :extends com.badlogic.gdx.ApplicationAdapter
    :methods [[setFileSelectHandler [Runnable] void]
+             [setEditPermissionHandler [Runnable] void]
              [setStoragePermissionStatus [Boolean] void]
              [selectFile [String] void]]))
 
@@ -25,6 +26,7 @@
 (defonce h3m-map (atom nil))
 (defonce settings
   (atom {:on-file-select-click     nil
+         :on-permission-click      nil
          :state                    :ready
          :error                    ""
          :position-update-interval (* 60 15)}))
@@ -78,6 +80,14 @@
          (fn []
            (swap! settings assoc :state :ready :error "")
            (.run file-select-handler))))
+
+
+(defn -setEditPermissionHandler
+  [^ApplicationAdapter _ ^Runnable permission-handler]
+  (swap! settings assoc :on-permission-click
+         (fn []
+           (swap! settings assoc :state :ready :error "")
+           (.run permission-handler))))
 
 
 (defn -setStoragePermissionStatus
