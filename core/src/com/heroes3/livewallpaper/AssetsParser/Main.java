@@ -140,9 +140,11 @@ public class Main {
                 continue;
             }
 
+            boolean isExtraSprite = defFile.fileType == Lod.FileType.SPRITE && defName.startsWith("av");
+            boolean isMapSprite = defFile.fileType == Lod.FileType.MAP;
+            boolean isTerrainTile = defFile.fileType == Lod.FileType.TERRAIN;
 
-            if (defFile.fileType == Lod.FileType.MAP ||
-                defFile.fileType == Lod.FileType.TERRAIN) {
+            if (isExtraSprite || isMapSprite || isTerrainTile) {
 //                    saveDef("../defs/" + defFile.name, defContentStream);
 //                    System.out.printf("parse: %s\n", defFile.name);
 
