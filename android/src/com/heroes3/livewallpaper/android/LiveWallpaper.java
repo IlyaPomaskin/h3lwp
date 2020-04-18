@@ -1,4 +1,4 @@
-package com.heroes3.livewallpaper;
+package com.heroes3.livewallpaper.android;
 
 import android.Manifest;
 import android.content.BroadcastReceiver;
