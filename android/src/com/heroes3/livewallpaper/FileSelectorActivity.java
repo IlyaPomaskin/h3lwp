@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.widget.Toast;
 
 import static android.content.Intent.CATEGORY_OPENABLE;
 import static android.content.Intent.EXTRA_LOCAL_ONLY;
@@ -52,21 +51,7 @@ public class FileSelectorActivity extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == PICK_FILE_RESULT_CODE && resultCode == RESULT_OK) {
-            String filePath = getFilePath(data);
-            boolean isCorrectFile = filePath.toLowerCase().endsWith("h3sprite.lod");
-
-            if (isCorrectFile) {
-                sendFilePath(filePath);
-            } else {
-                Toast
-                    .makeText(
-                        this,
-                        "Incorrect file selected",
-                        Toast.LENGTH_LONG
-                    )
-                    .show();
-            }
-
+            sendFilePath(getFilePath(data));
             finish();
         }
     }
