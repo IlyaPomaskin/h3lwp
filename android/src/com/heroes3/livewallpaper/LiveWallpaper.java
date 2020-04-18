@@ -56,4 +56,10 @@ public class LiveWallpaper extends AndroidLiveWallpaperService {
 
         initialize(app, config);
     }
+
+    @Override
+    public void onDestroy() {
+        unregisterReceiver(receiver);
+        super.onDestroy();
+    }
 }
