@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.PixmapPacker;
 import com.badlogic.gdx.math.Rectangle;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
@@ -120,10 +121,25 @@ public class Main {
         Writer writer = atlasFile.writer(false);
         writePageHeader(writer, pngFilename, packer);
 
+        ArrayList<String> skipFiles = new ArrayList<>();
+        skipFiles.add("arrow");
+        skipFiles.add("avwattack");
+        skipFiles.add("adag");
+
         for (Lod.File defFile : sprites.files) {
             if (!defFile.name.toLowerCase().endsWith(".def")) {
                 continue;
             }
+
+            String defName = defFile
+                .name
+                .toLowerCase()
+                .replace(".def", "");
+
+            if (skipFiles.contains(defName)) {
+                continue;
+            }
+
 
             if (defFile.fileType == Lod.FileType.MAP ||
                 defFile.fileType == Lod.FileType.TERRAIN) {
