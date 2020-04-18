@@ -156,6 +156,7 @@
         groups
         (doto (new VerticalGroup)
           (.grow)
+          (.center)
           (.addActor instructions-group)
           (.addActor buttons-group))]
     (set-settings-handler
