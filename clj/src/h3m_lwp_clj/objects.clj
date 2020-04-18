@@ -2,7 +2,8 @@
   (:import
    [com.badlogic.gdx.graphics OrthographicCamera]
    [com.badlogic.gdx.graphics.g2d SpriteBatch TextureAtlas$AtlasRegion]
-   [com.badlogic.gdx.utils Array TimeUtils])
+   [com.badlogic.gdx.utils Array]
+   [com.badlogic.gdx Gdx])
   (:require
    [h3m-lwp-clj.assets :as assets]
    [h3m-lwp-clj.utils :as utils]
@@ -44,18 +45,19 @@
 
 (defn create-frame-getter
   [^Array frames]
-  (let [initial-time (TimeUtils/millis)
-        frames-count (.-size frames)
-        frame-offset (rand-int frames-count)]
+  (let [frames-count (.-size frames)
+        last-time (volatile! (float 0))
+        frame (volatile! (rand-int frames-count))]
     (fn frame-getter
       ^TextureAtlas$AtlasRegion
       []
-      (.get
-       frames
-       (mod (+ (quot (- (TimeUtils/millis) initial-time)
-                     (* 1000 consts/animation-interval))
-               frame-offset)
-            frames-count)))))
+      (let [next-time (+ @last-time (.getDeltaTime Gdx/graphics))]
+        (if (>= next-time consts/animation-interval)
+          (do
+            (vreset! last-time (float 0))
+            (vswap! frame #(mod (inc %1) frames-count)))
+          (vreset! last-time next-time)))
+      (.get frames @frame))))
 
 
 (defn get-frame-x
