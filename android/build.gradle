@@ -87,8 +87,21 @@ task run(type: Exec) {
     commandLine "$adb", 'shell', 'am', 'start', '-n', 'com.heroes3.livewallpaper/com.heroes3.livewallpaper.AndroidLauncher'
 }
 
+ext {
+    ktxVersion = '1.9.10-b5'
+}
+
 dependencies {
     implementation 'androidx.core:core:1.2.0'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+        jvmTarget = '1.8'
+        apiVersion = '1.3'
+        languageVersion = '1.3'
+    }
 }
 
 // sets up the Android Eclipse project, using the old Ant based build.
