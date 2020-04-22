@@ -8,17 +8,26 @@
 
     <uses-feature android:name="android.software.live_wallpaper" />
 
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/GdxTheme">
-        <activity android:name="com.heroes3.livewallpaper.android.FileSelectorActivity" />
+        <activity
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.Light"
+            android:name=".android.SettingsActivity"
+            android:label="@string/title_activity_settings">
+            <intent-filter>
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".android.FileSelectorActivity" />
 
         <service
-            android:name="com.heroes3.livewallpaper.android.LiveWallpaper"
+            android:name=".android.LiveWallpaper"
             android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
             android:permission="android.permission.BIND_WALLPAPER">

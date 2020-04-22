@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<wallpaper
-    xmlns:android="http://schemas.android.com/apk/res/android"  
-    android:thumbnail="@mipmap/ic_launcher"
+<wallpaper xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/description"
-    android:settingsActivity="com.heroes3.livewallpaper.SettingsActivity"/>
+    android:settingsActivity="com.heroes3.livewallpaper.android.SettingsActivity"
+    android:thumbnail="@mipmap/ic_launcher" />
