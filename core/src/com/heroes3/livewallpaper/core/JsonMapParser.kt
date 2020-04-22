@@ -17,7 +17,7 @@ class JsonMapParser {
     )
 
     class Def(
-        val spriteName: String,
+        var spriteName: String,
         val passableCells: List<Int>,
         val activeCells: List<Int>,
         val terrainType: Int,

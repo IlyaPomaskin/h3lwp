@@ -18,6 +18,7 @@ class ObjectsRenderer(
         val y: Float
     )
 
+    private val randomizer = ObjectsRandomizer()
     private val batch = SpriteBatch()
     private var sprites = h3mMap
         .objects
@@ -25,8 +26,9 @@ class ObjectsRenderer(
         .asReversed()
         .filter { it.z == 0 && it.x <= 50 && it.y <= 50 }
         .map {
+            val spriteName = randomizer.replaceRandomObject(it)
             Sprite(
-                Animation(0.18f, assets.getObjectFrames(it.def.spriteName)),
+                Animation(0.18f, assets.getObjectFrames(spriteName)),
                 ((it.x + 1) * 32).toFloat(),
                 ((it.y + 1) * 32).toFloat()
             )
