@@ -12,14 +12,14 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/GdxTheme">
-        <activity android:name=".FileSelectorActivity" />
+        <activity android:name="com.heroes3.livewallpaper.android.FileSelectorActivity" />
 
         <service
-            android:name=".LiveWallpaper"
-            android:icon="@drawable/ic_launcher"
+            android:name="com.heroes3.livewallpaper.android.LiveWallpaper"
+            android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
             android:permission="android.permission.BIND_WALLPAPER">
             <intent-filter>
