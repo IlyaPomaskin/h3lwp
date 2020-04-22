@@ -10,7 +10,7 @@ public class Reader {
     long pos = 0;
     private long mark = 0;
 
-    Reader(InputStream input) throws IOException {
+    public Reader(InputStream input) throws IOException {
         if (!input.markSupported()) {
             throw new IOException("Mark not supported.");
         }
@@ -24,17 +24,21 @@ public class Reader {
         return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
     }
 
-    int readByte() throws IOException {
+    public int readByte() throws IOException {
         return Byte.toUnsignedInt(
             toByteBuffer(readBytes(1)).array()[0]
         );
     }
 
-    int readShort() throws IOException {
+    public boolean readBool() throws IOException {
+        return readByte() == 1;
+    }
+
+    public int readShort() throws IOException {
         return Short.toUnsignedInt(toByteBuffer(readBytes(2)).getShort());
     }
 
-    int readInt() throws IOException {
+    public int readInt() throws IOException {
         return (int) Integer.toUnsignedLong(toByteBuffer(readBytes(4)).getInt());
     }
 
@@ -42,7 +46,11 @@ public class Reader {
         return new String(readBytes(length)).replaceAll("\u0000.*", "");
     }
 
-    byte[] readBytes(int length) throws IOException {
+    public String readString() throws IOException {
+        return readString(readInt());
+    }
+
+    public byte[] readBytes(int length) throws IOException {
         byte[] buffer = new byte[length];
         read(buffer, 0, length);
         return buffer;
@@ -64,10 +72,14 @@ public class Reader {
         return n;
     }
 
-    synchronized long skip(long skip) throws IOException {
-        long n = stream.skip(skip);
+    public long skip(int amount) throws IOException {
+        return skip((long) amount);
+    }
+
+    public synchronized long skip(long amount) throws IOException {
+        long n = stream.skip(amount);
         if (n > 0) {
-            pos += skip;
+            pos += amount;
         }
         return n;
     }
