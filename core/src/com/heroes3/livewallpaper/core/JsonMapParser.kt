@@ -1,0 +1,75 @@
+package com.heroes3.livewallpaper.core
+
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import java.io.InputStream
+
+
+class JsonMapParser {
+    class TerrainTile(
+        val terrain: Int,
+        val terrainImageIndex: Int,
+        val river: Int,
+        val riverImageIndex: Int,
+        val road: Int,
+        val roadImageIndex: Int,
+        val mirrorConfig: Long
+    )
+
+    class Def(
+        val spriteName: String,
+        val passableCells: List<Int>,
+        val activeCells: List<Int>,
+        val terrainType: Int,
+        val terrainGroup: Int,
+        val `object`: String,
+        val classSubId: Int,
+        val group: Int,
+        val placementOrder: Int
+    )
+
+    class MapObject(
+        val x: Int,
+        val y: Int,
+        val z: Int,
+        val defIndex: Int,
+        val info: Map<String, *>?,
+        val def: Def
+    ) : Comparable<MapObject> {
+        private fun isVisitable(): Boolean {
+            return def.activeCells.all { it == 0 }
+        }
+
+        override fun compareTo(other: MapObject): Int {
+            val a = this
+            val b = other
+
+            if (a.def.placementOrder != b.def.placementOrder) {
+                return a.def.placementOrder.compareTo(b.def.placementOrder)
+            }
+            if (a.y != b.y) return b.y.compareTo(a.y)
+            if (b.def.`object` === "hero" && a.def.`object` !== "hero") return -1
+            if (b.def.`object` !== "hero" && a.def.`object` === "hero") return 1
+            if (a.isVisitable() != b.isVisitable()) {
+                if (!a.isVisitable() && b.isVisitable()) return -1
+                if (!b.isVisitable() && a.isVisitable()) return 1
+            }
+            if (a.x != b.x) return b.x.compareTo(a.x)
+            return 0
+        }
+    }
+
+    class ParsedMap(
+        val size: Int = 0,
+        val hasUnderground: Boolean,
+        val terrain: List<TerrainTile>,
+        val objects: List<MapObject>
+    )
+
+    private val mapper = jacksonObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+    fun parse(stream: InputStream): ParsedMap {
+        return mapper.readValue(stream, ParsedMap::class.java)
+    }
+}
