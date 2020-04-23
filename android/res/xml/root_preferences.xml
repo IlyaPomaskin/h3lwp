@@ -1,24 +1,16 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory app:title="@string/messages_header">
-
-        <EditTextPreference
-            app:key="signature"
-            app:title="@string/signature_title"
-            app:useSimpleSummaryProvider="true" />
-
-        <ListPreference
-            app:defaultValue="reply"
-            app:entries="@array/reply_entries"
-            app:entryValues="@array/reply_values"
-            app:key="reply"
-            app:title="@string/reply_title"
-            app:useSimpleSummaryProvider="true" />
-
+    <PreferenceCategory app:title="@string/assets_header">
+        <Preference
+            app:key="select_file"
+            app:summary="@string/assets_instructions"
+            app:title="@string/assets_select_button" />
+        <Preference
+            app:isPreferenceVisible="false"
+            app:key="parsing_progress" />
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="@string/sync_header">
-
+    <!--<PreferenceCategory app:title="@string/sync_header">
         <SwitchPreferenceCompat
             app:key="sync"
             app:title="@string/sync_title" />
@@ -29,7 +21,6 @@
             app:summaryOff="@string/attachment_summary_off"
             app:summaryOn="@string/attachment_summary_on"
             app:title="@string/attachment_title" />
-
-    </PreferenceCategory>
+    </PreferenceCategory>-->
 
 </PreferenceScreen>
