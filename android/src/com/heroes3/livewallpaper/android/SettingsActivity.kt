@@ -7,7 +7,11 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
+import com.badlogic.gdx.utils.GdxNativesLoader
 import com.heroes3.livewallpaper.R
+import com.heroes3.livewallpaper.parser.AssetsParser
+import java.io.*
+import kotlin.concurrent.thread
 
 class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,15 +59,40 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-        private fun handleFileSelection(filePath: Uri) {
-//            val stream = context?.contentResolver?.openInputStream(filePath)
-            println("FILE SELECTED $filePath")
+        private fun applyPreference(name: String, block: (parsingStatus: Preference) -> Unit) {
+            val preference = findPreference<Preference>(name)
+            requireActivity().runOnUiThread { preference?.apply(block) }
+        }
 
-            val parsingProgress = findPreference<Preference>("parsing_progress")
-            if (parsingProgress != null) {
-                parsingProgress.isVisible = true
-                parsingProgress.title = "Parsing..."
-                parsingProgress.summary = "85%..."
+        private fun handleFileSelection(filePath: Uri) {
+            thread {
+                var stream: InputStream? = null
+
+                try {
+                    applyPreference("parsing_status") {
+                        it.isVisible = true
+                        it.title = "Parsing..."
+                    }
+                    applyPreference("select_file") { it.isEnabled = false }
+
+                    GdxNativesLoader.load()
+
+                    stream = requireContext().contentResolver.openInputStream(filePath)!!
+                    AssetsParser(stream)
+                        .parseLodToAtlas(
+                            requireContext().filesDir.resolve("assets/sprites/test/"),
+                            "assets"
+                        )
+                    applyPreference("parsing_status") { it.title = "Parsing done!" }
+                } catch (e: Exception) {
+                    applyPreference("parsing_status") {
+                        it.title = "Something went wrong!"
+                        it.summary = e.message
+                    }
+                } finally {
+                    stream?.close()
+                    applyPreference("select_file") { it.isEnabled = true }
+                }
             }
         }
 

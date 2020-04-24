@@ -1,14 +1,16 @@
 package com.heroes3.livewallpaper.parser
 
-import com.badlogic.gdx.files.FileHandle
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.PixmapIO
 import com.badlogic.gdx.graphics.g2d.PixmapPacker
 import com.badlogic.gdx.math.Rectangle
 import java.io.*
 import java.util.*
+import java.util.zip.Deflater
 
-class AssetsParser(private val lodFileInputStream: FileInputStream) {
+private typealias PackedFrames = MutableMap<String, Def.Frame>
+
+class AssetsParser(private val lodFileInputStream: InputStream) {
     companion object {
         private val transparent = byteArrayOf(
             0x00.toByte(),
@@ -38,8 +40,9 @@ class AssetsParser(private val lodFileInputStream: FileInputStream) {
         )
     }
 
-    private val lodReader = LodReader(BufferedInputStream(lodFileInputStream))
+    private val lodReader = LodReader(lodFileInputStream)
     private val packer = PixmapPacker(2048, 2048, Pixmap.Format.RGBA4444, 0, false)
+    private val terrainRegex = Regex("([a-z]+[0-9]+.pcx)_([0-1]+)", RegexOption.IGNORE_CASE)
 
     private fun writePageHeader(writer: Writer, filename: String, packer: PixmapPacker) {
         writer.append("\n")
@@ -67,20 +70,13 @@ class AssetsParser(private val lodFileInputStream: FileInputStream) {
         writer.append("  index: ${index}\n")
     }
 
-    private fun readDefFile(fileStream: FileInputStream, file: Lod.File): Def {
-        val defContentStream = LodReader.readFileContent(fileStream, file)
+    private fun readDefFile(fileStream: InputStream, file: Lod.File): Def {
+        val defContentStream = lodReader.readFileContent(file)
         val defReader = DefReader(defContentStream)
         val def = defReader.read()
         def.lodFile = file
         System.arraycopy(fixedPalette, 0, def.rawPalette, 0, fixedPalette.size)
         return def
-    }
-
-    private fun readFrames(files: List<Lod.File>): List<Def.Frame> {
-        return files
-            .map { file -> readDefFile(lodFileInputStream, file) }
-            .flatMap { def -> def.groups.flatMap { group -> group.frames } }
-            .distinctBy { it.frameName }
     }
 
     private fun makePixmap(frame: Def.Frame): Pixmap {
@@ -106,8 +102,24 @@ class AssetsParser(private val lodFileInputStream: FileInputStream) {
         return fullImage
     }
 
+    private fun packTerrainFrame(frame: Def.Frame, acc: PackedFrames): PackedFrames {
+        val index = 0
+        val frameName = "${frame.frameName}_${index}"
+        packer.pack(frameName, makeTerrainPixmap(frame))
+        acc[frameName] = frame
+        return acc
+    }
+
+    private fun packSpriteFrame(frame: Def.Frame, acc: PackedFrames): PackedFrames {
+        val frameName = frame.frameName
+        packer.pack(frameName, makePixmap(frame))
+        acc[frameName] = frame
+        return acc
+    }
+
     @Throws(IOException::class)
-    fun parseLodToAtlas(outputDirectory: FileHandle, atlasName: String) {
+    fun parseLodToAtlas(outputDirectory: File, atlasName: String) {
+        val sprites = mutableListOf<Lod.File>()
         val defList = lodReader
             .read()
             .files
@@ -117,54 +129,58 @@ class AssetsParser(private val lodFileInputStream: FileInputStream) {
                 isDef && !isIgnored
             }
 
-        val terrains = defList
-            .filter { it.fileType == Lod.FileType.TERRAIN }
-            .run(::readFrames)
-            .foldRight(
+        defList.filterTo(sprites, fun(file): Boolean {
+            return file.fileType == Lod.FileType.TERRAIN
+        })
+        defList.filterTo(sprites, fun(file): Boolean {
+            val isExtraSprite = file.fileType == Lod.FileType.SPRITE
+                && file.name.startsWith("av", true)
+            val isMapSprite = file.fileType == Lod.FileType.MAP
+            return isExtraSprite || isMapSprite
+        })
+
+        val packedFrames = sprites
+            .sortedBy { it.offset }
+            .map { file -> readDefFile(lodFileInputStream, file) }
+            .flatMap { def -> def.groups.flatMap { group -> group.frames } }
+            .distinctBy { it.frameName }
+            .foldRightIndexed(
                 mutableMapOf<String, Def.Frame>(),
-                { frame, acc ->
-                    val index = 0
-                    val frameName = "${frame.frameName}_${index}"
-                    packer.pack(frameName, makeTerrainPixmap(frame))
-                    acc[frameName] = frame
-                    acc
+                { index, frame, acc ->
+                    when (frame.parentGroup.parentDef.lodFile.fileType) {
+                        Lod.FileType.TERRAIN -> packTerrainFrame(frame, acc)
+                        Lod.FileType.SPRITE -> packSpriteFrame(frame, acc)
+                        Lod.FileType.MAP -> packSpriteFrame(frame, acc)
+                        else -> acc
+                    }
                 }
             )
 
-        val sprites = defList
-            .filter {
-                val isExtraSprite = it.fileType == Lod.FileType.SPRITE && it.name.startsWith("av", true)
-                val isMapSprite = it.fileType == Lod.FileType.MAP
-                isExtraSprite || isMapSprite
-            }
-            .run(::readFrames)
-            .foldRight(
-                mutableMapOf<String, Def.Frame>(),
-                { frame, acc ->
-                    val frameName = frame.frameName
-                    packer.pack(frameName, makePixmap(frame))
-                    acc[frameName] = frame
-                    acc
-                }
-            )
-
-        pack((sprites + terrains) as MutableMap<String, Def.Frame>, outputDirectory, atlasName)
+        writePackerContent(packedFrames, outputDirectory, atlasName)
     }
 
-    private fun pack(
-        sprites: MutableMap<String, Def.Frame>,
-        outputDirectory: FileHandle,
-        atlasName: String
-    ) {
-        val writer = outputDirectory
-            .child("${atlasName}.atlas")
-            .writer(false)
-        val terrainRegex = Regex("([a-z]+[0-9]+.pcx)_([0-1]+)", RegexOption.IGNORE_CASE)
+    private fun writePng(stream: OutputStream, pixmap: Pixmap) {
+        val writer = PixmapIO.PNG(pixmap.width * pixmap.height * 1.5f.toInt())
+        try {
+            writer.setFlipY(false)
+            writer.setCompression(Deflater.DEFAULT_COMPRESSION)
+            writer.write(stream, pixmap)
+        } finally {
+            writer.dispose()
+        }
+    }
+
+    private fun writePackerContent(sprites: PackedFrames, outputDirectory: File, atlasName: String) {
+        if (outputDirectory.exists()) {
+            outputDirectory.deleteRecursively()
+        }
+        outputDirectory.mkdirs()
+        val writer = outputDirectory.resolve("${atlasName}.atlas").writer()
 
         packer.pages.forEachIndexed { index, page ->
             val pngName = "${atlasName}_${index}.png"
             writePageHeader(writer, pngName, packer)
-            PixmapIO.writePNG(outputDirectory.child(pngName), page.pixmap)
+            writePng(outputDirectory.resolve(pngName).outputStream(), page.pixmap)
 
             page.rects.forEach { entry ->
                 val rectName = entry.key

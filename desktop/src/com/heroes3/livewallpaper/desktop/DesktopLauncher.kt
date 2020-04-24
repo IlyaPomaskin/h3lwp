@@ -3,12 +3,15 @@ package com.heroes3.livewallpaper.desktop
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
+import com.badlogic.gdx.utils.GdxNativesLoader
 import com.heroes3.livewallpaper.core.Engine
 import com.heroes3.livewallpaper.parser.AssetsParser
 import java.awt.FileDialog
 import java.awt.Frame
+import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream
+import java.io.InputStream
 import kotlin.system.measureTimeMillis
 
 object DesktopLauncher {
@@ -24,8 +27,17 @@ object DesktopLauncher {
     fun parse() {
         try {
             val time = measureTimeMillis {
-                val ap = AssetsParser(FileInputStream("/Users/ipomaskin/Documents/Games/Heroes3/Data/H3sprite.lod"))
-                ap.parseLodToAtlas(Gdx.files.local("sprites/h3/"), "assets")
+                GdxNativesLoader.load()
+                val ap = AssetsParser(
+                    FileInputStream(
+                        "/Users/ipomaskin/Documents/Games/Heroes3/Data/H3sprite.lod"
+                    )
+                )
+                ap.parseLodToAtlas(
+                    File("assets/h3/test"),
+                    "assets",
+                    fun(percents) { println(percents) }
+                )
             }
             println("done for $time ms")
         } catch (e: Exception) {
@@ -45,7 +57,7 @@ object DesktopLauncher {
             height = 426
             width = 500
         }
-        LwjglApplication(Engine(), config)
-//        parse()
+//        LwjglApplication(Engine(), config)
+        parse()
     }
 }

@@ -33,16 +33,33 @@ internal class LodReader(stream: InputStream) {
         file.name = reader.readString(16)
         file.offset = reader.readInt()
         file.size = reader.readInt()
-        val int = reader.readInt()
-        file.fileType = Lod.FileType.getByValue(int)
+        file.fileType = Lod.FileType.getByValue(reader.readInt())
         file.compressedSize = reader.readInt()
         return file
     }
 
+    fun readFileContent(file: File): ByteArrayInputStream {
+        reader.skip(file.offset - reader.position)
+
+        return if (file.compressedSize > 0) {
+            val packedData = reader.readBytes(file.compressedSize)
+            val unpackedData = ByteArray(file.size)
+            val inflater = Inflater()
+            inflater.setInput(packedData)
+            inflater.inflate(unpackedData)
+            inflater.end()
+            unpackedData.inputStream()
+        } else {
+            reader.readBytes(file.size).inputStream()
+        }
+    }
+
     companion object {
-        fun readFileContent(fileStream: FileInputStream, file: File): ByteArrayInputStream {
+        fun readFileContent(fileStream: InputStream, file: File): ByteArrayInputStream {
             val fileContent = ByteArray(file.size)
-            fileStream.channel.position(file.offset.toLong())
+            fileStream.reset()
+            fileStream.skip(file.offset.toLong())
+//            fileStream.skip(file.offset - fileStream.channel.position())
 
             if (file.compressedSize > 0) {
                 val packedData = ByteArray(file.compressedSize)
