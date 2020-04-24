@@ -27,8 +27,9 @@ class ObjectsRenderer(
         .filter { it.z == 0 && it.x <= 50 && it.y <= 50 }
         .map {
             val spriteName = randomizer.replaceRandomObject(it)
+            val frames = assets.getObjectFrames(spriteName)
             Sprite(
-                Animation(0.18f, assets.getObjectFrames(spriteName)),
+                Animation(0.18f, frames),
                 ((it.x + 1) * 32).toFloat(),
                 ((it.y + 1) * 32).toFloat()
             )
@@ -39,7 +40,7 @@ class ObjectsRenderer(
     }
 
     private fun getFrameY(frame: TextureAtlas.AtlasRegion, y: Float): Float {
-        return y + frame.offsetY - frame.originalHeight
+        return y - frame.packedHeight
     }
 
     private var stateTime = 0f

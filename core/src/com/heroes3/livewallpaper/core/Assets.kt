@@ -12,20 +12,19 @@ class Assets {
     private val assetManager = AssetManager()
 
     init {
-        val params = TextureAtlasLoader.TextureAtlasParameter(true);
-        assetManager.load<TextureAtlas>("sprites/h3/objects.atlas", params)
-        assetManager.load<TextureAtlas>("sprites/h3/terrains.atlas", params)
+        val params = TextureAtlasLoader.TextureAtlasParameter(true)
+        assetManager.load<TextureAtlas>("sprites/h3/assets.atlas", params)
         assetManager.finishLoading()
         Texture.setAssetManager(assetManager)
     }
 
-    private fun getAtlasRegions(atlasName: String, defName: String): Array<TextureAtlas.AtlasRegion> {
+    private fun getAtlasRegions(defName: String): Array<TextureAtlas.AtlasRegion> {
         val regions = assetManager
-            .get<TextureAtlas>(atlasName)
+            .get<TextureAtlas>("sprites/h3/assets.atlas")
             .findRegions(defName)
 
         if (regions.isEmpty) {
-            println("atlas $atlasName don't have $defName")
+            println("can't find def $defName")
             return Array()
         }
 
@@ -33,10 +32,10 @@ class Assets {
     }
 
     fun getObjectFrames(defName: String): Array<TextureAtlas.AtlasRegion> {
-        return getAtlasRegions("sprites/h3/objects.atlas", defName.toLowerCase(Locale.ROOT).removeSuffix(".def"))
+        return getAtlasRegions(defName.toLowerCase(Locale.ROOT).removeSuffix(".def"))
     }
 
     fun getTerrainFrames(defName: String, index: Int): Array<TextureAtlas.AtlasRegion> {
-        return getAtlasRegions("sprites/h3/terrains.atlas", String.format("%s/%02d", defName, index))
+        return getAtlasRegions("$defName/$index")
     }
 }

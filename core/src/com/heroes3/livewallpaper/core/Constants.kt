@@ -1,7 +1,7 @@
 package com.heroes3.livewallpaper.core
 
 class Constants {
-    enum class TerrainDefs(value: Int) {
+    enum class TerrainDefs(val value: Int) {
         dirttl(0),
         sandtl(1),
         grastl(2),
@@ -15,12 +15,12 @@ class Constants {
 
         companion object {
             fun byInt(int: Int): String {
-                return values().find { it.ordinal == int }.toString()
+                return values().find { it.value == int }.toString()
             }
         }
     }
 
-    enum class RiverDefs(value: Int) {
+    enum class RiverDefs(val value: Int) {
         clrrvr(1),
         icyrvr(2),
         mudrvr(3),
@@ -28,19 +28,19 @@ class Constants {
 
         companion object {
             fun byInt(int: Int): String {
-                return values().find { it.ordinal == int - 1 }.toString()
+                return values().find { it.value == int }.toString()
             }
         }
     }
 
-    enum class RoadDefs(value: Int) {
+    enum class RoadDefs(val value: Int) {
         dirtrd(1),
         gravrd(2),
         cobbrd(3);
 
         companion object {
             fun byInt(int: Int): String {
-                return values().find { it.ordinal == int - 1 }.toString()
+                return values().find { it.value == int }.toString()
             }
         }
     }
