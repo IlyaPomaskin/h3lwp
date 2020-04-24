@@ -58,7 +58,6 @@ project(":core") {
     apply plugin: "kotlin"
 
     dependencies {
-//        compile files("libs/clj.jar")
         implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
     }
 }

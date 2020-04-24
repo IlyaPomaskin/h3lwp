@@ -5,10 +5,6 @@
             app:key="select_file"
             app:summary="@string/assets_instructions"
             app:title="@string/assets_select_button" />
-        <Preference
-            app:enabled="false"
-            app:isPreferenceVisible="false"
-            app:key="parsing_status" />
     </PreferenceCategory>
 
     <!--<PreferenceCategory app:title="@string/sync_header">

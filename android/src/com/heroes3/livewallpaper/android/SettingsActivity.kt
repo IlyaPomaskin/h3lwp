@@ -65,17 +65,16 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private fun handleFileSelection(filePath: Uri) {
+            GdxNativesLoader.load()
+
             thread {
                 var stream: InputStream? = null
 
                 try {
-                    applyPreference("parsing_status") {
-                        it.isVisible = true
-                        it.title = "Parsing..."
+                    applyPreference("select_file") {
+                        it.summary = "Parsing..."
+                        it.isSelectable = false
                     }
-                    applyPreference("select_file") { it.isEnabled = false }
-
-                    GdxNativesLoader.load()
 
                     stream = requireContext().contentResolver.openInputStream(filePath)!!
                     AssetsParser(stream)
@@ -83,15 +82,12 @@ class SettingsActivity : AppCompatActivity() {
                             requireContext().filesDir.resolve("assets/sprites/test/"),
                             "assets"
                         )
-                    applyPreference("parsing_status") { it.title = "Parsing done!" }
+                    applyPreference("select_file") { it.summary = "Parsing successfully done!" }
                 } catch (e: Exception) {
-                    applyPreference("parsing_status") {
-                        it.title = "Something went wrong!"
-                        it.summary = e.message
-                    }
+                    applyPreference("select_file") { it.summary = "Something went wrong!\n${e.message}" }
                 } finally {
                     stream?.close()
-                    applyPreference("select_file") { it.isEnabled = true }
+                    applyPreference("select_file") { it.isSelectable = true }
                 }
             }
         }
