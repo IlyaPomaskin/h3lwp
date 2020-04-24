@@ -1,6 +1,5 @@
 package com.heroes3.livewallpaper.core
 
-import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion
 import com.badlogic.gdx.maps.tiled.TiledMap
 import com.badlogic.gdx.maps.tiled.TiledMapTile
@@ -14,11 +13,7 @@ import com.heroes3.livewallpaper.core.JsonMapParser.TerrainTile
 import ktx.collections.map
 import java.util.*
 
-class TerrainRenderer(
-    private val assets: Assets,
-    private val camera: OrthographicCamera,
-    private val h3mMap: ParsedMap
-) {
+class TerrainRenderer(private val engine: Engine, private val h3mMap: ParsedMap) {
     private var tiledMap = TiledMap()
     private val renderer = OrthogonalTiledMapRenderer(tiledMap)
 
@@ -33,10 +28,6 @@ class TerrainRenderer(
     )
 
     object Bits {
-        fun convert(input: Int): BitSet {
-            return convert(input.toLong())
-        }
-
         fun convert(input: Long): BitSet {
             var value = input
             val bits = BitSet()
@@ -50,30 +41,22 @@ class TerrainRenderer(
             }
             return bits
         }
-
-        fun convert(bits: BitSet): Long {
-            var value = 0L
-            for (i in 0 until bits.length()) {
-                value += if (bits[i]) 1L shl i else 0L
-            }
-            return value
-        }
     }
 
     private fun getTileSettingsByType(tile: TerrainTile, type: String): TileSettings {
         return when (type) {
             "terrain" -> TileSettings(
-                assets.getTerrainFrames(Constants.TerrainDefs.byInt(tile.terrain), tile.terrainImageIndex),
+                engine.assets.getTerrainFrames(Constants.TerrainDefs.byInt(tile.terrain), tile.terrainImageIndex),
                 Bits.convert(tile.mirrorConfig).get(0),
                 Bits.convert(tile.mirrorConfig).get(1)
             )
             "river" -> TileSettings(
-                assets.getTerrainFrames(Constants.RiverDefs.byInt(tile.river), tile.riverImageIndex),
+                engine.assets.getTerrainFrames(Constants.RiverDefs.byInt(tile.river), tile.riverImageIndex),
                 Bits.convert(tile.mirrorConfig).get(2),
                 Bits.convert(tile.mirrorConfig).get(3)
             )
             "road" -> TileSettings(
-                assets.getTerrainFrames(Constants.RoadDefs.byInt(tile.road), tile.roadImageIndex),
+                engine.assets.getTerrainFrames(Constants.RoadDefs.byInt(tile.road), tile.roadImageIndex),
                 Bits.convert(tile.mirrorConfig).get(4),
                 Bits.convert(tile.mirrorConfig).get(5)
             )
@@ -125,7 +108,7 @@ class TerrainRenderer(
     }
 
     fun render() {
-        renderer.setView(camera)
+        renderer.setView(engine.camera)
         renderer.render()
     }
 }

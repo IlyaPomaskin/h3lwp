@@ -9,6 +9,7 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.heroes3.livewallpaper.R
+import com.heroes3.livewallpaper.core.Assets
 import com.heroes3.livewallpaper.parser.AssetsParser
 import java.io.*
 import kotlin.concurrent.thread
@@ -79,8 +80,8 @@ class SettingsActivity : AppCompatActivity() {
                     stream = requireContext().contentResolver.openInputStream(filePath)!!
                     AssetsParser(stream)
                         .parseLodToAtlas(
-                            requireContext().filesDir.resolve("assets/sprites/test/"),
-                            "assets"
+                            requireContext().filesDir.resolve(Assets.atlasFolder),
+                            Assets.atlasName
                         )
                     applyPreference("select_file") { it.summary = "Parsing successfully done!" }
                 } catch (e: Exception) {

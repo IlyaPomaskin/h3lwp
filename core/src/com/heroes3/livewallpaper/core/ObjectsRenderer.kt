@@ -1,17 +1,11 @@
 package com.heroes3.livewallpaper.core
 
-import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.Animation
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import ktx.graphics.use
 
-class ObjectsRenderer(
-    private val assets: Assets,
-    private val camera: OrthographicCamera,
-    h3mMap: JsonMapParser.ParsedMap
-) {
+class ObjectsRenderer(private val engine: Engine, h3mMap: JsonMapParser.ParsedMap) {
     class Sprite(
         val animation: Animation<TextureAtlas.AtlasRegion>,
         val x: Float,
@@ -27,7 +21,7 @@ class ObjectsRenderer(
         .filter { it.z == 0 && it.x <= 50 && it.y <= 50 }
         .map {
             val spriteName = randomizer.replaceRandomObject(it)
-            val frames = assets.getObjectFrames(spriteName)
+            val frames = engine.assets.getObjectFrames(spriteName)
             Sprite(
                 Animation(0.18f, frames),
                 ((it.x + 1) * 32).toFloat(),
@@ -45,9 +39,9 @@ class ObjectsRenderer(
 
     private var stateTime = 0f
 
-    fun render() {
-        stateTime += Gdx.graphics.deltaTime
-        batch.use(camera) { b ->
+    fun render(delta: Float) {
+        stateTime += delta
+        batch.use(engine.camera) { b ->
             sprites.forEach { sprite ->
                 val frame = sprite.animation.getKeyFrame(stateTime, true)
                 b.draw(
