@@ -7,20 +7,15 @@ import com.badlogic.gdx.math.Rectangle
 import java.io.*
 import java.util.*
 import java.util.zip.Deflater
+import kotlin.Exception
 
 private typealias PackedFrames = MutableMap<String, Def.Frame>
 
-class AssetsParser(private val lodFileInputStream: InputStream) {
+class AssetsParser(lodFileInputStream: InputStream, private val outputDirectory: File, private val atlasName: String) {
     companion object {
         private val transparent = byteArrayOf(
-            0x00.toByte(),
-            0x40.toByte(),
-            0x00.toByte(),
-            0x00.toByte(),
-            0x80.toByte(),
-            0xff.toByte(),
-            0x80.toByte(),
-            0x40.toByte()
+            0x00.toByte(), 0x40.toByte(), 0x00.toByte(), 0x00.toByte(),
+            0x80.toByte(), 0xff.toByte(), 0x80.toByte(), 0x40.toByte()
         )
         private val fixedPalette = byteArrayOf(
             0, 0, 0,
@@ -38,6 +33,7 @@ class AssetsParser(private val lodFileInputStream: InputStream) {
             "avwmon1.def", "avwmon2.def", "avwmon3.def", "avwmon4.def", "avwmon5.def", "avwmon6.def",
             "avarnd1.def", "avarnd2.def", "avarnd3.def", "avarnd4.def", "avarnd5.def", "avtrndm0.def"
         )
+        const val MINIMUM_DEFS_COUNT = 1000
     }
 
     private val lodReader = LodReader(lodFileInputStream)
@@ -70,7 +66,7 @@ class AssetsParser(private val lodFileInputStream: InputStream) {
         writer.append("  index: ${index}\n")
     }
 
-    private fun readDefFile(fileStream: InputStream, file: Lod.File): Def {
+    private fun readDefFile(file: Lod.File): Def {
         val defContentStream = lodReader.readFileContent(file)
         val defReader = DefReader(defContentStream)
         val def = defReader.read()
@@ -117,10 +113,25 @@ class AssetsParser(private val lodFileInputStream: InputStream) {
         return acc
     }
 
-    @Throws(IOException::class)
-    fun parseLodToAtlas(outputDirectory: File, atlasName: String) {
-        val sprites = mutableListOf<Lod.File>()
-        val defList = lodReader
+    @Throws(Exception::class)
+    fun parseLodToAtlas() {
+        runCatching(::readLodFiles)
+            .onFailure { throw Exception("Can't parse file") }
+            .mapCatching(::readDefs)
+            .onFailure { throw Exception("Can't read images from file") }
+            .also { defs ->
+                if (defs.getOrDefault(emptyList()).size < MINIMUM_DEFS_COUNT) {
+                    throw Exception("Wrong file selected")
+                }
+            }
+            .mapCatching(::packFrames)
+            .onFailure { throw Exception("Can't save files") }
+            .mapCatching(::writePackerContent)
+            .onFailure { throw Exception("Can't write files") }
+    }
+
+    private fun readLodFiles(): List<Lod.File> {
+        return lodReader
             .read()
             .files
             .filter { lodFile ->
@@ -128,35 +139,40 @@ class AssetsParser(private val lodFileInputStream: InputStream) {
                 val isIgnored = ignoredFiles.any { it.equals(lodFile.name, true) }
                 isDef && !isIgnored
             }
+    }
 
-        defList.filterTo(sprites, fun(file): Boolean {
+    private fun readDefs(lodFiles: List<Lod.File>): List<Def.Frame> {
+        val defs = mutableListOf<Lod.File>()
+
+        lodFiles.filterTo(defs, fun(file): Boolean {
             return file.fileType == Lod.FileType.TERRAIN
         })
-        defList.filterTo(sprites, fun(file): Boolean {
+        lodFiles.filterTo(defs, fun(file): Boolean {
             val isExtraSprite = file.fileType == Lod.FileType.SPRITE
                 && file.name.startsWith("av", true)
             val isMapSprite = file.fileType == Lod.FileType.MAP
             return isExtraSprite || isMapSprite
         })
 
-        val packedFrames = sprites
+        return defs
             .sortedBy { it.offset }
-            .map { file -> readDefFile(lodFileInputStream, file) }
+            .map { file -> readDefFile(file) }
             .flatMap { def -> def.groups.flatMap { group -> group.frames } }
             .distinctBy { it.frameName }
-            .foldRightIndexed(
-                mutableMapOf<String, Def.Frame>(),
-                { index, frame, acc ->
-                    when (frame.parentGroup.parentDef.lodFile.fileType) {
-                        Lod.FileType.TERRAIN -> packTerrainFrame(frame, acc)
-                        Lod.FileType.SPRITE -> packSpriteFrame(frame, acc)
-                        Lod.FileType.MAP -> packSpriteFrame(frame, acc)
-                        else -> acc
-                    }
-                }
-            )
+    }
 
-        writePackerContent(packedFrames, outputDirectory, atlasName)
+    private fun packFrames(assets: List<Def.Frame>): PackedFrames {
+        return assets.foldRight(
+            mutableMapOf(),
+            { frame, acc ->
+                when (frame.parentGroup.parentDef.lodFile.fileType) {
+                    Lod.FileType.TERRAIN -> packTerrainFrame(frame, acc)
+                    Lod.FileType.SPRITE -> packSpriteFrame(frame, acc)
+                    Lod.FileType.MAP -> packSpriteFrame(frame, acc)
+                    else -> acc
+                }
+            }
+        )
     }
 
     private fun writePng(stream: OutputStream, pixmap: Pixmap) {
@@ -170,11 +186,7 @@ class AssetsParser(private val lodFileInputStream: InputStream) {
         }
     }
 
-    private fun writePackerContent(sprites: PackedFrames, outputDirectory: File, atlasName: String) {
-        if (outputDirectory.exists()) {
-            outputDirectory.deleteRecursively()
-        }
-        outputDirectory.mkdirs()
+    private fun writePackerContent(sprites: PackedFrames) {
         val writer = outputDirectory.resolve("${atlasName}.atlas").writer()
 
         packer.pages.forEachIndexed { index, page ->
@@ -183,27 +195,28 @@ class AssetsParser(private val lodFileInputStream: InputStream) {
             writePng(outputDirectory.resolve(pngName).outputStream(), page.pixmap)
 
             page.rects.forEach { entry ->
-                val rectName = entry.key
+                var rectName = entry.key
                 val rect = entry.value
                 val frame = sprites[rectName] ?: return@forEach
+                val defName = frame.parentGroup.parentDef.lodFile.name
+                val isTerrainTile = frame.parentGroup.parentDef.lodFile.fileType == Lod.FileType.TERRAIN
+                var rotationIndex = ""
+                if (isTerrainTile) {
+                    terrainRegex.findAll(rectName).elementAtOrNull(0)?.run {
+                        rectName = this.groupValues[1]
+                        rotationIndex = this.groupValues[2]
+                    }
+                }
                 frame
                     .parentGroup
                     .filenames
                     .forEachIndexed(fun(index, fileName) {
-                        val defName = frame.parentGroup.parentDef.lodFile.name
-                        val matchResult = terrainRegex.findAll(rectName).toList()
-                        val isTerrain = matchResult.isNotEmpty()
-                        if (isTerrain) {
-                            val name = matchResult[0].groupValues[1]
-                            val rotationIndex = matchResult[0].groupValues[2]
+                        if (fileName != rectName) return
 
-                            if (fileName == name) {
-                                writeFrame(writer, "$defName/$index", rotationIndex, rect, frame)
-                            }
+                        if (isTerrainTile) {
+                            writeFrame(writer, "$defName/$index", rotationIndex, rect, frame)
                         } else {
-                            if (fileName == rectName) {
-                                writeFrame(writer, defName, index.toString(), rect, frame)
-                            }
+                            writeFrame(writer, defName, index.toString(), rect, frame)
                         }
                     })
             }

@@ -10,9 +10,11 @@ import androidx.preference.PreferenceFragmentCompat
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.heroes3.livewallpaper.R
 import com.heroes3.livewallpaper.core.Assets
+import com.heroes3.livewallpaper.core.Engine
 import com.heroes3.livewallpaper.parser.AssetsParser
 import java.io.*
 import kotlin.concurrent.thread
+import kotlin.system.measureTimeMillis
 
 class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,13 +58,31 @@ class SettingsActivity : AppCompatActivity() {
             if (requestCode == PICK_FILE_RESULT_CODE
                 && resultCode == Activity.RESULT_OK
                 && intent?.data != null) {
-                handleFileSelection(intent.data!!)
+
+                measureTimeMillis {
+                    handleFileSelection(intent.data!!)
+                }.run { println("Parsing done for $this ms") }
             }
         }
 
-        private fun applyPreference(name: String, block: (parsingStatus: Preference) -> Unit) {
-            val preference = findPreference<Preference>(name)
+        private fun setStatus(block: (parsingStatus: Preference) -> Unit) {
+            val preference = findPreference<Preference>("select_file")
             requireActivity().runOnUiThread { preference?.apply(block) }
+        }
+
+        private fun clearOutputDirectory(outputDirectory: File) {
+            if (outputDirectory.exists()) {
+                outputDirectory.deleteRecursively()
+            }
+            outputDirectory.mkdirs()
+        }
+
+        private fun setAssetsReadyFlag(value: Boolean) {
+            activity
+                ?.getSharedPreferences(Engine.PREFERENCES_NAME, Context.MODE_PRIVATE)
+                ?.edit()
+                ?.putBoolean(Engine.IS_ASSETS_READY_KEY, value)
+                ?.apply()
         }
 
         private fun handleFileSelection(filePath: Uri) {
@@ -70,25 +90,39 @@ class SettingsActivity : AppCompatActivity() {
 
             thread {
                 var stream: InputStream? = null
-
+                var outputDirectory: File? = null
                 try {
-                    applyPreference("select_file") {
+                    setStatus {
                         it.summary = "Parsing..."
                         it.isSelectable = false
                     }
-
-                    stream = requireContext().contentResolver.openInputStream(filePath)!!
-                    AssetsParser(stream)
-                        .parseLodToAtlas(
-                            requireContext().filesDir.resolve(Assets.atlasFolder),
-                            Assets.atlasName
-                        )
-                    applyPreference("select_file") { it.summary = "Parsing successfully done!" }
-                } catch (e: Exception) {
-                    applyPreference("select_file") { it.summary = "Something went wrong!\n${e.message}" }
+                    kotlin
+                        .runCatching {
+                            stream = requireContext()
+                                .contentResolver
+                                .openInputStream(filePath)!!
+                        }
+                        .onFailure { throw Exception("Can't open file") }
+                        .mapCatching {
+                            outputDirectory = requireContext()
+                                .filesDir
+                                .resolve(Assets.atlasFolder)
+                                .also { clearOutputDirectory(it) }
+                            setAssetsReadyFlag(false)
+                        }
+                        .onFailure { throw Exception("Can't prepare output directory") }
+                        .map { AssetsParser(stream!!, outputDirectory!!, Assets.atlasName).parseLodToAtlas() }
+                        .map {
+                            setAssetsReadyFlag(true)
+                            setStatus { it.summary = "Parsing successfully done!" }
+                        }
+                } catch (ex: Exception) {
+                    outputDirectory?.run { clearOutputDirectory(this) }
+                    setAssetsReadyFlag(false)
+                    setStatus { it.summary = ex.message }
                 } finally {
+                    setStatus { it.isSelectable = true }
                     stream?.close()
-                    applyPreference("select_file") { it.isSelectable = true }
                 }
             }
         }

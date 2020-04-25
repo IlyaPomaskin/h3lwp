@@ -11,8 +11,8 @@ import java.util.*
 
 class Assets {
     companion object {
-        const val atlasFolder = "sprites/h3/"
-        const val atlasName = "assets"
+        const val atlasFolder = "assets/"
+        const val atlasName = "sprites"
         const val atlasPath = "$atlasFolder/$atlasName.atlas"
     }
 
@@ -28,17 +28,13 @@ class Assets {
         assetManager.finishLoading()
     }
 
-    fun isReady(): Boolean {
-        return Gdx.files.local(atlasPath).exists()
-    }
-
     private fun getAtlasRegions(defName: String): Array<TextureAtlas.AtlasRegion> {
         val regions = assetManager
             .get<TextureAtlas>(atlasPath)
             .findRegions(defName)
 
         if (regions.isEmpty) {
-            println("can't find def $defName")
+            println("Can't find def $defName")
             return Array()
         }
 

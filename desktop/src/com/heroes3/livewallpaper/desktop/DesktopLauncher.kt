@@ -1,5 +1,6 @@
 package com.heroes3.livewallpaper.desktop
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
 import com.badlogic.gdx.utils.GdxNativesLoader
@@ -9,7 +10,8 @@ import com.heroes3.livewallpaper.parser.AssetsParser
 import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
-import java.io.FileInputStream
+import java.io.InputStream
+import kotlin.concurrent.thread
 import kotlin.system.measureTimeMillis
 
 object DesktopLauncher {
@@ -19,22 +21,60 @@ object DesktopLauncher {
         dialog.file = "*.lod"
         dialog.isMultipleMode = false
         dialog.show()
-        return dialog.files[0]
+        return dialog.files.getOrNull(0)
     }
 
-    private fun parse() {
-        try {
-            val file = getSelectedFile() ?: return
-            measureTimeMillis {
-                GdxNativesLoader.load()
-                AssetsParser(FileInputStream(file))
-                    .parseLodToAtlas(File(Assets.atlasFolder), Assets.atlasName)
-            }.run { println("done for $this ms") }
-        } catch (e: Exception) {
-            println("parse error")
-            println(e.message)
-            e.stackTrace.forEach { println(it) }
+    private fun clearOutputDirectory(outputDirectory: File) {
+        if (outputDirectory.exists()) {
+            outputDirectory.deleteRecursively()
         }
+        outputDirectory.mkdirs()
+    }
+
+    private fun setAssetsReadyFlag(value: Boolean) {
+        Gdx.app
+            .getPreferences(Engine.PREFERENCES_NAME)
+            .putBoolean(Engine.IS_ASSETS_READY_KEY, value)
+    }
+
+    private fun parse(onDone: () -> Unit) {
+        val file = getSelectedFile() ?: return
+        measureTimeMillis {
+            GdxNativesLoader.load()
+
+            thread {
+                var stream: InputStream? = null
+                var outputDirectory: File? = null
+                try {
+                    println("Parsing...")
+                    kotlin
+                        .runCatching { stream = file.inputStream() }
+                        .onFailure { throw Exception("Can't open file") }
+                        .mapCatching {
+                            outputDirectory = File(Assets.atlasFolder)
+                                .also {
+                                    clearOutputDirectory(it)
+                                    setAssetsReadyFlag(false)
+                                }
+                        }
+                        .onFailure { throw Exception("Can't prepare output directory") }
+                        .map { AssetsParser(stream!!, outputDirectory!!, Assets.atlasName).parseLodToAtlas() }
+                        .map {
+                            setAssetsReadyFlag(true)
+                            println("Parsing successfully done!")
+                        }
+                } catch (ex: Exception) {
+                    outputDirectory?.run {
+                        clearOutputDirectory(this)
+                        setAssetsReadyFlag(false)
+                    }
+                    println("Fail: ${ex.message}")
+                } finally {
+                    stream?.close()
+                    onDone()
+                }
+            }
+        }.run { println("Done for $this ms") }
     }
 
     @JvmStatic
@@ -49,7 +89,7 @@ object DesktopLauncher {
         }
 
         val engine = Engine()
-        engine.onSettingButtonClick = { parse() }
+        engine.onSettingButtonClick = ::parse
         LwjglApplication(engine, config)
     }
 }

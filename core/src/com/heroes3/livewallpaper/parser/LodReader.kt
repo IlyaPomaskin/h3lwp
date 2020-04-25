@@ -7,6 +7,10 @@ import java.util.zip.Inflater
 internal class LodReader(stream: InputStream) {
     private val lod = Lod()
     private var reader = Reader(stream)
+    private val magicHeader = byteArrayOf(
+        0x4c.toByte(), 0x4f.toByte(), 0x44.toByte(), 0x00.toByte(),
+        0xc8.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte()
+    )
 
     @Throws(IOException::class)
     fun read(): Lod {
@@ -17,6 +21,7 @@ internal class LodReader(stream: InputStream) {
 
     private fun readHeader() {
         lod.magic = reader.readBytes(lod.magic.size)
+        if (!lod.magic.contentEquals(magicHeader)) throw Exception("Wrong file selected")
         lod.filesCount = reader.readInt()
         lod.unknown = reader.readBytes(lod.unknown.size)
         lod.files = mutableListOf()

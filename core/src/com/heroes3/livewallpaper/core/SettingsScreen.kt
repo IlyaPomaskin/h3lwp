@@ -6,13 +6,12 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.scenes.scene2d.ui.VerticalGroup
 import com.badlogic.gdx.utils.Align
-import com.badlogic.gdx.utils.viewport.ScreenViewport
 import ktx.app.KtxScreen
 import ktx.actors.*
 
 class SettingsScreen(private val engine: Engine) : KtxScreen {
     private val stage = stage(viewport = engine.viewport)
-    private val skin = Skin(Gdx.files.local("sprites/skin/uiskin.json"))
+    private val skin = Skin(Gdx.files.internal("skin/uiskin.json"))
 
     init {
         val labelGroup = VerticalGroup().apply {
@@ -35,8 +34,11 @@ class SettingsScreen(private val engine: Engine) : KtxScreen {
             this.addActor(
                 TextButton("Open settings", skin).apply {
                     this.onChange {
-                        engine.onSettingButtonClick()
-                        engine.start()
+                        engine.onSettingButtonClick {
+                            Gdx.app.postRunnable {
+                                engine.updateVisibleScreen()
+                            }
+                        }
                     }
                 }
             )
@@ -47,7 +49,6 @@ class SettingsScreen(private val engine: Engine) : KtxScreen {
 
     override fun show() {
         super.show()
-        engine.viewport.unitsPerPixel = 0.5f
         Gdx.input.inputProcessor = stage
     }
 

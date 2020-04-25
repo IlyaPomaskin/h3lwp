@@ -3,7 +3,7 @@ package com.heroes3.livewallpaper.core
 import com.badlogic.gdx.Gdx
 import ktx.app.KtxScreen
 
-class WallpaperScreen(val engine: Engine) : KtxScreen {
+class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private lateinit var terrainRenderer: TerrainRenderer
     private lateinit var objectsRenderer: ObjectsRenderer
     private val parser = JsonMapParser()
