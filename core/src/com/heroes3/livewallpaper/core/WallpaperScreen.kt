@@ -10,11 +10,10 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
 
     override fun show() {
         super.show()
-        engine.assets.loadAtlas()
+        engine.camera.setToOrtho(true)
         val h3mMap = parser.parse(Gdx.files.internal("maps/invasion.json").read())
         terrainRenderer = TerrainRenderer(engine, h3mMap)
         objectsRenderer = ObjectsRenderer(engine, h3mMap)
-        engine.camera.setToOrtho(true)
         Gdx.input.inputProcessor = InputProcessor(engine.camera)
     }
 
@@ -24,7 +23,10 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
 
     override fun render(delta: Float) {
         engine.camera.update()
-        terrainRenderer.render()
-        objectsRenderer.render(delta)
+
+        if (engine.assets.manager.update()) {
+            terrainRenderer.render()
+            objectsRenderer.render(delta)
+        }
     }
 }

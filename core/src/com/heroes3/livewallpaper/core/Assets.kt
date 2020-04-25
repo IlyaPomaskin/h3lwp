@@ -1,6 +1,5 @@
 package com.heroes3.livewallpaper.core
 
-import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.assets.loaders.TextureAtlasLoader
 import com.badlogic.gdx.graphics.Texture
@@ -11,25 +10,26 @@ import java.util.*
 
 class Assets {
     companion object {
-        const val atlasFolder = "assets/"
-        const val atlasName = "sprites"
+        const val atlasFolder = "sprites"
+        const val atlasName = "images"
         const val atlasPath = "$atlasFolder/$atlasName.atlas"
     }
 
-    private val assetManager = AssetManager()
+    val manager = AssetManager()
 
     init {
-        Texture.setAssetManager(assetManager)
+        Texture.setAssetManager(manager)
     }
 
     fun loadAtlas() {
-        val params = TextureAtlasLoader.TextureAtlasParameter(true)
-        assetManager.load<TextureAtlas>(atlasPath, params)
-        assetManager.finishLoading()
+        manager.load<TextureAtlas>(
+            atlasPath,
+            TextureAtlasLoader.TextureAtlasParameter(true)
+        )
     }
 
     private fun getAtlasRegions(defName: String): Array<TextureAtlas.AtlasRegion> {
-        val regions = assetManager
+        val regions = manager
             .get<TextureAtlas>(atlasPath)
             .findRegions(defName)
 

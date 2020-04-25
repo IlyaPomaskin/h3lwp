@@ -35,6 +35,7 @@ object DesktopLauncher {
         Gdx.app
             .getPreferences(Engine.PREFERENCES_NAME)
             .putBoolean(Engine.IS_ASSETS_READY_KEY, value)
+            .flush()
     }
 
     private fun parse(onDone: () -> Unit) {

@@ -11,49 +11,39 @@ import ktx.actors.*
 
 class SettingsScreen(private val engine: Engine) : KtxScreen {
     private val stage = stage(viewport = engine.viewport)
-    private val skin = Skin(Gdx.files.internal("skin/uiskin.json"))
 
     init {
-        val labelGroup = VerticalGroup().apply {
-            this.grow()
-            this.padBottom(30.toFloat())
-            this.addActor(
-                Label("Some text", skin).apply {
-                    this.setWrap(true)
-                    this.setAlignment(Align.center)
-                }
-            )
-        }
-        val group = VerticalGroup().apply {
-            this.center()
-            this.grow()
-            this.setFillParent(true)
-            this.space(10.toFloat())
-            this.pad(50.toFloat())
-            this.addActor(labelGroup)
-            this.addActor(
-                TextButton("Open settings", skin).apply {
-                    this.onChange {
-                        engine.onSettingButtonClick {
-                            Gdx.app.postRunnable {
-                                engine.updateVisibleScreen()
+        stage.addActor(
+            VerticalGroup().apply {
+                center()
+                grow()
+                setFillParent(true)
+                space(10.toFloat())
+                pad(50.toFloat())
+                addActor(
+                    Label("Some text", engine.skin).apply {
+                        setWrap(true)
+                        setAlignment(Align.center)
+                    }
+                )
+                addActor(
+                    TextButton("Open settings", engine.skin).apply {
+                        onChange {
+                            engine.onSettingButtonClick {
+                                Gdx.app.postRunnable {
+                                    engine.updateVisibleScreen()
+                                }
                             }
                         }
                     }
-                }
-            )
-        }
-
-        stage.addActor(group)
+                )
+            }
+        )
     }
 
     override fun show() {
         super.show()
         Gdx.input.inputProcessor = stage
-    }
-
-    override fun resize(width: Int, height: Int) {
-        engine.viewport.update(width, height, true)
     }
 
     override fun render(delta: Float) {
