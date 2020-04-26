@@ -1,12 +1,42 @@
 package com.heroes3.livewallpaper.core
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.assets.loaders.TextureAtlasLoader
+import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import ktx.app.KtxScreen
+import ktx.assets.load
 
 class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private lateinit var terrainRenderer: TerrainRenderer
     private lateinit var objectsRenderer: ObjectsRenderer
     private val parser = JsonMapParser()
+
+    init {
+        tryLoadAssets()
+    }
+
+    fun isAssetsLoaded() : Boolean {
+        return engine.assets.manager.isLoaded(Assets.atlasPath)
+    }
+
+    private fun canLoadAssets(): Boolean {
+        val isAssetsReady = Gdx.app
+            .getPreferences(Engine.PREFERENCES_NAME)
+            .getBoolean(Engine.IS_ASSETS_READY_KEY)
+        val filesExists = Gdx.files.internal(Assets.atlasPath).exists()
+
+        return isAssetsReady && filesExists && !isAssetsLoaded()
+    }
+
+    fun tryLoadAssets() {
+        if (canLoadAssets()) {
+            engine.assets.manager.load<TextureAtlas>(
+                Assets.atlasPath,
+                TextureAtlasLoader.TextureAtlasParameter(true)
+            )
+            engine.updateVisibleScreen()
+        }
+    }
 
     override fun show() {
         super.show()

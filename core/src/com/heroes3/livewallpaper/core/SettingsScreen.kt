@@ -28,10 +28,10 @@ class SettingsScreen(private val engine: Engine) : KtxScreen {
                 )
                 addActor(
                     TextButton("Open settings", engine.skin).apply {
-                        onChange {
+                        onClick {
                             engine.onSettingButtonClick {
                                 Gdx.app.postRunnable {
-                                    engine.updateVisibleScreen()
+                                    engine.getScreen<WallpaperScreen>().tryLoadAssets()
                                 }
                             }
                         }
@@ -44,6 +44,7 @@ class SettingsScreen(private val engine: Engine) : KtxScreen {
     override fun show() {
         super.show()
         Gdx.input.inputProcessor = stage
+        engine.getScreen<WallpaperScreen>().tryLoadAssets()
     }
 
     override fun render(delta: Float) {

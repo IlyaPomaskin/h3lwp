@@ -2,6 +2,7 @@ package com.heroes3.livewallpaper.core
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
+import com.badlogic.gdx.assets.loaders.SkinLoader
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.utils.viewport.ScreenViewport
@@ -21,9 +22,8 @@ class Engine : KtxGame<Screen>(null, true) {
 
     override fun create() {
         assets = Assets()
-        skin = Skin(Gdx.files.internal("skin/uiskin.json"))
-//        viewport.unitsPerPixel = 1 / Gdx.graphics.density
-        camera.zoom = 1 / Gdx.graphics.density
+        skin = assets.loadSkin()
+        camera.zoom = Gdx.graphics.density
         viewport.update(Gdx.graphics.width, Gdx.graphics.height, true)
         addScreen(LoadingScreen(this))
         addScreen(WallpaperScreen(this))
@@ -32,17 +32,13 @@ class Engine : KtxGame<Screen>(null, true) {
     }
 
     fun updateVisibleScreen() {
-        val isAssetsReady = Gdx.app
-            .getPreferences(PREFERENCES_NAME)
-            .getBoolean(IS_ASSETS_READY_KEY)
-        val filesExists = Gdx.files.internal(Assets.atlasPath).exists()
-        if (isAssetsReady && filesExists) {
-            if (assets.manager.isLoaded(Assets.atlasPath)) {
-                setScreen<WallpaperScreen>()
-            } else {
-                assets.loadAtlas()
-                setScreen<LoadingScreen>()
-            }
+        if (!assets.manager.isFinished) {
+            setScreen<LoadingScreen>()
+            return
+        }
+
+        if (getScreen<WallpaperScreen>().isAssetsLoaded()) {
+            setScreen<WallpaperScreen>()
         } else {
             setScreen<SettingsScreen>()
         }
@@ -55,7 +51,6 @@ class Engine : KtxGame<Screen>(null, true) {
 
     override fun resume() {
         super.resume()
-        println("engine resume!!")
         updateVisibleScreen()
     }
 }

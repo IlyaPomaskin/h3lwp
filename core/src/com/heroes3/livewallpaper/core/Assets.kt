@@ -1,11 +1,14 @@
 package com.heroes3.livewallpaper.core
 
 import com.badlogic.gdx.assets.AssetManager
-import com.badlogic.gdx.assets.loaders.TextureAtlasLoader
+import com.badlogic.gdx.assets.loaders.SkinLoader
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
+import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.utils.Array
+import ktx.assets.getAsset
 import ktx.assets.load
+import ktx.assets.loadAsset
 import java.util.*
 
 class Assets {
@@ -13,19 +16,13 @@ class Assets {
         const val atlasFolder = "sprites"
         const val atlasName = "images"
         const val atlasPath = "$atlasFolder/$atlasName.atlas"
+        const val skinPath = "skin/uiskin.json"
     }
 
     val manager = AssetManager()
 
     init {
         Texture.setAssetManager(manager)
-    }
-
-    fun loadAtlas() {
-        manager.load<TextureAtlas>(
-            atlasPath,
-            TextureAtlasLoader.TextureAtlasParameter(true)
-        )
     }
 
     private fun getAtlasRegions(defName: String): Array<TextureAtlas.AtlasRegion> {
@@ -47,5 +44,10 @@ class Assets {
 
     fun getTerrainFrames(defName: String, index: Int): Array<TextureAtlas.AtlasRegion> {
         return getAtlasRegions("$defName/$index")
+    }
+
+    fun loadSkin(): Skin {
+        manager.load<Skin>(skinPath).finishLoading()
+        return manager.get(skinPath)
     }
 }
