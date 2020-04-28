@@ -14,9 +14,11 @@ eclipse.project {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.5'
     implementation "io.github.libktx:ktx-actors:$ktxVersion"
     implementation "io.github.libktx:ktx-app:$ktxVersion"
     implementation "io.github.libktx:ktx-assets:$ktxVersion"
+    implementation "io.github.libktx:ktx-async:$ktxVersion"
     implementation "io.github.libktx:ktx-collections:$ktxVersion"
     implementation "io.github.libktx:ktx-graphics:$ktxVersion"
     implementation "io.protostuff:protostuff-core:1.7.1"
