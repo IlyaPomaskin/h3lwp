@@ -1,5 +1,6 @@
 package com.heroes3.livewallpaper.core
 
+import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.loaders.TextureAtlasLoader
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
@@ -72,10 +73,13 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     override fun show() {
         super.show()
         engine.camera.setToOrtho(true)
+        randomizeCameraPosition()
         terrainRenderer = terrainRenderer ?: TerrainRenderer(engine, h3mMap)
         objectsRenderer = objectsRenderer ?: ObjectsRenderer(engine, h3mMap)
-        Gdx.input.inputProcessor = inputProcessor
-        randomizeCameraPosition()
+
+        if (Gdx.app.type == Application.ApplicationType.Desktop) {
+            Gdx.input.inputProcessor = inputProcessor
+        }
     }
 
     override fun resize(width: Int, height: Int) {
