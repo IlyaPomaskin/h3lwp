@@ -3,6 +3,7 @@ package com.heroes3.livewallpaper.core
 import com.badlogic.gdx.graphics.g2d.Animation
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
+import com.heroes3.livewallpaper.parser.JsonMapParser
 import ktx.graphics.use
 
 class ObjectsRenderer(private val engine: Engine, h3mMap: JsonMapParser.ParsedMap) {

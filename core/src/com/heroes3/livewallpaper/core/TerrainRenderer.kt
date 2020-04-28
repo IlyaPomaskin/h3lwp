@@ -8,8 +8,8 @@ import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
 import com.badlogic.gdx.maps.tiled.tiles.AnimatedTiledMapTile
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile
 import com.badlogic.gdx.utils.Array
-import com.heroes3.livewallpaper.core.JsonMapParser.ParsedMap
-import com.heroes3.livewallpaper.core.JsonMapParser.TerrainTile
+import com.heroes3.livewallpaper.parser.JsonMapParser.ParsedMap
+import com.heroes3.livewallpaper.parser.JsonMapParser.TerrainTile
 import ktx.collections.map
 import java.util.*
 

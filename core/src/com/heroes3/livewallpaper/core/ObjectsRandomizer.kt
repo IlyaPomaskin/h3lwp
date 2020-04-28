@@ -1,5 +1,6 @@
 package com.heroes3.livewallpaper.core
 
+import com.heroes3.livewallpaper.parser.JsonMapParser
 import kotlin.random.Random
 
 class ObjectsRandomizer {

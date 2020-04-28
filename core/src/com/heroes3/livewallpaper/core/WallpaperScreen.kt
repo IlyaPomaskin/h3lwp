@@ -3,6 +3,7 @@ package com.heroes3.livewallpaper.core
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.loaders.TextureAtlasLoader
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
+import com.heroes3.livewallpaper.parser.JsonMapParser
 import ktx.app.KtxScreen
 import ktx.assets.load
 
