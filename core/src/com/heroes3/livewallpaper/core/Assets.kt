@@ -2,13 +2,16 @@ package com.heroes3.livewallpaper.core
 
 import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.assets.loaders.SkinLoader
+import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.utils.Array
 import ktx.assets.getAsset
 import ktx.assets.load
 import ktx.assets.loadAsset
+import ktx.collections.gdxArrayOf
 import java.util.*
 
 class Assets {
@@ -20,6 +23,13 @@ class Assets {
     }
 
     val manager = AssetManager()
+    val emptyPixmap = TextureAtlas.AtlasRegion(
+        TextureRegion(
+            Texture(
+                Pixmap(0, 0, Pixmap.Format.RGBA8888)
+            )
+        )
+    )
 
     init {
         Texture.setAssetManager(manager)
@@ -32,7 +42,7 @@ class Assets {
 
         if (regions.isEmpty) {
             println("Can't find def $defName")
-            return Array()
+            return gdxArrayOf(emptyPixmap)
         }
 
         return regions

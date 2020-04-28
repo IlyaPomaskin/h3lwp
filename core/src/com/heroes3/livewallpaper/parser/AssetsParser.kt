@@ -38,7 +38,6 @@ class AssetsParser(lodFileInputStream: InputStream, private val outputDirectory:
 
     private val lodReader = LodReader(lodFileInputStream)
     private val packer = PixmapPacker(2048, 2048, Pixmap.Format.RGBA4444, 0, false)
-    private val terrainRegex = Regex("([a-z]+[0-9]+.pcx)_([0-1]+)", RegexOption.IGNORE_CASE)
 
     private fun writePageHeader(writer: Writer, filename: String, packer: PixmapPacker) {
         writer.append("\n")
@@ -100,14 +99,14 @@ class AssetsParser(lodFileInputStream: InputStream, private val outputDirectory:
 
     private fun packTerrainFrame(frame: Def.Frame, acc: PackedFrames): PackedFrames {
         val index = 0
-        val frameName = "${frame.frameName}_${index}"
+        val frameName = frame.parentGroup.parentDef.lodFile.name + "/" + frame.frameName + "/" + index
         packer.pack(frameName, makeTerrainPixmap(frame))
         acc[frameName] = frame
         return acc
     }
 
     private fun packSpriteFrame(frame: Def.Frame, acc: PackedFrames): PackedFrames {
-        val frameName = frame.frameName
+        val frameName = frame.parentGroup.parentDef.lodFile.name + "/" + frame.frameName
         packer.pack(frameName, makePixmap(frame))
         acc[frameName] = frame
         return acc
@@ -156,9 +155,9 @@ class AssetsParser(lodFileInputStream: InputStream, private val outputDirectory:
 
         return defs
             .sortedBy { it.offset }
-            .map { file -> readDefFile(file) }
+            .map(::readDefFile)
             .flatMap { def -> def.groups.flatMap { group -> group.frames } }
-            .distinctBy { it.frameName }
+            .distinctBy { it.parentGroup.parentDef.lodFile.name + it.frameName }
     }
 
     private fun packFrames(assets: List<Def.Frame>): PackedFrames {
@@ -186,6 +185,47 @@ class AssetsParser(lodFileInputStream: InputStream, private val outputDirectory:
         }
     }
 
+    private fun writeSprite(
+        writer: Writer,
+        rectangleName: String,
+        rectangle: PixmapPacker.PixmapPackerRectangle,
+        frame: Def.Frame
+    ) {
+        val rectangleParts = rectangleName.split("/")
+        val defName = rectangleParts[0]
+        val frameName = rectangleParts[1]
+
+        frame
+            .parentGroup
+            .filenames
+            .forEachIndexed { index, fileName ->
+                if (fileName != frameName) return@forEachIndexed
+
+                writeFrame(writer, defName, index.toString(), rectangle, frame)
+            }
+    }
+
+    private fun writeTerrain(
+        writer: Writer,
+        rectangleName: String,
+        rectangle: PixmapPacker.PixmapPackerRectangle,
+        frame: Def.Frame
+    ) {
+        val rectangleParts = rectangleName.split("/")
+        val defName = rectangleParts[0]
+        val frameName = rectangleParts[1]
+        val rotationIndex = rectangleParts[2]
+
+        frame
+            .parentGroup
+            .filenames
+            .forEachIndexed { index, fileName ->
+                if (fileName != frameName) return@forEachIndexed
+
+                writeFrame(writer, "$defName/$index", rotationIndex, rectangle, frame)
+            }
+    }
+
     private fun writePackerContent(sprites: PackedFrames) {
         val writer = outputDirectory.resolve("${atlasName}.atlas").writer()
 
@@ -194,32 +234,19 @@ class AssetsParser(lodFileInputStream: InputStream, private val outputDirectory:
             writePageHeader(writer, pngName, packer)
             writePng(outputDirectory.resolve(pngName).outputStream(), page.pixmap)
 
-            page.rects.forEach { entry ->
-                var rectName = entry.key
-                val rect = entry.value
-                val frame = sprites[rectName] ?: return@forEach
-                val defName = frame.parentGroup.parentDef.lodFile.name
-                val isTerrainTile = frame.parentGroup.parentDef.lodFile.fileType == Lod.FileType.TERRAIN
-                var rotationIndex = ""
-                if (isTerrainTile) {
-                    terrainRegex.findAll(rectName).elementAtOrNull(0)?.run {
-                        rectName = this.groupValues[1]
-                        rotationIndex = this.groupValues[2]
+            page
+                .rects
+                .forEach { entry ->
+                    val rectangleName = entry.key
+                    val rectangle = entry.value
+                    val frame = sprites[rectangleName] ?: return@forEach
+
+                    when (frame.parentGroup.parentDef.lodFile.fileType) {
+                        Lod.FileType.TERRAIN -> writeTerrain(writer, rectangleName, rectangle, frame)
+                        Lod.FileType.SPRITE -> writeSprite(writer, rectangleName, rectangle, frame)
+                        Lod.FileType.MAP -> writeSprite(writer, rectangleName, rectangle, frame)
                     }
                 }
-                frame
-                    .parentGroup
-                    .filenames
-                    .forEachIndexed(fun(index, fileName) {
-                        if (fileName != rectName) return
-
-                        if (isTerrainTile) {
-                            writeFrame(writer, "$defName/$index", rotationIndex, rect, frame)
-                        } else {
-                            writeFrame(writer, defName, index.toString(), rect, frame)
-                        }
-                    })
-            }
         }
 
         writer.close()
