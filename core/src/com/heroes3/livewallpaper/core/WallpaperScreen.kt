@@ -6,11 +6,13 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.heroes3.livewallpaper.parser.JsonMapParser
 import ktx.app.KtxScreen
 import ktx.assets.load
+import kotlin.math.ceil
+import kotlin.random.Random
 
 class WallpaperScreen(private val engine: Engine) : KtxScreen {
-    private lateinit var terrainRenderer: TerrainRenderer
-    private lateinit var objectsRenderer: ObjectsRenderer
-    private val parser = JsonMapParser()
+    private var terrainRenderer: TerrainRenderer? = null
+    private var objectsRenderer: ObjectsRenderer? = null
+    private val h3mMap = JsonMapParser().parse(Gdx.files.internal("maps/invasion.json").read())
 
     init {
         tryLoadAssets()
@@ -56,14 +58,14 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         engine.camera.update()
 
         if (engine.assets.manager.update()) {
-            terrainRenderer.render()
-            objectsRenderer.render(delta)
+            terrainRenderer?.render()
+            objectsRenderer?.render(delta)
         }
     }
 
     override fun dispose() {
         super.dispose()
-        terrainRenderer.dispose()
-        objectsRenderer.dispose()
+        terrainRenderer?.dispose()
+        objectsRenderer?.dispose()
     }
 }
