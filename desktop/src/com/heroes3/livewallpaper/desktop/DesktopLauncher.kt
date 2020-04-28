@@ -12,7 +12,6 @@ import java.awt.Frame
 import java.io.File
 import java.io.InputStream
 import kotlin.concurrent.thread
-import kotlin.system.measureTimeMillis
 
 object DesktopLauncher {
     private fun getSelectedFile(): File? {
@@ -40,42 +39,41 @@ object DesktopLauncher {
 
     private fun parse(onDone: () -> Unit) {
         val file = getSelectedFile() ?: return
-        measureTimeMillis {
-            GdxNativesLoader.load()
 
-            thread {
-                var stream: InputStream? = null
-                var outputDirectory: File? = null
-                try {
-                    println("Parsing...")
-                    kotlin
-                        .runCatching { stream = file.inputStream() }
-                        .onFailure { throw Exception("Can't open file") }
-                        .mapCatching {
-                            outputDirectory = File(Assets.atlasFolder)
-                                .also {
-                                    clearOutputDirectory(it)
-                                    setAssetsReadyFlag(false)
-                                }
-                        }
-                        .onFailure { throw Exception("Can't prepare output directory") }
-                        .map { AssetsParser(stream!!, outputDirectory!!, Assets.atlasName).parseLodToAtlas() }
-                        .map {
-                            setAssetsReadyFlag(true)
-                            println("Parsing successfully done!")
-                        }
-                } catch (ex: Exception) {
-                    outputDirectory?.run {
-                        clearOutputDirectory(this)
-                        setAssetsReadyFlag(false)
+        GdxNativesLoader.load()
+
+        thread {
+            var stream: InputStream? = null
+            var outputDirectory: File? = null
+            try {
+                println("Parsing...")
+                kotlin
+                    .runCatching { stream = file.inputStream() }
+                    .onFailure { throw Exception("Can't open file") }
+                    .mapCatching {
+                        outputDirectory = File(Assets.atlasFolder)
+                            .also {
+                                clearOutputDirectory(it)
+                                setAssetsReadyFlag(false)
+                            }
                     }
-                    println("Fail: ${ex.message}")
-                } finally {
-                    stream?.close()
-                    onDone()
+                    .onFailure { throw Exception("Can't prepare output directory") }
+                    .map { AssetsParser(stream!!, outputDirectory!!, Assets.atlasName).parseLodToAtlas() }
+                    .map {
+                        setAssetsReadyFlag(true)
+                        println("Parsing successfully done!")
+                    }
+            } catch (ex: Exception) {
+                outputDirectory?.run {
+                    clearOutputDirectory(this)
+                    setAssetsReadyFlag(false)
                 }
+                println("Fail: ${ex.message}")
+            } finally {
+                stream?.close()
+                onDone()
             }
-        }.run { println("Done for $this ms") }
+        }
     }
 
     @JvmStatic
