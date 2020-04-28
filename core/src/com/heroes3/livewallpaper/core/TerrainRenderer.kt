@@ -8,12 +8,13 @@ import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
 import com.badlogic.gdx.maps.tiled.tiles.AnimatedTiledMapTile
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile
 import com.badlogic.gdx.utils.Array
+import com.badlogic.gdx.utils.Disposable
 import com.heroes3.livewallpaper.parser.JsonMapParser.ParsedMap
 import com.heroes3.livewallpaper.parser.JsonMapParser.TerrainTile
 import ktx.collections.map
 import java.util.*
 
-class TerrainRenderer(private val engine: Engine, private val h3mMap: ParsedMap) {
+class TerrainRenderer(private val engine: Engine, private val h3mMap: ParsedMap) : Disposable {
     private var tiledMap = TiledMap()
     private val renderer = OrthogonalTiledMapRenderer(tiledMap)
 
@@ -110,5 +111,10 @@ class TerrainRenderer(private val engine: Engine, private val h3mMap: ParsedMap)
     fun render() {
         renderer.setView(engine.camera)
         renderer.render()
+    }
+
+    override fun dispose() {
+        renderer.dispose()
+        tiledMap.dispose()
     }
 }

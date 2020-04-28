@@ -60,4 +60,10 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
             objectsRenderer.render(delta)
         }
     }
+
+    override fun dispose() {
+        super.dispose()
+        terrainRenderer.dispose()
+        objectsRenderer.dispose()
+    }
 }
