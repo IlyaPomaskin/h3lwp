@@ -73,9 +73,9 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     override fun show() {
         super.show()
         engine.camera.setToOrtho(true)
-        randomizeCameraPosition()
         terrainRenderer = terrainRenderer ?: TerrainRenderer(engine, h3mMap)
         objectsRenderer = objectsRenderer ?: ObjectsRenderer(engine, h3mMap)
+        randomizeCameraPosition()
 
         if (Gdx.app.type == Application.ApplicationType.Desktop) {
             Gdx.input.inputProcessor = inputProcessor
