@@ -28,7 +28,6 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
 
     init {
         tryLoadAssets()
-        randomizeCameraPosition()
     }
 
     fun isAssetsLoaded(): Boolean {
@@ -58,15 +57,16 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         val cameraViewportWidthTiles = ceil(engine.camera.viewportWidth * engine.camera.zoom / 32)
         val cameraViewportHeightTiles = ceil(engine.camera.viewportHeight * engine.camera.zoom / 32)
         val nextCameraX = Random.nextInt(
-            ceil(cameraViewportHeightTiles / 2).toInt(),
-            floor(h3mMap.size - cameraViewportWidthTiles / 2).toInt()
+           cameraViewportWidthTiles.toInt(),
+            floor(h3mMap.size - cameraViewportWidthTiles).toInt()
         ) * 32f
         val nextCameraY = Random.nextInt(
-            ceil(cameraViewportHeightTiles / 2).toInt(),
-            floor(h3mMap.size - cameraViewportHeightTiles / 2).toInt()
+            cameraViewportHeightTiles.toInt(),
+            floor(h3mMap.size - cameraViewportHeightTiles).toInt()
         ) * 32f
 
         engine.camera.position.set(nextCameraX, nextCameraY, 0f)
+        objectsRenderer?.updateVisibleSprites()
     }
 
     override fun show() {
@@ -75,6 +75,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         terrainRenderer = terrainRenderer ?: TerrainRenderer(engine, h3mMap)
         objectsRenderer = objectsRenderer ?: ObjectsRenderer(engine, h3mMap)
         Gdx.input.inputProcessor = inputProcessor
+        randomizeCameraPosition()
     }
 
     override fun resize(width: Int, height: Int) {

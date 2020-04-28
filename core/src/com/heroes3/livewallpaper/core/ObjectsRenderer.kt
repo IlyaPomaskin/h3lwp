@@ -7,7 +7,7 @@ import com.badlogic.gdx.utils.Disposable
 import com.heroes3.livewallpaper.parser.JsonMapParser
 import ktx.graphics.use
 
-class ObjectsRenderer(private val engine: Engine, h3mMap: JsonMapParser.ParsedMap) : Disposable {
+class ObjectsRenderer(private val engine: Engine, private val h3mMap: JsonMapParser.ParsedMap) : Disposable {
     class Sprite(
         val animation: Animation<TextureAtlas.AtlasRegion>,
         val x: Float,
@@ -16,20 +16,42 @@ class ObjectsRenderer(private val engine: Engine, h3mMap: JsonMapParser.ParsedMa
 
     private val randomizer = ObjectsRandomizer()
     private val batch = SpriteBatch()
-    private var sprites = h3mMap
-        .objects
-        .sorted()
-        .asReversed()
-        .filter { it.z == 0 && it.x <= 50 && it.y <= 50 }
-        .map {
-            val spriteName = randomizer.replaceRandomObject(it)
-            val frames = engine.assets.getObjectFrames(spriteName)
-            Sprite(
-                Animation(0.18f, frames),
-                ((it.x + 1) * 32).toFloat(),
-                ((it.y + 1) * 32).toFloat()
-            )
-        }
+    private var sprites: List<Sprite> = emptyList()
+
+    fun updateVisibleSprites() {
+        // TODO make 2d array, filter in render method like terrain renderer do, remove this method
+        sprites = h3mMap
+            .objects
+            .sorted()
+            .asReversed()
+            .filter {
+                val offset = 32 * 5
+                val isUnderground = it.z == 0
+
+                val x = it.x * 32
+                val halfWidth = engine.camera.viewportWidth / 2
+                val leftSide = engine.camera.position.x - halfWidth - offset
+                val rightSide = engine.camera.position.x + engine.camera.viewportWidth - halfWidth + offset
+                val isInViewportByX =  leftSide < x && x < rightSide
+
+                val y = it.y * 32
+                val halfHeight = engine.camera.viewportHeight / 2
+                val topSide = engine.camera.position.y - halfHeight - offset
+                val bottomSide = engine.camera.position.y + engine.camera.viewportHeight - halfHeight + offset
+                val isInViewportByY = topSide < y && y < bottomSide
+
+                isUnderground && isInViewportByX && isInViewportByY
+            }
+            .map {
+                val spriteName = randomizer.replaceRandomObject(it)
+                val frames = engine.assets.getObjectFrames(spriteName)
+                Sprite(
+                    Animation(0.18f, frames),
+                    ((it.x + 1) * 32).toFloat(),
+                    ((it.y + 1) * 32).toFloat()
+                )
+            }
+    }
 
     private fun getFrameX(frame: TextureAtlas.AtlasRegion, x: Float): Float {
         return x + frame.offsetX - frame.originalWidth

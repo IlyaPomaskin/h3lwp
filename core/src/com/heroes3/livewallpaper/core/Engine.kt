@@ -2,7 +2,6 @@ package com.heroes3.livewallpaper.core
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
-import com.badlogic.gdx.assets.loaders.SkinLoader
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.utils.viewport.ScreenViewport
@@ -23,8 +22,7 @@ class Engine : KtxGame<Screen>(null, true) {
     override fun create() {
         assets = Assets()
         skin = assets.loadSkin()
-        camera.zoom = Gdx.graphics.density
-        viewport.update(Gdx.graphics.width, Gdx.graphics.height, true)
+        viewport.update(Gdx.graphics.width, Gdx.graphics.height)
         addScreen(LoadingScreen(this))
         addScreen(WallpaperScreen(this))
         addScreen(SettingsScreen(this))
@@ -46,7 +44,7 @@ class Engine : KtxGame<Screen>(null, true) {
 
     override fun resize(width: Int, height: Int) {
         super.resize(width, height)
-        viewport.update(width, height, true)
+        viewport.update(width, height)
     }
 
     override fun resume() {
