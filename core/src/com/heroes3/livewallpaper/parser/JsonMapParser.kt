@@ -1,6 +1,7 @@
 package com.heroes3.livewallpaper.parser
 
 import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.dataformat.smile.SmileFactory
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.io.InputStream
 
@@ -38,7 +39,7 @@ class JsonMapParser {
         val info: Map<String, *>?,
         val def: Def
     ) : Comparable<MapObject> {
-       override fun compareTo(other: MapObject): Int {
+        override fun compareTo(other: MapObject): Int {
             val a = this
             val b = other
 
@@ -64,9 +65,9 @@ class JsonMapParser {
     )
 
     private val mapper = jacksonObjectMapper()
-        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     fun parse(stream: InputStream): ParsedMap {
-        return mapper.readValue(stream, ParsedMap::class.java)
+        return mapper.readValue(SmileFactory().createParser(stream), ParsedMap::class.java)
     }
 }

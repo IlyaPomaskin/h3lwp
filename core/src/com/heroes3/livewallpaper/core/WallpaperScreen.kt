@@ -24,7 +24,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         -1,
         ::randomizeCameraPosition
     )
-    private val h3mMap = JsonMapParser().parse(Gdx.files.internal("maps/invasion.json").read())
+    private val h3mMap = JsonMapParser().parse(Gdx.files.internal("maps/invasion.sml").read())
 
     init {
         tryLoadAssets()

@@ -23,6 +23,7 @@ dependencies {
     implementation "io.github.libktx:ktx-graphics:$ktxVersion"
     implementation "io.protostuff:protostuff-core:1.7.1"
     implementation "com.fasterxml.jackson.core:jackson-databind:2.10.3"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.8.9"
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:2.10.3"
 }
 
