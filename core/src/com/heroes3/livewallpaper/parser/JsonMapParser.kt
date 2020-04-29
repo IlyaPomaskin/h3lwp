@@ -26,7 +26,9 @@ class JsonMapParser {
         val classSubId: Int,
         val group: Int,
         val placementOrder: Int
-    )
+    ) {
+        val isVisitable = activeCells.all { it == 0 }
+    }
 
     class MapObject(
         val x: Int,
@@ -36,23 +38,18 @@ class JsonMapParser {
         val info: Map<String, *>?,
         val def: Def
     ) : Comparable<MapObject> {
-        private fun isVisitable(): Boolean {
-            return def.activeCells.all { it == 0 }
-        }
-
-        override fun compareTo(other: MapObject): Int {
+       override fun compareTo(other: MapObject): Int {
             val a = this
             val b = other
 
-            if (a.def.placementOrder != b.def.placementOrder) {
+            if (a.def.placementOrder != b.def.placementOrder)
                 return a.def.placementOrder.compareTo(b.def.placementOrder)
-            }
             if (a.y != b.y) return b.y.compareTo(a.y)
             if (b.def.`object` === "hero" && a.def.`object` !== "hero") return -1
             if (b.def.`object` !== "hero" && a.def.`object` === "hero") return 1
-            if (a.isVisitable() != b.isVisitable()) {
-                if (!a.isVisitable() && b.isVisitable()) return -1
-                if (!b.isVisitable() && a.isVisitable()) return 1
+            if (a.def.isVisitable != b.def.isVisitable) {
+                if (!a.def.isVisitable && b.def.isVisitable) return -1
+                if (!b.def.isVisitable && a.def.isVisitable) return 1
             }
             if (a.x != b.x) return b.x.compareTo(a.x)
             return 0
