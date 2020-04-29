@@ -14,6 +14,6 @@
 
     <string name="assets_header">Assets</string>
     <string name="assets_select_button">Select file \"h3sprite.lod\"</string>
-    <string name="assets_instructions">To use this app you must provide file <![CDATA[\"C:\\<path-to-heroes-3>\\Data\\h3sprite.lod\"]]> from your original copy of the game</string>
+    <string name="assets_instructions">To use this app you must provide file from your copy of the game. File can be found by this path: <![CDATA[\"C:\\<path-to-heroes-3>\\Data\\h3sprite.lod\"]]></string>
     <string name="assets_select_file_activity_title">Select \"h3sprite.lod\"</string>
 </resources>
