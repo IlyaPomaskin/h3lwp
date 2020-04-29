@@ -10,7 +10,6 @@ import ktx.assets.load
 import ktx.async.interval
 import kotlin.math.ceil
 import kotlin.math.floor
-import kotlin.math.round
 import kotlin.random.Random
 
 class WallpaperScreen(private val engine: Engine) : KtxScreen {
@@ -67,7 +66,6 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         ) * 32f
 
         engine.camera.position.set(nextCameraX, nextCameraY, 0f)
-        objectsRenderer?.updateVisibleSprites()
     }
 
     override fun show() {
@@ -89,7 +87,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     override fun render(delta: Float) {
         engine.camera.update()
 
-        if (engine.assets.manager.update()) {
+        if (isAssetsLoaded()) {
             terrainRenderer?.render()
             objectsRenderer?.render(delta)
         }
