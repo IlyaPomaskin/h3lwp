@@ -24,7 +24,7 @@ class Engine : KtxGame<Screen>(null, true) {
         assets = Assets()
         skin = assets.loadSkin()
         camera.zoom = min(1 / Gdx.graphics.density, 1f)
-        viewport.update(Gdx.graphics.width, Gdx.graphics.height)
+        viewport.update(Gdx.graphics.width, Gdx.graphics.height, true)
         addScreen(LoadingScreen(this))
         addScreen(WallpaperScreen(this))
         addScreen(SettingsScreen(this))
