@@ -13,10 +13,10 @@ class InputProcessor(private val camera: OrthographicCamera) : KtxInputAdapter {
             Input.Keys.NUM_0 -> camera.zoom = 1f
             Input.Keys.EQUALS -> camera.zoom -= 0.1f
             Input.Keys.MINUS -> camera.zoom += 0.1f
-            Input.Keys.UP -> camera.translate(0f, -32f, 0f)
-            Input.Keys.DOWN -> camera.translate(0f, 32f, 0f)
-            Input.Keys.LEFT -> camera.translate(-32f, 0f, 0f)
-            Input.Keys.RIGHT -> camera.translate(32f, 0f, 0f)
+            Input.Keys.UP -> camera.translate(0f, -Constants.TILE_SIZE, 0f)
+            Input.Keys.DOWN -> camera.translate(0f, Constants.TILE_SIZE, 0f)
+            Input.Keys.LEFT -> camera.translate(-Constants.TILE_SIZE, 0f, 0f)
+            Input.Keys.RIGHT -> camera.translate(Constants.TILE_SIZE, 0f, 0f)
             Input.Keys.SPACE -> onRandomizeCameraPosition()
         }
 

@@ -9,6 +9,8 @@ import com.badlogic.gdx.maps.tiled.tiles.AnimatedTiledMapTile
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.Disposable
+import com.heroes3.livewallpaper.core.Constants.Companion.FRAME_TIME
+import com.heroes3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.heroes3.livewallpaper.parser.JsonMapParser.ParsedMap
 import com.heroes3.livewallpaper.parser.JsonMapParser.TerrainTile
 import ktx.collections.map
@@ -67,7 +69,7 @@ class TerrainRenderer(private val engine: Engine, private val h3mMap: ParsedMap)
 
     private fun createMapTile(frames: Array<AtlasRegion>): TiledMapTile {
         return if (frames.size > 1) {
-            AnimatedTiledMapTile(0.18f, frames.map { StaticTiledMapTile(it) })
+            AnimatedTiledMapTile(FRAME_TIME, frames.map { StaticTiledMapTile(it) })
         } else {
             StaticTiledMapTile(frames.first())
         }
@@ -83,9 +85,9 @@ class TerrainRenderer(private val engine: Engine, private val h3mMap: ParsedMap)
     }
 
     private fun createLayers() {
-        val terrainLayer = TiledMapTileLayer(h3mMap.size, h3mMap.size, 32, 32)
-        val riverLayer = TiledMapTileLayer(h3mMap.size, h3mMap.size, 32, 32)
-        val roadLayer = TiledMapTileLayer(h3mMap.size, h3mMap.size, 32, 32)
+        val terrainLayer = TiledMapTileLayer(h3mMap.size, h3mMap.size, TILE_SIZE.toInt(), TILE_SIZE.toInt())
+        val riverLayer = TiledMapTileLayer(h3mMap.size, h3mMap.size, TILE_SIZE.toInt(), TILE_SIZE.toInt())
+        val roadLayer = TiledMapTileLayer(h3mMap.size, h3mMap.size, TILE_SIZE.toInt(), TILE_SIZE.toInt())
 
         roadLayer.offsetY = -16f
 

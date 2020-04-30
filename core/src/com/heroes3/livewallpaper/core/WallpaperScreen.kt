@@ -52,11 +52,11 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         val nextCameraX = Random.nextInt(
            cameraViewportWidthTiles.toInt(),
             floor(h3mMap.size - cameraViewportWidthTiles).toInt()
-        ) * 32f
+        ) * Constants.TILE_SIZE
         val nextCameraY = Random.nextInt(
             cameraViewportHeightTiles.toInt(),
             floor(h3mMap.size - cameraViewportHeightTiles).toInt()
-        ) * 32f
+        ) * Constants.TILE_SIZE
 
         engine.camera.position.set(nextCameraX, nextCameraY, 0f)
     }
