@@ -26,6 +26,10 @@ class LoadingScreen(private val engine: Engine) : KtxScreen {
         }
     }
 
+    override fun resize(width: Int, height: Int) {
+        engine.viewport.update(width, height, true)
+    }
+
     override fun dispose() {
         loadingStage.dispose()
     }

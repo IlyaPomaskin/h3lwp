@@ -48,6 +48,10 @@ class SettingsScreen(private val engine: Engine) : KtxScreen {
         engine.getScreen<WallpaperScreen>().tryLoadAssets()
     }
 
+    override fun resize(width: Int, height: Int) {
+        engine.viewport.update(width, height, true)
+    }
+
     override fun render(delta: Float) {
         stage.act(delta)
         stage.draw()

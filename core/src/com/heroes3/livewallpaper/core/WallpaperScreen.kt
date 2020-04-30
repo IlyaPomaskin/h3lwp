@@ -81,7 +81,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     }
 
     override fun resize(width: Int, height: Int) {
-        engine.viewport.update(width, height)
+        engine.viewport.update(width, height, false)
     }
 
     override fun render(delta: Float) {

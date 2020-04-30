@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import ktx.app.KtxGame
+import ktx.async.schedule
 import kotlin.math.min
 
 class Engine : KtxGame<Screen>(null, true) {
@@ -24,11 +25,10 @@ class Engine : KtxGame<Screen>(null, true) {
         assets = Assets()
         skin = assets.loadSkin()
         camera.zoom = min(1 / Gdx.graphics.density, 1f)
-        viewport.update(Gdx.graphics.width, Gdx.graphics.height, true)
         addScreen(LoadingScreen(this))
         addScreen(WallpaperScreen(this))
         addScreen(SettingsScreen(this))
-        updateVisibleScreen()
+        schedule(0f, ::updateVisibleScreen)
     }
 
     fun updateVisibleScreen() {
@@ -42,11 +42,6 @@ class Engine : KtxGame<Screen>(null, true) {
         } else {
             setScreen<SettingsScreen>()
         }
-    }
-
-    override fun resize(width: Int, height: Int) {
-        super.resize(width, height)
-        viewport.update(width, height)
     }
 
     override fun resume() {
