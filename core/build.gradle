@@ -18,7 +18,6 @@ dependencies {
     implementation "io.github.libktx:ktx-actors:$ktxVersion"
     implementation "io.github.libktx:ktx-app:$ktxVersion"
     implementation "io.github.libktx:ktx-assets:$ktxVersion"
-//    implementation "io.github.libktx:ktx-async:$ktxVersion"
     implementation "io.github.libktx:ktx-collections:$ktxVersion"
     implementation "io.github.libktx:ktx-graphics:$ktxVersion"
     implementation "io.protostuff:protostuff-core:1.7.1"

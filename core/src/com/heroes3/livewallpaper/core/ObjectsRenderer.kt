@@ -8,7 +8,6 @@ import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.utils.Disposable
 import com.heroes3.livewallpaper.parser.JsonMapParser
 import ktx.graphics.use
-import kotlin.math.abs
 
 class ObjectsRenderer(private val engine: Engine, h3mMap: JsonMapParser.ParsedMap) : Disposable {
     class Sprite(
@@ -19,7 +18,6 @@ class ObjectsRenderer(private val engine: Engine, h3mMap: JsonMapParser.ParsedMa
 
     private val randomizer = ObjectsRandomizer()
     private val batch = SpriteBatch()
-    private var viewBounds = Rectangle()
     private var sprites: List<Sprite> = h3mMap
         .objects
         .sorted()
@@ -35,31 +33,22 @@ class ObjectsRenderer(private val engine: Engine, h3mMap: JsonMapParser.ParsedMa
             )
         }
 
-    private fun isSpriteInCameraViewport(sprite: Sprite): Boolean {
+    private fun isSpriteInCameraViewport(camera: OrthographicCamera, sprite: Sprite): Boolean {
         val offset = 32 * 5
 
         val x = sprite.x
-        val halfWidth = engine.camera.viewportWidth / 2
-        val leftSide = engine.camera.position.x - halfWidth - offset
-        val rightSide = engine.camera.position.x + engine.camera.viewportWidth - halfWidth + offset
+        val halfWidth = camera.viewportWidth / 2
+        val leftSide = camera.position.x - halfWidth - offset
+        val rightSide = camera.position.x + camera.viewportWidth - halfWidth + offset
         val isInViewportByX = leftSide < x && x < rightSide
 
         val y = sprite.y
-        val halfHeight = engine.camera.viewportHeight / 2
-        val topSide = engine.camera.position.y - halfHeight - offset
-        val bottomSide = engine.camera.position.y + engine.camera.viewportHeight - halfHeight + offset
+        val halfHeight = camera.viewportHeight / 2
+        val topSide = camera.position.y - halfHeight - offset
+        val bottomSide = camera.position.y + camera.viewportHeight - halfHeight + offset
         val isInViewportByY = topSide < y && y < bottomSide
 
         return isInViewportByX && isInViewportByY
-    }
-
-    private fun setView(camera: OrthographicCamera) {
-        batch.projectionMatrix = camera.combined
-        val width = camera.viewportWidth * camera.zoom
-        val height = camera.viewportHeight * camera.zoom
-        val w = width * abs(camera.up.y) + height * abs(camera.up.x)
-        val h = height * abs(camera.up.y) + width * abs(camera.up.x)
-        viewBounds.set(camera.position.x - w / 2, camera.position.y - h / 2, w, h)
     }
 
     private fun getFrameX(frame: TextureAtlas.AtlasRegion, x: Float): Float {
@@ -74,15 +63,14 @@ class ObjectsRenderer(private val engine: Engine, h3mMap: JsonMapParser.ParsedMa
 
     fun render(delta: Float) {
         stateTime += delta
-        setView(engine.camera)
 
         if (stateTime < 0.18f) {
             return
         }
 
-        batch.use { b ->
+        batch.use(engine.camera) { b ->
             sprites.forEach { sprite ->
-                if (!isSpriteInCameraViewport(sprite)) {
+                if (!isSpriteInCameraViewport(engine.camera, sprite)) {
                     return@forEach
                 }
 
