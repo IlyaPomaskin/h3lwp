@@ -7,7 +7,6 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.heroes3.livewallpaper.parser.JsonMapParser
 import ktx.app.KtxScreen
 import ktx.assets.load
-import ktx.async.interval
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.random.Random
@@ -18,12 +17,6 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private var inputProcessor = InputProcessor(engine.camera).apply {
         onRandomizeCameraPosition = ::randomizeCameraPosition
     }
-    private val cameraRandomizerTask = interval(
-        60f * 10f,
-        0f,
-        -1,
-        ::randomizeCameraPosition
-    )
     private val h3mMap = JsonMapParser().parse(Gdx.files.internal("maps/invasion.sml").read())
 
     init {
@@ -97,6 +90,5 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         super.dispose()
         terrainRenderer?.dispose()
         objectsRenderer?.dispose()
-        cameraRandomizerTask.cancel()
     }
 }
