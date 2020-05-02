@@ -6,7 +6,6 @@ import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import ktx.app.KtxGame
-import ktx.async.schedule
 import kotlin.math.min
 
 class Engine : KtxGame<Screen>(null, true) {
@@ -28,7 +27,7 @@ class Engine : KtxGame<Screen>(null, true) {
         addScreen(LoadingScreen(this))
         addScreen(WallpaperScreen(this))
         addScreen(SettingsScreen(this))
-        schedule(0f, ::updateVisibleScreen)
+        Gdx.app.postRunnable(::updateVisibleScreen)
     }
 
     fun updateVisibleScreen() {
