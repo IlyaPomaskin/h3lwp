@@ -19,7 +19,7 @@ android {
         exclude 'META-INF/robovm/ios/robovm.xml'
     }
     defaultConfig {
-        applicationId "com.heroes3.livewallpaper"
+        applicationId "com.homm3.livewallpaper"
         minSdkVersion 28
         targetSdkVersion 28
     }
@@ -84,7 +84,7 @@ task run(type: Exec) {
     }
 
     def adb = path + "/platform-tools/adb"
-    commandLine "$adb", 'shell', 'am', 'start', '-n', 'com.heroes3.livewallpaper/com.heroes3.livewallpaper.android.SettingsActivity'
+    commandLine "$adb", 'shell', 'am', 'start', '-n', 'com.homm3.livewallpaper/com.homm3.livewallpaper.android.SettingsActivity'
 }
 
 ext {

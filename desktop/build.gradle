@@ -3,7 +3,7 @@ apply plugin: "kotlin"
 sourceCompatibility = 1.7
 sourceSets.main.java.srcDirs = [ "src/" ]
 
-project.ext.mainClassName = "com.heroes3.livewallpaper.desktop.DesktopLauncher"
+project.ext.mainClassName = "com.homm3.livewallpaper.desktop.DesktopLauncher"
 project.ext.assetsDir = new File("../android/assets")
 
 ext {
