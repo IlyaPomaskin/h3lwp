@@ -1,16 +1,14 @@
 package com.homm3.livewallpaper.core
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.AssetManager
-import com.badlogic.gdx.assets.loaders.SkinLoader
+import com.badlogic.gdx.assets.loaders.resolvers.LocalFileHandleResolver
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.utils.Array
-import ktx.assets.getAsset
-import ktx.assets.load
-import ktx.assets.loadAsset
 import ktx.collections.gdxArrayOf
 import java.util.*
 
@@ -22,14 +20,14 @@ class Assets {
         const val skinPath = "skin/uiskin.json"
     }
 
-    val manager = AssetManager()
-    val emptyPixmap = TextureAtlas.AtlasRegion(
+    private val emptyPixmap = TextureAtlas.AtlasRegion(
         TextureRegion(
             Texture(
                 Pixmap(0, 0, Pixmap.Format.RGBA8888)
             )
         )
     )
+    val manager = AssetManager(LocalFileHandleResolver())
 
     init {
         Texture.setAssetManager(manager)
@@ -57,7 +55,6 @@ class Assets {
     }
 
     fun loadSkin(): Skin {
-        manager.load<Skin>(skinPath).finishLoading()
-        return manager.get(skinPath)
+        return Skin(Gdx.files.internal(skinPath))
     }
 }

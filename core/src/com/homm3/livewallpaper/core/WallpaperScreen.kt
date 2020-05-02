@@ -31,7 +31,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         val isAssetsReady = Gdx.app
             .getPreferences(Engine.PREFERENCES_NAME)
             .getBoolean(Engine.IS_ASSETS_READY_KEY)
-        val filesExists = Gdx.files.internal(Assets.atlasPath).exists()
+        val filesExists = Gdx.files.local(Assets.atlasPath).exists()
 
         return isAssetsReady && filesExists && !isAssetsLoaded()
     }

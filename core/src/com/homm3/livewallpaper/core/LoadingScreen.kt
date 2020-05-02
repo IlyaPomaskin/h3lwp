@@ -19,10 +19,9 @@ class LoadingScreen(private val engine: Engine) : KtxScreen {
 
     override fun render(delta: Float) {
         super.render(delta)
+        loadingStage.draw()
         if (engine.assets.manager.update()) {
             engine.updateVisibleScreen()
-        } else {
-            loadingStage.draw()
         }
     }
 

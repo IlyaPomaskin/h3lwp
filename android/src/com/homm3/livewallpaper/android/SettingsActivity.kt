@@ -96,6 +96,13 @@ class SettingsActivity : AppCompatActivity() {
                 ?.apply()
         }
 
+        private fun sendParsingDoneMessage() {
+            val intent = Intent()
+                .setAction(context?.packageName)
+                .putExtra("parsingDone", true)
+            context?.sendBroadcast(intent)
+        }
+
         private fun handleFileSelection(filePath: Uri) {
             GdxNativesLoader.load()
 
@@ -104,7 +111,7 @@ class SettingsActivity : AppCompatActivity() {
                 var outputDirectory: File? = null
                 try {
                     setStatus {
-                        it.summary = "Parsing..."
+                        it.summary = "Parsing...\nCan take few minutes"
                         it.isSelectable = false
                     }
                     kotlin
@@ -126,13 +133,16 @@ class SettingsActivity : AppCompatActivity() {
                         .map {
                             setAssetsReadyFlag(true)
                             setStatus { it.summary = "Parsing successfully done!" }
+                            sendParsingDoneMessage()
                         }
                 } catch (ex: Exception) {
                     outputDirectory?.run { clearOutputDirectory(this) }
                     setAssetsReadyFlag(false)
-                    setStatus { it.summary = ex.message }
+                    setStatus {
+                        it.summary = ex.message
+                        it.isSelectable = true
+                    }
                 } finally {
-                    setStatus { it.isSelectable = true }
                     stream?.close()
                 }
             }
