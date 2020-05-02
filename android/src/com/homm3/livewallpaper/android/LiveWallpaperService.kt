@@ -7,7 +7,7 @@ import android.content.IntentFilter
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration
 import com.badlogic.gdx.backends.android.AndroidLiveWallpaperService
 
-class LiveWallpaper : AndroidLiveWallpaperService() {
+class LiveWallpaperService : AndroidLiveWallpaperService() {
     lateinit var engine: com.homm3.livewallpaper.core.Engine
     var receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
