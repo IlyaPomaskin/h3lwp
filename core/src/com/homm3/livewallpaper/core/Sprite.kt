@@ -20,7 +20,7 @@ class Sprite(mapObject: JsonMap.MapObject, private val frames: Array<TextureAtla
     }
 
     private fun getFrameY(frame: TextureAtlas.AtlasRegion): Float {
-        return y - frame.packedHeight
+        return y - frame.offsetY - frame.packedHeight
     }
 
     fun render(batch: SpriteBatch, delta: Float) {
