@@ -52,9 +52,9 @@ class SettingsActivity : AppCompatActivity() {
                 return true
             }
 
-            if (preference?.key == "source_code" || preference?.key == "icon_author") {
+            if (listOf("source_code", "icon_author", "map_author").contains(preference?.key )) {
                 val intent = Intent(Intent.ACTION_VIEW)
-                    .setData(Uri.parse(preference.summary.toString()))
+                    .setData(Uri.parse(preference?.summary.toString()))
                 startActivity(intent)
 
                 return true
