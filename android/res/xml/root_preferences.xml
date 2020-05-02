@@ -13,6 +13,10 @@
             app:summary="@string/source_code_summary"
             app:title="@string/source_code_title" />
         <Preference
+            app:key="map_author"
+            app:summary="@string/map_author_summary"
+            app:title="@string/map_author_title" />
+        <Preference
             app:key="icon_author"
             app:summary="@string/icon_author_summary"
             app:title="@string/icon_author_title" />
