@@ -11,8 +11,8 @@ import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.Disposable
 import com.heroes3.livewallpaper.core.Constants.Companion.FRAME_TIME
 import com.heroes3.livewallpaper.core.Constants.Companion.TILE_SIZE
-import com.heroes3.livewallpaper.parser.JsonMapParser.ParsedMap
-import com.heroes3.livewallpaper.parser.JsonMapParser.TerrainTile
+import com.heroes3.livewallpaper.parser.formats.JsonMap.ParsedMap
+import com.heroes3.livewallpaper.parser.formats.JsonMap.TerrainTile
 import ktx.collections.map
 import java.util.*
 

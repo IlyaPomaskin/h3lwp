@@ -6,7 +6,7 @@ import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.heroes3.livewallpaper.core.Assets
 import com.heroes3.livewallpaper.core.Engine
-import com.heroes3.livewallpaper.parser.AssetsParser
+import com.heroes3.livewallpaper.parser.AssetsConverter
 import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
@@ -58,7 +58,7 @@ object DesktopLauncher {
                             }
                     }
                     .onFailure { throw Exception("Can't prepare output directory") }
-                    .map { AssetsParser(stream!!, outputDirectory!!, Assets.atlasName).parseLodToAtlas() }
+                    .map { AssetsConverter(stream!!, outputDirectory!!, Assets.atlasName).convertLodToTextureAtlas() }
                     .map {
                         setAssetsReadyFlag(true)
                         println("Parsing successfully done!")

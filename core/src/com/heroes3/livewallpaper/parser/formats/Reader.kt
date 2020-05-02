@@ -1,6 +1,5 @@
-package com.heroes3.livewallpaper.parser
+package com.heroes3.livewallpaper.parser.formats
 
-import java.io.IOException
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder

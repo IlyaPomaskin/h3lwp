@@ -4,7 +4,7 @@ import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.loaders.TextureAtlasLoader
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
-import com.heroes3.livewallpaper.parser.JsonMapParser
+import com.heroes3.livewallpaper.parser.formats.JsonMap
 import ktx.app.KtxScreen
 import ktx.assets.load
 import kotlin.math.ceil
@@ -17,7 +17,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private var inputProcessor = InputProcessor(engine.camera).apply {
         onRandomizeCameraPosition = ::randomizeCameraPosition
     }
-    private val h3mMap = JsonMapParser().parse(Gdx.files.internal("maps/invasion.sml").read())
+    private val h3mMap = JsonMap().parse(Gdx.files.internal("maps/invasion.sml").read())
 
     init {
         tryLoadAssets()

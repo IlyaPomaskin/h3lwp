@@ -11,7 +11,7 @@ import com.badlogic.gdx.utils.GdxNativesLoader
 import com.heroes3.livewallpaper.R
 import com.heroes3.livewallpaper.core.Assets
 import com.heroes3.livewallpaper.core.Engine
-import com.heroes3.livewallpaper.parser.AssetsParser
+import com.heroes3.livewallpaper.parser.AssetsConverter
 import java.io.*
 import kotlin.concurrent.thread
 import kotlin.system.measureTimeMillis
@@ -111,7 +111,7 @@ class SettingsActivity : AppCompatActivity() {
                             setAssetsReadyFlag(false)
                         }
                         .onFailure { throw Exception("Can't prepare output directory") }
-                        .map { AssetsParser(stream!!, outputDirectory!!, Assets.atlasName).parseLodToAtlas() }
+                        .map { AssetsConverter(stream!!, outputDirectory!!, Assets.atlasName).convertLodToTextureAtlas() }
                         .map {
                             setAssetsReadyFlag(true)
                             setStatus { it.summary = "Parsing successfully done!" }

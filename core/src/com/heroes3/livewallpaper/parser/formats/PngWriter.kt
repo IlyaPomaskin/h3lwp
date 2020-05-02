@@ -1,9 +1,8 @@
-package com.heroes3.livewallpaper.parser
+package com.heroes3.livewallpaper.parser.formats
 
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.nio.ByteBuffer
-import java.util.*
 import java.util.zip.CRC32
 import java.util.zip.Deflater
 

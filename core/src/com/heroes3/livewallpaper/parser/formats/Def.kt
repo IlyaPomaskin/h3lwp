@@ -1,4 +1,4 @@
-package com.heroes3.livewallpaper.parser
+package com.heroes3.livewallpaper.parser.formats
 
 internal class Def {
     lateinit var lodFile: Lod.File

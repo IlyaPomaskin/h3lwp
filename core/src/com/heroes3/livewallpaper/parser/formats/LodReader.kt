@@ -1,6 +1,6 @@
-package com.heroes3.livewallpaper.parser
+package com.heroes3.livewallpaper.parser.formats
 
-import com.heroes3.livewallpaper.parser.Lod.File
+import com.heroes3.livewallpaper.parser.formats.Lod.File
 import java.io.*
 import java.util.zip.Inflater
 

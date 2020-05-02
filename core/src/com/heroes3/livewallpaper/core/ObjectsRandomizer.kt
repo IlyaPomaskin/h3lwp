@@ -1,6 +1,6 @@
 package com.heroes3.livewallpaper.core
 
-import com.heroes3.livewallpaper.parser.JsonMapParser
+import com.heroes3.livewallpaper.parser.formats.JsonMap
 import kotlin.random.Random
 
 class ObjectsRandomizer {
@@ -111,7 +111,7 @@ class ObjectsRandomizer {
         return dwellings.values.random().random()
     }
 
-    fun replaceRandomObject(obj: JsonMapParser.MapObject): String {
+    fun replaceRandomObject(obj: JsonMap.MapObject): String {
         return when (obj.def.`object`) {
             "random-monster" -> randomMonster(null)
             "random-monster-l1" -> randomMonster(1)

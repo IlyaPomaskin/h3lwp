@@ -1,4 +1,4 @@
-package com.heroes3.livewallpaper.parser
+package com.heroes3.livewallpaper.parser.formats
 
 internal class Lod {
     var magic = ByteArray(8)

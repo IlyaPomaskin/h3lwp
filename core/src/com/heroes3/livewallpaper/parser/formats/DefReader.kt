@@ -1,4 +1,4 @@
-package com.heroes3.livewallpaper.parser
+package com.heroes3.livewallpaper.parser.formats
 
 import java.io.ByteArrayOutputStream
 import java.io.IOException

@@ -1,4 +1,4 @@
-package com.heroes3.livewallpaper.parser
+package com.heroes3.livewallpaper.parser.formats
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.dataformat.smile.SmileFactory
@@ -6,7 +6,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.io.InputStream
 
 
-class JsonMapParser {
+class JsonMap {
     class TerrainTile(
         val terrain: Int,
         val terrainImageIndex: Int,

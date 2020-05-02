@@ -2,10 +2,10 @@ package com.heroes3.livewallpaper.core
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.utils.Disposable
-import com.heroes3.livewallpaper.parser.JsonMapParser
+import com.heroes3.livewallpaper.parser.formats.JsonMap
 import ktx.graphics.use
 
-class ObjectsRenderer(private val engine: Engine, h3mMap: JsonMapParser.ParsedMap) : Disposable {
+class ObjectsRenderer(private val engine: Engine, h3mMap: JsonMap.ParsedMap) : Disposable {
     private val randomizer = ObjectsRandomizer()
     private val batch = SpriteBatch()
     private var sprites: List<Sprite> = h3mMap
