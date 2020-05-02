@@ -10,7 +10,7 @@ internal typealias PackedFrames = MutableMap<String, Def.Frame>
 
 class AssetsConverter(lodFileInputStream: InputStream, outputDirectory: File, atlasName: String) {
     private val minimalDefCount = 1000
-    private val packer = PixmapPacker(2048, 2048, Pixmap.Format.RGBA4444, 0, false)
+    private val packer = PixmapPacker(8192, 8192, Pixmap.Format.RGBA4444, 0, false)
     private val assetsReader = AssetsReader(lodFileInputStream)
     private val assetsPacker = AssetsPacker(packer)
     private val assetsWriter = AssetsWriter(packer, outputDirectory, atlasName)
