@@ -23,7 +23,6 @@ class Engine : KtxGame<Screen>(null, true) {
     override fun create() {
         assets = Assets()
         skin = assets.loadSkin()
-        camera.zoom = min(1 / Gdx.graphics.density, 1f)
         addScreen(LoadingScreen(this))
         addScreen(WallpaperScreen(this))
         addScreen(SettingsScreen(this))

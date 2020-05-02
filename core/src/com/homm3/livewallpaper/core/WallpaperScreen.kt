@@ -9,6 +9,7 @@ import ktx.app.KtxScreen
 import ktx.assets.load
 import kotlin.math.ceil
 import kotlin.math.floor
+import kotlin.math.min
 import kotlin.random.Random
 
 class WallpaperScreen(private val engine: Engine) : KtxScreen {
@@ -63,6 +64,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
 
     override fun show() {
         super.show()
+        engine.camera.zoom = min(1 / Gdx.graphics.density, 1f)
         engine.camera.setToOrtho(true)
         terrainRenderer = terrainRenderer ?: TerrainRenderer(engine, h3mMap)
         objectsRenderer = objectsRenderer ?: ObjectsRenderer(engine, h3mMap)

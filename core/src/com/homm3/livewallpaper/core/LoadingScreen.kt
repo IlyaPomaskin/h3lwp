@@ -25,6 +25,11 @@ class LoadingScreen(private val engine: Engine) : KtxScreen {
         }
     }
 
+    override fun show() {
+        super.show()
+        engine.camera.zoom = 1f
+    }
+
     override fun resize(width: Int, height: Int) {
         engine.viewport.update(width, height, true)
     }

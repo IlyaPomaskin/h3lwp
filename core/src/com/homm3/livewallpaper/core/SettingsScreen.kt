@@ -45,6 +45,7 @@ class SettingsScreen(private val engine: Engine) : KtxScreen {
     override fun show() {
         super.show()
         Gdx.input.inputProcessor = stage
+        engine.camera.zoom = 1f
         engine.getScreen<WallpaperScreen>().tryLoadAssets()
     }
 
