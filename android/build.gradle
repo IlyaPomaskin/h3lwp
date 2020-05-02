@@ -65,7 +65,7 @@ tasks.whenTaskAdded { packageTask ->
     }
 }
 
-task run(type: Exec) {
+task startLiveWallpaperChanger(type: Exec) {
     def path
     def localProperties = project.file("../local.properties")
     if (localProperties.exists()) {
@@ -84,7 +84,8 @@ task run(type: Exec) {
     }
 
     def adb = path + "/platform-tools/adb"
-    commandLine "$adb", 'shell', 'am', 'start', '-n', 'com.homm3.livewallpaper/com.homm3.livewallpaper.android.SettingsActivity'
+//    commandLine "$adb", 'shell', 'pm', 'clear', 'com.homm3.livewallpaper'
+    commandLine "$adb", 'shell', 'am', 'start', '-a', 'android.service.wallpaper.LIVE_WALLPAPER_CHOOSER'
 }
 
 ext {
