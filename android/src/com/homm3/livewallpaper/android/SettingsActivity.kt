@@ -1,7 +1,8 @@
 package com.homm3.livewallpaper.android
 
 import android.app.Activity
-import android.content.*
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -12,9 +13,11 @@ import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.core.Assets
 import com.homm3.livewallpaper.core.Engine
 import com.homm3.livewallpaper.parser.AssetsConverter
-import java.io.*
+import java.io.File
+import java.io.InputStream
 import kotlin.concurrent.thread
 import kotlin.system.measureTimeMillis
+
 
 class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,6 +48,14 @@ class SettingsActivity : AppCompatActivity() {
                     Intent.createChooser(intent, getString(R.string.assets_select_file_activity_title)),
                     PICK_FILE_RESULT_CODE
                 )
+
+                return true
+            }
+
+            if (preference?.key == "source_code" || preference?.key == "icon_author") {
+                val intent = Intent(Intent.ACTION_VIEW)
+                    .setData(Uri.parse(preference.summary.toString()))
+                startActivity(intent)
 
                 return true
             }

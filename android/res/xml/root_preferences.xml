@@ -1,10 +1,21 @@
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory app:title="@string/assets_header">
         <Preference
             app:key="select_file"
             app:summary="@string/assets_instructions"
             app:title="@string/assets_select_button" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/credits_title">
+        <Preference
+            app:key="source_code"
+            app:summary="@string/source_code_summary"
+            app:title="@string/source_code_title" />
+        <Preference
+            app:key="icon_author"
+            app:summary="@string/icon_author_summary"
+            app:title="@string/icon_author_title" />
     </PreferenceCategory>
 
 </PreferenceScreen>
