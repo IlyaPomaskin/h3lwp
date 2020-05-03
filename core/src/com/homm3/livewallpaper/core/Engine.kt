@@ -18,7 +18,7 @@ class Engine : KtxGame<Screen>(null, true) {
     lateinit var skin: Skin
     val camera = OrthographicCamera()
     val viewport = ScreenViewport(camera)
-    var onSettingButtonClick: (onDone: () -> Unit) -> Unit = { }
+    var onSettingsButtonClick: (onDone: () -> Unit) -> Unit = { }
 
     override fun create() {
         assets = Assets()

@@ -16,10 +16,13 @@ import com.homm3.livewallpaper.parser.AssetsConverter
 import java.io.File
 import java.io.InputStream
 import kotlin.concurrent.thread
-import kotlin.system.measureTimeMillis
 
 
 class SettingsActivity : AppCompatActivity() {
+    companion object {
+        const val PICK_FILE_RESULT_CODE = 1
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.settings_activity)
@@ -70,9 +73,7 @@ class SettingsActivity : AppCompatActivity() {
                 && resultCode == Activity.RESULT_OK
                 && intent?.data != null) {
 
-                measureTimeMillis {
-                    handleFileSelection(intent.data!!)
-                }.run { println("Parsing done for $this ms") }
+                handleFileSelection(intent.data!!)
             }
         }
 
@@ -84,6 +85,7 @@ class SettingsActivity : AppCompatActivity() {
         private fun clearOutputDirectory(outputDirectory: File) {
             if (outputDirectory.exists()) {
                 outputDirectory.deleteRecursively()
+                outputDirectory.delete()
             }
             outputDirectory.mkdirs()
         }
@@ -125,7 +127,7 @@ class SettingsActivity : AppCompatActivity() {
                             outputDirectory = requireContext()
                                 .filesDir
                                 .resolve(Assets.atlasFolder)
-                                .also { clearOutputDirectory(it) }
+                                .also(::clearOutputDirectory)
                             setAssetsReadyFlag(false)
                         }
                         .onFailure { throw Exception("Can't prepare output directory") }
@@ -136,7 +138,7 @@ class SettingsActivity : AppCompatActivity() {
                             sendParsingDoneMessage()
                         }
                 } catch (ex: Exception) {
-                    outputDirectory?.run { clearOutputDirectory(this) }
+                    outputDirectory?.run(::clearOutputDirectory)
                     setAssetsReadyFlag(false)
                     setStatus {
                         it.summary = ex.message
@@ -146,10 +148,6 @@ class SettingsActivity : AppCompatActivity() {
                     stream?.close()
                 }
             }
-        }
-
-        companion object {
-            const val PICK_FILE_RESULT_CODE = 1
         }
     }
 }

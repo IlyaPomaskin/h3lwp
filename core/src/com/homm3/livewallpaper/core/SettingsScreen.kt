@@ -30,7 +30,7 @@ class SettingsScreen(private val engine: Engine) : KtxScreen {
                 addActor(
                     TextButton(buttonText, engine.skin).apply {
                         onClick {
-                            engine.onSettingButtonClick {
+                            engine.onSettingsButtonClick {
                                 Gdx.app.postRunnable {
                                     engine.getScreen<WallpaperScreen>().tryLoadAssets()
                                 }

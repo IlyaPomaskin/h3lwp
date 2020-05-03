@@ -25,7 +25,7 @@ class LiveWallpaperService : AndroidLiveWallpaperService() {
         super.onCreateApplication()
 
         engine = com.homm3.livewallpaper.core.Engine().apply {
-            onSettingButtonClick = {
+            onSettingsButtonClick = {
                 startActivity(
                     Intent()
                         .setClass(baseContext, SettingsActivity::class.java)

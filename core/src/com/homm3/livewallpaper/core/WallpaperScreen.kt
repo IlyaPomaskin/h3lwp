@@ -4,6 +4,7 @@ import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.loaders.TextureAtlasLoader
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
+import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.parser.formats.JsonMap
 import ktx.app.KtxScreen
 import ktx.assets.load
@@ -48,16 +49,16 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     }
 
     private fun randomizeCameraPosition() {
-        val cameraViewportWidthTiles = ceil(engine.camera.viewportWidth * engine.camera.zoom / 32)
-        val cameraViewportHeightTiles = ceil(engine.camera.viewportHeight * engine.camera.zoom / 32)
+        val cameraViewportWidthTiles = ceil(engine.camera.viewportWidth * engine.camera.zoom / TILE_SIZE)
+        val cameraViewportHeightTiles = ceil(engine.camera.viewportHeight * engine.camera.zoom / TILE_SIZE)
         val nextCameraX = Random.nextInt(
            cameraViewportWidthTiles.toInt(),
             floor(h3mMap.size - cameraViewportWidthTiles).toInt()
-        ) * Constants.TILE_SIZE
+        ) * TILE_SIZE
         val nextCameraY = Random.nextInt(
             cameraViewportHeightTiles.toInt(),
             floor(h3mMap.size - cameraViewportHeightTiles).toInt()
-        ) * Constants.TILE_SIZE
+        ) * TILE_SIZE
 
         engine.camera.position.set(nextCameraX, nextCameraY, 0f)
     }

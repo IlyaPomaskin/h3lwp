@@ -89,7 +89,7 @@ object DesktopLauncher {
         }
 
         val engine = Engine()
-        engine.onSettingButtonClick = DesktopLauncher::parse
+        engine.onSettingsButtonClick = DesktopLauncher::parse
         LwjglApplication(engine, config)
     }
 }
