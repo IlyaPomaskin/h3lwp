@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.dataformat.smile.SmileFactory
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.io.InputStream
+import java.util.*
 
 
 class JsonMap {
@@ -14,8 +15,26 @@ class JsonMap {
         val riverImageIndex: Int,
         val road: Int,
         val roadImageIndex: Int,
-        val mirrorConfig: Long
-    )
+        mirrorConfig: Long
+    ) {
+        private fun convertToBitset(input: Long): BitSet {
+            var value = input
+            val bits = BitSet()
+            var index = 0
+            while (value != 0L) {
+                if (value % 2L != 0L) {
+                    bits.set(index)
+                }
+                ++index
+                value = value ushr 1
+            }
+
+            return bits
+        }
+
+
+        val mirrorConfig = convertToBitset(mirrorConfig)
+    }
 
     class Def(
         var spriteName: String,
