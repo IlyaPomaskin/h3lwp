@@ -3,7 +3,6 @@ apply plugin: 'kotlin-android-extensions'
 
 android {
     buildToolsVersion '28.0.3'
-    compileSdkVersion 28
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
@@ -20,8 +19,9 @@ android {
     }
     defaultConfig {
         applicationId "com.homm3.livewallpaper"
-        minSdkVersion 28
-        targetSdkVersion 28
+        minSdkVersion 21
+        compileSdkVersion 28
+        targetSdkVersion 29
     }
     compileOptions {
         sourceCompatibility = 1.7
