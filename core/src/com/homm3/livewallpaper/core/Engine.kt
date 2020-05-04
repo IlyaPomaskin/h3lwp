@@ -6,7 +6,6 @@ import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import ktx.app.KtxGame
-import kotlin.math.min
 
 class Engine : KtxGame<Screen>(null, true) {
     companion object {
@@ -14,28 +13,32 @@ class Engine : KtxGame<Screen>(null, true) {
         const val IS_ASSETS_READY_KEY = "isAssetsReady"
     }
 
-    lateinit var assets: Assets
-    lateinit var skin: Skin
-    val camera = OrthographicCamera()
-    val viewport = ScreenViewport(camera)
-    var onSettingsButtonClick: (onDone: () -> Unit) -> Unit = { }
+    var onSettingsButtonClick: () -> Unit = { }
+
+    internal lateinit var assets: Assets
+    internal lateinit var skin: Skin
+    internal val camera = OrthographicCamera()
+    internal val viewport = ScreenViewport(camera)
 
     override fun create() {
         assets = Assets()
         skin = assets.loadSkin()
+        assets.tryLoadWallpaperAssets()
         addScreen(LoadingScreen(this))
-        addScreen(WallpaperScreen(this))
         addScreen(SettingsScreen(this))
         Gdx.app.postRunnable(::updateVisibleScreen)
     }
 
     fun updateVisibleScreen() {
+        assets.tryLoadWallpaperAssets()
+
         if (!assets.manager.isFinished) {
             setScreen<LoadingScreen>()
             return
         }
 
-        if (getScreen<WallpaperScreen>().isAssetsLoaded()) {
+        if (assets.isWallpaperAssetsLoaded()) {
+            addScreen(WallpaperScreen(this))
             setScreen<WallpaperScreen>()
         } else {
             setScreen<SettingsScreen>()

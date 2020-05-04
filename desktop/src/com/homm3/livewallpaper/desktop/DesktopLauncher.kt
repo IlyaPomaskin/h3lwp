@@ -37,7 +37,7 @@ object DesktopLauncher {
             .flush()
     }
 
-    private fun parse(onDone: () -> Unit) {
+    private fun parse() {
         val file = getSelectedFile()
             ?: return
 
@@ -72,7 +72,6 @@ object DesktopLauncher {
                 println("Fail: ${ex.message}")
             } finally {
                 stream?.close()
-                onDone()
             }
         }
     }
@@ -89,7 +88,10 @@ object DesktopLauncher {
         }
 
         val engine = Engine()
-        engine.onSettingsButtonClick = DesktopLauncher::parse
+        engine.onSettingsButtonClick = {
+            parse()
+            engine.updateVisibleScreen()
+        }
         LwjglApplication(engine, config)
     }
 }
