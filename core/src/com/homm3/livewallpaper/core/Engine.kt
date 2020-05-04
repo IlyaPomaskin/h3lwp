@@ -38,7 +38,9 @@ class Engine : KtxGame<Screen>(null, true) {
         }
 
         if (assets.isWallpaperAssetsLoaded()) {
-            addScreen(WallpaperScreen(this))
+            if (!screens.containsKey(WallpaperScreen::class.java)) {
+                addScreen(WallpaperScreen(this))
+            }
             setScreen<WallpaperScreen>()
         } else {
             setScreen<SettingsScreen>()

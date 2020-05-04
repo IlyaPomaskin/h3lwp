@@ -4,6 +4,7 @@ import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.utils.Timer
+import com.homm3.livewallpaper.core.Constants.Companion.RANDOMIZE_CAMERA_INTERVAL
 import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.parser.formats.JsonMap
 import ktx.app.KtxScreen
@@ -21,7 +22,6 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
             randomizeCameraPosition(engine.camera)
         }
     }
-    private val randomizeCameraInterval = 10f * 5f
     private val randomizeCameraTask = Timer.schedule(
         object : Timer.Task() {
             override fun run() {
@@ -29,7 +29,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
             }
         },
         0f,
-        randomizeCameraInterval
+        RANDOMIZE_CAMERA_INTERVAL
     )
 
     init {

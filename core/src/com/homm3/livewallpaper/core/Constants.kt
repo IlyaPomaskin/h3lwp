@@ -4,6 +4,7 @@ class Constants {
     companion object {
         const val TILE_SIZE = 32f
         const val FRAME_TIME = 0.18f
+        const val RANDOMIZE_CAMERA_INTERVAL = 10f * 60f
     }
 
     enum class TerrainDefs(val value: Int) {
