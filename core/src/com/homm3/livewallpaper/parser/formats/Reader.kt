@@ -12,21 +12,16 @@ class Reader(private val stream: InputStream) {
     }
 
     fun readByte(): Int {
-        return java.lang.Byte.toUnsignedInt(
-            toByteBuffer(readBytes(1)).array()[0]
-        )
-    }
-
-    fun readBool(): Boolean {
-        return readByte() == 1
+        return toByteBuffer(readBytes(1))[0].toInt().and(0xFF)
     }
 
     fun readShort(): Int {
-        return java.lang.Short.toUnsignedInt(toByteBuffer(readBytes(2)).short)
+        return toByteBuffer(readBytes(2)).short.toInt().and(0xFFFF)
     }
 
     fun readInt(): Int {
-        return Integer.toUnsignedLong(toByteBuffer(readBytes(4)).int).toInt()
+        //TODO change return type to Long
+        return toByteBuffer(readBytes(4)).int.and(0x7FFFFFFF)
     }
 
     fun readString(length: Int): String {

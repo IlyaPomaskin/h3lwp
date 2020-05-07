@@ -53,7 +53,7 @@ class AssetsPacker(private val packer: PixmapPacker) {
         val def = frame.parentGroup.parentDef
         val initialPalette = def.rawPalette.clone()
         val defName = def.lodFile.name.toLowerCase(Locale.ROOT)
-        val rotations = paletteRotations.getOrDefault(defName, emptyList())
+        val rotations = paletteRotations[defName] ?: emptyList()
         var rotationStep = 0
         do {
             val frameName = frame.parentGroup.parentDef.lodFile.name + "/" + frame.frameName + "/" + rotationStep
