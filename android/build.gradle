@@ -29,6 +29,13 @@ android {
     }
 }
 
+android.applicationVariants.all { variant ->
+    variant.mergeAssetsProvider.configure {
+        doLast {
+            delete(fileTree(dir: outputDir, includes: ['sprites/*']))
+        }
+    }
+}
 
 // called every time gradle gets executed, takes the native dependencies of
 // the natives configuration, and extracts them to the proper libs/ folders
