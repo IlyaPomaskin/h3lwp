@@ -10,7 +10,9 @@ import ktx.actors.*
 
 class SettingsScreen(private val engine: Engine) : KtxScreen {
     private val stage = stage(viewport = engine.viewport)
-    private val labelText = "To use this wallpaper you must provide files from \"Heroes of Might and Magic 3: Shadow of the Death\""
+    private val labelText = "To use this app you must provide files from Heroes 3 SoD or Complete (HD Edition will not work).\n" +
+        "Open the game folder on PC, find folder named  \"Data\", and upload file named \"h3sprite.lod\" to your phone. " +
+        "Click the button below and select the uploaded file."
     private val buttonText = "Open settings"
 
     init {
