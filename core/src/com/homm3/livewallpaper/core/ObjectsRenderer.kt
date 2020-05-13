@@ -16,9 +16,11 @@ class ObjectsRenderer(private val engine: Engine, h3mMap: JsonMap.ParsedMap) : D
         .map { Sprite(it, engine.assets.getObjectFrames(randomizer.replaceRandomObject(it))) }
 
     fun render(delta: Float) {
-        batch.use(engine.camera) { b ->
+        val camera = engine.camera
+
+        batch.use(camera) { b ->
             sprites.forEach { sprite ->
-                if (!sprite.inViewport(engine.camera)) {
+                if (!sprite.inViewport(camera)) {
                     return@forEach
                 }
 
