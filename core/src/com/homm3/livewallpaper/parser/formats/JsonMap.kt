@@ -55,7 +55,7 @@ class JsonMap {
         val y: Int,
         val z: Int,
         val defIndex: Int,
-        val info: Map<String, *>?,
+//        val info: Map<String, *>?,
         val def: Def
     ) : Comparable<MapObject> {
         override fun compareTo(other: MapObject): Int {
