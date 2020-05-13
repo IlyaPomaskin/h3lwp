@@ -8,6 +8,7 @@ import ktx.graphics.use
 class ObjectsRenderer(private val engine: Engine, h3mMap: JsonMap.ParsedMap) : Disposable {
     private val randomizer = ObjectsRandomizer()
     private val batch = SpriteBatch()
+    private val camera = engine.camera
     private var sprites: List<Sprite> = h3mMap
         .objects
         .sorted()
@@ -16,8 +17,6 @@ class ObjectsRenderer(private val engine: Engine, h3mMap: JsonMap.ParsedMap) : D
         .map { Sprite(it, engine.assets.getObjectFrames(randomizer.replaceRandomObject(it))) }
 
     fun render(delta: Float) {
-        val camera = engine.camera
-
         batch.use(camera) { b ->
             sprites.forEach { sprite ->
                 if (!sprite.inViewport(camera)) {
