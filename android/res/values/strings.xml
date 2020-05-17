@@ -8,6 +8,9 @@
     <string name="assets_instructions"> </string>
     <string name="assets_select_file_activity_title">Select \"h3sprite.lod\"</string>
 
+    <string name="credits_header">Credits</string>
+    <string name="credits_button">Open</string>
+
     <string name="credits_title">Credits</string>
     <string name="source_code_title">App by Ilya Pomaskin</string>
     <string name="source_code_summary">https://github.com/IlyaPomaskin/h3lwp</string>

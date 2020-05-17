@@ -1,6 +1,7 @@
 package com.homm3.livewallpaper.android
 
 import android.app.Activity
+import android.app.ActivityOptions
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -55,10 +56,8 @@ class SettingsActivity : AppCompatActivity() {
                 return true
             }
 
-            if (listOf("source_code", "icon_author", "map_author").contains(preference?.key )) {
-                val intent = Intent(Intent.ACTION_VIEW)
-                    .setData(Uri.parse(preference?.summary.toString()))
-                startActivity(intent)
+            if (preference?.key == "credits_button") {
+                startActivity(Intent(context, CreditsActivity::class.java))
 
                 return true
             }

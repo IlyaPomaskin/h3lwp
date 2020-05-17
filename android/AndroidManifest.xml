@@ -26,6 +26,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".android.CreditsActivity"
+            android:exported="true"
+            android:label="@string/credits_title" />
+
         <service
             android:name=".android.LiveWallpaperService"
             android:icon="@mipmap/ic_launcher"
