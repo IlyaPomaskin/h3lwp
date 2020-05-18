@@ -8,6 +8,8 @@
     <string name="assets_instructions"> </string>
     <string name="assets_select_file_activity_title">Select \"h3sprite.lod\"</string>
 
+    <string name="wallpaper_change_button">Set wallpaper</string>
+
     <string name="credits_header">Credits</string>
     <string name="credits_button">Open</string>
 

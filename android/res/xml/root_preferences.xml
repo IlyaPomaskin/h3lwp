@@ -6,6 +6,9 @@
             android:summary="@string/assets_instructions"
             android:title="@string/assets_select_button" />
     </PreferenceCategory>
+    <Preference
+        android:key="wallpaper_change"
+        android:title="@string/wallpaper_change_button" />
     <PreferenceCategory app:title="@string/credits_header">
         <Preference
             android:key="credits_button"

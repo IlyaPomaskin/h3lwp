@@ -1,7 +1,8 @@
 package com.homm3.livewallpaper.android
 
 import android.app.Activity
-import android.app.ActivityOptions
+import android.app.WallpaperManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -51,6 +52,18 @@ class SettingsActivity : AppCompatActivity() {
                 startActivityForResult(
                     Intent.createChooser(intent, getString(R.string.assets_select_file_activity_title)),
                     PICK_FILE_RESULT_CODE
+                )
+
+                return true
+            }
+
+            if (preference?.key == "wallpaper_change") {
+                startActivity(Intent()
+                    .setAction(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
+                    .putExtra(
+                        WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
+                        ComponentName(requireContext(), LiveWallpaperService::class.java)
+                    )
                 )
 
                 return true
