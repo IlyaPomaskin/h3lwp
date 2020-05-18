@@ -52,8 +52,9 @@ class SettingsActivity : AppCompatActivity() {
 
             findPreference<Preference>("select_file")?.let {
                 val isAssetsReady = sharedPreferences.getBoolean(Constants.Preferences.IS_ASSETS_READY_KEY, false)
-                if (!isAssetsReady) {
-                    it.isVisible = true
+                if (isAssetsReady) {
+                    it.isVisible = false
+                } else {
                     it.summary = Constants.INSTRUCTIONS
                 }
             }
