@@ -22,22 +22,44 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
             randomizeCameraPosition(engine.camera)
         }
     }
-    private val randomizeCameraTask = Timer.schedule(
-        object : Timer.Task() {
-            override fun run() {
-                randomizeCameraPosition(engine.camera)
-            }
-        },
-        0f,
-        RANDOMIZE_CAMERA_INTERVAL
-    )
+    private var randomizeCameraTask: Timer.Task? = null
+    private var updateInterval = Engine.DEFAULT_MAP_UPDATE_INTERVAL.toFloat()
 
     init {
-        engine.camera.zoom = min(1 / Gdx.graphics.density, 1f)
+        applyPreferences()
         engine.camera.setToOrtho(true)
 
         if (Gdx.app.type == Application.ApplicationType.Desktop) {
             Gdx.input.inputProcessor = inputProcessor
+        }
+    }
+
+    private fun applyPreferences() {
+        val prevUpdateInterval = updateInterval
+        updateInterval = Gdx.app
+            .getPreferences(Engine.PREFERENCES_NAME)
+            .getInteger(Engine.MAP_UPDATE_INTERVAL, Engine.DEFAULT_MAP_UPDATE_INTERVAL) * 60f
+
+        if (updateInterval == 0f || prevUpdateInterval != updateInterval) {
+            randomizeCameraTask?.cancel()
+        }
+
+        if (updateInterval > 0) {
+            randomizeCameraTask = Timer.schedule(
+                object : Timer.Task() {
+                    override fun run() {
+                        randomizeCameraPosition(engine.camera)
+                    }
+                },
+                updateInterval,
+                updateInterval
+            )
+        }
+
+        val scale = Gdx.app.getPreferences(Engine.PREFERENCES_NAME).getString(Engine.SCALE)
+        engine.camera.zoom = when (scale) {
+            "DPI" -> min(1 / Gdx.graphics.density, 1f)
+            else -> 1 / (scale.toFloatOrNull() ?: 1f)
         }
     }
 
@@ -53,6 +75,14 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         camera.position.set(nextCameraX, nextCameraY, 0f)
     }
 
+    override fun show() {
+        applyPreferences()
+
+        if (updateInterval == 0f) {
+            randomizeCameraPosition(engine.camera)
+        }
+    }
+
     override fun resize(width: Int, height: Int) {
         engine.viewport.update(width, height, false)
     }
@@ -65,7 +95,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
 
     override fun dispose() {
         super.dispose()
-        randomizeCameraTask.cancel()
+        randomizeCameraTask?.cancel()
         terrainRenderer.dispose()
         objectsRenderer.dispose()
     }
