@@ -87,6 +87,6 @@ class JsonMap {
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     fun parse(stream: InputStream): ParsedMap {
-        return mapper.readValue(SmileFactory().createParser(stream), ParsedMap::class.java)
+        return mapper.readValue(stream, ParsedMap::class.java)
     }
 }

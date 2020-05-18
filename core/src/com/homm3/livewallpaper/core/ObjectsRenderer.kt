@@ -11,9 +11,6 @@ class ObjectsRenderer(private val engine: Engine, h3mMap: JsonMap.ParsedMap) : D
     private val camera = engine.camera
     private var sprites: List<Sprite> = h3mMap
         .objects
-        .sorted()
-        .asReversed()
-        .filter { it.z == 0 }
         .map { Sprite(it, engine.assets.getObjectFrames(randomizer.replaceRandomObject(it))) }
 
     fun render(delta: Float) {

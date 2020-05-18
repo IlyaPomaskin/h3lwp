@@ -11,7 +11,7 @@ import kotlin.math.min
 import kotlin.random.Random
 
 class WallpaperScreen(private val engine: Engine) : KtxScreen {
-    private val h3mMap = JsonMap().parse(Gdx.files.internal("maps/invasion.sml").read())
+    private val h3mMap = JsonMap().parse(Gdx.files.internal("maps/invasion.json").read())
     private var terrainRenderer = TerrainRenderer(engine, h3mMap)
     private var objectsRenderer = ObjectsRenderer(engine, h3mMap)
     private var inputProcessor = InputProcessor(engine.camera).apply {
