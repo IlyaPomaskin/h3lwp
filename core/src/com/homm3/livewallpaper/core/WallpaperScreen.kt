@@ -43,15 +43,12 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
 
     private fun randomizeCameraPosition(camera: OrthographicCamera) {
         val cameraViewportWidthTiles = ceil(camera.viewportWidth * camera.zoom / TILE_SIZE)
+        val halfWidth = ceil(cameraViewportWidthTiles / 2).toInt()
+        val nextCameraX = Random.nextInt(halfWidth, h3mMap.size - halfWidth) * TILE_SIZE
+
         val cameraViewportHeightTiles = ceil(camera.viewportHeight * camera.zoom / TILE_SIZE)
-        val nextCameraX = Random.nextInt(
-            cameraViewportWidthTiles.toInt(),
-            floor(h3mMap.size - cameraViewportWidthTiles).toInt()
-        ) * TILE_SIZE
-        val nextCameraY = Random.nextInt(
-            cameraViewportHeightTiles.toInt(),
-            floor(h3mMap.size - cameraViewportHeightTiles).toInt()
-        ) * TILE_SIZE
+        val halfHeight = ceil(cameraViewportHeightTiles / 2).toInt()
+        val nextCameraY = Random.nextInt(halfHeight, h3mMap.size - halfHeight) * TILE_SIZE
 
         camera.position.set(nextCameraX, nextCameraY, 0f)
     }
