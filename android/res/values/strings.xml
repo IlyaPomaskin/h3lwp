@@ -10,6 +10,10 @@
 
     <string name="wallpaper_change_button">Set wallpaper</string>
 
+    <string name="scale_title">Image scale</string>
+    <string name="update_time_title">Change map interval</string>
+    <string name="update_time_summary">Every %s minutes</string>
+
     <string name="credits_header">Credits</string>
     <string name="credits_button">Open</string>
 

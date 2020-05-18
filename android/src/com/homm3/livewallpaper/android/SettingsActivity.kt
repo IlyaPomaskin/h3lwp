@@ -5,11 +5,14 @@ import android.app.WallpaperManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.preference.DropDownPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.SeekBarPreference
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.core.Assets
@@ -35,9 +38,41 @@ class SettingsActivity : AppCompatActivity() {
         actionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
-    class SettingsFragment : PreferenceFragmentCompat() {
+    class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedPreferenceChangeListener {
+        private lateinit var sharedPreferences: SharedPreferences
+
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
+
+            sharedPreferences = requireActivity()
+                .getSharedPreferences(Engine.PREFERENCES_NAME, Context.MODE_PRIVATE)
+
+            findPreference<SeekBarPreference>("update_timeout")?.let {
+                it.summaryProvider = Preference.SummaryProvider<SeekBarPreference> { pref ->
+                    if (pref.value > 0) {
+                        String.format("Every %d minutes", pref.value)
+                    } else {
+                        String.format("Every switch to home screen")
+                    }
+                }
+                it.onPreferenceChangeListener =
+                    Preference.OnPreferenceChangeListener { _, newValue ->
+                        val nextValue = newValue.toString().toIntOrNull()
+                            ?: Engine.DEFAULT_MAP_UPDATE_INTERVAL
+                        setPreferenceValue(Engine.MAP_UPDATE_INTERVAL, nextValue)
+                        it.value = nextValue
+                        true
+                    }
+                it.value = sharedPreferences.getInt(Engine.MAP_UPDATE_INTERVAL, Engine.DEFAULT_MAP_UPDATE_INTERVAL)
+            }
+
+            findPreference<DropDownPreference>("scale")?.let {
+                it.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
+                    setPreferenceValue(Engine.SCALE, newValue.toString())
+                    true
+                }
+                it.value = sharedPreferences.getString(Engine.SCALE, Engine.DEFAULT_SCALE)
+            }
         }
 
         override fun onPreferenceTreeClick(preference: Preference?): Boolean {
@@ -102,12 +137,20 @@ class SettingsActivity : AppCompatActivity() {
             outputDirectory.mkdirs()
         }
 
-        private fun setAssetsReadyFlag(value: Boolean) {
-            activity
-                ?.getSharedPreferences(Engine.PREFERENCES_NAME, Context.MODE_PRIVATE)
-                ?.edit()
-                ?.putBoolean(Engine.IS_ASSETS_READY_KEY, value)
-                ?.apply()
+        private fun setPreferenceValue(name: String, value: Any) {
+            sharedPreferences
+                .edit()
+                .let {
+                    when (value) {
+                        is Long -> it.putLong(name, value)
+                        is Float -> it.putFloat(name, value)
+                        is Int -> it.putInt(name, value)
+                        is Boolean -> it.putBoolean(name, value)
+                        is String -> it.putString(name, value)
+                        else -> throw Error("Not supported value type")
+                    }
+                }
+                .apply()
         }
 
         private fun sendParsingDoneMessage() {
@@ -140,18 +183,18 @@ class SettingsActivity : AppCompatActivity() {
                                 .filesDir
                                 .resolve(Assets.atlasFolder)
                                 .also(::clearOutputDirectory)
-                            setAssetsReadyFlag(false)
+                            setPreferenceValue(Engine.IS_ASSETS_READY_KEY, false)
                         }
                         .onFailure { throw Exception("Can't prepare output directory. Check free space.") }
                         .map { AssetsConverter(stream!!, outputDirectory!!, Assets.atlasName).convertLodToTextureAtlas() }
                         .map {
-                            setAssetsReadyFlag(true)
+                            setPreferenceValue(Engine.IS_ASSETS_READY_KEY, true)
                             setStatus { it.summary = "Parsing successfully done!" }
                             sendParsingDoneMessage()
                         }
                 } catch (ex: Exception) {
                     outputDirectory?.run(::clearOutputDirectory)
-                    setAssetsReadyFlag(false)
+                    setPreferenceValue(Engine.IS_ASSETS_READY_KEY, false)
                     setStatus {
                         it.summary = ex.message
                         it.isSelectable = true
@@ -159,6 +202,12 @@ class SettingsActivity : AppCompatActivity() {
                 } finally {
                     stream?.close()
                 }
+            }
+        }
+
+        override fun onSharedPreferenceChanged(p0: SharedPreferences?, key: String?) {
+            p0?.all?.forEach {
+                println("Pref ${it.key} value ${it.value.toString()}")
             }
         }
     }

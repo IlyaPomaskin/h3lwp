@@ -5,10 +5,23 @@
             android:key="select_file"
             android:summary="@string/assets_instructions"
             android:title="@string/assets_select_button" />
+        <Preference
+            android:key="wallpaper_change"
+            android:title="@string/wallpaper_change_button" />
+        <DropDownPreference
+            app:defaultValue="DPI"
+            app:entries="@array/scale_entries"
+            app:entryValues="@array/scale_values"
+            app:key="scale"
+            app:title="@string/scale_title"
+            app:useSimpleSummaryProvider="true" />
+        <SeekBarPreference
+            app:min="0"
+            android:max="60"
+            app:key="update_timeout"
+            app:title="@string/update_time_title"
+            app:updatesContinuously="true" />
     </PreferenceCategory>
-    <Preference
-        android:key="wallpaper_change"
-        android:title="@string/wallpaper_change_button" />
     <PreferenceCategory app:title="@string/credits_header">
         <Preference
             android:key="credits_button"
