@@ -4,6 +4,8 @@ class Constants {
     companion object {
         const val TILE_SIZE = 32f
         const val FRAME_TIME = 0.18f
+        const val INSTRUCTIONS = "To use this app you must provide files from Heroes 3 SoD or Complete (HD Edition will not work).\n" +
+            "Open the game folder on PC, find folder named  \"Data\", and upload file named \"h3sprite.lod\" to your phone."
     }
 
     class Preferences {

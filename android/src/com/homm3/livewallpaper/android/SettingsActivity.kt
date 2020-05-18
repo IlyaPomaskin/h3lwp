@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.DropDownPreference
 import androidx.preference.Preference
@@ -47,6 +48,16 @@ class SettingsActivity : AppCompatActivity() {
             sharedPreferences = requireActivity()
                 .getSharedPreferences(Constants.Preferences.PREFERENCES_NAME, Context.MODE_PRIVATE)
 
+            updateAssetsButtons()
+
+            findPreference<Preference>("select_file")?.let {
+                val isAssetsReady = sharedPreferences.getBoolean(Constants.Preferences.IS_ASSETS_READY_KEY, false)
+                if (!isAssetsReady) {
+                    it.isVisible = true
+                    it.summary = Constants.INSTRUCTIONS
+                }
+            }
+
             findPreference<SeekBarPreference>("update_timeout")?.let {
                 it.summaryProvider = Preference.SummaryProvider<SeekBarPreference> { pref ->
                     if (pref.value > 0) {
@@ -72,6 +83,20 @@ class SettingsActivity : AppCompatActivity() {
                     true
                 }
                 it.value = sharedPreferences.getString(Constants.Preferences.SCALE, Constants.Preferences.DEFAULT_SCALE)
+            }
+        }
+
+        private fun updateAssetsButtons() {
+            val isAssetsReady = sharedPreferences.getBoolean(Constants.Preferences.IS_ASSETS_READY_KEY, false)
+
+            findPreference<Preference>("select_file")?.let {
+                if (isAssetsReady) {
+                    it.isEnabled = false
+                }
+            }
+
+            findPreference<Preference>("wallpaper_change")?.let {
+                it.isVisible = isAssetsReady
             }
         }
 
@@ -160,6 +185,11 @@ class SettingsActivity : AppCompatActivity() {
             context?.sendBroadcast(intent)
         }
 
+        private fun setAssetsReadyFlag(value: Boolean) {
+            setPreferenceValue(Constants.Preferences.IS_ASSETS_READY_KEY, value)
+            Handler(context?.mainLooper).post { updateAssetsButtons() }
+        }
+
         private fun handleFileSelection(filePath: Uri) {
             GdxNativesLoader.load()
 
@@ -183,18 +213,18 @@ class SettingsActivity : AppCompatActivity() {
                                 .filesDir
                                 .resolve(Assets.atlasFolder)
                                 .also(::clearOutputDirectory)
-                            setPreferenceValue(Constants.Preferences.IS_ASSETS_READY_KEY, false)
+                            setAssetsReadyFlag(false)
                         }
                         .onFailure { throw Exception("Can't prepare output directory. Check free space.") }
                         .map { AssetsConverter(stream!!, outputDirectory!!, Assets.atlasName).convertLodToTextureAtlas() }
                         .map {
-                            setPreferenceValue(Constants.Preferences.IS_ASSETS_READY_KEY, true)
+                            setAssetsReadyFlag(true)
                             setStatus { it.summary = "Parsing successfully done!" }
                             sendParsingDoneMessage()
                         }
                 } catch (ex: Exception) {
                     outputDirectory?.run(::clearOutputDirectory)
-                    setPreferenceValue(Constants.Preferences.IS_ASSETS_READY_KEY, false)
+                    setAssetsReadyFlag(false)
                     setStatus {
                         it.summary = ex.message
                         it.isSelectable = true
