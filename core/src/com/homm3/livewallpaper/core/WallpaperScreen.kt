@@ -2,7 +2,6 @@ package com.homm3.livewallpaper.core
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.utils.Timer
 import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.parser.formats.JsonMap
@@ -16,9 +15,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private var terrainRenderer = TerrainRenderer(engine, h3mMap)
     private var objectsRenderer = ObjectsRenderer(engine, h3mMap)
     private var inputProcessor = InputProcessor(engine.camera).apply {
-        onRandomizeCameraPosition = {
-            randomizeCameraPosition(engine.camera)
-        }
+        onRandomizeCameraPosition = ::randomizeCameraPosition
     }
     private var randomizeCameraTask: Timer.Task? = null
     private var updateInterval = Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL.toFloat()
@@ -26,6 +23,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     init {
         applyPreferences()
         engine.camera.setToOrtho(true)
+        randomizeCameraPosition()
 
         if (Gdx.app.type == Application.ApplicationType.Desktop) {
             Gdx.input.inputProcessor = inputProcessor
@@ -38,15 +36,16 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
             .getPreferences(Constants.Preferences.PREFERENCES_NAME)
             .getInteger(Constants.Preferences.MAP_UPDATE_INTERVAL, Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL) * 60f
 
-        if (updateInterval == 0f || prevUpdateInterval != updateInterval) {
+        if (updateInterval == 0f) {
             randomizeCameraTask?.cancel()
         }
 
-        if (updateInterval > 0) {
+        if (updateInterval > 0 && prevUpdateInterval != updateInterval) {
+            randomizeCameraTask?.cancel()
             randomizeCameraTask = Timer.schedule(
                 object : Timer.Task() {
                     override fun run() {
-                        randomizeCameraPosition(engine.camera)
+                        randomizeCameraPosition()
                     }
                 },
                 updateInterval,
@@ -59,11 +58,13 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
             .getString(Constants.Preferences.SCALE)
         engine.camera.zoom = when (scale) {
             "DPI" -> min(1 / Gdx.graphics.density, 1f)
-            else -> 1 / (scale.toFloatOrNull() ?: 1f)
+            else -> 1 / (scale.toFloatOrNull() ?: Constants.Preferences.DEFAULT_SCALE.toFloat())
         }
     }
 
-    private fun randomizeCameraPosition(camera: OrthographicCamera) {
+    private fun randomizeCameraPosition() {
+        val camera = engine.camera
+
         val cameraViewportWidthTiles = ceil(camera.viewportWidth * camera.zoom / TILE_SIZE)
         val halfWidth = ceil(cameraViewportWidthTiles / 2).toInt()
         val nextCameraX = Random.nextInt(halfWidth, h3mMap.size - halfWidth) * TILE_SIZE
@@ -79,7 +80,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         applyPreferences()
 
         if (updateInterval == 0f) {
-            randomizeCameraPosition(engine.camera)
+            randomizeCameraPosition()
         }
     }
 
