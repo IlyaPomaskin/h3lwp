@@ -3,12 +3,16 @@
     <string-array name="scale_entries">
         <item>1x</item>
         <item>2x</item>
+        <item>3x</item>
+        <item>4x</item>
         <item>Based on display density</item>
     </string-array>
 
     <string-array name="scale_values">
         <item>1</item>
         <item>2</item>
+        <item>3</item>
+        <item>4</item>
         <item>DPI</item>
     </string-array>
 </resources>
