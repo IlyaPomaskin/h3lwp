@@ -58,7 +58,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
             .getString(Constants.Preferences.SCALE)
         engine.camera.zoom = when (scale) {
             "DPI" -> min(1 / Gdx.graphics.density, 1f)
-            else -> 1 / (scale.toFloatOrNull() ?: Constants.Preferences.DEFAULT_SCALE.toFloat())
+            else -> 1 / (scale.toFloatOrNull() ?: 1f)
         }
     }
 
