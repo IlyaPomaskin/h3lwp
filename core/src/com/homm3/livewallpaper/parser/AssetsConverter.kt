@@ -18,17 +18,16 @@ class AssetsConverter(lodFileInputStream: InputStream, outputDirectory: File, at
     @Throws(Exception::class)
     fun convertLodToTextureAtlas() {
         runCatching(assetsReader::readFilesList)
-            .onFailure { throw Exception("Can't parse file") }
+            .onFailure { throw Exception("Can't parse. Try another file.") }
             .mapCatching(assetsReader::readDefs)
-            .onFailure { throw Exception("Can't read images from file") }
+            .onFailure { throw Exception("Can't read content. Try another file.") }
             .also { defs ->
                 if (defs.getOrDefault(emptyList()).size < minimalDefCount) {
-                    throw Exception("Wrong file selected")
+                    throw Exception("Wrong file selected. Try another file.")
                 }
             }
             .mapCatching(assetsPacker::packFrames)
-            .onFailure { throw Exception("Can't save files") }
             .mapCatching(assetsWriter::writePackerContent)
-            .onFailure { throw Exception("Can't write files") }
+            .onFailure { throw Exception("Can't save files. Check free space.") }
     }
 }

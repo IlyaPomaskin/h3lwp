@@ -119,9 +119,9 @@ class SettingsActivity : AppCompatActivity() {
                         .runCatching {
                             stream = requireContext()
                                 .contentResolver
-                                .openInputStream(filePath)!!
+                                .openInputStream(filePath)
                         }
-                        .onFailure { throw Exception("Can't open file") }
+                        .onFailure { throw Exception("Can't open file. Check app permissions.") }
                         .mapCatching {
                             outputDirectory = requireContext()
                                 .filesDir
@@ -129,7 +129,7 @@ class SettingsActivity : AppCompatActivity() {
                                 .also(::clearOutputDirectory)
                             setAssetsReadyFlag(false)
                         }
-                        .onFailure { throw Exception("Can't prepare output directory") }
+                        .onFailure { throw Exception("Can't prepare output directory. Check free space.") }
                         .map { AssetsConverter(stream!!, outputDirectory!!, Assets.atlasName).convertLodToTextureAtlas() }
                         .map {
                             setAssetsReadyFlag(true)
