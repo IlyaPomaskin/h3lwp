@@ -3,12 +3,13 @@
     <string name="app_name">Heroes 3 Wallpaper</string>
     <string name="title_activity_settings">Settings</string>
 
-    <string name="assets_header">Assets</string>
+    <string name="assets_header">Wallpaper</string>
     <string name="assets_select_button">Select file \"h3sprite.lod\"</string>
     <string name="assets_instructions"> </string>
     <string name="assets_select_file_activity_title">Select \"h3sprite.lod\"</string>
-
     <string name="wallpaper_change_button">Set wallpaper</string>
+
+    <string name="preferences_header">Preferences</string>
 
     <string name="scale_title">Image scale</string>
     <string name="update_time_title">Change map interval</string>

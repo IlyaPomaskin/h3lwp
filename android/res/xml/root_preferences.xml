@@ -8,6 +8,8 @@
         <Preference
             android:key="wallpaper_change"
             android:title="@string/wallpaper_change_button" />
+    </PreferenceCategory>
+    <PreferenceCategory app:title="@string/preferences_header">
         <DropDownPreference
             app:defaultValue="DPI"
             app:entries="@array/scale_entries"
@@ -16,9 +18,9 @@
             app:title="@string/scale_title"
             app:useSimpleSummaryProvider="true" />
         <SeekBarPreference
-            app:min="0"
             android:max="60"
             app:key="update_timeout"
+            app:min="0"
             app:title="@string/update_time_title"
             app:updatesContinuously="true" />
     </PreferenceCategory>
