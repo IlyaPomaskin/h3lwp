@@ -4,7 +4,17 @@ class Constants {
     companion object {
         const val TILE_SIZE = 32f
         const val FRAME_TIME = 0.18f
-        const val RANDOMIZE_CAMERA_INTERVAL = 10f * 60f
+    }
+
+    class Preferences {
+        companion object {
+            val PREFERENCES_NAME = Engine::class.java.`package`.name + ".PREFERENCES"
+            const val IS_ASSETS_READY_KEY = "isAssetsReady"
+            const val MAP_UPDATE_INTERVAL = "mapUpdateInterval"
+            const val SCALE = "scale"
+            const val DEFAULT_MAP_UPDATE_INTERVAL = 15
+            const val DEFAULT_SCALE = "DPI"
+        }
     }
 
     enum class TerrainDefs(val value: Int) {

@@ -66,8 +66,8 @@ class Assets {
 
     private fun canLoadWallpapersAssets(): Boolean {
         val isAssetsReady = Gdx.app
-            .getPreferences(Engine.PREFERENCES_NAME)
-            .getBoolean(Engine.IS_ASSETS_READY_KEY)
+            .getPreferences(Constants.Preferences.PREFERENCES_NAME)
+            .getBoolean(Constants.Preferences.IS_ASSETS_READY_KEY)
         val filesExists = Gdx.files.local(atlasPath).exists()
 
         return isAssetsReady && filesExists && !isWallpaperAssetsLoaded()

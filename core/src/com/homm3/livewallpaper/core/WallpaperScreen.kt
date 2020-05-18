@@ -4,12 +4,10 @@ import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.utils.Timer
-import com.homm3.livewallpaper.core.Constants.Companion.RANDOMIZE_CAMERA_INTERVAL
 import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.parser.formats.JsonMap
 import ktx.app.KtxScreen
 import kotlin.math.ceil
-import kotlin.math.floor
 import kotlin.math.min
 import kotlin.random.Random
 
@@ -23,7 +21,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         }
     }
     private var randomizeCameraTask: Timer.Task? = null
-    private var updateInterval = Engine.DEFAULT_MAP_UPDATE_INTERVAL.toFloat()
+    private var updateInterval = Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL.toFloat()
 
     init {
         applyPreferences()
@@ -37,8 +35,8 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private fun applyPreferences() {
         val prevUpdateInterval = updateInterval
         updateInterval = Gdx.app
-            .getPreferences(Engine.PREFERENCES_NAME)
-            .getInteger(Engine.MAP_UPDATE_INTERVAL, Engine.DEFAULT_MAP_UPDATE_INTERVAL) * 60f
+            .getPreferences(Constants.Preferences.PREFERENCES_NAME)
+            .getInteger(Constants.Preferences.MAP_UPDATE_INTERVAL, Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL) * 60f
 
         if (updateInterval == 0f || prevUpdateInterval != updateInterval) {
             randomizeCameraTask?.cancel()
@@ -56,7 +54,9 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
             )
         }
 
-        val scale = Gdx.app.getPreferences(Engine.PREFERENCES_NAME).getString(Engine.SCALE)
+        val scale = Gdx.app
+            .getPreferences(Constants.Preferences.PREFERENCES_NAME)
+            .getString(Constants.Preferences.SCALE)
         engine.camera.zoom = when (scale) {
             "DPI" -> min(1 / Gdx.graphics.density, 1f)
             else -> 1 / (scale.toFloatOrNull() ?: 1f)

@@ -8,15 +8,6 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import ktx.app.KtxGame
 
 class Engine : KtxGame<Screen>(null, true) {
-    companion object {
-        val PREFERENCES_NAME = Engine::class.java.`package`.name + ".PREFERENCES"
-        const val IS_ASSETS_READY_KEY = "isAssetsReady"
-        const val MAP_UPDATE_INTERVAL = "mapUpdateInterval"
-        const val SCALE = "scale"
-        const val DEFAULT_MAP_UPDATE_INTERVAL = 15
-        const val DEFAULT_SCALE = "DPI"
-    }
-
     var onSettingsButtonClick: () -> Unit = { }
 
     internal lateinit var assets: Assets

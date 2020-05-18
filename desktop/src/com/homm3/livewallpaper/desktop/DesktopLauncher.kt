@@ -5,6 +5,7 @@ import com.badlogic.gdx.backends.lwjgl.LwjglApplication
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.homm3.livewallpaper.core.Assets
+import com.homm3.livewallpaper.core.Constants
 import com.homm3.livewallpaper.core.Engine
 import com.homm3.livewallpaper.parser.AssetsConverter
 import java.awt.FileDialog
@@ -32,8 +33,8 @@ object DesktopLauncher {
 
     private fun setAssetsReadyFlag(value: Boolean) {
         Gdx.app
-            .getPreferences(Engine.PREFERENCES_NAME)
-            .putBoolean(Engine.IS_ASSETS_READY_KEY, value)
+            .getPreferences(Constants.Preferences.PREFERENCES_NAME)
+            .putBoolean(Constants.Preferences.IS_ASSETS_READY_KEY, value)
             .flush()
     }
 

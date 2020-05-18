@@ -16,7 +16,7 @@ import androidx.preference.SeekBarPreference
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.core.Assets
-import com.homm3.livewallpaper.core.Engine
+import com.homm3.livewallpaper.core.Constants
 import com.homm3.livewallpaper.parser.AssetsConverter
 import java.io.File
 import java.io.InputStream
@@ -45,7 +45,7 @@ class SettingsActivity : AppCompatActivity() {
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
 
             sharedPreferences = requireActivity()
-                .getSharedPreferences(Engine.PREFERENCES_NAME, Context.MODE_PRIVATE)
+                .getSharedPreferences(Constants.Preferences.PREFERENCES_NAME, Context.MODE_PRIVATE)
 
             findPreference<SeekBarPreference>("update_timeout")?.let {
                 it.summaryProvider = Preference.SummaryProvider<SeekBarPreference> { pref ->
@@ -58,20 +58,20 @@ class SettingsActivity : AppCompatActivity() {
                 it.onPreferenceChangeListener =
                     Preference.OnPreferenceChangeListener { _, newValue ->
                         val nextValue = newValue.toString().toIntOrNull()
-                            ?: Engine.DEFAULT_MAP_UPDATE_INTERVAL
-                        setPreferenceValue(Engine.MAP_UPDATE_INTERVAL, nextValue)
+                            ?: Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL
+                        setPreferenceValue(Constants.Preferences.MAP_UPDATE_INTERVAL, nextValue)
                         it.value = nextValue
                         true
                     }
-                it.value = sharedPreferences.getInt(Engine.MAP_UPDATE_INTERVAL, Engine.DEFAULT_MAP_UPDATE_INTERVAL)
+                it.value = sharedPreferences.getInt(Constants.Preferences.MAP_UPDATE_INTERVAL, Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL)
             }
 
             findPreference<DropDownPreference>("scale")?.let {
                 it.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
-                    setPreferenceValue(Engine.SCALE, newValue.toString())
+                    setPreferenceValue(Constants.Preferences.SCALE, newValue.toString())
                     true
                 }
-                it.value = sharedPreferences.getString(Engine.SCALE, Engine.DEFAULT_SCALE)
+                it.value = sharedPreferences.getString(Constants.Preferences.SCALE, Constants.Preferences.DEFAULT_SCALE)
             }
         }
 
@@ -183,18 +183,18 @@ class SettingsActivity : AppCompatActivity() {
                                 .filesDir
                                 .resolve(Assets.atlasFolder)
                                 .also(::clearOutputDirectory)
-                            setPreferenceValue(Engine.IS_ASSETS_READY_KEY, false)
+                            setPreferenceValue(Constants.Preferences.IS_ASSETS_READY_KEY, false)
                         }
                         .onFailure { throw Exception("Can't prepare output directory. Check free space.") }
                         .map { AssetsConverter(stream!!, outputDirectory!!, Assets.atlasName).convertLodToTextureAtlas() }
                         .map {
-                            setPreferenceValue(Engine.IS_ASSETS_READY_KEY, true)
+                            setPreferenceValue(Constants.Preferences.IS_ASSETS_READY_KEY, true)
                             setStatus { it.summary = "Parsing successfully done!" }
                             sendParsingDoneMessage()
                         }
                 } catch (ex: Exception) {
                     outputDirectory?.run(::clearOutputDirectory)
-                    setPreferenceValue(Engine.IS_ASSETS_READY_KEY, false)
+                    setPreferenceValue(Constants.Preferences.IS_ASSETS_READY_KEY, false)
                     setStatus {
                         it.summary = ex.message
                         it.isSelectable = true
