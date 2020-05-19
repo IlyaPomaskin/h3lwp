@@ -25,19 +25,19 @@ class Engine : KtxGame<Screen>(null, true) {
     }
 
     fun updateVisibleScreen() {
-        assets.tryLoadWallpaperAssets()
-
-        if (!assets.manager.isFinished) {
-            setScreen<LoadingScreen>()
-            return
-        }
-
         if (assets.isWallpaperAssetsLoaded()) {
             if (!screens.containsKey(WallpaperScreen::class.java)) {
                 addScreen(WallpaperScreen(this))
             }
             setScreen<WallpaperScreen>()
         } else {
+            assets.tryLoadWallpaperAssets()
+
+            if (!assets.manager.isFinished) {
+                setScreen<LoadingScreen>()
+                return
+            }
+
             setScreen<SettingsScreen>()
         }
     }
