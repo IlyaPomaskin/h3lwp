@@ -2,7 +2,6 @@ package com.homm3.livewallpaper.core
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.utils.Timer
 import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.parser.formats.JsonMap
 import ktx.app.KtxScreen
@@ -17,12 +16,12 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private var inputProcessor = InputProcessor(engine.camera).apply {
         onRandomizeCameraPosition = ::randomizeCameraPosition
     }
-    private var randomizeCameraTask: Timer.Task? = null
-    private var updateInterval = Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL.toFloat()
+    private var mapUpdateInterval = Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL * 60f * 1000f
+    private var lastMapUpdateTime = System.currentTimeMillis()
 
     init {
-        applyPreferences()
         engine.camera.setToOrtho(true)
+        applyPreferences()
         randomizeCameraPosition()
 
         if (Gdx.app.type == Application.ApplicationType.Desktop) {
@@ -31,27 +30,9 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     }
 
     private fun applyPreferences() {
-        val prevUpdateInterval = updateInterval
-        updateInterval = Gdx.app
+        mapUpdateInterval = Gdx.app
             .getPreferences(Constants.Preferences.PREFERENCES_NAME)
-            .getInteger(Constants.Preferences.MAP_UPDATE_INTERVAL, Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL) * 60f
-
-        if (updateInterval == 0f) {
-            randomizeCameraTask?.cancel()
-        }
-
-        if (updateInterval > 0 && prevUpdateInterval != updateInterval) {
-            randomizeCameraTask?.cancel()
-            randomizeCameraTask = Timer.schedule(
-                object : Timer.Task() {
-                    override fun run() {
-                        randomizeCameraPosition()
-                    }
-                },
-                updateInterval,
-                updateInterval
-            )
-        }
+            .getInteger(Constants.Preferences.MAP_UPDATE_INTERVAL, Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL) * 60f * 1000f
 
         val scale = Gdx.app
             .getPreferences(Constants.Preferences.PREFERENCES_NAME)
@@ -79,7 +60,9 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     override fun show() {
         applyPreferences()
 
-        if (updateInterval == 0f) {
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastMapUpdateTime >= mapUpdateInterval) {
+            lastMapUpdateTime = currentTime
             randomizeCameraPosition()
         }
     }
@@ -96,7 +79,6 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
 
     override fun dispose() {
         super.dispose()
-        randomizeCameraTask?.cancel()
         terrainRenderer.dispose()
         objectsRenderer.dispose()
     }
