@@ -13,7 +13,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.DropDownPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SeekBarPreference
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.core.Assets
@@ -39,7 +38,7 @@ class SettingsActivity : AppCompatActivity() {
         actionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
-    class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedPreferenceChangeListener {
+    class SettingsFragment : PreferenceFragmentCompat() {
         private lateinit var sharedPreferences: SharedPreferences
 
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -56,34 +55,72 @@ class SettingsActivity : AppCompatActivity() {
                     it.isVisible = false
                 } else {
                     it.summary = Constants.INSTRUCTIONS
+                    it.onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                        val intent = Intent(Intent.ACTION_GET_CONTENT)
+                            .setType("application/octet-stream")
+                            .addCategory(Intent.CATEGORY_OPENABLE)
+                            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            .setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
+                            .putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+                        startActivityForResult(
+                            Intent.createChooser(intent, getString(R.string.assets_select_file_activity_title)),
+                            PICK_FILE_RESULT_CODE
+                        )
+                        true
+                    }
                 }
             }
 
-            findPreference<SeekBarPreference>("update_timeout")?.let {
-                it.summaryProvider = Preference.SummaryProvider<SeekBarPreference> { pref ->
-                    if (pref.value > 0) {
-                        String.format("Every %d minutes", pref.value)
-                    } else {
-                        String.format("Every switch to home screen")
-                    }
+            findPreference<Preference>("wallpaper_change")?.let {
+                it.onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                    startActivity(Intent()
+                        .setAction(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
+                        .putExtra(
+                            WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
+                            ComponentName(requireContext(), LiveWallpaperService::class.java)
+                        )
+                    )
+                    true
                 }
-                it.onPreferenceChangeListener =
-                    Preference.OnPreferenceChangeListener { _, newValue ->
-                        val nextValue = newValue.toString().toIntOrNull()
-                            ?: Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL
-                        setPreferenceValue(Constants.Preferences.MAP_UPDATE_INTERVAL, nextValue)
-                        it.value = nextValue
-                        true
-                    }
-                it.value = sharedPreferences.getInt(Constants.Preferences.MAP_UPDATE_INTERVAL, Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL)
             }
 
             findPreference<DropDownPreference>("scale")?.let {
                 it.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
-                    setPreferenceValue(Constants.Preferences.SCALE, newValue.toString())
+                    setPreferenceValue(
+                        Constants.Preferences.SCALE,
+                        newValue.toString().toIntOrNull() ?: Constants.Preferences.DEFAULT_SCALE
+                    )
                     true
                 }
-                it.value = sharedPreferences.getString(Constants.Preferences.SCALE, Constants.Preferences.DEFAULT_SCALE)
+                it.value = sharedPreferences
+                    .getInt(Constants.Preferences.SCALE, Constants.Preferences.DEFAULT_SCALE)
+                    .toString()
+            }
+
+            findPreference<DropDownPreference>("update_timeout")?.let {
+                it.onPreferenceChangeListener =
+                    Preference.OnPreferenceChangeListener { _, newValue ->
+                        setPreferenceValue(
+                            Constants.Preferences.MAP_UPDATE_INTERVAL,
+                            newValue.toString().toFloatOrNull()
+                                ?: Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL
+                        )
+                        true
+                    }
+                it.value = sharedPreferences
+                    .getFloat(
+                        Constants.Preferences.MAP_UPDATE_INTERVAL,
+                        Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL
+                    )
+                    .toInt()
+                    .toString()
+            }
+
+            findPreference<Preference>("credits_button")?.let {
+                it.onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                    startActivity(Intent(context, CreditsActivity::class.java))
+                    true
+                }
             }
         }
 
@@ -91,52 +128,12 @@ class SettingsActivity : AppCompatActivity() {
             val isAssetsReady = sharedPreferences.getBoolean(Constants.Preferences.IS_ASSETS_READY_KEY, false)
 
             findPreference<Preference>("select_file")?.let {
-                if (isAssetsReady) {
-                    it.isEnabled = false
-                }
+                it.isEnabled = !isAssetsReady
             }
 
             findPreference<Preference>("wallpaper_change")?.let {
                 it.isVisible = isAssetsReady
             }
-        }
-
-        override fun onPreferenceTreeClick(preference: Preference?): Boolean {
-            if (preference?.key == "select_file") {
-                val intent = Intent(Intent.ACTION_GET_CONTENT)
-                    .setType("application/octet-stream")
-                    .addCategory(Intent.CATEGORY_OPENABLE)
-                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    .setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
-                    .putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-
-                startActivityForResult(
-                    Intent.createChooser(intent, getString(R.string.assets_select_file_activity_title)),
-                    PICK_FILE_RESULT_CODE
-                )
-
-                return true
-            }
-
-            if (preference?.key == "wallpaper_change") {
-                startActivity(Intent()
-                    .setAction(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
-                    .putExtra(
-                        WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
-                        ComponentName(requireContext(), LiveWallpaperService::class.java)
-                    )
-                )
-
-                return true
-            }
-
-            if (preference?.key == "credits_button") {
-                startActivity(Intent(context, CreditsActivity::class.java))
-
-                return true
-            }
-
-            return super.onPreferenceTreeClick(preference)
         }
 
         override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
@@ -233,12 +230,6 @@ class SettingsActivity : AppCompatActivity() {
                 } finally {
                     stream?.close()
                 }
-            }
-        }
-
-        override fun onSharedPreferenceChanged(p0: SharedPreferences?, key: String?) {
-            p0?.all?.forEach {
-                println("Pref ${it.key} value ${it.value.toString()}")
             }
         }
     }

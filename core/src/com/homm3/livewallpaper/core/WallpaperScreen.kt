@@ -16,7 +16,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private var inputProcessor = InputProcessor(engine.camera).apply {
         onRandomizeCameraPosition = ::randomizeCameraPosition
     }
-    private var mapUpdateInterval = Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL * 60f * 1000f
+    private var mapUpdateInterval = Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL
     private var lastMapUpdateTime = System.currentTimeMillis()
 
     init {
@@ -32,14 +32,14 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private fun applyPreferences() {
         mapUpdateInterval = Gdx.app
             .getPreferences(Constants.Preferences.PREFERENCES_NAME)
-            .getInteger(Constants.Preferences.MAP_UPDATE_INTERVAL, Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL) * 60f * 1000f
+            .getFloat(Constants.Preferences.MAP_UPDATE_INTERVAL, Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL)
 
         val scale = Gdx.app
             .getPreferences(Constants.Preferences.PREFERENCES_NAME)
-            .getString(Constants.Preferences.SCALE)
+            .getInteger(Constants.Preferences.SCALE, Constants.Preferences.DEFAULT_SCALE)
         engine.camera.zoom = when (scale) {
-            "DPI" -> min(1 / Gdx.graphics.density, 1f)
-            else -> 1 / (scale.toFloatOrNull() ?: 1f)
+            0 -> min(1 / Gdx.graphics.density, 1f)
+            else -> 1 / scale.toFloat()
         }
     }
 

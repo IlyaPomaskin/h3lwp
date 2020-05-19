@@ -1,18 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="scale_entries">
+        <item>Based on display density</item>
         <item>1x</item>
         <item>2x</item>
         <item>3x</item>
         <item>4x</item>
-        <item>Based on display density</item>
     </string-array>
 
     <string-array name="scale_values">
+        <item>0</item>
         <item>1</item>
         <item>2</item>
         <item>3</item>
         <item>4</item>
-        <item>DPI</item>
+    </string-array>
+
+    <string-array name="update_timeout_entries">
+        <item>Every switch to home screen</item>
+        <item>5 minutes</item>
+        <item>15 minutes</item>
+        <item>30 minutes</item>
+        <item>1 hour</item>
+        <item>24 hours</item>
+    </string-array>
+
+    <string-array name="update_timeout_values">
+        <item>0</item>
+        <item>300000</item>
+        <item>900000</item>
+        <item>1800000</item>
+        <item>3600000</item>
+        <item>86400000</item>
     </string-array>
 </resources>

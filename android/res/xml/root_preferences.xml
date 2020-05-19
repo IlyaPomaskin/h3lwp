@@ -11,18 +11,17 @@
     </PreferenceCategory>
     <PreferenceCategory app:title="@string/preferences_header">
         <DropDownPreference
-            app:defaultValue="DPI"
             app:entries="@array/scale_entries"
             app:entryValues="@array/scale_values"
             app:key="scale"
             app:title="@string/scale_title"
             app:useSimpleSummaryProvider="true" />
-        <SeekBarPreference
-            android:max="60"
+        <DropDownPreference
+            app:entries="@array/update_timeout_entries"
+            app:entryValues="@array/update_timeout_values"
             app:key="update_timeout"
-            app:min="0"
             app:title="@string/update_time_title"
-            app:updatesContinuously="true" />
+            app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
     <PreferenceCategory app:title="@string/credits_header">
         <Preference
