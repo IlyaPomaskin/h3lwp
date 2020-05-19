@@ -55,6 +55,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         val nextCameraY = Random.nextInt(halfHeight, h3mMap.size - halfHeight) * TILE_SIZE
 
         camera.position.set(nextCameraX, nextCameraY, 0f)
+        objectsRenderer.updateVisibleSprites()
     }
 
     override fun show() {

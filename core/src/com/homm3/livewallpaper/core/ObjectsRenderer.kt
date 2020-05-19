@@ -12,16 +12,15 @@ class ObjectsRenderer(private val engine: Engine, h3mMap: JsonMap.ParsedMap) : D
     private var sprites: List<Sprite> = h3mMap
         .objects
         .map { Sprite(it, engine.assets.getObjectFrames(randomizer.replaceRandomObject(it))) }
+    private var visibleSprites: List<Sprite> = mutableListOf()
+
+    fun updateVisibleSprites() {
+        visibleSprites = sprites.filter { it.inViewport(camera) }
+    }
 
     fun render(delta: Float) {
         batch.use(camera) { b ->
-            sprites.forEach { sprite ->
-                if (!sprite.inViewport(camera)) {
-                    return@forEach
-                }
-
-                sprite.render(b, delta)
-            }
+            visibleSprites.forEach { it.render(b, delta) }
         }
     }
 
