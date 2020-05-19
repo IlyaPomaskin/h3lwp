@@ -24,27 +24,29 @@ class TerrainRenderer(private val engine: Engine, private val h3mMap: ParsedMap)
     }
 
     private fun createCell(tile: TerrainTile, type: String): TiledMapTileLayer.Cell {
+        val mirrorConfig = tile.mirror()
+
         return when (type) {
             "terrain" -> TiledMapTileLayer.Cell().apply {
                 this.tile = createMapTile(
                     engine.assets.getTerrainFrames(Constants.TerrainDefs.byInt(tile.terrain), tile.terrainImageIndex)
                 )
-                this.flipHorizontally = tile.mirrorConfig.get(0)
-                this.flipVertically = tile.mirrorConfig.get(1)
+                this.flipHorizontally = mirrorConfig.get(0)
+                this.flipVertically = mirrorConfig.get(1)
             }
             "river" -> TiledMapTileLayer.Cell().apply {
                 this.tile = createMapTile(
                     engine.assets.getTerrainFrames(Constants.RiverDefs.byInt(tile.river), tile.riverImageIndex)
                 )
-                this.flipHorizontally = tile.mirrorConfig.get(2)
-                this.flipVertically = tile.mirrorConfig.get(3)
+                this.flipHorizontally = mirrorConfig.get(2)
+                this.flipVertically = mirrorConfig.get(3)
             }
             "road" -> TiledMapTileLayer.Cell().apply {
                 this.tile = createMapTile(
                     engine.assets.getTerrainFrames(Constants.RoadDefs.byInt(tile.road), tile.roadImageIndex)
                 )
-                this.flipHorizontally = tile.mirrorConfig.get(4)
-                this.flipVertically = tile.mirrorConfig.get(5)
+                this.flipHorizontally = mirrorConfig.get(4)
+                this.flipVertically = mirrorConfig.get(5)
             }
             else -> throw Exception("Incorrect tile")
         }
