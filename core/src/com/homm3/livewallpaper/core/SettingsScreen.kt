@@ -14,6 +14,7 @@ class SettingsScreen(private val engine: Engine) : KtxScreen {
     private val buttonText = "Open settings"
 
     init {
+        val skin = engine.assets.skin
         stage.addActor(
             VerticalGroup().apply {
                 center()
@@ -22,13 +23,13 @@ class SettingsScreen(private val engine: Engine) : KtxScreen {
                 space(10.toFloat())
                 pad(50.toFloat())
                 addActor(
-                    Label(INSTRUCTIONS, engine.skin).apply {
+                    Label(INSTRUCTIONS, skin).apply {
                         setWrap(true)
                         setAlignment(Align.center)
                     }
                 )
                 addActor(
-                    TextButton(buttonText, engine.skin).apply {
+                    TextButton(buttonText, skin).apply {
                         onClick { engine.onSettingsButtonClick() }
                     }
                 )

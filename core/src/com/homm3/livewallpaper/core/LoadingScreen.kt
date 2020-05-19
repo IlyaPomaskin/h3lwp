@@ -9,7 +9,7 @@ class LoadingScreen(private val engine: Engine) : KtxScreen {
     private val loadingStage = stage(viewport = engine.viewport)
         .apply {
             addActor(
-                Label("Loading...", engine.skin)
+                Label("Loading...", engine.assets.skin)
                     .apply {
                         setFillParent(true)
                         setAlignment(Align.center)

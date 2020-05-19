@@ -30,6 +30,7 @@ class Assets {
         )
     )
     val manager = AssetManager(LocalFileHandleResolver())
+    val skin = Skin(Gdx.files.internal(skinPath))
 
     init {
         Texture.setAssetManager(manager)
@@ -54,10 +55,6 @@ class Assets {
 
     fun getTerrainFrames(defName: String, index: Int): Array<TextureAtlas.AtlasRegion> {
         return getAtlasRegions("$defName/$index")
-    }
-
-    fun loadSkin(): Skin {
-        return Skin(Gdx.files.internal(skinPath))
     }
 
     fun isWallpaperAssetsLoaded(): Boolean {
