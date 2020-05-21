@@ -3,6 +3,7 @@ package com.homm3.livewallpaper.core
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
+import com.homm3.livewallpaper.parser.formats.H3mReader
 import com.homm3.livewallpaper.parser.formats.JsonMap
 import ktx.app.KtxScreen
 import kotlin.math.ceil
@@ -10,7 +11,7 @@ import kotlin.math.min
 import kotlin.random.Random
 
 class WallpaperScreen(private val engine: Engine) : KtxScreen {
-    private val h3mMap = JsonMap().parse(Gdx.files.internal("maps/invasion.json").read())
+    private val h3mMap = H3mReader(Gdx.files.internal("maps/invasion.h3m").read()).read()
     private var terrainRenderer = TerrainRenderer(engine, h3mMap)
     private var objectsRenderer = ObjectsRenderer(engine, h3mMap)
     private var inputProcessor = InputProcessor(engine.camera).apply {
@@ -48,11 +49,11 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
 
         val cameraViewportWidthTiles = ceil(camera.viewportWidth * camera.zoom / TILE_SIZE)
         val halfWidth = ceil(cameraViewportWidthTiles / 2).toInt()
-        val nextCameraX = Random.nextInt(halfWidth, h3mMap.size - halfWidth) * TILE_SIZE
+        val nextCameraX = Random.nextInt(halfWidth, h3mMap.header.size - halfWidth) * TILE_SIZE
 
         val cameraViewportHeightTiles = ceil(camera.viewportHeight * camera.zoom / TILE_SIZE)
         val halfHeight = ceil(cameraViewportHeightTiles / 2).toInt()
-        val nextCameraY = Random.nextInt(halfHeight, h3mMap.size - halfHeight) * TILE_SIZE
+        val nextCameraY = Random.nextInt(halfHeight, h3mMap.header.size - halfHeight) * TILE_SIZE
 
         camera.position.set(nextCameraX, nextCameraY, 0f)
         objectsRenderer.updateVisibleSprites()

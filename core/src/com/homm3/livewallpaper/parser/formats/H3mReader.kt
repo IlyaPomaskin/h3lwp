@@ -465,9 +465,6 @@ internal class H3mReader(stream: InputStream) {
                 H3mObjects.Object.HERO_PLACEHOLDER -> objectsReader.readHeroPlaceholder()
             }
 
-            if (obj.obj == H3mObjects.Object.GRAIL) {
-                continue
-            }
             objects.add(obj)
         }
 

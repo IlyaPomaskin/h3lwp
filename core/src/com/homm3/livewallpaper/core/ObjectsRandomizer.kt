@@ -1,6 +1,7 @@
 package com.homm3.livewallpaper.core
 
-import com.homm3.livewallpaper.parser.formats.JsonMap
+import com.homm3.livewallpaper.parser.formats.H3m
+import com.homm3.livewallpaper.parser.formats.H3mObjects
 import kotlin.random.Random
 
 class ObjectsRandomizer {
@@ -111,31 +112,31 @@ class ObjectsRandomizer {
         return dwellings.values.random().random()
     }
 
-    fun replaceRandomObject(obj: JsonMap.MapObject): String {
-        return when (obj.def.`object`) {
-            "random-monster" -> randomMonster(null)
-            "random-monster-l1" -> randomMonster(1)
-            "random-monster-l2" -> randomMonster(2)
-            "random-monster-l3" -> randomMonster(3)
-            "random-monster-l4" -> randomMonster(4)
-            "random-monster-l5" -> randomMonster(5)
-            "random-monster-l6" -> randomMonster(6)
-            "random-monster-l7" -> randomMonster(7)
-            "random-art" -> randomArtifact()
-            "random-treasure-art" -> randomArtifact()
-            "random-minor-art" -> randomArtifact()
-            "random-major-art" -> randomArtifact()
-            "random-relic-art" -> randomArtifact(true)
-            "random-resource" -> randomResource()
-            "random-town" -> randomTown(obj.def.classSubId)
-            "random-hero" -> "empty"
-            "random-dwelling" -> randomDwelling(null, null)
-            "random-dwelling-lvl" -> randomDwelling(
-                null,
-                null
-                // TODO Random.nextInt(obj.info.get("min"), obj.info.get("max"))
-            )
-            "random-dwelling-faction" -> randomDwelling(null, null)
+    fun replaceRandomObject(obj: H3m.Object): String {
+        return when (obj.obj) {
+            H3mObjects.Object.RANDOM_MONSTER -> randomMonster(null)
+            H3mObjects.Object.RANDOM_MONSTER_L1 -> randomMonster(1)
+            H3mObjects.Object.RANDOM_MONSTER_L2 -> randomMonster(2)
+            H3mObjects.Object.RANDOM_MONSTER_L3 -> randomMonster(3)
+            H3mObjects.Object.RANDOM_MONSTER_L4 -> randomMonster(4)
+            H3mObjects.Object.RANDOM_MONSTER_L5 -> randomMonster(5)
+            H3mObjects.Object.RANDOM_MONSTER_L6 -> randomMonster(6)
+            H3mObjects.Object.RANDOM_MONSTER_L7 -> randomMonster(7)
+            H3mObjects.Object.ARTIFACT,
+            H3mObjects.Object.RANDOM_ART,
+            H3mObjects.Object.RANDOM_TREASURE_ART,
+            H3mObjects.Object.RANDOM_MINOR_ART,
+            H3mObjects.Object.RANDOM_MAJOR_ART -> randomArtifact()
+            H3mObjects.Object.RANDOM_RELIC_ART -> randomArtifact(true)
+            H3mObjects.Object.RANDOM_RESOURCE -> randomResource()
+            H3mObjects.Object.RANDOM_TOWN -> randomTown(obj.def.objectClassSubId)
+            H3mObjects.Object.RANDOM_DWELLING,
+                // TODO min/max level limit
+            H3mObjects.Object.RANDOM_DWELLING_LVL,
+            H3mObjects.Object.RANDOM_DWELLING_FACTION -> randomDwelling(null, null)
+            H3mObjects.Object.GRAIL,
+            H3mObjects.Object.HERO_PLACEHOLDER,
+            H3mObjects.Object.HERO -> "empty"
             else -> obj.def.spriteName
         }
     }
