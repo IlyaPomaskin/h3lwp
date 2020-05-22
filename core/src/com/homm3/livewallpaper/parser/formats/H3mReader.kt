@@ -74,11 +74,11 @@ internal class H3mReader(stream: InputStream) {
         readVictoryLossConditions()
         readTeamInfo()
         readAllowedHeroes()
-        readDisposedHeroes();
-        readAllowedArtifacts();
-        readAllowedSpellsAbilities();
-        readRumors();
-        readPredefinedHeroes();
+        readDisposedHeroes()
+        readAllowedArtifacts()
+        readAllowedSpellsAbilities()
+        readRumors()
+        readPredefinedHeroes()
 
         return header
     }
@@ -223,9 +223,7 @@ internal class H3mReader(stream: InputStream) {
         val teamsCount: Int = reader.readByte()
 
         if (teamsCount > 0) {
-            for (i in 0..7) {
-                reader.readByte()
-            }
+            reader.skip(H3m.PlayerColor.values().size)
         }
     }
 

@@ -431,7 +431,7 @@ class H3mObjects(private val h3m: H3m, private val stream: Reader) {
             stream.skip(6) //builtBuildings
             stream.skip(6) //forbiddenBuildings
         } else {
-            stream.readBool() //has form
+            stream.readBool() //has fort
         }
         if (h3m.version !== H3m.Version.ROE) {
             stream.skip(9) //spells?
@@ -439,12 +439,12 @@ class H3mObjects(private val h3m: H3m, private val stream: Reader) {
         stream.skip(9) //more spells?
         val castleEvents = stream.readInt()
         for (i in 0 until castleEvents) {
-            stream.readString()
-            stream.readString()
+            stream.readString() //name
+            stream.readString() //message
             readResources()
-            stream.readByte()
-            if (h3m.version !== H3m.Version.ROE) {
-                stream.readByte()
+            stream.readByte() // players
+            if (h3m.version == H3m.Version.SOD) {
+                stream.readByte() //humanAffected
             }
             stream.skip(1) //computerAffected
             stream.skip(2) //firstOccurence
