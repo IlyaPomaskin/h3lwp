@@ -6,31 +6,12 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
-import java.util.*
 import java.util.zip.GZIPInputStream
 import kotlin.math.pow
 
 
 internal class H3mReader(stream: InputStream) {
     private val h3m = H3m()
-
-    class ReaderLogger(stream: InputStream) : Reader(stream) {
-        override fun readByte(): Int {
-            return super.readByte().also { println("byte $it") }
-        }
-
-        override fun readShort(): Int {
-            return super.readShort().also { println("short $it") }
-        }
-
-        override fun readInt(): Int {
-            return super.readInt().also { println("int $it") }
-        }
-
-        override fun readString(): String {
-            return super.readString().also { println("string $it") }
-        }
-    }
 
     private var reader = Reader(readWholeFile(GZIPInputStream(stream)))
 
@@ -88,7 +69,7 @@ internal class H3mReader(stream: InputStream) {
 
         for (i in 0..7) {
             val player = Player()
-            player.playerColor = H3m.PlayerColor.values()[i]
+            player.playerColor = i
 
             val canHumanPlay: Boolean = reader.readBool()
             val canPCPlay: Boolean = reader.readBool()
@@ -211,7 +192,7 @@ internal class H3mReader(stream: InputStream) {
         val teamsCount: Int = reader.readByte()
 
         if (teamsCount > 0) {
-            reader.skip(H3m.PlayerColor.values().size)
+            reader.skip(8)
         }
     }
 
@@ -226,7 +207,7 @@ internal class H3mReader(stream: InputStream) {
     }
 
     private fun readDisposedHeroes() {
-        if (h3m.version === H3m.Version.SOD || h3m.version === H3m.Version.WOG) {
+        if (h3m.version === H3m.Version.SOD) {
             val heroesCount = reader.readByte()
             for (i in 0 until heroesCount) {
                 reader.readByte() //hero id
@@ -248,7 +229,7 @@ internal class H3mReader(stream: InputStream) {
     }
 
     private fun readAllowedSpellsAbilities() {
-        if (h3m.version === H3m.Version.SOD || h3m.version === H3m.Version.WOG) {
+        if (h3m.version === H3m.Version.SOD) {
             reader.readBytes(9) //spells
             reader.readBytes(4) //abillities
         }
@@ -279,7 +260,7 @@ internal class H3mReader(stream: InputStream) {
         for (j in 0..15) {
             loadArtifactToSlot()
         }
-        if (h3m.version === H3m.Version.SOD || h3m.version === H3m.Version.WOG) {
+        if (h3m.version === H3m.Version.SOD) {
             loadArtifactToSlot()
         }
 
@@ -299,7 +280,7 @@ internal class H3mReader(stream: InputStream) {
     }
 
     private fun readPredefinedHeroes() {
-        if (h3m.version !== H3m.Version.WOG && h3m.version !== H3m.Version.SOD) {
+        if (h3m.version !== H3m.Version.SOD) {
             return
         }
 
@@ -449,6 +430,7 @@ internal class H3mReader(stream: InputStream) {
                 H3mObjects.Object.RANDOM_DWELLING_FACTION -> objectsReader.readRandomDwelling(obj.obj)
                 H3mObjects.Object.QUEST_GUARD -> objectsReader.readQuestGuard()
                 H3mObjects.Object.HERO_PLACEHOLDER -> objectsReader.readHeroPlaceholder()
+                else -> Unit
             }
 
             objects.add(obj)

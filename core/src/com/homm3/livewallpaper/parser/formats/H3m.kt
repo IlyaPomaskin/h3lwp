@@ -6,8 +6,7 @@ class H3m {
     enum class Version(val value: Int) {
         ROE(0x0e),
         AB(0x15),
-        SOD(0x1c),
-        WOG(0x33);
+        SOD(0x1c);
 
         companion object {
             fun fromInt(value: Int): Version {
@@ -17,47 +16,13 @@ class H3m {
         }
     }
 
-    enum class Town(var value: Int) {
-        CASTLE(0),
-        RAMPART(1),
-        TOWER(2),
-        INFERNO(3),
-        NECROPOLIS(4),
-        DUNGEON(5),
-        STRONGHOLD(6),
-        FORTRESS(7),
-        CONFLUX(8);
-    }
-
-    enum class PlayerColor(val value: Int) {
-        Red(0),
-        Blue(1),
-        Tan(2),
-        Green(3),
-        Orange(4),
-        Purple(5),
-        Teal(6),
-        Pink(7);
-
-        companion object {
-            fun fromInt(value: Int): PlayerColor {
-                return values().find { it.value == value }
-                    ?: throw Exception("Enum value $value not found in ${PlayerColor::name}")
-            }
-        }
-    }
-
     class Player {
-        var playerColor: PlayerColor? = null
-        var allowedTowns = mutableListOf<Town>()
+        var playerColor = 0
         var isRandomTown = false
         var hasMainTown = false
         var isTownsSet = false
         var generateHeroAtMainTown = false
         var generateHero = false
-        var hasRandomHero = false
-        var mainCustomHeroId = false
-        var mainTownType: Town? = null
         var mainTownX = 0
         var mainTownY = 0
         var mainTownZ = 0

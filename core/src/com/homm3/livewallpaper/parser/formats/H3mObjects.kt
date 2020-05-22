@@ -210,7 +210,7 @@ class H3mObjects(private val h3m: H3m, private val stream: Reader) {
         for (j in 0..15) {
             loadArtifactToSlot()
         }
-        if (h3m.version === H3m.Version.SOD || h3m.version === H3m.Version.WOG) {
+        if (h3m.version === H3m.Version.SOD) {
             loadArtifactToSlot()
         }
         loadArtifactToSlot() //spellbook
