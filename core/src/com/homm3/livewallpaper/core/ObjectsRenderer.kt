@@ -12,6 +12,7 @@ class ObjectsRenderer(private val engine: Engine, h3mMap: H3m) : Disposable {
     private val camera = engine.camera
     private var sprites: List<Sprite> = h3mMap
         .objects
+        .sorted()
         // TODO underground rendering
         .filter { it.z == 0 }
         .map { Sprite(it, engine.assets.getObjectFrames(randomizer.replaceRandomObject(it))) }

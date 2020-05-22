@@ -102,15 +102,38 @@ class H3m {
         var placeholder = byteArrayOf()
 
         val isVisitable: Boolean
-            get() = activeCells.all { it == 0 }
+            get() = !activeCells.any { it != 0 }
     }
 
-    class Object {
+    class Object : Comparable<Object> {
         var x = 0
         var y = 0
         var z = 0
         lateinit var def: DefInfo
         lateinit var obj: H3mObjects.Object
+
+        private fun <T> compare2way(x: T, y: T, predicate: (x: T, y: T) -> Boolean): Int {
+            return when {
+                predicate(x, y) -> -1
+                predicate(y, x) -> 1
+                else -> 0
+            }
+        }
+
+        override fun compareTo(other: Object): Int {
+            return compare2way(this, other) { a, b ->
+                when {
+                    a.def.placementOrder != b.def.placementOrder ->
+                        a.def.placementOrder > b.def.placementOrder
+                    a.y != b.y -> a.y < b.y
+                    b.obj == H3mObjects.Object.HERO && a.obj != H3mObjects.Object.HERO -> true
+                    b.obj != H3mObjects.Object.HERO && a.obj == H3mObjects.Object.HERO -> false
+                    !a.def.isVisitable && b.def.isVisitable -> true
+                    !b.def.isVisitable && a.def.isVisitable -> false
+                    else -> a.x < b.x
+                }
+            }
+        }
     }
 
     class Header {
@@ -122,7 +145,6 @@ class H3m {
         var difficulty = 0
         var levelLimit = 0
         var players = mutableListOf<Player>()
-        var availableArtifacts: BitSet? = null
     }
 
     var version: Version? = null
