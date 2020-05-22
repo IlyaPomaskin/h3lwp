@@ -161,6 +161,13 @@ class H3mObjects(private val h3m: H3m, private val stream: Reader) {
         ARTIFACT(8),
         SPELL(9),
         CREATURE(10);
+
+        companion object {
+            fun fromInt(value: Int?): SeerHutRewardType {
+                return values().find { it.value == value }
+                   ?: throw Exception("Unknown SeerHutRewardType")
+            }
+        }
     }
 
     private fun readCreatureSet(creaturesCount: Int) {
@@ -346,7 +353,7 @@ class H3mObjects(private val h3m: H3m, private val stream: Reader) {
         }
 
         if (missionType > 0) {
-            when (SeerHutRewardType.values()[stream.readByte()]) {
+            when (SeerHutRewardType.fromInt(stream.readByte())) {
                 SeerHutRewardType.EXPERIENCE -> stream.readInt()
                 SeerHutRewardType.MANA_POINTS -> stream.readInt()
                 SeerHutRewardType.MORALE_BONUS -> stream.readByte()
@@ -372,7 +379,7 @@ class H3mObjects(private val h3m: H3m, private val stream: Reader) {
                 }
                 SeerHutRewardType.SPELL -> stream.readByte()
                 SeerHutRewardType.CREATURE -> {
-                    stream.skip(if (h3m.version === H3m.Version.ROE) 4 else 3)
+                    stream.skip(if (h3m.version === H3m.Version.ROE) 3 else 4)
                 }
             }
             stream.skip(2)
@@ -393,13 +400,13 @@ class H3mObjects(private val h3m: H3m, private val stream: Reader) {
     }
 
     fun readGarrison() {
-        stream.skip(1);
-        stream.skip(3);
-        readCreatureSet(7);
+        stream.skip(1)
+        stream.skip(3)
+        readCreatureSet(7)
         if (h3m.version != H3m.Version.ROE) {
-            stream.readBool();
+            stream.readBool()
         }
-        stream.skip(8);
+        stream.skip(8)
     }
 
     fun readArtifact(obj: Object?) {
