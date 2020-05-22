@@ -4,7 +4,6 @@ import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.parser.formats.H3mReader
-import com.homm3.livewallpaper.parser.formats.JsonMap
 import ktx.app.KtxScreen
 import kotlin.math.ceil
 import kotlin.math.min
