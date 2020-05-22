@@ -86,7 +86,11 @@ class ObjectsRandomizer {
         else
             Random.nextInt(10, 127)
 
-        return String.format("ava%04d", artId)
+        return specificArtiface(artId)
+    }
+
+    private fun specificArtiface(int: Int): String {
+        return String.format("ava%04d", int)
     }
 
     private fun randomResource(): String {
@@ -122,7 +126,7 @@ class ObjectsRandomizer {
             H3mObjects.Object.RANDOM_MONSTER_L5 -> randomMonster(5)
             H3mObjects.Object.RANDOM_MONSTER_L6 -> randomMonster(6)
             H3mObjects.Object.RANDOM_MONSTER_L7 -> randomMonster(7)
-            H3mObjects.Object.ARTIFACT,
+            H3mObjects.Object.ARTIFACT -> specificArtiface(obj.def.objectClassSubId)
             H3mObjects.Object.RANDOM_ART,
             H3mObjects.Object.RANDOM_TREASURE_ART,
             H3mObjects.Object.RANDOM_MINOR_ART,
