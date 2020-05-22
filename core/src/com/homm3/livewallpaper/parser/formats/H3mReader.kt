@@ -90,42 +90,31 @@ internal class H3mReader(stream: InputStream) {
             val player = Player()
             player.playerColor = H3m.PlayerColor.values()[i]
 
-            // can be played by human
             val canHumanPlay: Boolean = reader.readBool()
-            // can be played by computer
             val canPCPlay: Boolean = reader.readBool()
-            if (!canHumanPlay && !canPCPlay) {
+            if (!(canHumanPlay || canPCPlay)) {
                 when (h3m.version) {
-                    H3m.Version.SOD, H3m.Version.WOG -> reader.readBytes(13)
+                    H3m.Version.SOD -> reader.readBytes(13)
                     H3m.Version.AB -> reader.readBytes(12)
                     H3m.Version.ROE -> reader.readBytes(6)
                 }
                 continue
             }
 
-            //behavior
-            reader.readByte()
+            reader.readByte()  //ai behavior
 
             //is allowed towns set
-            if (h3m.version === H3m.Version.WOG || h3m.version === H3m.Version.SOD) {
+            if (h3m.version === H3m.Version.SOD) {
                 player.isTownsSet = reader.readBool()
             } else {
                 player.isTownsSet = true
             }
 
-            //allowed towns
-            val towns = if (h3m.version === H3m.Version.ROE) {
+            reader.readByte() // allowedFactions
+            if (h3m.version != H3m.Version.ROE) {
                 reader.readByte()
-            } else {
-                reader.readShort()
             }
-            val townsBits = BitSet.valueOf(LongArray(1) { towns.toLong() })
-            for (j in 0..8) {
-                val isCurrentTownAllowed: Boolean = townsBits.get(j)
-                if (isCurrentTownAllowed) {
-                    player.allowedTowns.add(H3m.Town.values()[j])
-                }
-            }
+
             player.isRandomTown = reader.readBool()
             player.hasMainTown = reader.readBool()
             if (player.hasMainTown) {
@@ -174,14 +163,14 @@ internal class H3mReader(stream: InputStream) {
             reader.readBytes(2)
         }
         when (victoryCondition) {
-            0x00 -> {
+            0 -> {
                 //ARTIFACT
                 reader.readByte() //obj terrain
                 if (h3m.version !== H3m.Version.ROE) {
                     reader.readByte()
                 }
             }
-            0x01 -> {
+            1 -> {
                 //GATHERTROOP
                 reader.readByte() //obj terrain
                 if (h3m.version !== H3m.Version.ROE) {
@@ -189,33 +178,32 @@ internal class H3mReader(stream: InputStream) {
                 }
                 reader.readInt() //value
             }
-            0x02 -> {
+            2 -> {
                 //GATHERRESOURCE
                 reader.readByte() //obj terrain
                 reader.readInt() //value
             }
-            0x03 -> {
+            3 -> {
                 //BUILDCITY
                 reader.readBytes(3) //coords
                 reader.readByte() //obj terrain village
                 reader.readByte() //obj terrain form
             }
-            0x04 -> reader.readBytes(3) //BUILDGRAIL coords
-            0x05 -> reader.readBytes(3) //BEATHERO coords
-            0x06 -> reader.readBytes(3) //CAPTURECITY coords
-            0x07 -> reader.readBytes(3) // BEATMONSTER coords
-            0x0A -> {
+            4 -> reader.readBytes(3) //BUILDGRAIL coords
+            5 -> reader.readBytes(3) //BEATHERO coords
+            6 -> reader.readBytes(3) //CAPTURECITY coords
+            7 -> reader.readBytes(3) // BEATMONSTER coords
+            10 -> {
                 //TRANSPORTITEM
                 reader.readByte() //obj terrain
                 reader.readBytes(3) //coords
             }
         }
 
-        // lossCondition
-        when (reader.readByte()) {
-            0x01 -> reader.readBytes(3) //LOSSCASTLE
-            0x02 -> reader.readBytes(3) //LOSSHERO
-            0x03 -> reader.readBytes(2) //TIMEEXPIRES
+        when (reader.readByte()) { // lossCondition
+            0 -> reader.readBytes(3) //LOSSCASTLE
+            1 -> reader.readBytes(3) //LOSSHERO
+            2 -> reader.readBytes(2) //TIMEEXPIRES
         }
     }
 
