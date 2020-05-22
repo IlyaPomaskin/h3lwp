@@ -102,7 +102,7 @@ class H3m {
         var placeholder = byteArrayOf()
 
         val isVisitable: Boolean
-            get() = !activeCells.any { it != 0 }
+            get() = activeCells.any { it != 0 }
     }
 
     class Object : Comparable<Object> {
