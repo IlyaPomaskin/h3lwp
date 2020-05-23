@@ -38,7 +38,7 @@ object DesktopLauncher {
             .flush()
     }
 
-    private fun parse() {
+    private fun parse(callback: () -> Unit) {
         val file = getSelectedFile()
             ?: return
 
@@ -64,6 +64,7 @@ object DesktopLauncher {
                     .map {
                         setAssetsReadyFlag(true)
                         println("Parsing successfully done!")
+                        callback()
                     }
             } catch (ex: Exception) {
                 outputDirectory?.run {
@@ -89,10 +90,11 @@ object DesktopLauncher {
         }
 
         val engine = Engine()
+        val app = LwjglApplication(engine, config)
         engine.onSettingsButtonClick = {
-            parse()
-            engine.updateVisibleScreen()
+            parse {
+                app.postRunnable { engine.updateVisibleScreen() }
+            }
         }
-        LwjglApplication(engine, config)
     }
 }
