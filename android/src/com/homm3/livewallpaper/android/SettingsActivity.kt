@@ -2,9 +2,7 @@ package com.homm3.livewallpaper.android
 
 import android.app.Activity
 import android.app.WallpaperManager
-import android.content.ComponentName
-import android.content.Intent
-import android.content.SharedPreferences
+import android.content.*
 import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -55,7 +53,7 @@ class SettingsActivity : AppCompatActivity() {
                             .setType("application/octet-stream")
                             .addCategory(Intent.CATEGORY_OPENABLE)
                             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            .setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
+                            .addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
                             .putExtra(Intent.EXTRA_LOCAL_ONLY, true)
                         startActivityForResult(
                             Intent.createChooser(intent, getString(R.string.assets_select_file_activity_title)),
