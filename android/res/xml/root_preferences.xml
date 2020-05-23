@@ -19,7 +19,7 @@
         <DropDownPreference
             app:entries="@array/update_timeout_entries"
             app:entryValues="@array/update_timeout_values"
-            app:key="update_timeout"
+            app:key="mapUpdateInterval"
             app:title="@string/update_time_title"
             app:useSimpleSummaryProvider="true" />
         <MultiSelectListPreference
