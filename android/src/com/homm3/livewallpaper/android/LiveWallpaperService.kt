@@ -1,20 +1,16 @@
 package com.homm3.livewallpaper.android
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import com.badlogic.gdx.backends.android.AndroidApplication
+import android.content.*
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration
 import com.badlogic.gdx.backends.android.AndroidLiveWallpaperService
 
 class LiveWallpaperService : AndroidLiveWallpaperService() {
     companion object {
-        val PARSING_DONE_MESSAGE = "parsingDone"
+        const val PARSING_DONE_MESSAGE = "parsingDone"
     }
 
     lateinit var engine: com.homm3.livewallpaper.core.Engine
-    var receiver = object : BroadcastReceiver() {
+    private var receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.hasExtra(PARSING_DONE_MESSAGE) == true) {
                 engine.updateVisibleScreen()
