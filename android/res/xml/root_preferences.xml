@@ -23,6 +23,7 @@
             app:title="@string/update_time_title"
             app:useSimpleSummaryProvider="true" />
         <MultiSelectListPreference
+            app:isPreferenceVisible="false"
             android:key="maps"
             android:title="@string/maps_title" />
     </PreferenceCategory>
