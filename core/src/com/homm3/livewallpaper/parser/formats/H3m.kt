@@ -18,11 +18,7 @@ class H3m {
 
     class Player {
         var playerColor = 0
-        var isRandomTown = false
         var hasMainTown = false
-        var isTownsSet = false
-        var generateHeroAtMainTown = false
-        var generateHero = false
         var mainTownX = 0
         var mainTownY = 0
         var mainTownZ = 0
@@ -77,7 +73,7 @@ class H3m {
         lateinit var def: DefInfo
         lateinit var obj: H3mObjects.Object
 
-        private fun <T> compare2way(x: T, y: T, predicate: (x: T, y: T) -> Boolean): Int {
+        private fun <T>compare2way(x: T, y: T, predicate: (x: T, y: T) -> Boolean): Int {
             return when {
                 predicate(x, y) -> -1
                 predicate(y, x) -> 1
@@ -107,8 +103,6 @@ class H3m {
         var hasUnderground = false
         var title = ""
         var description = ""
-        var difficulty = 0
-        var levelLimit = 0
         var players = mutableListOf<Player>()
     }
 

@@ -45,10 +45,10 @@ internal class H3mReader(stream: InputStream) {
         header.hasUnderground = reader.readBool()
         header.title = reader.readString()
         header.description = reader.readString()
-        header.difficulty = reader.readByte()
+        reader.readByte() // difficulty
 
         if (h3m.version != H3m.Version.ROE) {
-            header.levelLimit = reader.readByte()
+            reader.readByte() // levelLimit
         }
 
         header.players = readPlayerInfo()
@@ -71,8 +71,8 @@ internal class H3mReader(stream: InputStream) {
             val player = Player()
             player.playerColor = i
 
-            val canHumanPlay: Boolean = reader.readBool()
-            val canPCPlay: Boolean = reader.readBool()
+            val canHumanPlay = reader.readBool()
+            val canPCPlay = reader.readBool()
             if (!(canHumanPlay || canPCPlay)) {
                 when (h3m.version) {
                     H3m.Version.SOD -> reader.readBytes(13)
@@ -82,29 +82,23 @@ internal class H3mReader(stream: InputStream) {
                 continue
             }
 
-            reader.readByte()  //ai behavior
+            reader.readByte() //ai behavior
 
-            //is allowed towns set
             if (h3m.version === H3m.Version.SOD) {
-                player.isTownsSet = reader.readBool()
-            } else {
-                player.isTownsSet = true
+                reader.readBool() // isTownsSet
             }
 
             reader.readByte() // allowedFactions
             if (h3m.version != H3m.Version.ROE) {
-                reader.readByte()
+                reader.readByte() // conflux?
             }
 
-            player.isRandomTown = reader.readBool()
+            reader.readBool() // isRandomTown
             player.hasMainTown = reader.readBool()
             if (player.hasMainTown) {
                 if (h3m.version !== H3m.Version.ROE) {
-                    player.generateHeroAtMainTown = reader.readBool()
-                    player.generateHero = reader.readBool()
-                } else {
-                    player.generateHeroAtMainTown = true
-                    player.generateHero = false
+                    reader.readBool() // generateHeroAtMainTown
+                    reader.readBool() // generateHero
                 }
                 player.mainTownX = reader.readByte()
                 player.mainTownY = reader.readByte()
@@ -137,7 +131,7 @@ internal class H3mReader(stream: InputStream) {
     }
 
     private fun readVictoryLossConditions() {
-        val victoryCondition: Int = reader.readByte()
+        val victoryCondition = reader.readByte()
         if (victoryCondition != 0xFF) {
             //allow normal victory
             //applies to ai
@@ -189,8 +183,7 @@ internal class H3mReader(stream: InputStream) {
     }
 
     private fun readTeamInfo() {
-        val teamsCount: Int = reader.readByte()
-
+        val teamsCount = reader.readByte()
         if (teamsCount > 0) {
             reader.skip(8)
         }
@@ -201,8 +194,8 @@ internal class H3mReader(stream: InputStream) {
         reader.readBytes(bytesCount)
 
         if (h3m.version !== H3m.Version.ROE) {
-            val placeholderAmount = reader.readInt()
-            reader.readBytes(placeholderAmount)
+            val placeholderSize = reader.readInt()
+            reader.readBytes(placeholderSize)
         }
     }
 
@@ -272,8 +265,7 @@ internal class H3mReader(stream: InputStream) {
             reader.readByte()
         }
 
-        //bag
-        val artsCount = reader.readShort()
+        val artsCount = reader.readShort() //bag
         for (h in 0 until artsCount) {
             loadArtifactToSlot()
         }
@@ -294,10 +286,8 @@ internal class H3mReader(stream: InputStream) {
                 reader.readInt() //exp
             }
 
-            //sec skills
-            if (reader.readBool()) {
-                //count
-                val skillsCount: Int = reader.readInt()
+            if (reader.readBool()) {  //secondary skills
+                val skillsCount = reader.readInt()
                 for (k in 0 until skillsCount) {
                     reader.readByte() //skill
                     reader.readByte() //value
