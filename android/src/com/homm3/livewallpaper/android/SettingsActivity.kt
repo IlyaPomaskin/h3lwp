@@ -38,13 +38,8 @@ class SettingsActivity : AppCompatActivity() {
             preferenceManager.sharedPreferences.registerOnSharedPreferenceChangeListener(this)
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
 
-            // TODO check files existence
-            val isAssetsReady = preferenceManager
-                .sharedPreferences
-                .getBoolean(Constants.Preferences.IS_ASSETS_READY_KEY, false)
-
             findPreference<Preference>("select_file")?.let {
-                if (isAssetsReady) {
+                if (isAssetsReady()) {
                     it.isVisible = false
                 } else {
                     it.summary = Constants.INSTRUCTIONS
@@ -64,7 +59,7 @@ class SettingsActivity : AppCompatActivity() {
             }
 
             findPreference<Preference>("wallpaper_change")?.let {
-                it.isVisible = isAssetsReady
+                it.isVisible = isAssetsReady()
                 it.onPreferenceClickListener = Preference.OnPreferenceClickListener {
                     startActivity(Intent()
                         .setAction(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
@@ -101,12 +96,8 @@ class SettingsActivity : AppCompatActivity() {
 
         override fun onSharedPreferenceChanged(preferences: SharedPreferences?, key: String?) {
             if (key == Constants.Preferences.IS_ASSETS_READY_KEY) {
-                val isAssetsReady = preferenceManager
-                    .sharedPreferences
-                    .getBoolean(Constants.Preferences.IS_ASSETS_READY_KEY, false)
-
-                findPreference<Preference>("select_file")?.isEnabled = !isAssetsReady
-                findPreference<Preference>("wallpaper_change")?.isVisible = isAssetsReady
+                findPreference<Preference>("select_file")?.isEnabled = !isAssetsReady()
+                findPreference<Preference>("wallpaper_change")?.isVisible = isAssetsReady()
             }
         }
 
@@ -119,6 +110,13 @@ class SettingsActivity : AppCompatActivity() {
 
                 handleFileSelection(intent.data!!)
             }
+        }
+
+        private fun isAssetsReady(): Boolean {
+            // TODO check files existence
+            return preferenceManager
+                .sharedPreferences
+                .getBoolean(Constants.Preferences.IS_ASSETS_READY_KEY, false)
         }
 
         private fun updateSelectFilePreference(block: (parsingStatus: Preference) -> Unit) {
