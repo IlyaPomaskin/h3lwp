@@ -3,6 +3,11 @@ package com.homm3.livewallpaper.core
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
+import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_MAP_UPDATE_INTERVAL
+import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_SCALE
+import com.homm3.livewallpaper.core.Constants.Preferences.Companion.MAP_UPDATE_INTERVAL
+import com.homm3.livewallpaper.core.Constants.Preferences.Companion.PREFERENCES_NAME
+import com.homm3.livewallpaper.core.Constants.Preferences.Companion.SCALE
 import com.homm3.livewallpaper.parser.formats.H3mReader
 import ktx.app.KtxScreen
 import kotlin.math.ceil
@@ -16,7 +21,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private var inputProcessor = InputProcessor(engine.camera).apply {
         onRandomizeCameraPosition = ::randomizeCameraPosition
     }
-    private var mapUpdateInterval = Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL
+    private var mapUpdateInterval = DEFAULT_MAP_UPDATE_INTERVAL
     private var lastMapUpdateTime = System.currentTimeMillis()
 
     init {
@@ -30,13 +35,30 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     }
 
     private fun applyPreferences() {
-        mapUpdateInterval = Gdx.app
-            .getPreferences(Constants.Preferences.PREFERENCES_NAME)
-            .getFloat(Constants.Preferences.MAP_UPDATE_INTERVAL, Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL)
+        val prefs = Gdx.app
+            .getPreferences(PREFERENCES_NAME)
 
-        val scale = Gdx.app
-            .getPreferences(Constants.Preferences.PREFERENCES_NAME)
-            .getInteger(Constants.Preferences.SCALE, Constants.Preferences.DEFAULT_SCALE)
+        // Old float/integer preferences used in <= 2.2.0
+        mapUpdateInterval = kotlin
+            .runCatching {
+                prefs
+                    .getFloat(MAP_UPDATE_INTERVAL)
+                    .also { prefs.putString(MAP_UPDATE_INTERVAL, it.toString()).flush() }
+            }
+            .recoverCatching { prefs.getString(MAP_UPDATE_INTERVAL).toFloat() }
+            .map { if (it == 0f) DEFAULT_MAP_UPDATE_INTERVAL else it }
+            .getOrDefault(DEFAULT_MAP_UPDATE_INTERVAL)
+
+        val scale = kotlin
+            .runCatching {
+                prefs
+                    .getInteger(SCALE)
+                    .also { prefs.putString(SCALE, it.toString()).flush() }
+            }
+            .recoverCatching { prefs.getString(SCALE).toInt() }
+            .map { if (it == 0) DEFAULT_SCALE else it }
+            .getOrDefault(DEFAULT_SCALE)
+
         engine.camera.zoom = when (scale) {
             0 -> min(1 / Gdx.graphics.density, 1f)
             else -> 1 / scale.toFloat()

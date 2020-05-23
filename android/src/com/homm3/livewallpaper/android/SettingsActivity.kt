@@ -11,6 +11,12 @@ import com.badlogic.gdx.utils.GdxNativesLoader
 import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.core.Assets
 import com.homm3.livewallpaper.core.Constants
+import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_MAP_UPDATE_INTERVAL
+import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_SCALE
+import com.homm3.livewallpaper.core.Constants.Preferences.Companion.IS_ASSETS_READY_KEY
+import com.homm3.livewallpaper.core.Constants.Preferences.Companion.MAP_UPDATE_INTERVAL
+import com.homm3.livewallpaper.core.Constants.Preferences.Companion.PREFERENCES_NAME
+import com.homm3.livewallpaper.core.Constants.Preferences.Companion.SCALE
 import com.homm3.livewallpaper.parser.AssetsConverter
 import java.io.File
 import java.io.InputStream
@@ -33,9 +39,33 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedPreferenceChangeListener {
+        private fun convertOldPreferences() {
+            // Old float/integer preferences used in <= 2.2.0
+            val prefs = preferenceManager.sharedPreferences
+            val editor = prefs.edit()
+
+            try {
+                prefs
+                    .getFloat(MAP_UPDATE_INTERVAL, DEFAULT_MAP_UPDATE_INTERVAL)
+                    .also { editor.remove(MAP_UPDATE_INTERVAL).putString(MAP_UPDATE_INTERVAL, it.toString()) }
+            } catch (e: Exception) {
+            }
+
+            try {
+                prefs
+                    .getInt(SCALE, DEFAULT_SCALE)
+                    .also { editor.remove(SCALE).putString(SCALE, it.toString()) }
+            } catch (e: Exception) {
+            }
+
+            editor.commit()
+        }
+
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-            preferenceManager.sharedPreferencesName = Constants.Preferences.PREFERENCES_NAME
+            preferenceManager.sharedPreferencesName = PREFERENCES_NAME
             preferenceManager.sharedPreferences.registerOnSharedPreferenceChangeListener(this)
+            convertOldPreferences()
+
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
 
             findPreference<Preference>("select_file")?.let {
@@ -95,7 +125,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         override fun onSharedPreferenceChanged(preferences: SharedPreferences?, key: String?) {
-            if (key == Constants.Preferences.IS_ASSETS_READY_KEY) {
+            if (key == IS_ASSETS_READY_KEY) {
                 findPreference<Preference>("select_file")?.isEnabled = !isAssetsReady()
                 findPreference<Preference>("wallpaper_change")?.isVisible = isAssetsReady()
             }
@@ -116,7 +146,7 @@ class SettingsActivity : AppCompatActivity() {
             // TODO check files existence
             return preferenceManager
                 .sharedPreferences
-                .getBoolean(Constants.Preferences.IS_ASSETS_READY_KEY, false)
+                .getBoolean(IS_ASSETS_READY_KEY, false)
         }
 
         private fun updateSelectFilePreference(block: (parsingStatus: Preference) -> Unit) {
@@ -150,7 +180,7 @@ class SettingsActivity : AppCompatActivity() {
             preferenceManager
                 .sharedPreferences
                 .edit()
-                .putBoolean(Constants.Preferences.IS_ASSETS_READY_KEY, value)
+                .putBoolean(IS_ASSETS_READY_KEY, value)
                 .apply()
         }
 
