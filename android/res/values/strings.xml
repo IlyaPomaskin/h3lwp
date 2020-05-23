@@ -14,6 +14,8 @@
     <string name="scale_title">Image scale</string>
     <string name="update_time_title">Change map interval</string>
     <string name="update_time_summary">Every %s minutes</string>
+    <string name="maps_title">Maps</string>
+    <string name="maps_add">Add maps</string>
 
     <string name="credits_header">Credits</string>
     <string name="credits_button">Open</string>

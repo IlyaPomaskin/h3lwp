@@ -40,6 +40,7 @@ class SettingsActivity : AppCompatActivity() {
             preferenceManager.sharedPreferences.registerOnSharedPreferenceChangeListener(this)
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
 
+            // TODO check files existence
             val isAssetsReady = preferenceManager
                 .sharedPreferences
                 .getBoolean(Constants.Preferences.IS_ASSETS_READY_KEY, false)
@@ -79,7 +80,7 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
 
-            findPreference<MapsSelectPreference>("maps")?.let {
+            findPreference<MultiSelectListPreference>("maps")?.let {
                 val files = requireContext()
                     .assets
                     .list("maps")
@@ -120,88 +121,66 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-        private fun setStatus(block: (parsingStatus: Preference) -> Unit) {
-            val preference = findPreference<Preference>("select_file")
-            requireActivity().runOnUiThread { preference?.apply(block) }
-        }
-
-        private fun clearOutputDirectory(outputDirectory: File) {
-            if (outputDirectory.exists()) {
-                outputDirectory.deleteRecursively()
-                outputDirectory.delete()
+        private fun updateSelectFilePreference(block: (parsingStatus: Preference) -> Unit) {
+            activity?.runOnUiThread {
+                findPreference<Preference>("select_file")?.apply(block)
             }
-            outputDirectory.mkdirs()
         }
 
-        private fun setPreferenceValue(name: String, value: Any) {
-            sharedPreferences
-                .edit()
-                .let {
-                    when (value) {
-                        is Long -> it.putLong(name, value)
-                        is Float -> it.putFloat(name, value)
-                        is Int -> it.putInt(name, value)
-                        is Boolean -> it.putBoolean(name, value)
-                        is String -> it.putString(name, value)
-                        else -> throw Error("Not supported value type")
+        private fun prepareFileStream(uri: Uri): InputStream {
+            return requireContext()
+                .contentResolver
+                .runCatching { openInputStream(uri) }
+                .getOrElse { throw Exception("Can't open file. Check app permissions.") }
+        }
+
+        private fun prepareOutputDirectory(path: String): File {
+            return requireContext()
+                .filesDir
+                .resolve(path)
+                .runCatching {
+                    if (this.exists()) {
+                        this.deleteRecursively()
                     }
+                    this.mkdirs()
+                    this
                 }
-                .apply()
-        }
-
-        private fun sendParsingDoneMessage() {
-            val intent = Intent()
-                .setAction(context?.packageName)
-                .putExtra("parsingDone", true)
-            context?.sendBroadcast(intent)
+                .getOrElse { throw Exception("Can't prepare output directory. Check free space.") }
         }
 
         private fun setAssetsReadyFlag(value: Boolean) {
-            setPreferenceValue(Constants.Preferences.IS_ASSETS_READY_KEY, value)
-            Handler(context?.mainLooper).post { updateAssetsButtons() }
+            preferenceManager
+                .sharedPreferences
+                .edit()
+                .putBoolean(Constants.Preferences.IS_ASSETS_READY_KEY, value)
+                .apply()
         }
 
         private fun handleFileSelection(filePath: Uri) {
             GdxNativesLoader.load()
 
             thread {
-                var stream: InputStream? = null
-                var outputDirectory: File? = null
                 try {
-                    setStatus {
+                    updateSelectFilePreference {
                         it.summary = "Parsing...\nCan take few minutes"
                         it.isSelectable = false
                     }
-                    kotlin
-                        .runCatching {
-                            stream = requireContext()
-                                .contentResolver
-                                .openInputStream(filePath)
-                        }
-                        .onFailure { throw Exception("Can't open file. Check app permissions.") }
-                        .mapCatching {
-                            outputDirectory = requireContext()
-                                .filesDir
-                                .resolve(Assets.atlasFolder)
-                                .also(::clearOutputDirectory)
-                            setAssetsReadyFlag(false)
-                        }
-                        .onFailure { throw Exception("Can't prepare output directory. Check free space.") }
-                        .map { AssetsConverter(stream!!, outputDirectory!!, Assets.atlasName).convertLodToTextureAtlas() }
-                        .map {
-                            setAssetsReadyFlag(true)
-                            setStatus { it.summary = "Parsing successfully done!" }
-                            sendParsingDoneMessage()
-                        }
+                    AssetsConverter(
+                        prepareFileStream(filePath),
+                        prepareOutputDirectory(Assets.atlasFolder),
+                        Assets.atlasName
+                    ).convertLodToTextureAtlas()
+                    setAssetsReadyFlag(true)
+                    updateSelectFilePreference { it.summary = "Parsing successfully done!" }
+                    context?.sendBroadcast(Intent()
+                        .setAction(context?.packageName)
+                        .putExtra(LiveWallpaperService.PARSING_DONE_MESSAGE, true))
                 } catch (ex: Exception) {
-                    outputDirectory?.run(::clearOutputDirectory)
                     setAssetsReadyFlag(false)
-                    setStatus {
+                    updateSelectFilePreference {
                         it.summary = ex.message
                         it.isSelectable = true
                     }
-                } finally {
-                    stream?.close()
                 }
             }
         }

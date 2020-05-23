@@ -16,6 +16,7 @@ import java.util.*
 
 class Assets {
     companion object {
+        const val mapsFolder = "maps"
         const val atlasFolder = "sprites"
         const val atlasName = "images"
         const val atlasPath = "$atlasFolder/$atlasName.atlas"

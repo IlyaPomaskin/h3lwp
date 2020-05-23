@@ -22,6 +22,9 @@
             app:key="update_timeout"
             app:title="@string/update_time_title"
             app:useSimpleSummaryProvider="true" />
+        <MultiSelectListPreference
+            android:key="maps"
+            android:title="@string/maps_title" />
     </PreferenceCategory>
     <PreferenceCategory app:title="@string/credits_header">
         <Preference

@@ -9,10 +9,14 @@ import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration
 import com.badlogic.gdx.backends.android.AndroidLiveWallpaperService
 
 class LiveWallpaperService : AndroidLiveWallpaperService() {
+    companion object {
+        val PARSING_DONE_MESSAGE = "parsingDone"
+    }
+
     lateinit var engine: com.homm3.livewallpaper.core.Engine
     var receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.hasExtra("parsingDone") == true) {
+            if (intent?.hasExtra(PARSING_DONE_MESSAGE) == true) {
                 engine.updateVisibleScreen()
             }
         }
