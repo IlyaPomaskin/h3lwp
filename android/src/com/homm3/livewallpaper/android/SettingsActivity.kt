@@ -3,16 +3,12 @@ package com.homm3.livewallpaper.android
 import android.app.Activity
 import android.app.WallpaperManager
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
 import androidx.appcompat.app.AppCompatActivity
-import androidx.preference.DropDownPreference
-import androidx.preference.Preference
-import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.*
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.core.Assets
@@ -38,19 +34,17 @@ class SettingsActivity : AppCompatActivity() {
         actionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
-    class SettingsFragment : PreferenceFragmentCompat() {
-        private lateinit var sharedPreferences: SharedPreferences
-
+    class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedPreferenceChangeListener {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+            preferenceManager.sharedPreferencesName = Constants.Preferences.PREFERENCES_NAME
+            preferenceManager.sharedPreferences.registerOnSharedPreferenceChangeListener(this)
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
 
-            sharedPreferences = requireActivity()
-                .getSharedPreferences(Constants.Preferences.PREFERENCES_NAME, Context.MODE_PRIVATE)
-
-            updateAssetsButtons()
+            val isAssetsReady = preferenceManager
+                .sharedPreferences
+                .getBoolean(Constants.Preferences.IS_ASSETS_READY_KEY, false)
 
             findPreference<Preference>("select_file")?.let {
-                val isAssetsReady = sharedPreferences.getBoolean(Constants.Preferences.IS_ASSETS_READY_KEY, false)
                 if (isAssetsReady) {
                     it.isVisible = false
                 } else {
@@ -72,6 +66,7 @@ class SettingsActivity : AppCompatActivity() {
             }
 
             findPreference<Preference>("wallpaper_change")?.let {
+                it.isVisible = isAssetsReady
                 it.onPreferenceClickListener = Preference.OnPreferenceClickListener {
                     startActivity(Intent()
                         .setAction(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
@@ -84,36 +79,13 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
 
-            findPreference<DropDownPreference>("scale")?.let {
-                it.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
-                    setPreferenceValue(
-                        Constants.Preferences.SCALE,
-                        newValue.toString().toIntOrNull() ?: Constants.Preferences.DEFAULT_SCALE
-                    )
-                    true
-                }
-                it.value = sharedPreferences
-                    .getInt(Constants.Preferences.SCALE, Constants.Preferences.DEFAULT_SCALE)
-                    .toString()
-            }
+            findPreference<MapsSelectPreference>("maps")?.let {
+                val files = requireContext()
+                    .assets
+                    .list("maps")
 
-            findPreference<DropDownPreference>("update_timeout")?.let {
-                it.onPreferenceChangeListener =
-                    Preference.OnPreferenceChangeListener { _, newValue ->
-                        setPreferenceValue(
-                            Constants.Preferences.MAP_UPDATE_INTERVAL,
-                            newValue.toString().toFloatOrNull()
-                                ?: Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL
-                        )
-                        true
-                    }
-                it.value = sharedPreferences
-                    .getFloat(
-                        Constants.Preferences.MAP_UPDATE_INTERVAL,
-                        Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL
-                    )
-                    .toInt()
-                    .toString()
+                it.entries = files
+                it.entryValues = files
             }
 
             findPreference<Preference>("credits_button")?.let {
@@ -124,16 +96,17 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-        private fun updateAssetsButtons() {
-            val isAssetsReady = sharedPreferences.getBoolean(Constants.Preferences.IS_ASSETS_READY_KEY, false)
+        override fun onSharedPreferenceChanged(preferences: SharedPreferences?, key: String?) {
+            if (key == Constants.Preferences.IS_ASSETS_READY_KEY) {
+                val isAssetsReady = preferenceManager
+                    .sharedPreferences
+                    .getBoolean(Constants.Preferences.IS_ASSETS_READY_KEY, false)
 
-            findPreference<Preference>("select_file")?.let {
-                it.isEnabled = !isAssetsReady
+                findPreference<Preference>("select_file")?.isEnabled = !isAssetsReady
+                findPreference<Preference>("wallpaper_change")?.isVisible = isAssetsReady
             }
 
-            findPreference<Preference>("wallpaper_change")?.let {
-                it.isVisible = isAssetsReady
-            }
+            println("change: $key : ${preferences?.getString(key ?: "", "default")}")
         }
 
         override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
