@@ -108,8 +108,6 @@ class SettingsActivity : AppCompatActivity() {
                 findPreference<Preference>("select_file")?.isEnabled = !isAssetsReady
                 findPreference<Preference>("wallpaper_change")?.isVisible = isAssetsReady
             }
-
-            println("change: $key : ${preferences?.getString(key ?: "", "default")}")
         }
 
         override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
