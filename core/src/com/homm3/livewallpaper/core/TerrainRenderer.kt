@@ -22,30 +22,35 @@ class TerrainRenderer(private val engine: Engine, private val h3mMap: H3m) : Dis
         createLayers()
     }
 
-    private fun createCell(tile: H3m.Tile, type: String): TiledMapTileLayer.Cell {
+    enum class TileType {
+        TERRAIN,
+        RIVER,
+        ROAD
+    }
+
+    private fun createCell(tile: H3m.Tile, type: TileType): TiledMapTileLayer.Cell {
         return when (type) {
-            "terrain" -> TiledMapTileLayer.Cell().apply {
+            TileType.TERRAIN -> TiledMapTileLayer.Cell().apply {
                 this.tile = createMapTile(
                     engine.assets.getTerrainFrames(Constants.TerrainDefs.byInt(tile.terrain), tile.terrainImageIndex)
                 )
                 this.flipHorizontally = tile.mirrorConfig.get(0)
                 this.flipVertically = tile.mirrorConfig.get(1)
             }
-            "river" -> TiledMapTileLayer.Cell().apply {
+            TileType.RIVER -> TiledMapTileLayer.Cell().apply {
                 this.tile = createMapTile(
                     engine.assets.getTerrainFrames(Constants.RiverDefs.byInt(tile.river), tile.riverImageIndex)
                 )
                 this.flipHorizontally = tile.mirrorConfig.get(2)
                 this.flipVertically = tile.mirrorConfig.get(3)
             }
-            "road" -> TiledMapTileLayer.Cell().apply {
+            TileType.ROAD -> TiledMapTileLayer.Cell().apply {
                 this.tile = createMapTile(
                     engine.assets.getTerrainFrames(Constants.RoadDefs.byInt(tile.road), tile.roadImageIndex)
                 )
                 this.flipHorizontally = tile.mirrorConfig.get(4)
                 this.flipVertically = tile.mirrorConfig.get(5)
             }
-            else -> throw Exception("Incorrect tile")
         }
     }
 
@@ -70,12 +75,12 @@ class TerrainRenderer(private val engine: Engine, private val h3mMap: H3m) : Dis
             for (y in 0 until mapSize) {
                 val index = mapSize * y + x
                 val tile = h3mMap.terrainTiles[index]
-                terrainLayer.setCell(x, y, createCell(tile, "terrain"))
+                terrainLayer.setCell(x, y, createCell(tile, TileType.TERRAIN))
                 if (tile.river > 0) {
-                    riverLayer.setCell(x, y, createCell(tile, "river"))
+                    riverLayer.setCell(x, y, createCell(tile, TileType.RIVER))
                 }
                 if (tile.road > 0) {
-                    roadLayer.setCell(x, y, createCell(tile, "road"))
+                    roadLayer.setCell(x, y, createCell(tile, TileType.ROAD))
                 }
             }
         }
