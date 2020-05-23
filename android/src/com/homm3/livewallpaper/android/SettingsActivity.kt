@@ -94,6 +94,11 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
+        override fun onDestroy() {
+            preferenceManager.sharedPreferences.unregisterOnSharedPreferenceChangeListener(this)
+            super.onDestroy()
+        }
+
         override fun onSharedPreferenceChanged(preferences: SharedPreferences?, key: String?) {
             if (key == Constants.Preferences.IS_ASSETS_READY_KEY) {
                 val isAssetsReady = preferenceManager
