@@ -43,7 +43,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
             .runCatching {
                 prefs
                     .getFloat(MAP_UPDATE_INTERVAL)
-                    .also { prefs.putString(MAP_UPDATE_INTERVAL, it.toString()).flush() }
+                    .also { prefs.putString(MAP_UPDATE_INTERVAL, it.toInt().toString()).flush() }
             }
             .recoverCatching { prefs.getString(MAP_UPDATE_INTERVAL).toFloat() }
             .map { if (it == 0f) DEFAULT_MAP_UPDATE_INTERVAL else it }

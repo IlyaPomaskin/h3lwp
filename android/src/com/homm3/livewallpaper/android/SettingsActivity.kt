@@ -47,7 +47,7 @@ class SettingsActivity : AppCompatActivity() {
             try {
                 prefs
                     .getFloat(MAP_UPDATE_INTERVAL, DEFAULT_MAP_UPDATE_INTERVAL)
-                    .also { editor.remove(MAP_UPDATE_INTERVAL).putString(MAP_UPDATE_INTERVAL, it.toString()) }
+                    .also { editor.remove(MAP_UPDATE_INTERVAL).putString(MAP_UPDATE_INTERVAL, it.toInt().toString()) }
             } catch (e: Exception) {
             }
 
