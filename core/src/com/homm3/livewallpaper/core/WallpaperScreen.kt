@@ -46,7 +46,6 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
                     .also { prefs.putString(MAP_UPDATE_INTERVAL, it.toInt().toString()).flush() }
             }
             .recoverCatching { prefs.getString(MAP_UPDATE_INTERVAL).toFloat() }
-            .map { if (it == 0f) DEFAULT_MAP_UPDATE_INTERVAL else it }
             .getOrDefault(DEFAULT_MAP_UPDATE_INTERVAL)
 
         val scale = kotlin
@@ -56,7 +55,6 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
                     .also { prefs.putString(SCALE, it.toString()).flush() }
             }
             .recoverCatching { prefs.getString(SCALE).toInt() }
-            .map { if (it == 0) DEFAULT_SCALE else it }
             .getOrDefault(DEFAULT_SCALE)
 
         engine.camera.zoom = when (scale) {
