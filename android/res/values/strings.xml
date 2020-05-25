@@ -5,6 +5,7 @@
 
     <string name="assets_header">Wallpaper</string>
     <string name="assets_select_button">Select file \"h3sprite.lod\"</string>
+    <string name="assets_permission_canceled">Can\'t read file without permission</string>
     <string name="assets_instructions"> </string>
     <string name="assets_select_file_activity_title">Select \"h3sprite.lod\"</string>
     <string name="wallpaper_change_button">Set wallpaper</string>

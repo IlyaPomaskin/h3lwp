@@ -1,12 +1,21 @@
 package com.homm3.livewallpaper.android
 
+import android.Manifest
 import android.app.Activity
 import android.app.WallpaperManager
-import android.content.*
+import android.content.ComponentName
+import android.content.Intent
+import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.preference.*
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.preference.MultiSelectListPreference
+import androidx.preference.Preference
+import androidx.preference.PreferenceFragmentCompat
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.core.Assets
@@ -25,20 +34,30 @@ import kotlin.concurrent.thread
 
 class SettingsActivity : AppCompatActivity() {
     companion object {
-        const val PICK_FILE_RESULT_CODE = 1
+        const val ACTION_GET_CONTENT_RESULT_CODE = 1
+        const val READ_EXTERNAL_STORAGE_RESULT_CODE = 2
     }
+
+    lateinit var settingsFragment: SettingsFragment
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.settings_activity)
+        settingsFragment = SettingsFragment()
         supportFragmentManager
             .beginTransaction()
-            .replace(R.id.settings, SettingsFragment())
+            .replace(R.id.settings, settingsFragment)
             .commit()
         actionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
-    class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedPreferenceChangeListener {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        settingsFragment.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+    class SettingsFragment : PreferenceFragmentCompat(),
+        SharedPreferences.OnSharedPreferenceChangeListener,
+        ActivityCompat.OnRequestPermissionsResultCallback {
         private fun convertOldPreferences() {
             // Old float/integer preferences used in <= 2.2.0
             val prefs = preferenceManager.sharedPreferences
@@ -74,15 +93,19 @@ class SettingsActivity : AppCompatActivity() {
                 } else {
                     it.summary = Constants.INSTRUCTIONS
                     it.onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                        val intent = Intent(Intent.ACTION_GET_CONTENT)
-                            .setType("application/octet-stream")
-                            .addCategory(Intent.CATEGORY_OPENABLE)
-                            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            .putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-                        startActivityForResult(
-                            Intent.createChooser(intent, getString(R.string.assets_select_file_activity_title)),
-                            PICK_FILE_RESULT_CODE
-                        )
+                        val hasReadStoragePermission = ContextCompat.checkSelfPermission(
+                            requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                        if (!hasReadStoragePermission) {
+                            ActivityCompat.requestPermissions(
+                                requireActivity(),
+                                Array(1) { Manifest.permission.READ_EXTERNAL_STORAGE },
+                                READ_EXTERNAL_STORAGE_RESULT_CODE
+                            )
+                        } else {
+                            showFileSelectionDialog()
+                        }
                         true
                     }
                 }
@@ -134,11 +157,38 @@ class SettingsActivity : AppCompatActivity() {
         override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
             super.onActivityResult(requestCode, resultCode, intent)
 
-            if (requestCode == PICK_FILE_RESULT_CODE
+            if (requestCode == ACTION_GET_CONTENT_RESULT_CODE
                 && resultCode == Activity.RESULT_OK
                 && intent?.data != null) {
 
                 handleFileSelection(intent.data!!)
+            }
+        }
+
+        private fun showFileSelectionDialog() {
+            val intent = Intent(Intent.ACTION_GET_CONTENT)
+                .setType("application/octet-stream")
+                .addCategory(Intent.CATEGORY_OPENABLE)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                .putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+            startActivityForResult(
+                Intent.createChooser(intent, getString(R.string.assets_select_file_activity_title)),
+                ACTION_GET_CONTENT_RESULT_CODE
+            )
+        }
+
+        override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+            val isReadExternalPermission = requestCode == READ_EXTERNAL_STORAGE_RESULT_CODE
+            val isGranted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+
+            if (isReadExternalPermission) {
+                if (isGranted) {
+                    showFileSelectionDialog()
+                } else {
+                    Toast
+                        .makeText(requireContext(), R.string.assets_permission_canceled, Toast.LENGTH_LONG)
+                        .show()
+                }
             }
         }
 
