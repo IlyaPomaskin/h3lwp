@@ -2,7 +2,9 @@ package com.homm3.livewallpaper.core
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.AssetManager
+import com.badlogic.gdx.assets.loaders.I18NBundleLoader
 import com.badlogic.gdx.assets.loaders.TextureAtlasLoader
+import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver
 import com.badlogic.gdx.assets.loaders.resolvers.LocalFileHandleResolver
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
@@ -33,12 +35,16 @@ class Assets {
         )
     )
     val manager = AssetManager(LocalFileHandleResolver())
-    val skin = Skin(Gdx.files.internal(skinPath))
-    val i18n = manager.let {
+    private val internalManager = AssetManager(InternalFileHandleResolver())
+    val skin = internalManager.let {
+        it.load<Skin>(skinPath)
+        it.finishLoadingAsset<Skin>(skinPath)
+    }!!
+    val i18n = internalManager.let {
         I18NBundle.setExceptionOnMissingKey(false)
         it.load<I18NBundle>(i18nPath)
         it.finishLoadingAsset<I18NBundle>(i18nPath)
-    }
+    }!!
 
     init {
         Texture.setAssetManager(manager)
