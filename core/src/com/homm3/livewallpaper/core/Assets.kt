@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.utils.Array
+import com.badlogic.gdx.utils.I18NBundle
 import ktx.assets.load
 import ktx.collections.gdxArrayOf
 import java.util.*
@@ -21,6 +22,7 @@ class Assets {
         const val atlasName = "images"
         const val atlasPath = "$atlasFolder/$atlasName.atlas"
         const val skinPath = "skin/uiskin.json"
+        const val i18nPath = "i18n/Bundle"
     }
 
     private val emptyPixmap = TextureAtlas.AtlasRegion(
@@ -32,6 +34,11 @@ class Assets {
     )
     val manager = AssetManager(LocalFileHandleResolver())
     val skin = Skin(Gdx.files.internal(skinPath))
+    val i18n = manager.let {
+        I18NBundle.setExceptionOnMissingKey(false)
+        it.load<I18NBundle>(i18nPath)
+        it.finishLoadingAsset<I18NBundle>(i18nPath)
+    }
 
     init {
         Texture.setAssetManager(manager)

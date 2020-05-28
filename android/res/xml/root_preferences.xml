@@ -3,7 +3,7 @@
     <PreferenceCategory app:title="@string/assets_header">
         <Preference
             android:key="select_file"
-            android:summary="@string/assets_instructions"
+            android:summary=" "
             android:title="@string/assets_select_button" />
         <Preference
             android:key="wallpaper_change"

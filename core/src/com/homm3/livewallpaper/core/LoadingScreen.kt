@@ -7,7 +7,7 @@ import ktx.app.KtxScreen
 import java.lang.Exception
 
 class LoadingScreen(private val engine: Engine) : KtxScreen {
-    private val label = Label("Loading...", engine.assets.skin)
+    private val label = Label(engine.assets.i18n.get("loading"), engine.assets.skin)
         .apply {
             setFillParent(true)
             setAlignment(Align.center)
@@ -18,7 +18,7 @@ class LoadingScreen(private val engine: Engine) : KtxScreen {
 
     private fun showError() {
         isError = true
-        label.setText(Constants.LOADING_ERROR)
+        label.setText(engine.assets.i18n.get("loadingError"))
     }
 
     override fun render(delta: Float) {

@@ -19,7 +19,6 @@ import androidx.preference.PreferenceFragmentCompat
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.core.Assets
-import com.homm3.livewallpaper.core.Constants
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_MAP_UPDATE_INTERVAL
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_SCALE
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.IS_ASSETS_READY_KEY
@@ -29,6 +28,7 @@ import com.homm3.livewallpaper.core.Constants.Preferences.Companion.SCALE
 import com.homm3.livewallpaper.parser.AssetsConverter
 import java.io.File
 import java.io.InputStream
+import java.util.*
 import kotlin.concurrent.thread
 
 
@@ -91,7 +91,9 @@ class SettingsActivity : AppCompatActivity() {
                 if (isAssetsReady()) {
                     it.isVisible = false
                 } else {
-                    it.summary = Constants.INSTRUCTIONS
+                    it.summary = ResourceBundle
+                        .getBundle("assets/${Assets.i18nPath}")
+                        .getString("instructions")
                     it.onPreferenceClickListener = Preference.OnPreferenceClickListener {
                         val hasReadStoragePermission = ContextCompat.checkSelfPermission(
                             requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE

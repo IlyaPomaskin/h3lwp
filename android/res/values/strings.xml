@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Heroes 3 Wallpaper</string>
+    <string name="app_name" translatable="false">Heroes 3 Wallpaper</string>
     <string name="title_activity_settings">Settings</string>
 
     <string name="assets_header">Wallpaper</string>
     <string name="assets_select_button">Select file \"h3sprite.lod\"</string>
     <string name="assets_permission_canceled">Can\'t read file without permission</string>
-    <string name="assets_instructions"> </string>
     <string name="assets_select_file_activity_title">Select \"h3sprite.lod\"</string>
     <string name="wallpaper_change_button">Set wallpaper</string>
 
@@ -14,7 +13,6 @@
 
     <string name="scale_title">Image scale</string>
     <string name="update_time_title">Change map interval</string>
-    <string name="update_time_summary">Every %s minutes</string>
     <string name="maps_title">Maps</string>
     <string name="maps_add">Add maps</string>
 
@@ -22,12 +20,19 @@
     <string name="credits_button">Open</string>
 
     <string name="credits_title">Credits</string>
-    <string name="source_code_title">App by Ilya Pomaskin</string>
-    <string name="source_code_summary">https://github.com/IlyaPomaskin/h3lwp</string>
+    <string name="source_code_title" translatable="false">App by Ilya Pomaskin</string>
+    <string name="source_code_summary" translatable="false">https://github.com/IlyaPomaskin/h3lwp</string>
 
-    <string name="map_author_title">Map by Fosgen</string>
-    <string name="map_author_summary">https://en.heroesportal.net/maps/view/1737</string>
+    <string name="map_author_title" translatable="false">Map by Fosgen</string>
+    <string name="map_author_summary" translatable="false">https://en.heroesportal.net/maps/view/1737</string>
 
-    <string name="icon_author_title">Icon by Wit Olszewski</string>
-    <string name="icon_author_summary">https://www.instagram.com/witolszewski/</string>
+    <string name="icon_author_title" translatable="false">Icon by Wit Olszewski</string>
+    <string name="icon_author_summary" translatable="false">https://www.instagram.com/witolszewski/</string>
+    <string name="scale_by_density">Based on display density</string>
+    <string name="update_timeout_5minutes">5 minutes</string>
+    <string name="update_timeout_15minutes">15 minutes</string>
+    <string name="update_timeout_30minutes">30 minutes</string>
+    <string name="update_timeout_1hour">1 hour</string>
+    <string name="update_timeout_24hours">24 hours</string>
+    <string name="update_timeout_every_switch">Every switch to home screen</string>
 </resources>

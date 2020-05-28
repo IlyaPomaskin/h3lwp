@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title_activity_settings">Настройки</string>
+    <string name="assets_header">Обои</string>
+    <string name="assets_select_button">Выбрать файл \"h3sprite.lod\"</string>
+    <string name="assets_permission_canceled">Невозможно выбрать файл без разрешения на чтение</string>
+    <string name="assets_select_file_activity_title">Выберите \"h3sprite.lod\"</string>
+    <string name="wallpaper_change_button">Установить обои</string>
+    <string name="preferences_header">Настройки</string>
+    <string name="scale_title">Масштаб карты</string>
+    <string name="update_time_title">Частота смены карты</string>
+    <string name="maps_title">Карты</string>
+    <string name="maps_add">Добавить карты</string>
+    <string name="credits_header">Благодарности</string>
+    <string name="credits_button">Открыть</string>
+    <string name="credits_title">Благодарности</string>
+    <string name="scale_by_density">На основе экрана</string>
+    <string name="update_timeout_5minutes">5 минут</string>
+    <string name="update_timeout_15minutes">15 минут</string>
+    <string name="update_timeout_30minutes">30 минут</string>
+    <string name="update_timeout_1hour">1 час</string>
+    <string name="update_timeout_24hours">24 часа</string>
+    <string name="update_timeout_every_switch">Каждое переключение на раб. стол</string>
+</resources>

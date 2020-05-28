@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="scale_entries">
-        <item>Based on display density</item>
+        <item>@string/scale_by_density</item>
         <item>1x</item>
         <item>2x</item>
         <item>3x</item>
@@ -17,12 +17,12 @@
     </string-array>
 
     <string-array name="update_timeout_entries">
-        <item>5 minutes</item>
-        <item>15 minutes</item>
-        <item>30 minutes</item>
-        <item>1 hour</item>
-        <item>24 hours</item>
-        <item>Every switch to home screen</item>
+        <item>@string/update_timeout_5minutes</item>
+        <item>@string/update_timeout_15minutes</item>
+        <item>@string/update_timeout_30minutes</item>
+        <item>@string/update_timeout_1hour</item>
+        <item>@string/update_timeout_24hours</item>
+        <item>@string/update_timeout_every_switch</item>
     </string-array>
 
     <string-array name="update_timeout_values">
