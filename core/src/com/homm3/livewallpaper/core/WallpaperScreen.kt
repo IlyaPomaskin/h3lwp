@@ -19,10 +19,11 @@ import kotlin.random.Random
 
 class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private val h3mMap = H3mReader(Gdx.files.internal("maps/invasion.h3m").read()).read()
+    private val objectsLayer = ObjectsLayer(engine, h3mMap)
     private val tiledMap = TiledMap().also {
         it.layers.add(TerrainGroupLayer(engine.assets, h3mMap))
-        it.layers.add(ObjectsLayer(engine.assets, engine.camera, h3mMap))
-        it.layers.add(BorderLayer(engine.assets, h3mMap.header.size, 15))
+        it.layers.add(objectsLayer)
+        it.layers.add(BorderLayer(engine.assets, h3mMap.header.size, 40))
     }
     private val renderer = object : OrthogonalTiledMapRenderer(tiledMap) {
         override fun renderObjects(layer: MapLayer?) {
@@ -41,7 +42,8 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
 
         if (Gdx.app.type == Application.ApplicationType.Desktop) {
             Gdx.input.inputProcessor = InputProcessor(engine.camera).also {
-                it.onRandomizeCameraPosition = ::randomizeCameraPosition
+                it.onEnter = ::randomizeCameraPosition
+                it.onSpace = objectsLayer::updateVisibleSprites
             }
         }
     }
@@ -86,7 +88,9 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         val halfHeight = ceil(cameraViewportHeightTiles / 2).toInt()
         val nextCameraY = Random.nextInt(halfHeight, h3mMap.header.size - halfHeight) * TILE_SIZE
 
-        camera.position.set(nextCameraX, nextCameraY, 0f)
+        engine.randomPoint.set(nextCameraX, nextCameraY)
+        camera.position.set(engine.randomPoint, 0f)
+        objectsLayer.updateVisibleSprites()
     }
 
     override fun show() {

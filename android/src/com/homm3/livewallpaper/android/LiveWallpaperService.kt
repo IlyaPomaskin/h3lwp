@@ -3,13 +3,33 @@ package com.homm3.livewallpaper.android
 import android.content.*
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration
 import com.badlogic.gdx.backends.android.AndroidLiveWallpaperService
+import com.badlogic.gdx.backends.android.AndroidWallpaperListener
+import com.homm3.livewallpaper.core.Constants.Companion.SCROLL_OFFSET
 
 class LiveWallpaperService : AndroidLiveWallpaperService() {
     companion object {
         const val PARSING_DONE_MESSAGE = "parsingDone"
     }
 
-    lateinit var engine: com.homm3.livewallpaper.core.Engine
+    val engine: com.homm3.livewallpaper.core.Engine = object : com.homm3.livewallpaper.core.Engine(), AndroidWallpaperListener {
+        override var onSettingsButtonClick = {
+            startActivity(
+                Intent()
+                    .setClass(baseContext, SettingsActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }
+
+        override fun previewStateChange(isPreview: Boolean) {}
+        override fun iconDropped(x: Int, y: Int) {}
+        override fun offsetChange(xOffset: Float, yOffset: Float,
+                                  xOffsetStep: Float, yOffsetStep: Float,
+                                  xPixelOffset: Int, yPixelOffset: Int) {
+            camera.position.x = randomPoint.x + xOffset * SCROLL_OFFSET * (1 / xOffsetStep)
+            camera.position.y = randomPoint.y + yOffset * SCROLL_OFFSET * (1 / yOffsetStep)
+        }
+    }
+
     private var receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.hasExtra(PARSING_DONE_MESSAGE) == true) {
@@ -25,15 +45,6 @@ class LiveWallpaperService : AndroidLiveWallpaperService() {
     override fun onCreateApplication() {
         super.onCreateApplication()
 
-        engine = com.homm3.livewallpaper.core.Engine().apply {
-            onSettingsButtonClick = {
-                startActivity(
-                    Intent()
-                        .setClass(baseContext, SettingsActivity::class.java)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                )
-            }
-        }
         val config = AndroidApplicationConfiguration().apply {
             useAccelerometer = false
             useCompass = false

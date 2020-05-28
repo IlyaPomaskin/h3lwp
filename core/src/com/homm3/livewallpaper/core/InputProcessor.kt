@@ -6,7 +6,8 @@ import com.badlogic.gdx.graphics.OrthographicCamera
 import ktx.app.KtxInputAdapter
 
 class InputProcessor(private val camera: OrthographicCamera) : KtxInputAdapter {
-    var onRandomizeCameraPosition: () -> Unit = {}
+    var onSpace: () -> Unit = {}
+    var onEnter: () -> Unit = {}
 
     override fun keyDown(keycode: Int): Boolean {
         when (keycode) {
@@ -17,7 +18,8 @@ class InputProcessor(private val camera: OrthographicCamera) : KtxInputAdapter {
             Input.Keys.DOWN -> camera.translate(0f, Constants.TILE_SIZE, 0f)
             Input.Keys.LEFT -> camera.translate(-Constants.TILE_SIZE, 0f, 0f)
             Input.Keys.RIGHT -> camera.translate(Constants.TILE_SIZE, 0f, 0f)
-            Input.Keys.SPACE -> onRandomizeCameraPosition()
+            Input.Keys.ENTER -> onEnter()
+            Input.Keys.SPACE -> onSpace()
         }
 
         return super.keyDown(keycode)

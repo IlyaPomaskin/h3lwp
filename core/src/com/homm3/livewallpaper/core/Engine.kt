@@ -3,15 +3,17 @@ package com.homm3.livewallpaper.core
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import ktx.app.KtxGame
 
-class Engine : KtxGame<Screen>(null, true) {
-    var onSettingsButtonClick: () -> Unit = { }
+open class Engine : KtxGame<Screen>(null, true) {
+    open var onSettingsButtonClick: () -> Unit = { }
 
-    internal lateinit var assets: Assets
-    internal val camera = OrthographicCamera()
-    internal val viewport = ScreenViewport(camera)
+    lateinit var assets: Assets
+    val camera = OrthographicCamera()
+    var randomPoint = Vector2()
+    val viewport = ScreenViewport(camera)
 
     override fun create() {
         assets = Assets()
