@@ -1,29 +1,36 @@
 package com.homm3.livewallpaper.core
 
-import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.utils.Align
 import ktx.actors.stage
 import ktx.app.KtxScreen
-import kotlin.math.min
+import java.lang.Exception
 
 class LoadingScreen(private val engine: Engine) : KtxScreen {
-    private val loadingStage = stage(viewport = engine.viewport)
+    private val label = Label("Loading...", engine.assets.skin)
         .apply {
-            addActor(
-                Label("Loading...", engine.assets.skin)
-                    .apply {
-                        setFillParent(true)
-                        setAlignment(Align.center)
-                    }
-            )
+            setFillParent(true)
+            setAlignment(Align.center)
+            setWrap(true)
         }
+    private val loadingStage = stage(viewport = engine.viewport).apply { addActor(label) }
+    private var isError = false
+
+    private fun showError() {
+        isError = true
+        label.setText(Constants.LOADING_ERROR)
+    }
 
     override fun render(delta: Float) {
         super.render(delta)
         loadingStage.draw()
-        if (engine.assets.manager.update()) {
-            engine.updateVisibleScreen()
+
+        try {
+            if (!isError && engine.assets.manager.update()) {
+                engine.updateVisibleScreen()
+            }
+        } catch (ex: Exception) {
+            showError()
         }
     }
 
