@@ -20,7 +20,7 @@ import kotlin.random.Random
 class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private val h3mMap = H3mReader(Gdx.files.internal("maps/invasion.h3m").read()).read()
     private val tiledMap = TiledMap().also {
-        it.layers.add(TerrainRenderer(engine.assets, h3mMap))
+        it.layers.add(TerrainGroupLayer(engine.assets, h3mMap))
         it.layers.add(ObjectsLayer(engine.assets, engine.camera, h3mMap))
         it.layers.add(BorderLayer(engine.assets, h3mMap.header.size, 15))
     }

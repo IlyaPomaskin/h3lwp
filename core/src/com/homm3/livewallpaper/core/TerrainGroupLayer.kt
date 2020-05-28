@@ -12,7 +12,7 @@ import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.parser.formats.H3m
 import ktx.collections.map
 
-class TerrainRenderer(private val assets: Assets, h3mMap: H3m) : MapGroupLayer() {
+class TerrainGroupLayer(private val assets: Assets, h3mMap: H3m) : MapGroupLayer() {
     enum class TileType {
         TERRAIN,
         RIVER,
