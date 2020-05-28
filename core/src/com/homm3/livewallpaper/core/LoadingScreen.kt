@@ -1,9 +1,11 @@
 package com.homm3.livewallpaper.core
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.utils.Align
 import ktx.actors.stage
 import ktx.app.KtxScreen
+import kotlin.math.min
 
 class LoadingScreen(private val engine: Engine) : KtxScreen {
     private val loadingStage = stage(viewport = engine.viewport)

@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import ktx.app.KtxGame
+import kotlin.math.min
 
 open class Engine : KtxGame<Screen>(null, true) {
     open var onSettingsButtonClick: () -> Unit = { }
@@ -16,6 +17,7 @@ open class Engine : KtxGame<Screen>(null, true) {
     val viewport = ScreenViewport(camera)
 
     override fun create() {
+        camera.zoom = min(1 / Gdx.graphics.density, 1f)
         assets = Assets()
         assets.tryLoadWallpaperAssets()
         addScreen(LoadingScreen(this))
