@@ -1,7 +1,7 @@
 package com.homm3.livewallpaper.core
 
-import com.badlogic.gdx.graphics.OrthographicCamera
-import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.Camera
+import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.utils.Array
 import com.homm3.livewallpaper.core.Constants.Companion.FRAME_TIME
@@ -23,14 +23,14 @@ class Sprite(mapObject: H3m.Object, private val frames: Array<TextureAtlas.Atlas
         return y - frame.offsetY - frame.packedHeight
     }
 
-    fun render(batch: SpriteBatch, delta: Float) {
+    fun render(batch: Batch, delta: Float) {
         stateTime = (stateTime % animationLength) + delta
         val frameIndex = ((stateTime / FRAME_TIME) % frames.size).toInt()
         val frame = frames.get(frameIndex)
         batch.draw(frame, getFrameX(frame), getFrameY(frame))
     }
 
-    fun inViewport(camera: OrthographicCamera): Boolean {
+    fun inViewport(camera: Camera): Boolean {
         val offset = TILE_SIZE * 5
 
         val halfWidth = camera.viewportWidth / 2

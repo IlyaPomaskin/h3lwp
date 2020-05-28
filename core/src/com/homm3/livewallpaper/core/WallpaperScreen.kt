@@ -2,6 +2,9 @@ package com.homm3.livewallpaper.core
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.maps.MapLayer
+import com.badlogic.gdx.maps.tiled.TiledMap
+import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
 import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_MAP_UPDATE_INTERVAL
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_SCALE
@@ -16,10 +19,17 @@ import kotlin.random.Random
 
 class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private val h3mMap = H3mReader(Gdx.files.internal("maps/invasion.h3m").read()).read()
-    private var terrainRenderer = TerrainRenderer(engine, h3mMap)
-    private var objectsRenderer = ObjectsRenderer(engine, h3mMap)
-    private var inputProcessor = InputProcessor(engine.camera).apply {
-        onRandomizeCameraPosition = ::randomizeCameraPosition
+    private val tiledMap = TiledMap().also {
+        it.layers.add(TerrainRenderer(engine.assets, h3mMap))
+        it.layers.add(ObjectsLayer(engine.assets, engine.camera, h3mMap))
+        it.layers.add(BorderLayer(engine.assets, h3mMap.header.size, 15))
+    }
+    private val renderer = object : OrthogonalTiledMapRenderer(tiledMap) {
+        override fun renderObjects(layer: MapLayer?) {
+            if (layer is ObjectsLayer) {
+                layer.render(batch)
+            }
+        }
     }
     private var mapUpdateInterval = DEFAULT_MAP_UPDATE_INTERVAL
     private var lastMapUpdateTime = System.currentTimeMillis()
@@ -30,7 +40,9 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         randomizeCameraPosition()
 
         if (Gdx.app.type == Application.ApplicationType.Desktop) {
-            Gdx.input.inputProcessor = inputProcessor
+            Gdx.input.inputProcessor = InputProcessor(engine.camera).also {
+                it.onRandomizeCameraPosition = ::randomizeCameraPosition
+            }
         }
     }
 
@@ -75,7 +87,6 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         val nextCameraY = Random.nextInt(halfHeight, h3mMap.header.size - halfHeight) * TILE_SIZE
 
         camera.position.set(nextCameraX, nextCameraY, 0f)
-        objectsRenderer.updateVisibleSprites()
     }
 
     override fun show() {
@@ -94,13 +105,12 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
 
     override fun render(delta: Float) {
         engine.camera.update()
-        terrainRenderer.render()
-        objectsRenderer.render(delta)
+        renderer.setView(engine.camera)
+        renderer.render()
     }
 
     override fun dispose() {
         super.dispose()
-        terrainRenderer.dispose()
-        objectsRenderer.dispose()
+        renderer.dispose()
     }
 }
