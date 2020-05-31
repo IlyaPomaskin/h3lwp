@@ -138,6 +138,7 @@ class ObjectsRandomizer {
                 // TODO min/max level limit
             H3mObjects.Object.RANDOM_DWELLING_LVL,
             H3mObjects.Object.RANDOM_DWELLING_FACTION -> randomDwelling(null, null)
+            H3mObjects.Object.EVENT,
             H3mObjects.Object.GRAIL,
             H3mObjects.Object.HERO_PLACEHOLDER,
             H3mObjects.Object.HERO -> "empty"
