@@ -5,6 +5,7 @@ import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration
 import com.badlogic.gdx.backends.android.AndroidLiveWallpaperService
 import com.badlogic.gdx.backends.android.AndroidWallpaperListener
 import com.homm3.livewallpaper.core.Constants.Companion.SCROLL_OFFSET
+import java.lang.Exception
 
 class LiveWallpaperService : AndroidLiveWallpaperService() {
     companion object {
@@ -54,7 +55,10 @@ class LiveWallpaperService : AndroidLiveWallpaperService() {
     }
 
     override fun onDestroy() {
-        unregisterReceiver(receiver)
+        try {
+            unregisterReceiver(receiver)
+        } catch (ex: Exception) {
+        }
         super.onDestroy()
     }
 }
