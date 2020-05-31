@@ -4,7 +4,7 @@ class Constants {
     companion object {
         const val TILE_SIZE = 32f
         const val FRAME_TIME = 0.18f
-        const val SCROLL_OFFSET = 1 * TILE_SIZE
+        const val SCROLL_OFFSET = 3 * TILE_SIZE
         const val VISIBLE_OBJECTS_OFFSET = 6 * TILE_SIZE
     }
 
