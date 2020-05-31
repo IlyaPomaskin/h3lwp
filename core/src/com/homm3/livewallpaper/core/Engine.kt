@@ -13,7 +13,7 @@ open class Engine : KtxGame<Screen>(null, true) {
 
     lateinit var assets: Assets
     val camera = OrthographicCamera()
-    var randomPoint = Vector2()
+    var cameraPoint = Vector2()
     val viewport = ScreenViewport(camera)
 
     override fun create() {

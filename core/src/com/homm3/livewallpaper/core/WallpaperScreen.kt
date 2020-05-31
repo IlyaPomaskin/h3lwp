@@ -88,8 +88,8 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         val halfHeight = ceil(cameraViewportHeightTiles / 2).toInt()
         val nextCameraY = Random.nextInt(halfHeight, h3mMap.header.size - halfHeight) * TILE_SIZE
 
-        engine.randomPoint.set(nextCameraX, nextCameraY)
-        camera.position.set(engine.randomPoint, 0f)
+        engine.cameraPoint.set(nextCameraX, nextCameraY)
+        camera.position.set(engine.cameraPoint, 0f)
         objectsLayer.updateVisibleSprites()
     }
 

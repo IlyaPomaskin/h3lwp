@@ -25,8 +25,8 @@ class LiveWallpaperService : AndroidLiveWallpaperService() {
         override fun offsetChange(xOffset: Float, yOffset: Float,
                                   xOffsetStep: Float, yOffsetStep: Float,
                                   xPixelOffset: Int, yPixelOffset: Int) {
-            camera.position.x = randomPoint.x + xOffset * SCROLL_OFFSET * (1 / xOffsetStep)
-            camera.position.y = randomPoint.y + yOffset * SCROLL_OFFSET * (1 / yOffsetStep)
+            camera.position.x = cameraPoint.x + xOffset * SCROLL_OFFSET
+            camera.position.y = cameraPoint.y + yOffset * SCROLL_OFFSET
         }
     }
 
