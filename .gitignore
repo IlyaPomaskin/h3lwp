@@ -1,6 +1,7 @@
 core/libs/clj.jar
 android/assets/sprites/*
 android/build/outputs/apk/debug/*.apk
+android/release
 
 ## Java
 
