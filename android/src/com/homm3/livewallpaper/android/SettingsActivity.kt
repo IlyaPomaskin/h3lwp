@@ -26,6 +26,8 @@ import com.homm3.livewallpaper.core.Constants.Preferences.Companion.MAP_UPDATE_I
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.PREFERENCES_NAME
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.SCALE
 import com.homm3.livewallpaper.parser.AssetsConverter
+import com.homm3.livewallpaper.parser.InvalidFileException
+import com.homm3.livewallpaper.parser.OutputFileWriteException
 import java.io.File
 import java.io.InputStream
 import java.util.*
@@ -211,7 +213,7 @@ class SettingsActivity : AppCompatActivity() {
             return requireContext()
                 .contentResolver
                 .runCatching { openInputStream(uri) }
-                .getOrElse { throw Exception("Can't open file. Check app permissions.") }
+                .getOrElse { throw Exception(getString(R.string.file_open_error)) }
         }
 
         private fun prepareOutputDirectory(path: String): File {
@@ -225,7 +227,7 @@ class SettingsActivity : AppCompatActivity() {
                     this.mkdirs()
                     this
                 }
-                .getOrElse { throw Exception("Can't prepare output directory. Check free space.") }
+                .getOrElse { throw Exception(getString(R.string.output_error)) }
         }
 
         private fun setAssetsReadyFlag(value: Boolean) {

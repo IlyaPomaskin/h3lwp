@@ -8,6 +8,9 @@ import kotlin.Exception
 
 internal typealias PackedFrames = MutableMap<String, Def.Frame>
 
+class InvalidFileException(msg: String) : Exception(msg)
+class OutputFileWriteException(msg: String) : Exception(msg)
+
 class AssetsConverter(lodFileInputStream: InputStream, outputDirectory: File, atlasName: String) {
     private val minimalDefCount = 1000
     private val packer = PixmapPacker(2048, 2048, Pixmap.Format.RGBA4444, 0, false)
@@ -15,19 +18,19 @@ class AssetsConverter(lodFileInputStream: InputStream, outputDirectory: File, at
     private val assetsPacker = AssetsPacker(packer)
     private val assetsWriter = AssetsWriter(packer, outputDirectory, atlasName)
 
-    @Throws(Exception::class)
+    @Throws(InvalidFileException::class, OutputFileWriteException::class)
     fun convertLodToTextureAtlas() {
         runCatching(assetsReader::readFilesList)
-            .onFailure { throw Exception("Can't parse. Try another file.") }
+            .onFailure { throw InvalidFileException("Can't parse. Try another file.") }
             .mapCatching(assetsReader::readDefs)
-            .onFailure { throw Exception("Can't read content. Try another file.") }
+            .onFailure { throw InvalidFileException("Can't read content. Try another file.") }
             .also { defs ->
                 if (defs.getOrDefault(emptyList()).size < minimalDefCount) {
-                    throw Exception("Wrong file selected. Try another file.")
+                    throw InvalidFileException("Wrong file selected. Try another file.")
                 }
             }
             .mapCatching(assetsPacker::packFrames)
             .mapCatching(assetsWriter::writePackerContent)
-            .onFailure { throw Exception("Can't save files. Check free space.") }
+            .onFailure { throw OutputFileWriteException("Can't save files. Check free space.") }
     }
 }
