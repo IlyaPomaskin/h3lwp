@@ -3,7 +3,7 @@
     <string name="title_activity_settings">Настройки</string>
     <string name="assets_header">Обои</string>
     <string name="assets_select_button">Выбрать файл \"h3sprite.lod\"</string>
-    <string name="assets_permission_canceled">Невозможно выбрать файл без разрешения на чтение</string>
+    <string name="assets_permission_canceled">Невозможно подолжить без разрешения на доступ к файлам</string>
     <string name="assets_select_file_activity_title">Выберите \"h3sprite.lod\"</string>
     <string name="wallpaper_change_button">Установить обои</string>
     <string name="preferences_header">Настройки</string>
@@ -21,9 +21,9 @@
     <string name="update_timeout_1hour">1 час</string>
     <string name="update_timeout_24hours">24 часа</string>
     <string name="update_timeout_every_switch">Каждое переключение на раб. стол</string>
-    <string name="assets_parsing_progress">Чтение файла...\nМожет занять несколько минут</string>
+    <string name="assets_parsing_progress">Чтение файла…\nМожет занять несколько минут</string>
     <string name="assets_parsing_done">Чтение успешно завершено!</string>
-    <string name="file_open_error">Не удалось открыть файл.\nПроверьте разрешения приложения на доступ к файлам.</string>
+    <string name="file_open_error">Не удалось открыть файл.\nПроверьте разрешение приложения на доступ к файлам или попробуйте другой файл.</string>
     <string name="output_error">Не удалось сохранить файлы.\nПроверьте свободное место или переустановите приложение.</string>
     <string name="invalid_file_error">Ошибка при чтении файла.\nПопробуйте другой файл.</string>
     <string name="common_error">Что-то пошло не так.\nПопробуйте другой файл или переустановите приложение.</string>
