@@ -244,7 +244,7 @@ class SettingsActivity : AppCompatActivity() {
             thread {
                 try {
                     updateSelectFilePreference {
-                        it.summary = "Parsing...\nCan take few minutes"
+                        it.summary = getString(R.string.assets_parsing_progress)
                         it.isSelectable = false
                     }
                     AssetsConverter(
@@ -253,14 +253,19 @@ class SettingsActivity : AppCompatActivity() {
                         Assets.atlasName
                     ).convertLodToTextureAtlas()
                     setAssetsReadyFlag(true)
-                    updateSelectFilePreference { it.summary = "Parsing successfully done!" }
+                    updateSelectFilePreference { it.summary = getString(R.string.assets_parsing_done) }
                     context?.sendBroadcast(Intent()
                         .setAction(context?.packageName)
                         .putExtra(LiveWallpaperService.PARSING_DONE_MESSAGE, true))
                 } catch (ex: Exception) {
+                    val errorMessage = when (ex) {
+                        is InvalidFileException -> getString(R.string.invalid_file_error)
+                        is OutputFileWriteException  -> getString(R.string.output_error)
+                        else -> getString(R.string.common_error)
+                    }
                     setAssetsReadyFlag(false)
                     updateSelectFilePreference {
-                        it.summary = ex.message
+                        it.summary = errorMessage
                         it.isSelectable = true
                     }
                 }

@@ -7,6 +7,12 @@
     <string name="assets_select_button">Select file \"h3sprite.lod\"</string>
     <string name="assets_permission_canceled">Can\'t read file without permission</string>
     <string name="assets_select_file_activity_title">Select \"h3sprite.lod\"</string>
+    <string name="assets_parsing_progress">Parsing…\nCan take few minutes</string>
+    <string name="assets_parsing_done">Parsing successfully done!</string>
+    <string name="file_open_error">Can\'t open file.\nCheck app permissions.</string>
+    <string name="output_error">Can\'t save files.\nCheck free space or try reinstall the app.</string>
+    <string name="invalid_file_error">Error while reading while.\nTry another file.</string>
+    <string name="common_error">Something went wrong.\nTry another file or reinstall the app.</string>
     <string name="wallpaper_change_button">Set wallpaper</string>
 
     <string name="preferences_header">Preferences</string>
@@ -28,7 +34,9 @@
 
     <string name="icon_author_title" translatable="false">Icon by Wit Olszewski</string>
     <string name="icon_author_summary" translatable="false">https://www.instagram.com/witolszewski/</string>
+
     <string name="scale_by_density">Based on display density</string>
+
     <string name="update_timeout_5minutes">5 minutes</string>
     <string name="update_timeout_15minutes">15 minutes</string>
     <string name="update_timeout_30minutes">30 minutes</string>
