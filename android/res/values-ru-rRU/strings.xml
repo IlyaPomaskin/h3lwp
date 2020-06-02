@@ -28,5 +28,5 @@
     <string name="invalid_file_error">Ошибка при чтении файла.\nПопробуйте другой файл.</string>
     <string name="common_error">Что-то пошло не так.\nПопробуйте другой файл или переустановите приложение.</string>
     <string name="use_scroll_title">Прокрутка карты</string>
-    <string name="use_scroll_summary">Передвигать карту при переключении рабочего стола</string>
+    <string name="use_scroll_summary">Передвигать карту при переключении рабочего стола\nНе поддерживается на некоторых телефонах</string>
 </resources>
