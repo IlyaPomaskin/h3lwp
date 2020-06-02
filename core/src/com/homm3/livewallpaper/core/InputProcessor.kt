@@ -8,9 +8,20 @@ import ktx.app.KtxInputAdapter
 class InputProcessor(private val camera: OrthographicCamera) : KtxInputAdapter {
     var onSpace: () -> Unit = {}
     var onEnter: () -> Unit = {}
+    private var pressedKeyCode = 0
 
     override fun keyDown(keycode: Int): Boolean {
-        when (keycode) {
+        pressedKeyCode = keycode
+        return true
+    }
+
+    override fun keyUp(keycode: Int): Boolean {
+        pressedKeyCode = Input.Keys.UNKNOWN
+        return true
+    }
+
+    fun handlePressedKeys() {
+        when (pressedKeyCode) {
             Input.Keys.NUM_0 -> camera.zoom = 1f
             Input.Keys.EQUALS -> camera.zoom -= 0.1f
             Input.Keys.MINUS -> camera.zoom += 0.1f
@@ -21,8 +32,6 @@ class InputProcessor(private val camera: OrthographicCamera) : KtxInputAdapter {
             Input.Keys.ENTER -> onEnter()
             Input.Keys.SPACE -> onSpace()
         }
-
-        return super.keyDown(keycode)
     }
 
     override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {

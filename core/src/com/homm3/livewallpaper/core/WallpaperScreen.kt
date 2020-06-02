@@ -34,6 +34,10 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     }
     private var mapUpdateInterval = DEFAULT_MAP_UPDATE_INTERVAL
     private var lastMapUpdateTime = System.currentTimeMillis()
+    private val inputProcessor = InputProcessor(camera).also {
+        it.onEnter = ::randomizeCameraPosition
+        it.onSpace = objectsLayer::updateVisibleSprites
+    }
 
     init {
         engine.camera.setToOrtho(true)
@@ -41,10 +45,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         randomizeCameraPosition()
 
         if (Gdx.app.type == Application.ApplicationType.Desktop) {
-            Gdx.input.inputProcessor = InputProcessor(engine.camera).also {
-                it.onEnter = ::randomizeCameraPosition
-                it.onSpace = objectsLayer::updateVisibleSprites
-            }
+            Gdx.input.inputProcessor = inputProcessor
         }
     }
 
@@ -108,8 +109,9 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     }
 
     override fun render(delta: Float) {
-        engine.camera.update()
-        renderer.setView(engine.camera)
+        inputProcessor.handlePressedKeys()
+        camera.update()
+        renderer.setView(camera)
         renderer.render()
     }
 
