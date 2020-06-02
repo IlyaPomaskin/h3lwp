@@ -5,39 +5,45 @@ import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile
 import com.badlogic.gdx.math.Rectangle
 import kotlin.random.Random
 
-class BorderLayer(private val assets: Assets, private val mapSize: Int, borderSize: Int = 10) :
-    TiledMapTileLayer(
-        mapSize + borderSize * 2, mapSize + borderSize * 2,
-        Constants.TILE_SIZE.toInt(), Constants.TILE_SIZE.toInt()
-    ) {
+class BorderLayer(
+    private val assets: Assets,
+    private val mapSize: Int,
+    borderWidth: Int,
+    borderHeight: Int
+) : TiledMapTileLayer(
+    mapSize + borderWidth * 2,
+    mapSize + borderHeight * 2,
+    Constants.TILE_SIZE.toInt(),
+    Constants.TILE_SIZE.toInt()
+) {
 
     private fun createBorderCell(from: Int, to: Int? = null): Cell {
         val index = if (to == null) from else Random.nextInt(from, to)
         val cell = Cell()
-        cell.tile = StaticTiledMapTile(assets.getTerrainFrames("edg", index)[0])
+        cell.tile = StaticTiledMapTile(assets.getTerrainFrames("edg", index).first())
         return cell
     }
 
     init {
-        val mapSizeWithBorder = mapSize + borderSize * 2
-        offsetX = -(borderSize * Constants.TILE_SIZE)
-        offsetY = (borderSize * Constants.TILE_SIZE)
+        offsetX = -(borderWidth * Constants.TILE_SIZE)
+        offsetY = (borderHeight * Constants.TILE_SIZE)
 
-        val mapStart = borderSize - 1
-        val mapEnd = borderSize + mapSize
-        val rect = Rectangle(borderSize.toFloat(), borderSize.toFloat(), mapSize - 1f, mapSize - 1f)
-        val borderRange = (0..mapSizeWithBorder)
-        borderRange.forEach(fun(x) {
-            borderRange.forEach(fun(y) {
-                if (rect.contains(x.toFloat(), y.toFloat())) {
+        val xStart = borderWidth - 1
+        val xEnd = borderWidth + mapSize
+        val yStart = borderHeight - 1
+        val yEnd = borderHeight + mapSize
+        val mapRect = Rectangle(borderWidth.toFloat(), borderHeight.toFloat(), mapSize - 1f, mapSize - 1f)
+        (0..mapSize + borderWidth * 2).forEach(fun(x) {
+            (0..mapSize + borderHeight * 2).forEach(fun(y) {
+                if (mapRect.contains(x.toFloat(), y.toFloat())) {
                     return
                 }
 
                 val borderCell = when {
-                    x in mapStart until mapEnd && y == mapStart -> createBorderCell(21, 24)
-                    y in mapStart until mapEnd && x == mapEnd -> createBorderCell(25, 28)
-                    x in mapStart until mapEnd && y == mapEnd -> createBorderCell(29, 32)
-                    y in mapStart until mapEnd && x == mapStart -> createBorderCell(33, 36)
+                    x in xStart until xEnd && y == yStart -> createBorderCell(21, 24)
+                    y in yStart until yEnd && x == xEnd -> createBorderCell(25, 28)
+                    x in xStart until xEnd && y == yEnd -> createBorderCell(29, 32)
+                    y in yStart until yEnd && x == xStart -> createBorderCell(33, 36)
                     else -> createBorderCell(0, 16)
                 }
 
@@ -45,9 +51,9 @@ class BorderLayer(private val assets: Assets, private val mapSize: Int, borderSi
             })
         })
 
-        setCell(mapStart, mapStart, createBorderCell(16))
-        setCell(mapEnd, mapStart, createBorderCell(17))
-        setCell(mapEnd, mapEnd, createBorderCell(18))
-        setCell(mapStart, mapEnd, createBorderCell(19))
+        setCell(xStart, yStart, createBorderCell(16))
+        setCell(xEnd, yStart, createBorderCell(17))
+        setCell(xEnd, yEnd, createBorderCell(18))
+        setCell(xStart, yEnd, createBorderCell(19))
     }
 }
