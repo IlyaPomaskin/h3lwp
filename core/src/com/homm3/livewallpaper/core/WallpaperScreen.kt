@@ -21,7 +21,7 @@ import kotlin.random.Random
 
 class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private val h3mMap = H3mReader(Gdx.files.internal("maps/invasion.h3m").read()).read()
-    private val camera = OrthographicCamera().also {
+    val camera = OrthographicCamera().also {
         it.setToOrtho(true)
     }
     private val viewport = ScreenViewport(camera).also {

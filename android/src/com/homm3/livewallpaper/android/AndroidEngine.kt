@@ -7,6 +7,7 @@ import android.content.IntentFilter
 import com.badlogic.gdx.backends.android.AndroidWallpaperListener
 import com.homm3.livewallpaper.core.Constants
 import com.homm3.livewallpaper.core.Engine
+import com.homm3.livewallpaper.core.WallpaperScreen
 import java.lang.Exception
 
 class AndroidEngine(private val context: Context) : Engine(), AndroidWallpaperListener {
@@ -55,9 +56,8 @@ class AndroidEngine(private val context: Context) : Engine(), AndroidWallpaperLi
     override fun offsetChange(xOffset: Float, yOffset: Float,
                               xOffsetStep: Float, yOffsetStep: Float,
                               xPixelOffset: Int, yPixelOffset: Int) {
-        if (useScroll) {
-            camera.position.x = cameraPoint.x + xOffset * Constants.SCROLL_OFFSET
-            camera.position.y = cameraPoint.y + yOffset * Constants.SCROLL_OFFSET
+        if (useScroll && screens.containsKey(WallpaperScreen::class.java)) {
+            getScreen<WallpaperScreen>().camera.position.x = cameraPoint.x + xOffset * Constants.SCROLL_OFFSET
         }
     }
 
