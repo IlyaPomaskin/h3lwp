@@ -13,7 +13,7 @@ class LoadingScreen(private val engine: Engine) : KtxScreen {
             setAlignment(Align.center)
             setWrap(true)
         }
-    private val loadingStage = stage(viewport = engine.viewport).apply { addActor(label) }
+    private val loadingStage = stage().apply { addActor(label) }
     private var isError = false
 
     private fun showError() {
@@ -35,7 +35,7 @@ class LoadingScreen(private val engine: Engine) : KtxScreen {
     }
 
     override fun resize(width: Int, height: Int) {
-        engine.viewport.update(width, height, true)
+        loadingStage.viewport.update(width, height, true)
     }
 
     override fun dispose() {

@@ -9,7 +9,7 @@ import ktx.app.KtxScreen
 import ktx.actors.*
 
 class SettingsScreen(private val engine: Engine) : KtxScreen {
-    private val stage = stage(viewport = engine.viewport)
+    private val stage = stage()
 
     init {
         val skin = engine.assets.skin
@@ -41,7 +41,7 @@ class SettingsScreen(private val engine: Engine) : KtxScreen {
     }
 
     override fun resize(width: Int, height: Int) {
-        engine.viewport.update(width, height, true)
+        stage.viewport.update(width, height, true)
     }
 
     override fun render(delta: Float) {
