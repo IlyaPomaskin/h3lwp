@@ -17,6 +17,8 @@ class Constants {
             const val DEFAULT_MAP_UPDATE_INTERVAL = 15f * 60f * 1000f
             const val SCALE = "scale"
             const val DEFAULT_SCALE = 0
+            const val USE_SCROLL = "useScroll"
+            const val USE_SCROLL_DEFAULT = true
         }
     }
 

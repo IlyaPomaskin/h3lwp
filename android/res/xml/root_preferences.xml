@@ -22,6 +22,11 @@
             app:key="mapUpdateInterval"
             app:title="@string/update_time_title"
             app:useSimpleSummaryProvider="true" />
+        <SwitchPreference
+            app:defaultValue="true"
+            app:key="useScroll"
+            app:title="@string/use_scroll_title"
+            app:summary="@string/use_scroll_summary" />
         <MultiSelectListPreference
             app:isPreferenceVisible="false"
             android:key="maps"
