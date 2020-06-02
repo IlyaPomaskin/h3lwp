@@ -1,6 +1,7 @@
 package com.homm3.livewallpaper.core
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Camera
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.MapObject
@@ -16,8 +17,8 @@ class ObjectsLayer(private val engine: Engine, h3mMap: H3m) : MapLayer() {
         .filter { it.z == 0 }
         .map { Sprite(it, engine.assets.getObjectFrames(randomizer.replaceRandomObject(it))) }
 
-    fun updateVisibleSprites() {
-        visibleSprites = sprites.filter { it.inViewport(engine.camera, Constants.VISIBLE_OBJECTS_OFFSET) }
+    fun updateVisibleSprites(camera: Camera) {
+        visibleSprites = sprites.filter { it.inViewport(camera, Constants.VISIBLE_OBJECTS_OFFSET) }
     }
 
     fun render(batch: Batch) {

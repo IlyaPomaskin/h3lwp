@@ -81,17 +81,18 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private fun randomizeCameraPosition() {
         val camera = engine.camera
 
-        val cameraViewportWidthTiles = ceil(camera.viewportWidth * camera.zoom / TILE_SIZE)
-        val halfWidth = ceil(cameraViewportWidthTiles / 2).toInt()
-        val nextCameraX = Random.nextInt(halfWidth, h3mMap.header.size - halfWidth) * TILE_SIZE
+        val xStart = xVisibleBorderSize
+        val xEnd = mapSize - xStart - xVisibleBorderSize
+        val nextCameraX = xStart + Random.nextFloat() * xEnd
 
-        val cameraViewportHeightTiles = ceil(camera.viewportHeight * camera.zoom / TILE_SIZE)
-        val halfHeight = ceil(cameraViewportHeightTiles / 2).toInt()
-        val nextCameraY = Random.nextInt(halfHeight, h3mMap.header.size - halfHeight) * TILE_SIZE
+        val yStart = yVisibleBorderSize
+        val yEnd = mapSize - yStart - yVisibleBorderSize
+        val nextCameraY = yStart + Random.nextFloat() * yEnd
 
         engine.cameraPoint.set(nextCameraX, nextCameraY)
         camera.position.set(engine.cameraPoint, 0f)
-        objectsLayer.updateVisibleSprites()
+        viewport.update(Gdx.graphics.width, Gdx.graphics.height)
+        objectsLayer.updateVisibleSprites(camera)
     }
 
     override fun show() {
