@@ -3,6 +3,7 @@
     <PreferenceCategory app:title="@string/assets_header">
         <Preference
             android:key="select_file"
+            android:layout="@layout/preference_extended_summary"
             android:summary=" "
             android:title="@string/assets_select_button" />
         <Preference
@@ -25,12 +26,12 @@
         <SwitchPreference
             app:defaultValue="true"
             app:key="useScroll"
-            app:title="@string/use_scroll_title"
-            app:summary="@string/use_scroll_summary" />
+            app:summary="@string/use_scroll_summary"
+            app:title="@string/use_scroll_title" />
         <MultiSelectListPreference
-            app:isPreferenceVisible="false"
             android:key="maps"
-            android:title="@string/maps_title" />
+            android:title="@string/maps_title"
+            app:isPreferenceVisible="false" />
     </PreferenceCategory>
     <PreferenceCategory app:title="@string/credits_header">
         <Preference
