@@ -9,12 +9,12 @@ import ktx.app.KtxGame
 import kotlin.math.min
 
 open class Engine : KtxGame<Screen>(null, true) {
-    open var onSettingsButtonClick: () -> Unit = { }
-
     lateinit var assets: Assets
     val camera = OrthographicCamera()
     var cameraPoint = Vector2()
     val viewport = ScreenViewport(camera)
+
+    open fun onSettingsButtonClick() {}
 
     override fun create() {
         camera.zoom = min(1 / Gdx.graphics.density, 1f)
