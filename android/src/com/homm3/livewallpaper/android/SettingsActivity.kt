@@ -210,22 +210,26 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private fun prepareFileStream(uri: Uri): InputStream {
-            return requireContext()
-                .contentResolver
-                .runCatching { openInputStream(uri) }
+            return kotlin.runCatching {
+                requireContext()
+                    .contentResolver
+                    .openInputStream(uri)
+            }
                 .getOrElse { throw Exception(getString(R.string.file_open_error)) }
         }
 
         private fun prepareOutputDirectory(path: String): File {
-            return requireContext()
-                .filesDir
-                .resolve(path)
-                .runCatching {
-                    if (this.exists()) {
-                        this.deleteRecursively()
+            return kotlin.runCatching {
+                requireContext()
+                    .filesDir
+                    .resolve(path)
+            }
+                .mapCatching {
+                    if (it.exists()) {
+                        it.deleteRecursively()
                     }
-                    this.mkdirs()
-                    this
+                    it.mkdirs()
+                    it
                 }
                 .getOrElse { throw Exception(getString(R.string.output_error)) }
         }
@@ -257,7 +261,7 @@ class SettingsActivity : AppCompatActivity() {
                 } catch (ex: Exception) {
                     val errorMessage = when (ex) {
                         is InvalidFileException -> getString(R.string.invalid_file_error)
-                        is OutputFileWriteException  -> getString(R.string.output_error)
+                        is OutputFileWriteException -> getString(R.string.output_error)
                         else -> getString(R.string.common_error)
                     }
                     setAssetsReadyFlag(false)
