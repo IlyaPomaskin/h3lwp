@@ -29,17 +29,13 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         it.worldWidth = h3mMap.header.size.toFloat()
         it.update(Gdx.graphics.width, Gdx.graphics.height)
     }
-    private val xVisibleBorderSize = camera.viewportWidth / 3
-    private val yVisibleBorderSize = camera.viewportWidth / 3
+    private val xVisibleBorderSize = 3 * TILE_SIZE
+    private val yVisibleBorderSize = 3 * TILE_SIZE
     private val objectsLayer = ObjectsLayer(engine, h3mMap)
     private val tiledMap = TiledMap().also {
         it.layers.add(TerrainGroupLayer(engine.assets, h3mMap))
         it.layers.add(objectsLayer)
-        it.layers.add(BorderLayer(
-            engine.assets, h3mMap.header.size,
-            ceil(xVisibleBorderSize / TILE_SIZE).toInt() + 5,
-            ceil(yVisibleBorderSize / TILE_SIZE).toInt() + 5
-        ))
+        it.layers.add(BorderLayer(engine.assets, h3mMap.header.size, 10, 10))
     }
     private val renderer = object : OrthogonalTiledMapRenderer(tiledMap) {
         override fun renderObjects(layer: MapLayer?) {
