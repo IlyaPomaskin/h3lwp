@@ -18,6 +18,7 @@ class LiveWallpaperService : AndroidLiveWallpaperService() {
             AndroidApplicationConfiguration().apply {
                 useAccelerometer = false
                 useCompass = false
+                disableAudio = true
             }
         )
     }
