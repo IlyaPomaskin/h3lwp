@@ -35,7 +35,11 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private val tiledMap = TiledMap().also {
         it.layers.add(TerrainGroupLayer(engine.assets, h3mMap))
         it.layers.add(objectsLayer)
-        it.layers.add(BorderLayer(engine.assets, h3mMap.header.size, 10, 10))
+        it.layers.add(BorderLayer(
+            engine.assets,
+            h3mMap.header.size,
+            ceil(camera.viewportWidth / TILE_SIZE).toInt(),
+            ceil(camera.viewportHeight / TILE_SIZE).toInt()))
     }
     private val renderer = object : OrthogonalTiledMapRenderer(tiledMap) {
         override fun renderObjects(layer: MapLayer?) {
@@ -91,12 +95,12 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private fun randomizeCameraPosition() {
         val mapSize = h3mMap.header.size * TILE_SIZE
 
-        val xStart = xVisibleBorderSize
-        val xEnd = mapSize - xStart - xVisibleBorderSize
+        val xStart = (camera.viewportWidth / 2) - xVisibleBorderSize
+        val xEnd = mapSize - xStart - (camera.viewportWidth / 2) + xVisibleBorderSize
         val nextCameraX = xStart + Random.nextFloat() * xEnd
 
-        val yStart = yVisibleBorderSize
-        val yEnd = mapSize - yStart - yVisibleBorderSize
+        val yStart = (camera.viewportHeight / 2) - yVisibleBorderSize
+        val yEnd = mapSize - yStart - (camera.viewportHeight / 2) + yVisibleBorderSize
         val nextCameraY = yStart + Random.nextFloat() * yEnd
 
         engine.cameraPoint.set(nextCameraX, nextCameraY)
