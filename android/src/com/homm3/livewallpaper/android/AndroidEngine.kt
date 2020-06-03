@@ -9,9 +9,10 @@ import com.homm3.livewallpaper.core.WallpaperScreen
 
 class AndroidEngine(private val context: Context) : Engine(), AndroidWallpaperListener {
     private var useScroll = Constants.Preferences.USE_SCROLL_DEFAULT
+    private val preferences = context.getSharedPreferences(Constants.Preferences.PREFERENCES_NAME, Context.MODE_PRIVATE)
 
     private fun getUseScrollPreference(): Boolean {
-        return context.getSharedPreferences(Constants.Preferences.PREFERENCES_NAME, Context.MODE_PRIVATE)
+        return preferences
             .runCatching { getBoolean(Constants.Preferences.USE_SCROLL, Constants.Preferences.USE_SCROLL_DEFAULT) }
             .getOrDefault(Constants.Preferences.USE_SCROLL_DEFAULT)
     }

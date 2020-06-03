@@ -54,6 +54,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         it.onEnter = ::randomizeCameraPosition
         it.onSpace = { objectsLayer.updateVisibleSprites(camera) }
     }
+    private val prefs = Gdx.app.getPreferences(PREFERENCES_NAME)
 
     init {
         applyPreferences()
@@ -65,9 +66,6 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     }
 
     private fun applyPreferences() {
-        val prefs = Gdx.app
-            .getPreferences(PREFERENCES_NAME)
-
         // Old float/integer preferences used in <= 2.2.0
         mapUpdateInterval = kotlin
             .runCatching {
