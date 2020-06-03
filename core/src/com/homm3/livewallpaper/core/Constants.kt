@@ -1,7 +1,5 @@
 package com.homm3.livewallpaper.core
 
-import com.badlogic.gdx.graphics.Color
-
 class Constants {
     companion object {
         const val TILE_SIZE = 32f
@@ -21,8 +19,8 @@ class Constants {
             const val DEFAULT_SCALE = 0
             const val USE_SCROLL = "useScroll"
             const val USE_SCROLL_DEFAULT = true
-            const val OVERLAY_COLOR = "overlayColor"
-            const val OVERLAY_COLOR_DEFAULT = 0
+            const val DIMMING = "dimming"
+            const val DIMMING_DEFAULT = 0
         }
     }
 

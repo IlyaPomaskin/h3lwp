@@ -12,8 +12,8 @@ import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_MAP_UPDATE_INTERVAL
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_SCALE
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.MAP_UPDATE_INTERVAL
-import com.homm3.livewallpaper.core.Constants.Preferences.Companion.OVERLAY_COLOR
-import com.homm3.livewallpaper.core.Constants.Preferences.Companion.OVERLAY_COLOR_DEFAULT
+import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DIMMING
+import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DIMMING_DEFAULT
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.PREFERENCES_NAME
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.SCALE
 import com.homm3.livewallpaper.parser.formats.H3mReader
@@ -97,7 +97,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         }
         viewport.update(Gdx.graphics.width, Gdx.graphics.height)
 
-        updateOverlay(prefs.getInteger(OVERLAY_COLOR, OVERLAY_COLOR_DEFAULT))
+        updateOverlay(prefs.getInteger(DIMMING, DIMMING_DEFAULT))
     }
 
     private fun randomizeCameraPosition() {
@@ -119,8 +119,8 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         objectsLayer.updateVisibleSprites(camera)
     }
 
-    private fun updateOverlay(color: Int) {
-        overlayPixmap.setColor(color)
+    private fun updateOverlay(dimming: Int) {
+        overlayPixmap.setColor(0f, 0f, 0f, dimming / 100f)
         overlayPixmap.fill()
         overlayTexture.draw(overlayPixmap, 0, 0)
     }
@@ -144,8 +144,14 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         camera.update()
         renderer.setView(camera)
         renderer.render()
-        overlayBatch.use {
-            it.draw(overlayTexture, 0f, 0f, camera.viewportWidth, camera.viewportHeight)
+        overlayBatch.use(camera.view) {
+            it.draw(
+                overlayTexture,
+                camera.position.x - camera.viewportWidth / 2,
+                camera.position.y - camera.viewportHeight / 2,
+                camera.viewportWidth,
+                camera.viewportHeight
+            )
         }
     }
 
