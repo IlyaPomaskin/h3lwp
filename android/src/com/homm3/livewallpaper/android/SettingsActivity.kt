@@ -205,7 +205,7 @@ class SettingsActivity : AppCompatActivity() {
 
         private fun updateSelectFilePreference(block: (parsingStatus: Preference) -> Unit) {
             activity?.runOnUiThread {
-                findPreference<Preference>("select_file")?.apply(block)
+                findPreference<Preference>("select_file")?.runCatching(block)
             }
         }
 
