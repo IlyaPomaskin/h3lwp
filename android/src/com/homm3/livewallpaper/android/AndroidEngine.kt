@@ -1,27 +1,13 @@
 package com.homm3.livewallpaper.android
 
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import com.badlogic.gdx.backends.android.AndroidWallpaperListener
 import com.homm3.livewallpaper.core.Constants
 import com.homm3.livewallpaper.core.Engine
 import com.homm3.livewallpaper.core.WallpaperScreen
-import java.lang.Exception
 
 class AndroidEngine(private val context: Context) : Engine(), AndroidWallpaperListener {
-    companion object {
-        const val PARSING_DONE_MESSAGE = "parsingDone"
-    }
-
-    private var parsingDoneReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.hasExtra(PARSING_DONE_MESSAGE) == true) {
-                updateVisibleScreen()
-            }
-        }
-    }
     private var useScroll = Constants.Preferences.USE_SCROLL_DEFAULT
 
     private fun getUseScrollPreference(): Boolean {
@@ -41,7 +27,6 @@ class AndroidEngine(private val context: Context) : Engine(), AndroidWallpaperLi
     override fun create() {
         super.create()
         useScroll = getUseScrollPreference()
-        context.registerReceiver(parsingDoneReceiver, IntentFilter(context.packageName))
     }
 
     override fun resume() {
@@ -58,14 +43,6 @@ class AndroidEngine(private val context: Context) : Engine(), AndroidWallpaperLi
                               xPixelOffset: Int, yPixelOffset: Int) {
         if (useScroll && screens.containsKey(WallpaperScreen::class.java)) {
             getScreen<WallpaperScreen>().camera.position.x = cameraPoint.x + xOffset * Constants.SCROLL_OFFSET
-        }
-    }
-
-    override fun dispose() {
-        super.dispose()
-        try {
-            context.unregisterReceiver(parsingDoneReceiver)
-        } catch (ex: Exception) {
         }
     }
 }

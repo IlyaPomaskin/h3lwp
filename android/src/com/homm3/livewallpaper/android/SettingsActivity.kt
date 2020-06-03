@@ -254,9 +254,6 @@ class SettingsActivity : AppCompatActivity() {
                     ).convertLodToTextureAtlas()
                     setAssetsReadyFlag(true)
                     updateSelectFilePreference { it.summary = getString(R.string.assets_parsing_done) }
-                    context?.sendBroadcast(Intent()
-                        .setAction(context?.packageName)
-                        .putExtra(AndroidEngine.PARSING_DONE_MESSAGE, true))
                 } catch (ex: Exception) {
                     val errorMessage = when (ex) {
                         is InvalidFileException -> getString(R.string.invalid_file_error)
