@@ -7,7 +7,7 @@ import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.MapObject
 import com.homm3.livewallpaper.parser.formats.H3m
 
-class ObjectsLayer(private val engine: Engine, h3mMap: H3m) : RenderableLayer {
+class ObjectsLayer(private val engine: Engine, h3mMap: H3m) : MapLayer() {
     private val randomizer = ObjectsRandomizer()
     private var visibleSprites: List<Sprite> = mutableListOf()
     private var sprites: List<Sprite> = h3mMap
@@ -21,7 +21,7 @@ class ObjectsLayer(private val engine: Engine, h3mMap: H3m) : RenderableLayer {
         visibleSprites = sprites.filter { it.inViewport(camera, Constants.VISIBLE_OBJECTS_OFFSET) }
     }
 
-    override fun render(batch: Batch) {
+    fun render(batch: Batch) {
         visibleSprites.forEach { it.render(batch, Gdx.graphics.deltaTime) }
     }
 }

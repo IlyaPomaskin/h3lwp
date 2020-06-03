@@ -2,7 +2,8 @@ package com.homm3.livewallpaper.core
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.graphics.*
+import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.tiled.TiledMap
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
@@ -15,6 +16,7 @@ import com.homm3.livewallpaper.core.Constants.Preferences.Companion.PREFERENCES_
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.SCALE
 import com.homm3.livewallpaper.parser.formats.H3mReader
 import ktx.app.KtxScreen
+import ktx.graphics.use
 import kotlin.math.ceil
 import kotlin.math.min
 import kotlin.random.Random
@@ -37,11 +39,12 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
             engine.assets,
             h3mMap.header.size,
             ceil(camera.viewportWidth / TILE_SIZE).toInt(),
-            ceil(camera.viewportHeight / TILE_SIZE).toInt()))
+            ceil(camera.viewportHeight / TILE_SIZE).toInt()
+        ))
     }
     private val renderer = object : OrthogonalTiledMapRenderer(tiledMap) {
         override fun renderObjects(layer: MapLayer?) {
-            if (layer is RenderableLayer) {
+            if (layer is ObjectsLayer) {
                 layer.render(batch)
             }
         }
@@ -53,6 +56,9 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         it.onSpace = { objectsLayer.updateVisibleSprites(camera) }
     }
     private val prefs = Gdx.app.getPreferences(PREFERENCES_NAME)
+    private val overlayPixmap = Pixmap(1, 1, Pixmap.Format.RGBA4444)
+    private val overlayTexture = Texture(1, 1, Pixmap.Format.RGBA4444)
+    private val overlayBatch = SpriteBatch()
 
     init {
         applyPreferences()
@@ -88,6 +94,8 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
             else -> 1 / scale.toFloat()
         }
         viewport.update(Gdx.graphics.width, Gdx.graphics.height)
+
+        updateOverlay(Color(0x000001488))
     }
 
     private fun randomizeCameraPosition() {
@@ -109,6 +117,12 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         objectsLayer.updateVisibleSprites(camera)
     }
 
+    private fun updateOverlay(color: Color) {
+        overlayPixmap.setColor(color)
+        overlayPixmap.fill()
+        overlayTexture.draw(overlayPixmap, 0, 0)
+    }
+
     override fun show() {
         applyPreferences()
 
@@ -128,6 +142,9 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         camera.update()
         renderer.setView(camera)
         renderer.render()
+        overlayBatch.use {
+            it.draw(overlayTexture, 0f, 0f, camera.viewportWidth, camera.viewportHeight)
+        }
     }
 
     override fun dispose() {
