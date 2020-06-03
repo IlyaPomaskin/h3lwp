@@ -43,7 +43,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     }
     private val renderer = object : OrthogonalTiledMapRenderer(tiledMap) {
         override fun renderObjects(layer: MapLayer?) {
-            if (layer is ObjectsLayer) {
+            if (layer is RenderableLayer) {
                 layer.render(batch)
             }
         }
