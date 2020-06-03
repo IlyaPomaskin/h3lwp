@@ -29,8 +29,6 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         it.worldWidth = h3mMap.header.size.toFloat()
         it.update(Gdx.graphics.width, Gdx.graphics.height)
     }
-    private val xVisibleBorderSize = 3 * TILE_SIZE
-    private val yVisibleBorderSize = 3 * TILE_SIZE
     private val objectsLayer = ObjectsLayer(engine, h3mMap)
     private val tiledMap = TiledMap().also {
         it.layers.add(TerrainGroupLayer(engine.assets, h3mMap))
@@ -93,6 +91,8 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     }
 
     private fun randomizeCameraPosition() {
+        val xVisibleBorderSize = 3 * TILE_SIZE
+        val yVisibleBorderSize = 3 * TILE_SIZE
         val mapSize = h3mMap.header.size * TILE_SIZE
 
         val xStart = (camera.viewportWidth / 2) - xVisibleBorderSize
