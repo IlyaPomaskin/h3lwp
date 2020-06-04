@@ -17,6 +17,7 @@ import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DIMMING_DEFA
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.PREFERENCES_NAME
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.SCALE
 import com.homm3.livewallpaper.parser.formats.H3mReader
+import com.sun.java.swing.plaf.motif.MotifBorders.FrameBorder.BORDER_SIZE
 import ktx.app.KtxScreen
 import ktx.graphics.use
 import kotlin.math.ceil
@@ -40,8 +41,8 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         it.layers.add(BorderLayer(
             engine.assets,
             h3mMap.header.size,
-            ceil(camera.viewportWidth / TILE_SIZE).toInt(),
-            ceil(camera.viewportHeight / TILE_SIZE).toInt()
+            BORDER_SIZE,
+            BORDER_SIZE
         ))
     }
     private val renderer = object : OrthogonalTiledMapRenderer(tiledMap) {
