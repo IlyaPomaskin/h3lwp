@@ -19,6 +19,7 @@ import androidx.preference.PreferenceFragmentCompat
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.core.Assets
+import com.homm3.livewallpaper.core.Constants.Preferences.Companion.BRIGHTNESS
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_MAP_UPDATE_INTERVAL
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_SCALE
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.IS_ASSETS_READY_KEY
@@ -76,6 +77,13 @@ class SettingsActivity : AppCompatActivity() {
                 prefs
                     .getInt(SCALE, DEFAULT_SCALE)
                     .also { editor.remove(SCALE).putString(SCALE, it.toString()) }
+            } catch (e: Exception) {
+            }
+
+            try {
+                prefs
+                    .getInt("dimming", 0)
+                    .also { editor.remove("dimming").putInt(BRIGHTNESS, 100 - it) }
             } catch (e: Exception) {
             }
 

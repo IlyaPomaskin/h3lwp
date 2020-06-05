@@ -3,7 +3,7 @@ package com.homm3.livewallpaper.core
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.*
-import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.tiled.TiledMap
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
@@ -11,9 +11,9 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_MAP_UPDATE_INTERVAL
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_SCALE
+import com.homm3.livewallpaper.core.Constants.Preferences.Companion.BRIGHTNESS
+import com.homm3.livewallpaper.core.Constants.Preferences.Companion.BRIGHTNESS_DEFAULT
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.MAP_UPDATE_INTERVAL
-import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DIMMING
-import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DIMMING_DEFAULT
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.PREFERENCES_NAME
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.SCALE
 import com.homm3.livewallpaper.parser.formats.H3mReader
@@ -59,9 +59,8 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         it.onSpace = { objectsLayer.updateVisibleSprites(camera) }
     }
     private val prefs = Gdx.app.getPreferences(PREFERENCES_NAME)
-    private val overlayPixmap = Pixmap(1, 1, Pixmap.Format.RGBA4444)
-    private val overlayTexture = Texture(1, 1, Pixmap.Format.RGBA4444)
-    private val overlayBatch = SpriteBatch()
+    private var brightness = BRIGHTNESS_DEFAULT
+    private val brightnessOverlay = ShapeRenderer()
 
     init {
         applyPreferences()
@@ -98,7 +97,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         }
         viewport.update(Gdx.graphics.width, Gdx.graphics.height)
 
-        updateOverlay(prefs.getInteger(DIMMING, DIMMING_DEFAULT))
+        brightness = prefs.getInteger(BRIGHTNESS, BRIGHTNESS_DEFAULT)
     }
 
     private fun randomizeCameraPosition() {
@@ -120,12 +119,6 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         objectsLayer.updateVisibleSprites(camera)
     }
 
-    private fun updateOverlay(dimming: Int) {
-        overlayPixmap.setColor(0f, 0f, 0f, dimming / 100f)
-        overlayPixmap.fill()
-        overlayTexture.draw(overlayPixmap, 0, 0)
-    }
-
     override fun show() {
         applyPreferences()
 
@@ -140,20 +133,27 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         viewport.update(width, height)
     }
 
-    override fun render(delta: Float) {
-        inputProcessor.handlePressedKeys()
-        camera.update()
-        renderer.setView(camera)
-        renderer.render()
-        overlayBatch.use(camera.view) {
-            it.draw(
-                overlayTexture,
+    private fun renderBrightnessOverlay() {
+        Gdx.gl.glEnable(GL20.GL_BLEND)
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+        brightnessOverlay.projectionMatrix = camera.view
+        brightnessOverlay.use(ShapeRenderer.ShapeType.Filled) {
+            it.color = Color(0f, 0f, 0f, brightness / 100f)
+            it.rect(
                 camera.position.x - camera.viewportWidth / 2,
                 camera.position.y - camera.viewportHeight / 2,
                 camera.viewportWidth,
                 camera.viewportHeight
             )
         }
+    }
+
+    override fun render(delta: Float) {
+        inputProcessor.handlePressedKeys()
+        camera.update()
+        renderer.setView(camera)
+        renderer.render()
+        renderBrightnessOverlay()
     }
 
     override fun dispose() {

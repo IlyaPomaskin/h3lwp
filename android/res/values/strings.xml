@@ -25,7 +25,7 @@
     <string name="use_scroll_title">Use scroll</string>
     <string name="use_scroll_summary">Scroll map while switching home screen\nSome phones don\'t support this feature</string>
 
-    <string name="dimming_title">Dimming</string>
+    <string name="brightness_title">Brightness</string>
 
     <string name="credits_header">Credits</string>
     <string name="credits_button">Open</string>

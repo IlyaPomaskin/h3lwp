@@ -33,10 +33,11 @@
             android:title="@string/maps_title"
             app:isPreferenceVisible="false" />
         <SeekBarPreference
-            app:key="dimming"
-            app:title="@string/dimming_title"
+            app:key="brightness"
+            app:title="@string/brightness_title"
             app:min="0"
             android:max="100"
+            app:defaultValue="100"
             app:showSeekBarValue="true" />
     </PreferenceCategory>
     <PreferenceCategory app:title="@string/credits_header">
