@@ -4,6 +4,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.utils.Align
 import ktx.actors.stage
 import ktx.app.KtxScreen
+import ktx.app.clearScreen
 import kotlin.Exception
 
 class LoadingScreen(private val engine: Engine) : KtxScreen {
@@ -23,7 +24,7 @@ class LoadingScreen(private val engine: Engine) : KtxScreen {
     }
 
     override fun render(delta: Float) {
-        super.render(delta)
+        clearScreen(0f, 0f, 0f, 1f)
         loadingStage.draw()
 
         try {

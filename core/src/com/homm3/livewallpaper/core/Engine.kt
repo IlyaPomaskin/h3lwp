@@ -5,7 +5,7 @@ import com.badlogic.gdx.Screen
 import com.badlogic.gdx.math.Vector2
 import ktx.app.KtxGame
 
-open class Engine : KtxGame<Screen>(null, true) {
+open class Engine : KtxGame<Screen>(null, false) {
     lateinit var assets: Assets
     var cameraPoint = Vector2()
 

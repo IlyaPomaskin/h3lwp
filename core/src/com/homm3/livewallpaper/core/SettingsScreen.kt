@@ -7,6 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.VerticalGroup
 import com.badlogic.gdx.utils.Align
 import ktx.app.KtxScreen
 import ktx.actors.*
+import ktx.app.clearScreen
 
 class SettingsScreen(private val engine: Engine) : KtxScreen {
     private val stage = stage()
@@ -45,6 +46,7 @@ class SettingsScreen(private val engine: Engine) : KtxScreen {
     }
 
     override fun render(delta: Float) {
+        clearScreen(0f, 0f, 0f, 1f)
         stage.act(delta)
         stage.draw()
     }
