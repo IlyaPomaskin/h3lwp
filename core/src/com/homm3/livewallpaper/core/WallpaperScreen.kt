@@ -8,6 +8,7 @@ import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.tiled.TiledMap
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
 import com.badlogic.gdx.utils.viewport.ScreenViewport
+import com.homm3.livewallpaper.core.Constants.Companion.BORDER_SIZE
 import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_MAP_UPDATE_INTERVAL
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_SCALE
@@ -17,7 +18,6 @@ import com.homm3.livewallpaper.core.Constants.Preferences.Companion.MAP_UPDATE_I
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.PREFERENCES_NAME
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.SCALE
 import com.homm3.livewallpaper.parser.formats.H3mReader
-import com.sun.java.swing.plaf.motif.MotifBorders.FrameBorder.BORDER_SIZE
 import ktx.app.KtxScreen
 import ktx.graphics.use
 import kotlin.math.ceil
