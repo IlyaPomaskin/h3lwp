@@ -101,16 +101,16 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     }
 
     private fun randomizeCameraPosition() {
-        val xVisibleBorderSize = 3 * TILE_SIZE
-        val yVisibleBorderSize = 3 * TILE_SIZE
         val mapSize = h3mMap.header.size * TILE_SIZE
 
-        val xStart = (camera.viewportWidth / 2) - xVisibleBorderSize
-        val xEnd = mapSize - xStart - (camera.viewportWidth / 2) + xVisibleBorderSize
+        val halfWidth = camera.viewportWidth / 2
+        val xStart = halfWidth
+        val xEnd = mapSize - xStart - halfWidth
         val nextCameraX = xStart + Random.nextFloat() * xEnd
 
-        val yStart = (camera.viewportHeight / 2) - yVisibleBorderSize
-        val yEnd = mapSize - yStart - (camera.viewportHeight / 2) + yVisibleBorderSize
+        val halfHeight = camera.viewportHeight / 2
+        val yStart = halfHeight
+        val yEnd = mapSize - yStart - halfHeight
         val nextCameraY = yStart + Random.nextFloat() * yEnd
 
         engine.cameraPoint.set(nextCameraX, nextCameraY)
