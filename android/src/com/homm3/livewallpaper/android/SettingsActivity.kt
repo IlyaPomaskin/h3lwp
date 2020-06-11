@@ -58,9 +58,11 @@ class SettingsActivity : AppCompatActivity() {
             }
 
             try {
-                prefs
-                    .getInt("dimming", 0)
-                    .also { editor.remove("dimming").putInt(BRIGHTNESS, 100 - it) }
+                if (prefs.contains("dimming")) {
+                    prefs
+                        .getInt("dimming", 0)
+                        .also { editor.remove("dimming").putInt(BRIGHTNESS, 100 - it) }
+                }
             } catch (e: Exception) {
             }
 
