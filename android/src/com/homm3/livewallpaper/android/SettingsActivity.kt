@@ -39,31 +39,8 @@ class SettingsActivity : AppCompatActivity() {
     companion object {
         const val ACTION_GET_CONTENT_RESULT_CODE = 1
         const val READ_EXTERNAL_STORAGE_RESULT_CODE = 2
-    }
 
-    lateinit var settingsFragment: SettingsFragment
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.settings_activity)
-        settingsFragment = SettingsFragment()
-        supportFragmentManager
-            .beginTransaction()
-            .replace(R.id.settings, settingsFragment)
-            .commit()
-        actionBar?.setDisplayHomeAsUpEnabled(true)
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        settingsFragment.onRequestPermissionsResult(requestCode, permissions, grantResults)
-    }
-
-    class SettingsFragment : PreferenceFragmentCompat(),
-        SharedPreferences.OnSharedPreferenceChangeListener,
-        ActivityCompat.OnRequestPermissionsResultCallback {
-        private fun convertOldPreferences() {
-            // Old float/integer preferences used in <= 2.2.0
-            val prefs = preferenceManager.sharedPreferences
+        fun convertOldPreferences(prefs: SharedPreferences) {
             val editor = prefs.edit()
 
             try {
@@ -89,11 +66,32 @@ class SettingsActivity : AppCompatActivity() {
 
             editor.commit()
         }
+    }
 
+    lateinit var settingsFragment: SettingsFragment
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.settings_activity)
+        settingsFragment = SettingsFragment()
+        supportFragmentManager
+            .beginTransaction()
+            .replace(R.id.settings, settingsFragment)
+            .commit()
+        actionBar?.setDisplayHomeAsUpEnabled(true)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        settingsFragment.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+    class SettingsFragment : PreferenceFragmentCompat(),
+        SharedPreferences.OnSharedPreferenceChangeListener,
+        ActivityCompat.OnRequestPermissionsResultCallback {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             preferenceManager.sharedPreferencesName = PREFERENCES_NAME
             preferenceManager.sharedPreferences.registerOnSharedPreferenceChangeListener(this)
-            convertOldPreferences()
+            convertOldPreferences(preferenceManager.sharedPreferences)
 
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
 

@@ -72,23 +72,12 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     }
 
     private fun applyPreferences() {
-        // Old float/integer preferences used in <= 2.2.0
         mapUpdateInterval = kotlin
-            .runCatching {
-                prefs
-                    .getFloat(MAP_UPDATE_INTERVAL)
-                    .also { prefs.putString(MAP_UPDATE_INTERVAL, it.toInt().toString()).flush() }
-            }
-            .recoverCatching { prefs.getString(MAP_UPDATE_INTERVAL).toFloat() }
+            .runCatching { prefs.getString(MAP_UPDATE_INTERVAL).toFloat() }
             .getOrDefault(DEFAULT_MAP_UPDATE_INTERVAL)
 
         val scale = kotlin
-            .runCatching {
-                prefs
-                    .getInteger(SCALE)
-                    .also { prefs.putString(SCALE, it.toString()).flush() }
-            }
-            .recoverCatching { prefs.getString(SCALE).toInt() }
+            .runCatching { prefs.getString(SCALE).toInt() }
             .getOrDefault(DEFAULT_SCALE)
 
         viewport.unitsPerPixel = when (scale) {
