@@ -138,7 +138,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
         brightnessOverlay.projectionMatrix = camera.view
         brightnessOverlay.use(ShapeRenderer.ShapeType.Filled) {
-            it.color = Color(0f, 0f, 0f, brightness / 100f)
+            it.color = Color(0f, 0f, 0f, (100 - brightness) / 100f)
             it.rect(
                 camera.position.x - camera.viewportWidth / 2,
                 camera.position.y - camera.viewportHeight / 2,

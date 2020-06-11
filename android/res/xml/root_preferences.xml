@@ -35,7 +35,7 @@
         <SeekBarPreference
             app:key="brightness"
             app:title="@string/brightness_title"
-            app:min="0"
+            app:min="1"
             android:max="100"
             app:defaultValue="100"
             app:showSeekBarValue="true" />
