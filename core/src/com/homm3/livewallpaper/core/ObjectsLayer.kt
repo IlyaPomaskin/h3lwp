@@ -4,17 +4,16 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Camera
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.maps.MapLayer
-import com.badlogic.gdx.maps.MapObject
 import com.homm3.livewallpaper.parser.formats.H3m
 
-class ObjectsLayer(private val engine: Engine, h3mMap: H3m) : MapLayer() {
+class ObjectsLayer(private val engine: Engine, h3mMap: H3m, isUnderground: Boolean) : MapLayer() {
     private val randomizer = ObjectsRandomizer()
     private var visibleSprites: List<Sprite> = mutableListOf()
     private var sprites: List<Sprite> = h3mMap
         .objects
         .sorted()
         // TODO underground rendering
-        .filter { it.z == 0 }
+        .filter { it.z == if (isUnderground) 1 else 0 }
         .map { Sprite(it, engine.assets.getObjectFrames(randomizer.replaceRandomObject(it))) }
 
     init {

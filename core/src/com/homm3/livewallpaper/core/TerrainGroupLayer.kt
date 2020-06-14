@@ -12,7 +12,7 @@ import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.parser.formats.H3m
 import ktx.collections.map
 
-class TerrainGroupLayer(private val assets: Assets, h3mMap: H3m) : MapGroupLayer() {
+class TerrainGroupLayer(private val assets: Assets, h3mMap: H3m, isUnderground: Boolean) : MapGroupLayer() {
     enum class TileType {
         TERRAIN,
         RIVER,
@@ -60,10 +60,10 @@ class TerrainGroupLayer(private val assets: Assets, h3mMap: H3m) : MapGroupLayer
         val roadLayer = TiledMapTileLayer(mapSize, mapSize, TILE_SIZE.toInt(), TILE_SIZE.toInt())
         roadLayer.offsetY = -(TILE_SIZE / 2)
 
-        // TODO underground rendering
+        val tileOffset = if (isUnderground) mapSize * mapSize else 0
         for (x in 0 until mapSize) {
             for (y in 0 until mapSize) {
-                val index = mapSize * y + x
+                val index = tileOffset + mapSize * y + x
                 val tile = h3mMap.terrainTiles[index]
                 terrainLayer.setCell(x, y, createCell(tile, TileType.TERRAIN))
                 if (tile.river > 0) {
