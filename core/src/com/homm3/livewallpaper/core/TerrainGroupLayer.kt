@@ -78,5 +78,6 @@ class TerrainGroupLayer(private val assets: Assets, h3mMap: H3m) : MapGroupLayer
         layers.add(terrainLayer)
         layers.add(riverLayer)
         layers.add(roadLayer)
+        name = "terrain"
     }
 }

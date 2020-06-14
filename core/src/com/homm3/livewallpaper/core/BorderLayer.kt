@@ -55,5 +55,7 @@ class BorderLayer(
         setCell(xEnd, yStart, createBorderCell(17))
         setCell(xEnd, yEnd, createBorderCell(18))
         setCell(xStart, yEnd, createBorderCell(19))
+
+        name = "border"
     }
 }

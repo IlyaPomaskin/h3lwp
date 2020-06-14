@@ -17,6 +17,10 @@ class ObjectsLayer(private val engine: Engine, h3mMap: H3m) : MapLayer() {
         .filter { it.z == 0 }
         .map { Sprite(it, engine.assets.getObjectFrames(randomizer.replaceRandomObject(it))) }
 
+    init {
+        name = "objects"
+    }
+
     fun updateVisibleSprites(camera: Camera) {
         visibleSprites = sprites.filter { it.inViewport(camera, Constants.VISIBLE_OBJECTS_OFFSET) }
     }
