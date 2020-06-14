@@ -2,13 +2,13 @@ package com.homm3.livewallpaper.core
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.files.FileHandle
 import com.badlogic.gdx.graphics.*
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.tiled.TiledMap
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
 import com.badlogic.gdx.utils.viewport.ScreenViewport
-import com.homm3.livewallpaper.core.Constants.Companion.BORDER_SIZE
 import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_MAP_UPDATE_INTERVAL
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_SCALE
@@ -20,31 +20,15 @@ import com.homm3.livewallpaper.core.Constants.Preferences.Companion.SCALE
 import com.homm3.livewallpaper.parser.formats.H3mReader
 import ktx.app.KtxScreen
 import ktx.graphics.use
-import kotlin.math.ceil
 import kotlin.math.min
 import kotlin.random.Random
 
 class WallpaperScreen(private val engine: Engine) : KtxScreen {
-    private val h3mMap = H3mReader(Gdx.files.internal("maps/invasion.h3m").read()).read()
     val camera = OrthographicCamera().also {
         it.setToOrtho(true)
     }
-    private val viewport = ScreenViewport(camera).also {
-        it.worldHeight = h3mMap.header.size.toFloat()
-        it.worldWidth = h3mMap.header.size.toFloat()
-        it.update(Gdx.graphics.width, Gdx.graphics.height)
-    }
-    private val objectsLayer = ObjectsLayer(engine, h3mMap)
-    private val tiledMap = TiledMap().also {
-        it.layers.add(TerrainGroupLayer(engine.assets, h3mMap))
-        it.layers.add(objectsLayer)
-        it.layers.add(BorderLayer(
-            engine.assets,
-            h3mMap.header.size,
-            BORDER_SIZE,
-            BORDER_SIZE
-        ))
-    }
+    private val viewport = ScreenViewport(camera)
+    private val tiledMap = TiledMap()
     private val renderer = object : OrthogonalTiledMapRenderer(tiledMap) {
         override fun renderObjects(layer: MapLayer?) {
             if (layer is ObjectsLayer) {
@@ -55,19 +39,29 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private var mapUpdateInterval = DEFAULT_MAP_UPDATE_INTERVAL
     private var lastMapUpdateTime = System.currentTimeMillis()
     private val inputProcessor = InputProcessor(camera).also {
-        it.onEnter = ::randomizeCameraPosition
-        it.onSpace = { objectsLayer.updateVisibleSprites(camera) }
+        it.onEnter = { randomizeVisibleMapPart() }
+        it.onSpace = { tiledMap.layers.forEach { if (it is H3mLayer) it.updateVisibleObjects(camera) } }
     }
     private val prefs = Gdx.app.getPreferences(PREFERENCES_NAME)
     private var brightness = BRIGHTNESS_DEFAULT
     private val brightnessOverlay = ShapeRenderer()
 
     init {
+        Gdx.files.internal("maps").list(".h3m").forEach(this::readMap)
         applyPreferences()
-        randomizeCameraPosition()
+        randomizeVisibleMapPart()
 
         if (Gdx.app.type == Application.ApplicationType.Desktop) {
             Gdx.input.inputProcessor = inputProcessor
+        }
+    }
+
+    private fun readMap(file: FileHandle) {
+        val h3mMap = H3mReader(file.read()).read()
+
+        tiledMap.layers.add(H3mLayer(engine, h3mMap, false))
+        if (h3mMap.header.hasUnderground) {
+            tiledMap.layers.add(H3mLayer(engine, h3mMap, true))
         }
     }
 
@@ -89,9 +83,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         brightness = prefs.getInteger(BRIGHTNESS, BRIGHTNESS_DEFAULT)
     }
 
-    private fun randomizeCameraPosition() {
-        val mapSize = h3mMap.header.size * TILE_SIZE
-
+    private fun randomizeCameraPosition(mapSize: Float) {
         val halfWidth = camera.viewportWidth / 2
         val xStart = halfWidth
         val xEnd = mapSize - xStart - halfWidth
@@ -104,8 +96,17 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
 
         engine.cameraPoint.set(nextCameraX, nextCameraY)
         camera.position.set(engine.cameraPoint, 0f)
-        viewport.update(Gdx.graphics.width, Gdx.graphics.height)
-        objectsLayer.updateVisibleSprites(camera)
+    }
+
+    private fun randomizeVisibleMapPart() {
+        tiledMap.layers.forEach { it.isVisible = false }
+        val h3mLayer = tiledMap.layers[Random.nextInt(tiledMap.layers.count)]
+        if (h3mLayer !is H3mLayer) {
+            return
+        }
+        randomizeCameraPosition(h3mLayer.mapSize * TILE_SIZE)
+        h3mLayer.isVisible = true
+        h3mLayer.updateVisibleObjects(camera)
     }
 
     override fun show() {
@@ -114,7 +115,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastMapUpdateTime >= mapUpdateInterval) {
             lastMapUpdateTime = currentTime
-            randomizeCameraPosition()
+            randomizeVisibleMapPart()
         }
     }
 

@@ -13,7 +13,7 @@ class Sprite(mapObject: H3m.Object, private val frames: Array<TextureAtlas.Atlas
     private val x = (mapObject.x + 1) * TILE_SIZE
     private val y = (mapObject.y + 1) * TILE_SIZE
     private val animationLength = frames.size * FRAME_TIME
-    private var stateTime = Random.nextInt(0, frames.size) * FRAME_TIME
+    private var stateTime = animationLength * Random.nextFloat()
 
     private fun getFrameX(frame: TextureAtlas.AtlasRegion): Float {
         return x + frame.offsetX - frame.originalWidth
