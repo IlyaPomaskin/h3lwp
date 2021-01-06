@@ -17,6 +17,7 @@ class Constants {
             const val IS_ASSETS_READY_KEY = "isAssetsReady"
             const val MAP_UPDATE_INTERVAL = "mapUpdateInterval"
             const val DEFAULT_MAP_UPDATE_INTERVAL = 15f * 60f * 1000f
+            const val MINIMAL_MAP_UPDATE_INTERVAL = 1000f
             const val SCALE = "scale"
             const val DEFAULT_SCALE = 0
             const val USE_SCROLL = "useScroll"

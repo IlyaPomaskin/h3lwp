@@ -15,11 +15,13 @@ import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_SCAL
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.BRIGHTNESS
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.BRIGHTNESS_DEFAULT
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.MAP_UPDATE_INTERVAL
+import com.homm3.livewallpaper.core.Constants.Preferences.Companion.MINIMAL_MAP_UPDATE_INTERVAL
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.PREFERENCES_NAME
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.SCALE
 import com.homm3.livewallpaper.parser.formats.H3mReader
 import ktx.app.KtxScreen
 import ktx.graphics.use
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
 
@@ -109,12 +111,22 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         h3mLayer.updateVisibleObjects(camera)
     }
 
+    private fun shouldUpdateVisibleMapPart(): Boolean {
+        val currentTime = System.currentTimeMillis()
+        val timeSinceLastUpdate = currentTime - lastMapUpdateTime
+        val updateInterval = max(mapUpdateInterval, MINIMAL_MAP_UPDATE_INTERVAL)
+        if (timeSinceLastUpdate >= updateInterval) {
+            lastMapUpdateTime = currentTime
+            return true
+        }
+
+        return false
+    }
+
     override fun show() {
         applyPreferences()
 
-        val currentTime = System.currentTimeMillis()
-        if (currentTime - lastMapUpdateTime >= mapUpdateInterval) {
-            lastMapUpdateTime = currentTime
+        if (shouldUpdateVisibleMapPart()) {
             randomizeVisibleMapPart()
         }
     }
