@@ -30,7 +30,7 @@ class Sprite(mapObject: H3m.Object, private val frames: Array<TextureAtlas.Atlas
         batch.draw(frame, getFrameX(frame), getFrameY(frame))
     }
 
-    fun inViewport(camera: Camera, offset: Float): Boolean {
+    fun inViewport(camera: Camera, offset: Float = Constants.VISIBLE_OBJECTS_OFFSET): Boolean {
         val halfWidth = camera.viewportWidth / 2
         val leftSide = camera.position.x - halfWidth - offset
         val rightSide = camera.position.x + camera.viewportWidth - halfWidth + offset

@@ -21,7 +21,7 @@ class ObjectsLayer(private val engine: Engine, h3mMap: H3m, isUnderground: Boole
     }
 
     fun updateVisibleSprites(camera: Camera) {
-        visibleSprites = sprites.filter { it.inViewport(camera, Constants.VISIBLE_OBJECTS_OFFSET) }
+        visibleSprites = sprites.filter { it.inViewport(camera) }
     }
 
     fun render(batch: Batch) {
