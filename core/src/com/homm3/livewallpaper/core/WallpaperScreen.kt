@@ -76,11 +76,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
 
     private fun readMap(file: FileHandle): List<H3mLayer> {
         val h3mMap = H3mReader(file.read()).read()
-        val groundLayer = H3mLayer(engine, h3mMap, false)
-
-        if (h3mMap.header.hasUnderground) {
-            return listOf(groundLayer, H3mLayer(engine, h3mMap, true))
-        }
+        val groundLayer = H3mLayer(engine, h3mMap)
 
         return listOf(groundLayer)
     }
@@ -120,14 +116,16 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     }
 
     private fun randomizeVisibleMapPart() {
-        tiledMap.layers.forEach { it.isVisible = false }
-        val h3mLayer = tiledMap.layers[Random.nextInt(tiledMap.layers.count)]
-        if (h3mLayer !is H3mLayer) {
-            return
+        tiledMap.layers.toList().run {
+            forEach { it.isVisible = false }
+            filterIsInstance(H3mLayer::class.java)
+                .random()
+                .run {
+                    randomizeCameraPosition(mapSize)
+                    isVisible = true
+                    updateVisibleObjects(camera)
+                }
         }
-        randomizeCameraPosition(h3mLayer.mapSize * TILE_SIZE)
-        h3mLayer.isVisible = true
-        h3mLayer.updateVisibleObjects(camera)
     }
 
     private fun shouldUpdateVisibleMapPart(): Boolean {

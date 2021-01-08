@@ -2,20 +2,24 @@ package com.homm3.livewallpaper.core
 
 import com.badlogic.gdx.graphics.Camera
 import com.badlogic.gdx.maps.MapGroupLayer
+import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.parser.formats.H3m
 
-class H3mLayer(engine: Engine, h3mMap: H3m, isUnderground: Boolean) : MapGroupLayer() {
-    private val objectsLayer = ObjectsLayer(engine, h3mMap, isUnderground)
-    val mapSize = h3mMap.header.size
+class H3mLayer(engine: Engine, h3mMap: H3m) : MapGroupLayer() {
+    val mapSize = h3mMap.header.size * TILE_SIZE
 
     fun updateVisibleObjects(camera: Camera) {
-        objectsLayer.updateVisibleSprites(camera)
+        layers
+            .getByType(ObjectsLayer::class.java)
+            .firstOrNull()
+            ?.updateVisibleSprites(camera)
     }
 
     init {
-        isVisible = false;
-        layers.add(TerrainGroupLayer(engine.assets, h3mMap, isUnderground))
-        layers.add(objectsLayer)
-        layers.add(BorderLayer(engine.assets, mapSize, Constants.BORDER_SIZE, Constants.BORDER_SIZE))
+        isVisible = false
+
+        layers.add(TerrainGroupLayer(engine.assets, h3mMap, false))
+        layers.add(ObjectsLayer(engine, h3mMap, false))
+        layers.add(BorderLayer(engine.assets, h3mMap.header.size, Constants.BORDER_SIZE, Constants.BORDER_SIZE))
     }
 }
