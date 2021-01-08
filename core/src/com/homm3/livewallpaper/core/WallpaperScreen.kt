@@ -21,6 +21,7 @@ import com.homm3.livewallpaper.core.Constants.Preferences.Companion.SCALE
 import com.homm3.livewallpaper.parser.formats.H3mReader
 import ktx.app.KtxScreen
 import ktx.graphics.use
+import kotlin.concurrent.thread
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
@@ -49,7 +50,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     private val brightnessOverlay = ShapeRenderer()
 
     init {
-        Gdx.files.internal("maps").list(".h3m").forEach(this::readMap)
+        readMaps()
         applyPreferences()
         randomizeVisibleMapPart()
 
@@ -58,13 +59,30 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         }
     }
 
-    private fun readMap(file: FileHandle) {
-        val h3mMap = H3mReader(file.read()).read()
+    private fun readMaps() {
+        val filesListBySize = Gdx.files
+            .internal("maps")
+            .list(".h3m")
+            .filter { it.length() > 0L }
+            .sortedBy { it.length() }
 
-        tiledMap.layers.add(H3mLayer(engine, h3mMap, false))
-        if (h3mMap.header.hasUnderground) {
-            tiledMap.layers.add(H3mLayer(engine, h3mMap, true))
+        if (filesListBySize.isEmpty()) {
+            throw Exception("Maps not found")
         }
+
+        readMap(filesListBySize.first()).forEach { tiledMap.layers.add(it) }
+        filesListBySize.drop(1).forEach { fileHandle -> thread { readMap(fileHandle).forEach { tiledMap.layers.add(it) } } }
+    }
+
+    private fun readMap(file: FileHandle): List<H3mLayer> {
+        val h3mMap = H3mReader(file.read()).read()
+        val groundLayer = H3mLayer(engine, h3mMap, false)
+
+        if (h3mMap.header.hasUnderground) {
+            return listOf(groundLayer, H3mLayer(engine, h3mMap, true))
+        }
+
+        return listOf(groundLayer)
     }
 
     private fun applyPreferences() {
@@ -98,6 +116,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
 
         engine.cameraPoint.set(nextCameraX, nextCameraY)
         camera.position.set(engine.cameraPoint, 0f)
+        camera.update()
     }
 
     private fun randomizeVisibleMapPart() {

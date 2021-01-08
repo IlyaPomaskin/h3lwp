@@ -13,6 +13,7 @@ class H3mLayer(engine: Engine, h3mMap: H3m, isUnderground: Boolean) : MapGroupLa
     }
 
     init {
+        isVisible = false;
         layers.add(TerrainGroupLayer(engine.assets, h3mMap, isUnderground))
         layers.add(objectsLayer)
         layers.add(BorderLayer(engine.assets, mapSize, Constants.BORDER_SIZE, Constants.BORDER_SIZE))
