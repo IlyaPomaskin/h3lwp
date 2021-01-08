@@ -218,12 +218,13 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private fun prepareFileStream(uri: Uri): InputStream {
-            return kotlin.runCatching {
-                requireContext()
+            try {
+                return requireContext()
                     .contentResolver
-                    .openInputStream(uri)
+                    .openInputStream(uri) ?: throw Exception()
+            } catch (ex: Exception) {
+                throw Exception(getString(R.string.file_open_error))
             }
-                .getOrElse { throw Exception(getString(R.string.file_open_error)) }
         }
 
         private fun prepareOutputDirectory(path: String): File {
