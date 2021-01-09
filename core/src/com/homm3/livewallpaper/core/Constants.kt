@@ -1,5 +1,10 @@
 package com.homm3.livewallpaper.core
 
+import com.badlogic.gdx.graphics.Pixmap
+import com.badlogic.gdx.graphics.Texture
+import com.badlogic.gdx.graphics.g2d.TextureAtlas
+import com.badlogic.gdx.graphics.g2d.TextureRegion
+
 class Constants {
     companion object {
         const val TILE_SIZE = 32f
@@ -8,6 +13,23 @@ class Constants {
         const val SCROLL_OFFSET = 3 * TILE_SIZE
         const val BORDER_SIZE = ((VISIBLE_BORDER_SIZE + SCROLL_OFFSET) / TILE_SIZE).toInt()
         const val VISIBLE_OBJECTS_OFFSET = 6 * TILE_SIZE
+    }
+
+    class Assets {
+        companion object {
+            const val ATLAS_FOLDER = "sprites"
+            const val ATLAS_NAME = "images"
+            const val ATLAS_PATH = "$ATLAS_FOLDER/$ATLAS_NAME.atlas"
+            const val SKIN_PATH = "skin/uiskin.json"
+            const val I18N_PATH = "i18n/Bundle"
+            val emptyPixmap = TextureAtlas.AtlasRegion(
+                TextureRegion(
+                    Texture(
+                        Pixmap(0, 0, Pixmap.Format.RGBA8888)
+                    )
+                )
+            )
+        }
     }
 
     class Preferences {

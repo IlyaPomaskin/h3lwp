@@ -2,7 +2,6 @@ package com.homm3.livewallpaper.desktop
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.utils.GdxNativesLoader
-import com.homm3.livewallpaper.core.Assets
 import com.homm3.livewallpaper.core.Constants
 import com.homm3.livewallpaper.core.Engine
 import com.homm3.livewallpaper.parser.AssetsConverter
@@ -51,14 +50,14 @@ class DesktopEngine : Engine() {
                     .runCatching { stream = file.inputStream() }
                     .onFailure { throw Exception("Can't open file") }
                     .mapCatching {
-                        outputDirectory = File(Assets.atlasFolder)
+                        outputDirectory = File(Constants.Assets.ATLAS_FOLDER)
                             .also {
                                 clearOutputDirectory(it)
                                 setAssetsReadyFlag(false)
                             }
                     }
                     .onFailure { throw Exception("Can't prepare output directory") }
-                    .map { AssetsConverter(stream!!, outputDirectory!!, Assets.atlasName).convertLodToTextureAtlas() }
+                    .map { AssetsConverter(stream!!, outputDirectory!!, Constants.Assets.ATLAS_NAME).convertLodToTextureAtlas() }
                     .map {
                         setAssetsReadyFlag(true)
                         println("Parsing successfully done!")

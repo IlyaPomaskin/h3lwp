@@ -1,12 +1,14 @@
 package com.homm3.livewallpaper.core
 
+import com.badlogic.gdx.assets.AssetManager
+import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile
 import com.badlogic.gdx.math.Rectangle
 import kotlin.random.Random
 
 class BorderLayer(
-    private val assets: Assets,
+    private val manager: AssetManager,
     private val mapSize: Int,
     borderWidth: Int,
     borderHeight: Int
@@ -16,11 +18,24 @@ class BorderLayer(
     Constants.TILE_SIZE.toInt(),
     Constants.TILE_SIZE.toInt()
 ) {
+    private fun getTerrainFrames(defName: String, index: Int): TextureAtlas.AtlasRegion {
+        return manager
+            .get<TextureAtlas>(Constants.Assets.ATLAS_PATH)
+            .findRegions("$defName/$index")
+            .run {
+                return if (isEmpty) {
+                    println("Can't find def $defName/$index")
+                    Constants.Assets.emptyPixmap
+                } else {
+                    this.first()
+                }
+            }
+    }
 
     private fun createBorderCell(from: Int, to: Int? = null): Cell {
         val index = if (to == null) from else Random.nextInt(from, to)
         val cell = Cell()
-        cell.tile = StaticTiledMapTile(assets.getTerrainFrames("edg", index).first())
+        cell.tile = StaticTiledMapTile(getTerrainFrames("edg", index))
         return cell
     }
 

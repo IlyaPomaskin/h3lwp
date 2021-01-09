@@ -7,7 +7,6 @@ import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.tiled.TiledMap
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
 import com.badlogic.gdx.utils.viewport.ScreenViewport
-import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_MAP_UPDATE_INTERVAL
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_SCALE
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.BRIGHTNESS
@@ -16,10 +15,9 @@ import com.homm3.livewallpaper.core.Constants.Preferences.Companion.MAP_UPDATE_I
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.MINIMAL_MAP_UPDATE_INTERVAL
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.PREFERENCES_NAME
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.SCALE
-import com.homm3.livewallpaper.parser.formats.H3mReader
 import ktx.app.KtxScreen
-import ktx.graphics.use
-import kotlin.concurrent.thread
+import ktx.assets.Asset
+import ktx.assets.load
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
@@ -57,26 +55,19 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         }
     }
 
-    private fun readMaps() {
+    private fun readMaps(): List<Asset<H3mLayer>> {
         val filesListBySize = Gdx.files
             .internal("maps")
             .list(".h3m")
             .filter { it.length() > 0L }
             .sortedBy { it.length() }
+            .map { engine.assets.manager.load<H3mLayer>("maps/${it.name()}") }
 
         if (filesListBySize.isEmpty()) {
             throw Exception("Maps not found")
         }
 
-        readMap(filesListBySize.first()).forEach { tiledMap.layers.add(it) }
-        filesListBySize.drop(1).forEach { fileHandle -> thread { readMap(fileHandle).forEach { tiledMap.layers.add(it) } } }
-    }
-
-    private fun readMap(file: FileHandle): List<H3mLayer> {
-        val h3mMap = H3mReader(file.read()).read()
-        val groundLayer = H3mLayer(engine, h3mMap)
-
-        return listOf(groundLayer)
+        return filesListBySize;
     }
 
     private fun applyPreferences() {
@@ -97,8 +88,6 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
             else -> 1 / scale.toFloat()
         }
         viewport.update(Gdx.graphics.width, Gdx.graphics.height)
-
-        brightness = prefs.getInteger(BRIGHTNESS, BRIGHTNESS_DEFAULT)
     }
 
     private fun randomizeCameraPosition(mapSize: Float) {
@@ -118,15 +107,20 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     }
 
     private fun randomizeVisibleMapPart() {
-        tiledMap.layers.toList().run {
+        val randomMap = maps.filter { it.isLoaded() }.random().asset
+        val layersList = tiledMap.layers.toList()
+
+        if (!layersList.contains(randomMap)) {
+            tiledMap.layers.add(randomMap)
+        }
+
+        layersList.run {
             forEach { it.isVisible = false }
-            filterIsInstance(H3mLayer::class.java)
-                .random()
-                .run {
-                    randomizeCameraPosition(mapSize)
-                    isVisible = true
-                    updateVisibleObjects(camera)
-                }
+            randomMap.run {
+                randomizeCameraPosition(mapSize)
+                isVisible = true
+                updateVisibleObjects(camera)
+            }
         }
     }
 
