@@ -2,9 +2,7 @@ package com.homm3.livewallpaper.core
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.files.FileHandle
 import com.badlogic.gdx.graphics.*
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.tiled.TiledMap
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
@@ -46,11 +44,11 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         it.onSpace = { tiledMap.layers.forEach { if (it is H3mLayer) it.updateVisibleObjects(camera) } }
     }
     private val prefs = Gdx.app.getPreferences(PREFERENCES_NAME)
-    private var brightness = BRIGHTNESS_DEFAULT
-    private val brightnessOverlay = ShapeRenderer()
+    private val brightnessOverlay = BrightnessOverlay(camera)
+    private val maps = readMaps()
 
     init {
-        readMaps()
+        maps.firstOrNull()?.finishLoading()
         applyPreferences()
         randomizeVisibleMapPart()
 
@@ -82,6 +80,10 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     }
 
     private fun applyPreferences() {
+        brightnessOverlay.brightness = kotlin
+            .runCatching { prefs.getInteger(BRIGHTNESS, BRIGHTNESS_DEFAULT) }
+            .getOrDefault(BRIGHTNESS_DEFAULT)
+
         mapUpdateInterval = kotlin
             .runCatching { prefs.getString(MAP_UPDATE_INTERVAL).toFloat() }
             .getOrDefault(DEFAULT_MAP_UPDATE_INTERVAL)
@@ -152,27 +154,12 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         viewport.update(width, height)
     }
 
-    private fun renderBrightnessOverlay() {
-        Gdx.gl.glEnable(GL20.GL_BLEND)
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        brightnessOverlay.projectionMatrix = camera.view
-        brightnessOverlay.use(ShapeRenderer.ShapeType.Filled) {
-            it.color = Color(0f, 0f, 0f, (100 - brightness) / 100f)
-            it.rect(
-                camera.position.x - camera.viewportWidth / 2,
-                camera.position.y - camera.viewportHeight / 2,
-                camera.viewportWidth,
-                camera.viewportHeight
-            )
-        }
-    }
-
     override fun render(delta: Float) {
         inputProcessor.handlePressedKeys()
         camera.update()
         renderer.setView(camera)
         renderer.render()
-        renderBrightnessOverlay()
+        brightnessOverlay.render()
     }
 
     override fun dispose() {
