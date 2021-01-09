@@ -37,7 +37,7 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
     }
     private var mapUpdateInterval = DEFAULT_MAP_UPDATE_INTERVAL
     private var lastMapUpdateTime = System.currentTimeMillis()
-    private val inputProcessor = InputProcessor(camera).also {
+    private val inputProcessor = InputProcessor(viewport).also {
         it.onEnter = { randomizeVisibleMapPart() }
         it.onSpace = { tiledMap.layers.forEach { if (it is H3mLayer) it.updateVisibleObjects(camera) } }
     }

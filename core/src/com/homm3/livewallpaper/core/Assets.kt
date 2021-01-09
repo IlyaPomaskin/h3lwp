@@ -16,13 +16,15 @@ class Assets {
         it.setLoader(H3mLayer::class.java, H3mLayerLoader(it.fileHandleResolver))
     }
     private val internalManager = AssetManager(InternalFileHandleResolver())
-    val skin = internalManager.let {
-        it.load<Skin>(Constants.Assets.SKIN_PATH).finishLoading()
-    }!!
-    val i18n = internalManager.let {
+    val skin = internalManager.load<Skin>(Constants.Assets.SKIN_PATH).let {
+        it.finishLoading()
+        it.asset
+    }
+    val i18n = internalManager.load<I18NBundle>(Constants.Assets.I18N_PATH).let {
         I18NBundle.setExceptionOnMissingKey(false)
-        it.load<I18NBundle>(Constants.Assets.I18N_PATH).finishLoading()
-    }!!
+        it.finishLoading()
+        it.asset
+    }
 
     init {
         Texture.setAssetManager(manager)
