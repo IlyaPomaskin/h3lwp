@@ -7,7 +7,6 @@ import ktx.app.KtxGame
 
 open class Engine : KtxGame<Screen>(null, false) {
     lateinit var assets: Assets
-    var cameraPoint = Vector2()
 
     open fun onSettingsButtonClick() {}
 
@@ -22,7 +21,7 @@ open class Engine : KtxGame<Screen>(null, false) {
     fun updateVisibleScreen() {
         if (assets.isWallpaperAssetsLoaded()) {
             if (!screens.containsKey(WallpaperScreen::class.java)) {
-                addScreen(WallpaperScreen(this))
+                addScreen(WallpaperScreen(assets.manager))
             }
             setScreen<WallpaperScreen>()
         } else {

@@ -2,10 +2,12 @@ package com.homm3.livewallpaper.core
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.graphics.*
 import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.tiled.TiledMap
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
+import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_MAP_UPDATE_INTERVAL
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_SCALE
@@ -22,10 +24,11 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
 
-class WallpaperScreen(private val engine: Engine) : KtxScreen {
-    val camera = OrthographicCamera().also {
+class WallpaperScreen(private val manager: AssetManager) : KtxScreen {
+    private val camera = OrthographicCamera().also {
         it.setToOrtho(true)
     }
+    private val cameraPoint = Vector2()
     private val viewport = ScreenViewport(camera)
     private val tiledMap = TiledMap()
     private val renderer = object : OrthogonalTiledMapRenderer(tiledMap) {
@@ -101,9 +104,13 @@ class WallpaperScreen(private val engine: Engine) : KtxScreen {
         val yEnd = mapSize - yStart - halfHeight
         val nextCameraY = yStart + Random.nextFloat() * yEnd
 
-        engine.cameraPoint.set(nextCameraX, nextCameraY)
-        camera.position.set(engine.cameraPoint, 0f)
+        cameraPoint.set(nextCameraX, nextCameraY)
+        camera.position.set(cameraPoint, 0f)
         camera.update()
+    }
+
+    fun moveCameraByOffset(offset: Float) {
+        camera.position.x = cameraPoint.x + offset * Constants.SCROLL_OFFSET
     }
 
     private fun randomizeVisibleMapPart() {
