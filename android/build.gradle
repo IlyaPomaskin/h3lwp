@@ -100,7 +100,7 @@ ext {
 }
 
 dependencies {
-    implementation "androidx.core:core:1.2.0"
+    implementation "androidx.core:core:1.3.2"
     implementation "androidx.preference:preference:1.1.1"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation "io.github.libktx:ktx-app:$ktxVersion"
