@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="@string/credits_title">
+        <Preference
+            android:key="source_code"
+            android:summary="@string/source_code_summary"
+            android:title="@string/source_code_title" />
+        <Preference
+            android:key="map_author"
+            android:summary="@string/map_author_summary"
+            android:title="@string/map_author_title" />
+        <Preference
+            android:key="icon_author"
+            android:summary="@string/icon_author_summary"
+            android:title="@string/icon_author_title" />
+    </PreferenceCategory>
+</PreferenceScreen>

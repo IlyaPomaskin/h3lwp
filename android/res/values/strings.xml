@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Heroes 3 Wallpaper</string>
+    <string name="title_activity_settings">Settings</string>
+
+    <string name="assets_header">Wallpaper</string>
+    <string name="assets_select_button">Select file \"h3sprite.lod\"</string>
+    <string name="assets_permission_canceled">Can\'t read file without permission</string>
+    <string name="assets_select_file_activity_title">Select \"h3sprite.lod\"</string>
+    <string name="assets_parsing_progress">Parsing…\nCan take few minutes</string>
+    <string name="assets_parsing_done">Parsing successfully done!</string>
+    <string name="file_open_error">Can\'t open file.\nCheck app permissions.</string>
+    <string name="output_error">Can\'t save files.\nCheck free space or try reinstall the app.</string>
+    <string name="invalid_file_error">Error while reading while.\nTry another file.</string>
+    <string name="common_error">Something went wrong.\nTry another file or reinstall the app.</string>
+    <string name="wallpaper_change_button">Set wallpaper</string>
+
+    <string name="preferences_header">Preferences</string>
+
+    <string name="scale_title">Image scale</string>
+    <string name="update_time_title">Change map interval</string>
+    <string name="maps_title">Maps</string>
+    <string name="maps_add">Add maps</string>
+
+    <string name="use_scroll_title">Use scroll</string>
+    <string name="use_scroll_summary">Scroll map while switching home screen\nSome phones don\'t support this feature</string>
+
+    <string name="brightness_title">Brightness</string>
+
+    <string name="credits_header">Credits</string>
+    <string name="credits_button">Open</string>
+
+    <string name="credits_title">Credits</string>
+    <string name="source_code_title" translatable="false">App by Ilya Pomaskin</string>
+    <string name="source_code_summary" translatable="false">https://github.com/IlyaPomaskin/h3lwp</string>
+
+    <string name="map_author_title" translatable="false">Map by Fosgen</string>
+    <string name="map_author_summary" translatable="false">https://en.heroesportal.net/maps/view/1737</string>
+
+    <string name="icon_author_title" translatable="false">Icon by Wit Olszewski</string>
+    <string name="icon_author_summary" translatable="false">https://www.instagram.com/witolszewski/</string>
+
+    <string name="scale_by_density">Based on display density</string>
+
+    <string name="update_timeout_5minutes">5 minutes</string>
+    <string name="update_timeout_15minutes">15 minutes</string>
+    <string name="update_timeout_30minutes">30 minutes</string>
+    <string name="update_timeout_1hour">1 hour</string>
+    <string name="update_timeout_24hours">24 hours</string>
+    <string name="update_timeout_every_switch">Every switch to home screen</string>
+    <string name="title_activity_main">MainActivity</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">First Fragment</string>
+    <string name="second_fragment_label">Second Fragment</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+
+    <string name="hello_first_fragment">Hello first fragment</string>
+    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
+</resources>

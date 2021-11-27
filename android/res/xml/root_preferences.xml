@@ -1,0 +1,48 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory app:title="@string/assets_header">
+        <Preference
+            android:key="select_file"
+            android:layout="@layout/preference_extended_summary"
+            android:summary=" "
+            android:title="@string/assets_select_button" />
+        <Preference
+            android:key="wallpaper_change"
+            android:title="@string/wallpaper_change_button" />
+    </PreferenceCategory>
+    <PreferenceCategory app:title="@string/preferences_header">
+        <DropDownPreference
+            app:entries="@array/scale_entries"
+            app:entryValues="@array/scale_values"
+            app:key="scale"
+            app:title="@string/scale_title"
+            app:useSimpleSummaryProvider="true" />
+        <DropDownPreference
+            app:entries="@array/update_timeout_entries"
+            app:entryValues="@array/update_timeout_values"
+            app:key="mapUpdateInterval"
+            app:title="@string/update_time_title"
+            app:useSimpleSummaryProvider="true" />
+        <SwitchPreference
+            app:defaultValue="true"
+            app:key="useScroll"
+            app:summary="@string/use_scroll_summary"
+            app:title="@string/use_scroll_title" />
+        <MultiSelectListPreference
+            android:key="maps"
+            android:title="@string/maps_title"
+            app:isPreferenceVisible="false" />
+        <SeekBarPreference
+            app:key="brightness"
+            app:title="@string/brightness_title"
+            app:min="1"
+            android:max="100"
+            app:defaultValue="100"
+            app:showSeekBarValue="true" />
+    </PreferenceCategory>
+    <PreferenceCategory app:title="@string/credits_header">
+        <Preference
+            android:key="credits_button"
+            android:title="@string/credits_button" />
+    </PreferenceCategory>
+</PreferenceScreen>
