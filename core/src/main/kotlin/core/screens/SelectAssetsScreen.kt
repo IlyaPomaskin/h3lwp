@@ -1,10 +1,11 @@
-package com.homm3.livewallpaper.core
+package core.screens
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.scenes.scene2d.ui.VerticalGroup
 import com.badlogic.gdx.utils.Align
+import com.homm3.livewallpaper.core.Assets
 import ktx.app.KtxScreen
 import ktx.actors.*
 import ktx.app.clearScreen

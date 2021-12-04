@@ -1,7 +1,5 @@
-package com.homm3.livewallpaper.core
+package core.layers
 
-import com.badlogic.gdx.assets.AssetManager
-import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion
 import com.badlogic.gdx.maps.MapGroupLayer
 import com.badlogic.gdx.maps.tiled.TiledMapTile
@@ -9,10 +7,11 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer
 import com.badlogic.gdx.maps.tiled.tiles.AnimatedTiledMapTile
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile
 import com.badlogic.gdx.utils.Array
+import com.homm3.livewallpaper.core.Assets
+import com.homm3.livewallpaper.core.Constants
 import com.homm3.livewallpaper.core.Constants.Companion.FRAME_TIME
 import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.parser.formats.H3m
-import ktx.collections.gdxArrayOf
 import ktx.collections.map
 
 class TerrainGroupLayer(private val assets: Assets, h3m: H3m, isUnderground: Boolean) : MapGroupLayer() {
