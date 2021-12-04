@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.assets.AssetLoaderParameters
 import com.homm3.livewallpaper.parser.formats.H3m
+import core.Camera
 import core.layers.H3mLayersGroup
 import core.screens.GameScreen
 import core.screens.LoadingScreen
@@ -11,20 +12,25 @@ import core.screens.SelectAssetsScreen
 import ktx.app.KtxGame
 
 open class Engine : KtxGame<Screen>(null, false) {
-    lateinit var assets: Assets
+    private lateinit var assets: Assets
+    private lateinit var camera: Camera
 
     open fun onSettingsButtonClick() {}
 
     private val mapsList: MutableList<H3m> = mutableListOf()
-    private val mapsLayers: MutableList<H3mLayersGroup> = mutableListOf()
+
+    fun moveCameraByOffset(offset: Float) {
+        camera.moveCameraByOffset(offset)
+    }
 
     override fun create() {
+        camera = Camera()
         assets = Assets()
         assets.loadUiAssets()
 
         addScreen(LoadingScreen(assets))
         addScreen(SelectAssetsScreen(assets, ::onSettingsButtonClick))
-        addScreen(GameScreen())
+        addScreen(GameScreen(camera))
 
         loadAndStart()
         loadMaps()

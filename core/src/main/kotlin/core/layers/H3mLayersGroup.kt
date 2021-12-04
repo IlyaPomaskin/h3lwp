@@ -3,8 +3,6 @@ package core.layers
 import com.badlogic.gdx.graphics.Camera
 import com.badlogic.gdx.maps.MapGroupLayer
 import com.homm3.livewallpaper.core.Assets
-import core.layers.ObjectsLayer
-import core.layers.TerrainGroupLayer
 import com.homm3.livewallpaper.parser.formats.H3m
 
 class H3mLayersGroup(assets: Assets, h3m: H3m) : MapGroupLayer() {

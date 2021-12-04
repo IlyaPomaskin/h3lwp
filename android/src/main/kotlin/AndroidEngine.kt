@@ -43,7 +43,7 @@ class AndroidEngine(private val context: Context) : Engine(), AndroidWallpaperLi
                               xOffsetStep: Float, yOffsetStep: Float,
                               xPixelOffset: Int, yPixelOffset: Int) {
         if (useScroll && screens.containsKey(GameScreen::class.java)) {
-            getScreen<GameScreen>().moveCameraByOffset(xOffset);
+            moveCameraByOffset(xOffset);
         }
     }
 }

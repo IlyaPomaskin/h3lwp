@@ -20,10 +20,6 @@ class InputProcessor(private val viewport: ScreenViewport) : KtxInputAdapter {
         return true
     }
 
-    fun scrolled(amountX: Int): Boolean {
-        return false;
-    }
-
     fun handlePressedKeys() {
         when (pressedKeyCode) {
             Input.Keys.NUM_0 -> viewport.unitsPerPixel = 1f
