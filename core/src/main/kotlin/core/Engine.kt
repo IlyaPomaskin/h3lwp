@@ -63,8 +63,6 @@ open class Engine : KtxGame<Screen>(null, false) {
                         H3mLoaderParams().apply {
                             loadedCallback =
                                 AssetLoaderParameters.LoadedCallback { aManager, fileName, _ ->
-                                    Gdx.app.log("h3mLayer", "CB DONE ${fileHandle.file()}")
-
                                     mapsList.add(aManager.get(fileName))
                                 }
                         })

@@ -55,7 +55,7 @@ class GameScreen(private val camera: Camera) : KtxScreen {
         tiledMap.layers.add(map)
 
         if (tiledMap.layers.size() == 1) {
-            randomizeVisibleMapPart()
+            Gdx.app.postRunnable(::randomizeVisibleMapPart)
         }
     }
 

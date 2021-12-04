@@ -1,6 +1,5 @@
 package com.homm3.livewallpaper.core
 
-import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.AssetDescriptor
 import com.badlogic.gdx.assets.AssetLoaderParameters
 import com.badlogic.gdx.assets.AssetManager
@@ -51,12 +50,7 @@ class H3mLoader(private val resolver: FileHandleResolver) :
         file: FileHandle?,
         parameter: H3mLoaderParams?
     ): H3m {
-        val filename = fileName ?: file?.name() ?: throw Exception("file not loaded")
-
-        Gdx.app.log("h3mLoader", "load sync $filename")
-
         if (map == null) {
-            Gdx.app.log("h3mLoader", "layer null")
             map = load(manager, fileName, file, parameter)
         } else if (map is H3m) {
             return map as H3m
@@ -71,18 +65,10 @@ class H3mLoader(private val resolver: FileHandleResolver) :
         file: FileHandle?,
         parameter: H3mLoaderParams?
     ) {
-        val filename = fileName ?: file?.name() ?: throw Exception("file not loaded")
-
-        Gdx.app.log("h3mLoader", "load async $filename start")
-
         try {
             map = load(manager, fileName, file, parameter)
         } catch (e: Exception) {
-            Gdx.app.log("h3mLoader", "Failed to load $filename ")
-            Gdx.app.log("h3mLoader", e.message)
             e.printStackTrace()
         }
-
-        Gdx.app.log("h3mLayer", "load async $filename done")
     }
 }

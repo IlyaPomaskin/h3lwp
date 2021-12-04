@@ -9,10 +9,10 @@ import com.homm3.livewallpaper.core.ObjectsRandomizer
 import com.homm3.livewallpaper.core.Sprite
 import com.homm3.livewallpaper.parser.formats.H3m
 
-class ObjectsLayer(private val assets: Assets, h3mMap: H3m, isUnderground: Boolean) : MapLayer() {
+class ObjectsLayer(private val assets: Assets, h3m: H3m, isUnderground: Boolean) : MapLayer() {
     private val randomizer = ObjectsRandomizer()
     private var visibleSprites: List<Sprite> = mutableListOf()
-    private var sprites = h3mMap
+    private var sprites = h3m
         .objects
         .sorted()
         // TODO underground rendering
