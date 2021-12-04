@@ -44,7 +44,8 @@ class WallpaperScreen(private val manager: AssetManager) : KtxScreen {
     private var lastMapUpdateTime = System.currentTimeMillis()
     private val inputProcessor = InputProcessor(viewport).also {
         it.onEnter = ::randomizeVisibleMapPart
-        it.onSpace = { tiledMap.layers.forEach { if (it is H3mLayer) it.updateVisibleObjects(camera) } }
+        it.onSpace =
+            { tiledMap.layers.forEach { if (it is H3mLayer) it.updateVisibleObjects(camera) } }
     }
     private val prefs = Gdx.app.getPreferences(PREFERENCES_NAME)
     private val brightnessOverlay = BrightnessOverlay(camera)
@@ -61,31 +62,33 @@ class WallpaperScreen(private val manager: AssetManager) : KtxScreen {
     }
 
     private fun readMaps(): List<Asset<H3mLayer>> {
-
         val filesListBySize = Gdx.files
             .internal("maps")
             .list(".h3m")
             .filter { it.length() > 0L }
             .sortedBy { it.length() }
             .mapIndexed { index, fileHandle ->
-                val asset = manager.load(
-                    fileHandle.file().toString(),
-                    H3mLayerLoaderParams().apply {
-                        loadedCallback = AssetLoaderParameters.LoadedCallback { assetManager, fileName, _ ->
-                            Gdx.app.log("h3mLayer", "cb done")
-                            tiledMap.layers.add(assetManager.get(fileName))
-                            if (index == 0) {
-                                randomizeVisibleMapPart()
-                            }
-                        }
-                    })
-                manager.update()
-                asset
+                manager
+                    .load(
+                        fileHandle.file().toString(),
+                        H3mLayerLoaderParams().apply {
+                            loadedCallback =
+                                AssetLoaderParameters.LoadedCallback { aManager, fileName, _ ->
+                                    Gdx.app.log("h3mLayer", "cb done")
+//                                    tiledMap.layers.add(aManager.get(fileName))
+//                                    if (index == 0) {
+//                                        randomizeVisibleMapPart()
+//                                    }
+                                }
+                        })
+                    .also { it.finishLoading() }
             }
 
         if (filesListBySize.isEmpty()) {
             throw Exception("Maps not found")
         }
+
+        filesListBySize.forEach { tiledMap.layers.add(it.asset) }
 
         return filesListBySize
     }
@@ -130,7 +133,7 @@ class WallpaperScreen(private val manager: AssetManager) : KtxScreen {
         camera.position.x = cameraPoint.x + offset * Constants.SCROLL_OFFSET
     }
 
-    private fun randomizeVisibleMapPart() {
+    fun randomizeVisibleMapPart() {
         tiledMap.layers.run {
             forEach { it.isVisible = false }
 

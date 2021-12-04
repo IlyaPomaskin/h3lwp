@@ -40,11 +40,7 @@ class H3mLayerLoader(private val resolver: FileHandleResolver) :
         fileHandle = fileHandle ?: resolver.resolve(fileName)
         fileHandle ?: throw Exception("File not loaded $fileName")
 
-        val layer = H3mLayer(manager, H3mReader(fileHandle.read()).read())
-
-        parameter?.loadedCallback?.finishedLoading(manager, fileName, H3mLayer::class.java)
-
-        return layer;
+        return H3mLayer(manager, H3mReader(fileHandle.read()).read())
     }
 
     override fun loadSync(
@@ -75,6 +71,8 @@ class H3mLayerLoader(private val resolver: FileHandleResolver) :
         Gdx.app.log("h3mLayer", "load async $filename start")
         try {
             layer = load(manager, fileName, file, parameter)
+
+            parameter?.loadedCallback?.finishedLoading(manager, fileName, H3mLayer::class.java)
         } catch (e: Exception) {
             Gdx.app.log("h3mLayer", "Failed to load $filename ")
             Gdx.app.log("h3mLayer", e.message)
