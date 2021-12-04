@@ -1,10 +1,11 @@
-package com.homm3.livewallpaper.core
+package core.layers
 
 import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile
 import com.badlogic.gdx.math.Rectangle
+import com.homm3.livewallpaper.core.Constants
 import kotlin.random.Random
 
 class BorderLayer(
