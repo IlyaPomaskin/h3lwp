@@ -17,20 +17,20 @@ class PreferenceService {
         }
 
     var mapUpdateInterval: Float
-        get() = prefs.getFloat(
+        get() = prefs.getString(
             Constants.Preferences.MAP_UPDATE_INTERVAL,
-            Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL
-        )
+            Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL.toString()
+        ).toFloat()
         set(value) {
             prefs[Constants.Preferences.MAP_UPDATE_INTERVAL] = value
         }
 
     var scale: Int
-        get() = prefs.getInteger(
+        get() = prefs.getString(
             Constants.Preferences.SCALE,
-            Constants.Preferences.DEFAULT_SCALE
-        )
+            Constants.Preferences.DEFAULT_SCALE.toString()
+        ).toInt()
         set(value) {
-            prefs[Constants.Preferences.SCALE] = value
+            prefs[Constants.Preferences.SCALE] = value.toString()
         }
 }
