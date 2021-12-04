@@ -2,7 +2,9 @@ package com.homm3.livewallpaper.core
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
-import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.assets.AssetLoaderParameters
+import com.homm3.livewallpaper.parser.formats.H3m
+import core.H3mLayersGroup
 import ktx.app.KtxGame
 
 open class Engine : KtxGame<Screen>(null, false) {
@@ -10,34 +12,77 @@ open class Engine : KtxGame<Screen>(null, false) {
 
     open fun onSettingsButtonClick() {}
 
+    private val mapsList: MutableList<H3m> = mutableListOf()
+    private val mapsLayers: MutableList<H3mLayersGroup> = mutableListOf()
+
     override fun create() {
         assets = Assets()
-        assets.tryLoadWallpaperAssets()
-        addScreen(LoadingScreen(this))
-        addScreen(SettingsScreen(this))
-        Gdx.app.postRunnable(::updateVisibleScreen)
+        assets.loadUiAssets()
+
+        addScreen(LoadingScreen(assets))
+        addScreen(SelectAssetsScreen(assets, ::onSettingsButtonClick))
+        addScreen(GameScreen())
+
+        loadAndStart()
+        loadMaps()
     }
 
-    fun updateVisibleScreen() {
-        if (assets.isWallpaperAssetsLoaded()) {
-            if (!screens.containsKey(WallpaperScreen::class.java)) {
-                addScreen(WallpaperScreen(assets.manager))
-            }
-            setScreen<WallpaperScreen>()
+    private fun loadAndStart() {
+        setScreen<LoadingScreen>()
+
+        if (assets.isGameAssetsAvailable()) {
+            assets.loadGameAssets()
+            setScreen<GameScreen>()
         } else {
-            assets.tryLoadWallpaperAssets()
+            setScreen<SelectAssetsScreen>()
+        }
+    }
 
-            if (!assets.manager.isFinished) {
-                setScreen<LoadingScreen>()
-                return
+    private fun loadMaps() {
+        Gdx.files
+            .internal("maps")
+            .list(".h3m")
+            .filter { it.length() > 0L }
+            .sortedBy { it.length() }
+            .forEach { fileHandle ->
+                Gdx.app.log("h3mLayer", "start loading ${fileHandle.file()}")
+                assets
+                    .manager
+                    .load(
+                        fileHandle.file().toString(),
+                        H3m::class.java,
+                        H3mLoaderParams().apply {
+                            loadedCallback =
+                                AssetLoaderParameters.LoadedCallback { aManager, fileName, _ ->
+                                    Gdx.app.log("h3mLayer", "CB DONE ${fileHandle.file()}")
+
+                                    mapsList.add(aManager.get(fileName))
+                                }
+                        })
             }
 
-            setScreen<SettingsScreen>()
+        assets.manager.finishLoading()
+
+        mapsList.forEach {
+            getScreen<GameScreen>().addMap(
+                H3mLayersGroup(assets, it)
+            )
         }
     }
 
     override fun resume() {
         super.resume()
-        updateVisibleScreen()
+
+        if (assets.isGameAssetsLoaded()) {
+            setScreen<GameScreen>()
+        } else {
+            loadAndStart()
+        }
+    }
+
+    override fun render() {
+        assets.manager.update()
+
+        super.render()
     }
 }

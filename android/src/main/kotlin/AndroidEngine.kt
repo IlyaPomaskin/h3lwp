@@ -5,7 +5,7 @@ import android.content.Intent
 import com.badlogic.gdx.backends.android.AndroidWallpaperListener
 import com.homm3.livewallpaper.core.Constants
 import com.homm3.livewallpaper.core.Engine
-import com.homm3.livewallpaper.core.WallpaperScreen
+import com.homm3.livewallpaper.core.GameScreen
 
 class AndroidEngine(private val context: Context) : Engine(), AndroidWallpaperListener {
     private var useScroll = Constants.Preferences.USE_SCROLL_DEFAULT
@@ -42,8 +42,8 @@ class AndroidEngine(private val context: Context) : Engine(), AndroidWallpaperLi
     override fun offsetChange(xOffset: Float, yOffset: Float,
                               xOffsetStep: Float, yOffsetStep: Float,
                               xPixelOffset: Int, yPixelOffset: Int) {
-        if (useScroll && screens.containsKey(WallpaperScreen::class.java)) {
-            getScreen<WallpaperScreen>().moveCameraByOffset(xOffset);
+        if (useScroll && screens.containsKey(GameScreen::class.java)) {
+            getScreen<GameScreen>().moveCameraByOffset(xOffset);
         }
     }
 }

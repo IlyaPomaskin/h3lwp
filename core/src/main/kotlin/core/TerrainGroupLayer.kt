@@ -15,25 +15,11 @@ import com.homm3.livewallpaper.parser.formats.H3m
 import ktx.collections.gdxArrayOf
 import ktx.collections.map
 
-class TerrainGroupLayer(private val manager: AssetManager, h3mMap: H3m, isUnderground: Boolean) : MapGroupLayer() {
+class TerrainGroupLayer(private val assets: Assets, h3m: H3m, isUnderground: Boolean) : MapGroupLayer() {
     enum class TileType {
         TERRAIN,
         RIVER,
         ROAD
-    }
-
-    private fun getTerrainFrames(defName: String, index: Int): Array<AtlasRegion> {
-         manager
-            .get<TextureAtlas>(Constants.Assets.ATLAS_PATH)
-            .findRegions("$defName/$index")
-            .run {
-                return if (isEmpty) {
-                    println("Can't find terrain def $defName/$index")
-                    return gdxArrayOf(Constants.Assets.emptyPixmap)
-                } else {
-                    this
-                }
-            }
     }
 
     private fun createMapTile(frames: Array<AtlasRegion>): TiledMapTile {
@@ -48,21 +34,21 @@ class TerrainGroupLayer(private val manager: AssetManager, h3mMap: H3m, isUnderg
         return when (type) {
             TileType.TERRAIN -> TiledMapTileLayer.Cell().apply {
                 this.tile = createMapTile(
-                    getTerrainFrames(Constants.TerrainDefs.byInt(tile.terrain), tile.terrainImageIndex)
+                    assets.getTerrainFrames(Constants.TerrainDefs.byInt(tile.terrain), tile.terrainImageIndex)
                 )
                 this.flipHorizontally = tile.mirrorConfig.get(0)
                 this.flipVertically = tile.mirrorConfig.get(1)
             }
             TileType.RIVER -> TiledMapTileLayer.Cell().apply {
                 this.tile = createMapTile(
-                    getTerrainFrames(Constants.RiverDefs.byInt(tile.river), tile.riverImageIndex)
+                    assets.getTerrainFrames(Constants.RiverDefs.byInt(tile.river), tile.riverImageIndex)
                 )
                 this.flipHorizontally = tile.mirrorConfig.get(2)
                 this.flipVertically = tile.mirrorConfig.get(3)
             }
             TileType.ROAD -> TiledMapTileLayer.Cell().apply {
                 this.tile = createMapTile(
-                    getTerrainFrames(Constants.RoadDefs.byInt(tile.road), tile.roadImageIndex)
+                    assets.getTerrainFrames(Constants.RoadDefs.byInt(tile.road), tile.roadImageIndex)
                 )
                 this.flipHorizontally = tile.mirrorConfig.get(4)
                 this.flipVertically = tile.mirrorConfig.get(5)
@@ -71,7 +57,7 @@ class TerrainGroupLayer(private val manager: AssetManager, h3mMap: H3m, isUnderg
     }
 
     init {
-        val mapSize = h3mMap.header.size
+        val mapSize = h3m.header.size
         val terrainLayer = TiledMapTileLayer(mapSize, mapSize, TILE_SIZE.toInt(), TILE_SIZE.toInt())
         val riverLayer = TiledMapTileLayer(mapSize, mapSize, TILE_SIZE.toInt(), TILE_SIZE.toInt())
         val roadLayer = TiledMapTileLayer(mapSize, mapSize, TILE_SIZE.toInt(), TILE_SIZE.toInt())
@@ -81,7 +67,7 @@ class TerrainGroupLayer(private val manager: AssetManager, h3mMap: H3m, isUnderg
         for (x in 0 until mapSize) {
             for (y in 0 until mapSize) {
                 val index = tileOffset + mapSize * y + x
-                val tile = h3mMap.terrainTiles[index]
+                val tile = h3m.terrainTiles[index]
                 terrainLayer.setCell(x, y, createCell(tile, TileType.TERRAIN))
                 if (tile.river > 0) {
                     riverLayer.setCell(x, y, createCell(tile, TileType.RIVER))

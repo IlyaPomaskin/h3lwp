@@ -1,7 +1,7 @@
 apply plugin: 'application'
 
 sourceSets.main.resources.srcDirs += [ rootProject.file('assets').path ]
-mainClassName = 'com.homm3.livewallpaper.lwjgl3.DesktopLauncher'
+mainClassName = 'com.homm3.livewallpaper.desktop.Lwjgl3Launcher'
 sourceCompatibility = 8.0
 
 dependencies {
