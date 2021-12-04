@@ -26,7 +26,7 @@ class H3mLoader(private val resolver: FileHandleResolver) :
         return gdxArrayOf()
     }
 
-    fun load(
+    private fun load(
         manager: AssetManager?,
         fileName: String?,
         file: FileHandle?,
@@ -51,12 +51,12 @@ class H3mLoader(private val resolver: FileHandleResolver) :
         file: FileHandle?,
         parameter: H3mLoaderParams?
     ): H3m {
-        val filename = fileName ?: file?.name() ?: "unknown"
+        val filename = fileName ?: file?.name() ?: throw Exception("file not loaded")
 
-        Gdx.app.log("h3mLayer", "load sync $filename")
+        Gdx.app.log("h3mLoader", "load sync $filename")
 
         if (map == null) {
-            Gdx.app.log("h3mLayer", "layer null")
+            Gdx.app.log("h3mLoader", "layer null")
             map = load(manager, fileName, file, parameter)
         } else if (map is H3m) {
             return map as H3m
@@ -71,15 +71,15 @@ class H3mLoader(private val resolver: FileHandleResolver) :
         file: FileHandle?,
         parameter: H3mLoaderParams?
     ) {
-        val filename = fileName ?: file?.name() ?: "unknown"
+        val filename = fileName ?: file?.name() ?: throw Exception("file not loaded")
 
-        Gdx.app.log("h3mLayer", "load async $filename start")
+        Gdx.app.log("h3mLoader", "load async $filename start")
 
         try {
             map = load(manager, fileName, file, parameter)
         } catch (e: Exception) {
-            Gdx.app.log("h3mLayer", "Failed to load $filename ")
-            Gdx.app.log("h3mLayer", e.message)
+            Gdx.app.log("h3mLoader", "Failed to load $filename ")
+            Gdx.app.log("h3mLoader", e.message)
             e.printStackTrace()
         }
 
