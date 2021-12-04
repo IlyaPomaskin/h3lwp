@@ -8,76 +8,81 @@ import com.badlogic.gdx.assets.loaders.AsynchronousAssetLoader
 import com.badlogic.gdx.assets.loaders.FileHandleResolver
 import com.badlogic.gdx.files.FileHandle
 import com.badlogic.gdx.utils.Array
+import com.homm3.livewallpaper.parser.formats.H3m
 import com.homm3.livewallpaper.parser.formats.H3mReader
 import ktx.collections.gdxArrayOf
-import kotlin.concurrent.thread
 
-class H3mLayerLoaderParams : AssetLoaderParameters<H3mLayer>() {
+class H3mLoaderParams : AssetLoaderParameters<H3m>() {}
 
-}
-
-class H3mLayerLoader(private val resolver: FileHandleResolver) :
-    AsynchronousAssetLoader<H3mLayer, H3mLayerLoaderParams>(resolver) {
-    private var layer: H3mLayer? = null
+class H3mLoader(private val resolver: FileHandleResolver) :
+    AsynchronousAssetLoader<H3m, H3mLoaderParams>(resolver) {
+    private var map: H3m? = null
 
     override fun getDependencies(
         fileName: String?,
         file: FileHandle?,
-        parameter: H3mLayerLoaderParams?
+        parameter: H3mLoaderParams?
     ): Array<AssetDescriptor<Any>> {
         return gdxArrayOf()
     }
 
-    private fun load(
+    fun load(
         manager: AssetManager?,
         fileName: String?,
         file: FileHandle?,
-        parameter: H3mLayerLoaderParams?
-    ): H3mLayer {
+        parameter: H3mLoaderParams?
+    ): H3m {
         manager ?: throw Exception("Asset manager not found")
 
         var fileHandle: FileHandle? = file
         fileHandle = fileHandle ?: resolver.resolve(fileName)
         fileHandle ?: throw Exception("File not loaded $fileName")
 
-        return H3mLayer(manager, H3mReader(fileHandle.read()).read())
+        try {
+            return H3mReader(fileHandle.read()).read()
+        } catch (ex: Exception) {
+            throw Exception("Can't read map $fileName")
+        }
     }
 
     override fun loadSync(
         manager: AssetManager?,
         fileName: String?,
         file: FileHandle?,
-        parameter: H3mLayerLoaderParams?
-    ): H3mLayer {
+        parameter: H3mLoaderParams?
+    ): H3m {
         val filename = fileName ?: file?.name() ?: "unknown"
 
         Gdx.app.log("h3mLayer", "load sync $filename")
 
-        if (layer == null) {
+        if (map == null) {
             Gdx.app.log("h3mLayer", "layer null")
-            layer = load(manager, fileName, file, parameter)
+            map = load(manager, fileName, file, parameter)
+        } else if (map is H3m) {
+            return map as H3m
         }
 
-        return layer as H3mLayer
+        throw Exception("Can't loadSync map $fileName")
     }
 
     override fun loadAsync(
         manager: AssetManager?,
         fileName: String?,
         file: FileHandle?,
-        parameter: H3mLayerLoaderParams?
+        parameter: H3mLoaderParams?
     ) {
         val filename = fileName ?: file?.name() ?: "unknown"
-        Gdx.app.log("h3mLayer", "load async $filename start")
-        try {
-            layer = load(manager, fileName, file, parameter)
 
-            parameter?.loadedCallback?.finishedLoading(manager, fileName, H3mLayer::class.java)
+        Gdx.app.log("h3mLayer", "load async $filename start")
+
+        try {
+            map = load(manager, fileName, file, parameter)
         } catch (e: Exception) {
             Gdx.app.log("h3mLayer", "Failed to load $filename ")
             Gdx.app.log("h3mLayer", e.message)
             e.printStackTrace()
         }
+
         Gdx.app.log("h3mLayer", "load async $filename done")
     }
 }
