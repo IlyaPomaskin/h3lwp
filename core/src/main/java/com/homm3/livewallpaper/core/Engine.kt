@@ -27,12 +27,20 @@ open class Engine : KtxGame<Screen>(null, false) {
         assets = Assets()
         assets.loadUiAssets()
 
-        addScreen(LoadingScreen(assets))
+        addScreen(LoadingScreen(assets) {
+            mapsList.forEach {
+                getScreen<GameScreen>().addMap(
+                    H3mLayersGroup(assets, it)
+                )
+            }
+
+            setScreen<GameScreen>()
+        })
         addScreen(SelectAssetsScreen(assets, ::onSettingsButtonClick))
         addScreen(GameScreen(camera))
 
         loadAndStart()
-        loadMaps()
+        assets.loadMaps { mapsList.add(it) }
     }
 
     private fun loadAndStart() {
@@ -40,39 +48,8 @@ open class Engine : KtxGame<Screen>(null, false) {
 
         if (assets.isGameAssetsAvailable()) {
             assets.loadGameAssets()
-            setScreen<GameScreen>()
         } else {
             setScreen<SelectAssetsScreen>()
-        }
-    }
-
-    private fun loadMaps() {
-        Gdx.files
-            .internal("maps")
-            .list(".h3m")
-            .filter { it.length() > 0L }
-            .sortedBy { it.length() }
-            .forEach { fileHandle ->
-                Gdx.app.log("h3mLayer", "start loading ${fileHandle.file()}")
-                assets
-                    .manager
-                    .load(
-                        fileHandle.file().toString(),
-                        H3m::class.java,
-                        H3mLoaderParams().apply {
-                            loadedCallback =
-                                AssetLoaderParameters.LoadedCallback { aManager, fileName, _ ->
-                                    mapsList.add(aManager.get(fileName))
-                                }
-                        })
-            }
-
-        assets.manager.finishLoading()
-
-        mapsList.forEach {
-            getScreen<GameScreen>().addMap(
-                H3mLayersGroup(assets, it)
-            )
         }
     }
 
