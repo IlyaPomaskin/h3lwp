@@ -17,13 +17,9 @@
         android:theme="@style/Theme.AppCompat.DayNight">
         <activity
             android:name=".android.SettingsComposeActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/title_activity_settings_compose"
             android:theme="@style/Theme.AppCompat.DayNight" />
-        <activity
-            android:name=".android.MainActivity"
-            android:exported="true"
-            android:label="@string/title_activity_main" />
         <activity
             android:name=".android.SettingsActivity"
             android:exported="true"

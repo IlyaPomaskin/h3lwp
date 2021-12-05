@@ -38,10 +38,10 @@ class Constants {
             val PREFERENCES_NAME = Engine::class.java.`package`.name + ".PREFERENCES"
             const val IS_ASSETS_READY_KEY = "isAssetsReady"
             const val MAP_UPDATE_INTERVAL = "mapUpdateInterval"
-            const val DEFAULT_MAP_UPDATE_INTERVAL = 15f * 60f * 1000f
+            const val DEFAULT_MAP_UPDATE_INTERVAL = (15f * 60f * 1000f).toString()
             const val MINIMAL_MAP_UPDATE_INTERVAL = 1000f
             const val SCALE = "scale"
-            const val DEFAULT_SCALE = 0
+            const val DEFAULT_SCALE = "0"
             const val USE_SCROLL = "useScroll"
             const val USE_SCROLL_DEFAULT = true
             const val BRIGHTNESS = "brightness"

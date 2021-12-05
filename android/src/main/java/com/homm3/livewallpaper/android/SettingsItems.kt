@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -13,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
@@ -39,7 +41,7 @@ fun SettingsCategory(
 @Composable
 fun SettingsItem(
     title: String,
-    subtitle: String,
+    subtitle: String = "",
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = MutableInteractionSource(),
@@ -97,23 +99,23 @@ fun SettingsItem(
     }
 }
 
-data class SettingsOptionsItem(
-    val key: String,
-    val value: String
+data class SettingsDropdownItem(
+    val value: String,
+    val title: String
 )
 
 @Composable
-fun SettingsOptions(
+fun SettingsDropdown(
     title: String,
     subtitle: String,
-    items: List<SettingsOptionsItem>,
+    items: List<SettingsDropdownItem>,
     selectedItemKey: String,
-    onItemSelected: (SettingsOptionsItem) -> Unit,
+    onItemSelected: (SettingsDropdownItem) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
     var dropDownExpanded by remember { mutableStateOf(false) }
-    val selectedItem = items.filter { it.key == selectedItemKey }[0]
+    val selectedItem = items.filter { it.value == selectedItemKey }[0]
     var selectedItemIndexState by remember { mutableStateOf(items.indexOf(selectedItem)) }
     val scope = rememberCoroutineScope()
 
@@ -146,9 +148,27 @@ fun SettingsOptions(
                         ) else Color.Unspecified
                     )
                 ) {
-                    Text(item.value)
+                    Text(item.title)
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ListContainer(
+    content: LazyListScope.() -> Unit
+) {
+    val columnState = rememberLazyListState()
+
+    Scaffold { innerPadding ->
+        Box {
+            LazyColumn(
+                Modifier.fillMaxSize(),
+                state = columnState,
+                contentPadding = innerPadding,
+                content = content
+            )
         }
     }
 }
@@ -157,96 +177,81 @@ fun SettingsOptions(
 @Composable
 fun Prev() {
     H3lwpnextTheme {
-        var state by remember { mutableStateOf(false) }
+        val scaleOptions = stringArrayResource(id = R.array.scale_values)
+            .zip(stringArrayResource(id = R.array.scale_entries))
+            .map { SettingsDropdownItem(it.first, it.second) }
+        var selectedScale by remember { mutableStateOf(scaleOptions[0]) }
 
-        val columnState = rememberLazyListState()
-        val themes = listOf(
-            SettingsOptionsItem("system", "System default"),
-            SettingsOptionsItem("dark", "Dark"),
-            SettingsOptionsItem("light", "Light")
-        )
-        var selectedTheme by remember { mutableStateOf(themes[0]) }
+        val updateIntervalOptions = stringArrayResource(id = R.array.update_timeout_values)
+            .zip(stringArrayResource(id = R.array.update_timeout_entries))
+            .map { SettingsDropdownItem(it.first, it.second) }
+        var selectedUpdateInterval by remember { mutableStateOf(updateIntervalOptions[0]) }
+
+        var useScroll by remember { mutableStateOf(false) }
+
         var sliderValue by remember { mutableStateOf(0f) }
 
-        Scaffold { innerPadding ->
-            Box {
-                LazyColumn(
-                    Modifier.fillMaxSize(),
-                    state = columnState,
-                    contentPadding = innerPadding
-                ) {
-                    item { SettingsCategory(text = "Wallpaper") }
-                    item {
-                        SettingsItem(
-                            title = stringResource(id = R.string.wallpaper_change_button),
-                            subtitle = "",
-                            onClick = { println("set wallpaper") }
-                        )
-                    }
-                    item { SettingsCategory(text = "Preferences") }
-                    item {
-                        SettingsOptions(
-                            title = stringResource(id = R.string.scale_title),
-                            subtitle = "TODO current value",
-                            items = listOf(
-                                SettingsOptionsItem("key1", "key1"),
-                                SettingsOptionsItem("key2", "key2"),
-                                SettingsOptionsItem("key3", "key3")
-                            ),
-                            selectedItemKey = "key2",
-                            onItemSelected = { println("click") },
-                        )
-                    }
-                    item {
-                        SettingsOptions(
-                            title = stringResource(id = R.string.update_time_title),
-                            subtitle = "TODO current value",
-                            items = listOf(
-                                SettingsOptionsItem("key1", "key1"),
-                                SettingsOptionsItem("key2", "key2"),
-                                SettingsOptionsItem("key3", "key3")
-                            ),
-                            selectedItemKey = "key2",
-                            onItemSelected = { println("click") },
-                        )
-                    }
-                    item {
-                        SettingsItem(
-                            title = stringResource(id = R.string.use_scroll_title),
-                            subtitle = stringResource(id = R.string.use_scroll_summary),
-                            onClick = { },
-                        ) { interactionSource ->
-                            Switch(
-                                checked = state,
-                                onCheckedChange = { state = !state },
-                                interactionSource = interactionSource
-                            )
-                        }
-                    }
-                    item {
-                        SettingsItem(
-                            title = stringResource(id = R.string.brightness_title),
-                            subtitle = "",
-                            nextLine = true,
-                            onClick = { },
-                        ) {
-                            Slider(
-                                value = sliderValue,
-                                steps = 1,
-                                valueRange = 1f..100f,
-                                onValueChange = { sliderValue = it })
-                        }
-                    }
-                    item { SettingsCategory(text = "Credits") }
+        ListContainer {
+            item { SettingsCategory(text = "Wallpaper") }
+            item {
+                SettingsItem(
+                    title = stringResource(id = R.string.wallpaper_change_button),
+                    onClick = { println("set wallpaper") }
+                )
+            }
 
-                    item {
-                        SettingsItem(
-                            title = stringResource(id = R.string.credits_button),
-                            subtitle = "",
-                            onClick = {  },
-                        )
-                    }
+            item { SettingsCategory(text = "Preferences") }
+            item {
+                SettingsDropdown(
+                    title = stringResource(id = R.string.scale_title),
+                    subtitle = selectedScale.title,
+                    items = scaleOptions,
+                    selectedItemKey = selectedScale.value,
+                    onItemSelected = { selectedScale = it },
+                )
+            }
+            item {
+                SettingsDropdown(
+                    title = stringResource(id = R.string.update_time_title),
+                    subtitle = selectedUpdateInterval.title,
+                    items = updateIntervalOptions,
+                    selectedItemKey = selectedUpdateInterval.value,
+                    onItemSelected = { selectedUpdateInterval = it },
+                )
+            }
+            item {
+                SettingsItem(
+                    title = stringResource(id = R.string.use_scroll_title),
+                    subtitle = stringResource(id = R.string.use_scroll_summary),
+                    onClick = { useScroll = !useScroll },
+                ) { interactionSource ->
+                    Switch(
+                        checked = useScroll,
+                        onCheckedChange = { useScroll = !useScroll },
+                        interactionSource = interactionSource
+                    )
                 }
+            }
+            item {
+                SettingsItem(
+                    title = stringResource(id = R.string.brightness_title),
+                    nextLine = true,
+                    onClick = { },
+                ) {
+                    Slider(
+                        value = sliderValue,
+                        valueRange = 0f..1f,
+                        onValueChange = { sliderValue = it }
+                    )
+                }
+            }
+
+            item { SettingsCategory(text = "Credits") }
+            item {
+                SettingsItem(
+                    title = stringResource(id = R.string.credits_button),
+                    onClick = { },
+                )
             }
         }
     }

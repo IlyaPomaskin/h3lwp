@@ -19,13 +19,8 @@ import androidx.preference.PreferenceFragmentCompat
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.core.Constants
-import com.homm3.livewallpaper.core.Constants.Preferences.Companion.BRIGHTNESS
-import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_MAP_UPDATE_INTERVAL
-import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_SCALE
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.IS_ASSETS_READY_KEY
-import com.homm3.livewallpaper.core.Constants.Preferences.Companion.MAP_UPDATE_INTERVAL
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.PREFERENCES_NAME
-import com.homm3.livewallpaper.core.Constants.Preferences.Companion.SCALE
 import com.homm3.livewallpaper.parser.AssetsConverter
 import com.homm3.livewallpaper.parser.InvalidFileException
 import com.homm3.livewallpaper.parser.OutputFileWriteException
@@ -42,7 +37,7 @@ class SettingsActivity : AppCompatActivity() {
         fun convertOldPreferences(prefs: SharedPreferences) {
             val editor = prefs.edit()
 
-            try {
+         /*   try {
                 prefs
                     .getFloat(MAP_UPDATE_INTERVAL, DEFAULT_MAP_UPDATE_INTERVAL)
                     .also { editor.remove(MAP_UPDATE_INTERVAL).putString(MAP_UPDATE_INTERVAL, it.toInt().toString()) }
@@ -63,7 +58,7 @@ class SettingsActivity : AppCompatActivity() {
                         .also { editor.remove("dimming").putInt(BRIGHTNESS, 100 - it) }
                 }
             } catch (e: Exception) {
-            }
+            }*/
 
             editor.commit()
         }
