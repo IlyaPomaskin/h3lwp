@@ -1,4 +1,4 @@
-package core.layers
+package com.homm3.livewallpaper.core.layers
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Camera

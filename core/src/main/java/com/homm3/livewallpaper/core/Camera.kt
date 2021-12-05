@@ -1,8 +1,7 @@
-package core
+package com.homm3.livewallpaper.core
 
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.math.Vector2
-import com.homm3.livewallpaper.core.Constants
 import kotlin.random.Random
 
 class Camera : OrthographicCamera() {

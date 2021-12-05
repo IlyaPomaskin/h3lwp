@@ -7,7 +7,6 @@ import com.homm3.livewallpaper.core.Engine
 import com.homm3.livewallpaper.parser.AssetsConverter
 import java.io.File
 import java.io.InputStream
-import kotlin.concurrent.thread
 
 class DesktopEngine : Engine() {
     private fun clearOutputDirectory(outputDirectory: File) {

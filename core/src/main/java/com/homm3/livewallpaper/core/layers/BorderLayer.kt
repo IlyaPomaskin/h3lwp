@@ -1,4 +1,4 @@
-package core.layers
+package com.homm3.livewallpaper.core.layers
 
 import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.graphics.g2d.TextureAtlas

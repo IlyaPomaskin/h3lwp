@@ -52,7 +52,7 @@ class AssetsPacker(private val packer: PixmapPacker) {
     private fun terrainFrame(frame: Def.Frame, acc: PackedFrames): PackedFrames {
         val def = frame.parentGroup.parentDef
         val initialPalette = def.rawPalette.clone()
-        val defName = def.lodFile.name.toLowerCase(Locale.ROOT)
+        val defName = def.lodFile.name.lowercase(Locale.ROOT)
         val rotations = paletteRotations[defName] ?: emptyList()
         var rotationStep = 0
         do {

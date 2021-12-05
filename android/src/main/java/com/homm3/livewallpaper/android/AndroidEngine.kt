@@ -5,7 +5,7 @@ import android.content.Intent
 import com.badlogic.gdx.backends.android.AndroidWallpaperListener
 import com.homm3.livewallpaper.core.Constants
 import com.homm3.livewallpaper.core.Engine
-import core.screens.GameScreen
+import com.homm3.livewallpaper.core.screens.GameScreen
 
 class AndroidEngine(private val context: Context) : Engine(), AndroidWallpaperListener {
     private var useScroll = Constants.Preferences.USE_SCROLL_DEFAULT

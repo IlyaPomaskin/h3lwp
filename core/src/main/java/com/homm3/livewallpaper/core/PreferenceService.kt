@@ -1,7 +1,6 @@
-package core
+package com.homm3.livewallpaper.core
 
 import com.badlogic.gdx.Gdx
-import com.homm3.livewallpaper.core.Constants
 import ktx.preferences.set
 
 class PreferenceService {

@@ -24,7 +24,7 @@ class AssetsWriter(private val packer: PixmapPacker, private val outputDirectory
     }
 
     private fun atlasFrame(name: String, index: String, rect: Rectangle, frame: Def.Frame) {
-        val spriteName = name.toLowerCase(Locale.ROOT).replace(".def", "")
+        val spriteName = name.lowercase(Locale.ROOT).replace(".def", "")
         writer.append("$spriteName\n")
         writer.append("  rotate: false\n")
         writer.append("  xy: ${rect.x.toInt()}, ${rect.y.toInt()}\n")

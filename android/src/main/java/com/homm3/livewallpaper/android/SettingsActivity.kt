@@ -18,7 +18,6 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.homm3.livewallpaper.R
-import com.homm3.livewallpaper.core.Assets
 import com.homm3.livewallpaper.core.Constants
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.BRIGHTNESS
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.DEFAULT_MAP_UPDATE_INTERVAL

@@ -4,11 +4,10 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.assets.AssetLoaderParameters
 import com.homm3.livewallpaper.parser.formats.H3m
-import core.Camera
-import core.layers.H3mLayersGroup
-import core.screens.GameScreen
-import core.screens.LoadingScreen
-import core.screens.SelectAssetsScreen
+import com.homm3.livewallpaper.core.layers.H3mLayersGroup
+import com.homm3.livewallpaper.core.screens.GameScreen
+import com.homm3.livewallpaper.core.screens.LoadingScreen
+import com.homm3.livewallpaper.core.screens.SelectAssetsScreen
 import ktx.app.KtxGame
 
 open class Engine : KtxGame<Screen>(null, false) {

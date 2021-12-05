@@ -1,4 +1,4 @@
-package core.screens
+package com.homm3.livewallpaper.core.screens
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.scenes.scene2d.ui.Label

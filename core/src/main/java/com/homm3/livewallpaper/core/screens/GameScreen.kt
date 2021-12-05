@@ -1,4 +1,4 @@
-package core.screens
+package com.homm3.livewallpaper.core.screens
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
@@ -9,10 +9,10 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.homm3.livewallpaper.core.BrightnessOverlay
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.MINIMAL_MAP_UPDATE_INTERVAL
 import com.homm3.livewallpaper.core.InputProcessor
-import core.Camera
-import core.PreferenceService
-import core.layers.ObjectsLayer
-import core.layers.H3mLayersGroup
+import com.homm3.livewallpaper.core.Camera
+import com.homm3.livewallpaper.core.PreferenceService
+import com.homm3.livewallpaper.core.layers.ObjectsLayer
+import com.homm3.livewallpaper.core.layers.H3mLayersGroup
 import ktx.app.KtxScreen
 import kotlin.math.max
 import kotlin.math.min

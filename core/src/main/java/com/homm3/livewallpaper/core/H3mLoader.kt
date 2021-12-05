@@ -28,8 +28,7 @@ class H3mLoader(private val resolver: FileHandleResolver) :
     private fun load(
         manager: AssetManager?,
         fileName: String?,
-        file: FileHandle?,
-        parameter: H3mLoaderParams?
+        file: FileHandle?
     ): H3m {
         manager ?: throw Exception("Asset manager not found")
 
@@ -51,7 +50,7 @@ class H3mLoader(private val resolver: FileHandleResolver) :
         parameter: H3mLoaderParams?
     ): H3m {
         if (map == null) {
-            map = load(manager, fileName, file, parameter)
+            map = load(manager, fileName, file)
         } else if (map is H3m) {
             return map as H3m
         }
@@ -66,7 +65,7 @@ class H3mLoader(private val resolver: FileHandleResolver) :
         parameter: H3mLoaderParams?
     ) {
         try {
-            map = load(manager, fileName, file, parameter)
+            map = load(manager, fileName, file)
         } catch (e: Exception) {
             e.printStackTrace()
         }

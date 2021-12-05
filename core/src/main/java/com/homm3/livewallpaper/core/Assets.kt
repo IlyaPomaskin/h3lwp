@@ -78,7 +78,7 @@ class Assets {
     fun getObjectFrames(defName: String): Array<TextureAtlas.AtlasRegion> {
         val name = defName.lowercase(Locale.ROOT).removeSuffix(".def");
 
-        return manager
+        manager
             .get<TextureAtlas>(Constants.Assets.ATLAS_PATH)
             .findRegions(name)
             .run {
