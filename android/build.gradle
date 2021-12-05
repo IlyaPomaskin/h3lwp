@@ -2,155 +2,162 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-	compileSdkVersion 30
-	sourceSets {
-		main {
-			manifest.srcFile 'AndroidManifest.xml'
-			java.srcDirs = ['src/main/java', 'src/main/kotlin']
-			aidl.srcDirs = ['src/main/java', 'src/main/kotlin']
-			renderscript.srcDirs = ['src/main/java', 'src/main/kotlin']
-			res.srcDirs = ['res']
-			assets.srcDirs = ['../assets']
-			jniLibs.srcDirs = ['libs']
-		}
-	}
-	packagingOptions {
-		// Preventing from license violations (more or less):
-		pickFirst 'META-INF/LICENSE.txt'
-		pickFirst 'META-INF/LICENSE'
-		pickFirst 'META-INF/license.txt'
-		pickFirst 'META-INF/LGPL2.1'
-		pickFirst 'META-INF/NOTICE.txt'
-		pickFirst 'META-INF/NOTICE'
-		pickFirst 'META-INF/notice.txt'
-		// Excluding unnecessary meta-data:
-		exclude 'META-INF/robovm/ios/robovm.xml'
-		exclude 'META-INF/DEPENDENCIES.txt'
-		exclude 'META-INF/DEPENDENCIES'
-		exclude 'META-INF/dependencies.txt'
-	}
-	defaultConfig {
-		applicationId 'com.homm3.livewallpaper'
-		minSdkVersion 21
-		targetSdkVersion 30
-		versionCode 1
-		versionName "1.0"
-		multiDexEnabled true
-	}
-	compileOptions {
-		sourceCompatibility "8.0"
-		targetCompatibility "8.0"
-		coreLibraryDesugaringEnabled true
-	}
-	kotlinOptions.jvmTarget = "1.8"
-	buildFeatures {
-		compose true
-	}
-	composeOptions {
-		kotlinCompilerVersion "1.5.10"
-		kotlinCompilerExtensionVersion '1.0.0-rc02'
-	}
-	buildTypes {
-		release {
-			minifyEnabled false
-			proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-		}
-	}
-
+    compileSdkVersion 30
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['src/main/java', 'src/main/kotlin']
+            aidl.srcDirs = ['src/main/java', 'src/main/kotlin']
+            renderscript.srcDirs = ['src/main/java', 'src/main/kotlin']
+            res.srcDirs = ['res']
+            assets.srcDirs = ['../assets']
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+    packagingOptions {
+        // Preventing from license violations (more or less):
+        pickFirst 'META-INF/LICENSE.txt'
+        pickFirst 'META-INF/LICENSE'
+        pickFirst 'META-INF/license.txt'
+        pickFirst 'META-INF/LGPL2.1'
+        pickFirst 'META-INF/NOTICE.txt'
+        pickFirst 'META-INF/NOTICE'
+        pickFirst 'META-INF/notice.txt'
+        // Excluding unnecessary meta-data:
+        exclude 'META-INF/robovm/ios/robovm.xml'
+        exclude 'META-INF/DEPENDENCIES.txt'
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/dependencies.txt'
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+    }
+    defaultConfig {
+        applicationId 'com.homm3.livewallpaper'
+        minSdkVersion 21
+        targetSdkVersion 30
+        versionCode 1
+        versionName "1.0"
+        multiDexEnabled true
+        vectorDrawables {
+            useSupportLibrary true
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+        coreLibraryDesugaringEnabled true
+    }
+    kotlinOptions {
+        jvmTarget = "1.8"
+        languageVersion = "1.5"
+        apiVersion = "1.5"
+    }
+    buildFeatures {
+        compose true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion '1.0.5'
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    buildscript {
+        dependencies {
+            classpath "com.android.tools.build:gradle:7.0.0"
+        }
+    }
 }
 
 repositories {
-	// needed for AAPT2, may be needed for other tools
-	google()
+    google()
 }
 
 configurations { natives }
 
 dependencies {
-	coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
-	implementation project(':core')
-	implementation "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
+    implementation project(':core')
+    implementation "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
 
-	natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
-	natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-arm64-v8a"
-	natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86"
-	natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86_64"
-	natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-armeabi-v7a"
-	natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-arm64-v8a"
-	natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86"
-	natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86_64"
+    natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
+    natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-arm64-v8a"
+    natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86"
+    natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86_64"
+    natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-armeabi-v7a"
+    natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-arm64-v8a"
+    natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86"
+    natives "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86_64"
 
     implementation "androidx.core:core-ktx:1.6.0"
     implementation "androidx.preference:preference-ktx:1.1.1"
-    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.2'
     implementation 'androidx.navigation:navigation-fragment-ktx:2.3.5'
     implementation 'androidx.navigation:navigation-ui-ktx:2.3.5'
-	implementation 'androidx.activity:activity-compose:1.3.0-rc02'
-    implementation 'androidx.compose.ui:ui:1.0.0-rc02'
-    implementation 'androidx.compose.ui:ui-tooling:1.0.0-rc02'
-    implementation 'androidx.compose.foundation:foundation:1.0.0-rc02'
-    implementation 'androidx.compose.material:material:1.0.0-rc02'
-    implementation 'androidx.compose.material:material-icons-core:1.0.0-rc02'
-    implementation 'androidx.compose.material:material-icons-extended:1.0.0-rc02'
-    implementation 'androidx.compose.runtime:runtime-livedata:1.0.0-rc02'
-    implementation 'androidx.compose.runtime:runtime-rxjava2:1.0.0-rc02'
-   	implementation 'androidx.compose.compiler:compiler:1.0.0-rc02'
+    implementation 'androidx.activity:activity-compose:1.3.0'
+    implementation "androidx.compose.material:material:$androidxComposeVersion"
+    implementation "androidx.compose.animation:animation:$androidxComposeVersion"
+    implementation "androidx.compose.ui:ui-tooling:$androidxComposeVersion"
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:1.0.0-alpha07'
 }
 
 // Called every time gradle gets executed, takes the native dependencies of
 // the natives configuration, and extracts them to the proper libs/ folders
 // so they get packed with the APK.
 task copyAndroidNatives() {
-	doFirst {
-		file("libs/armeabi-v7a/").mkdirs()
-		file("libs/arm64-v8a/").mkdirs()
-		file("libs/x86_64/").mkdirs()
-		file("libs/x86/").mkdirs()
-		
-		configurations.getByName("natives").copy().files.each { jar ->
-    	    def outputDir = null
-    	    if(jar.name.endsWith("natives-armeabi-v7a.jar")) outputDir = file("libs/armeabi-v7a")
-    	    if(jar.name.endsWith("natives-arm64-v8a.jar")) outputDir = file("libs/arm64-v8a")
-    	    if(jar.name.endsWith("natives-x86_64.jar")) outputDir = file("libs/x86_64")
-    	    if(jar.name.endsWith("natives-x86.jar")) outputDir = file("libs/x86")
-    	    if(outputDir != null) {
-    	        copy {
-    	            from zipTree(jar)
-    	            into outputDir
-    	            include "*.so"
-    	        }
-    	    }
-    	}
-	}
+    doFirst {
+        file("libs/armeabi-v7a/").mkdirs()
+        file("libs/arm64-v8a/").mkdirs()
+        file("libs/x86_64/").mkdirs()
+        file("libs/x86/").mkdirs()
+
+        configurations.getByName("natives").copy().files.each { jar ->
+            def outputDir = null
+            if (jar.name.endsWith("natives-armeabi-v7a.jar")) outputDir = file("libs/armeabi-v7a")
+            if (jar.name.endsWith("natives-arm64-v8a.jar")) outputDir = file("libs/arm64-v8a")
+            if (jar.name.endsWith("natives-x86_64.jar")) outputDir = file("libs/x86_64")
+            if (jar.name.endsWith("natives-x86.jar")) outputDir = file("libs/x86")
+            if (outputDir != null) {
+                copy {
+                    from zipTree(jar)
+                    into outputDir
+                    include "*.so"
+                }
+            }
+        }
+    }
 }
 
 tasks.whenTaskAdded { packageTask ->
-  if (packageTask.name.contains("package")) {
-    packageTask.dependsOn 'copyAndroidNatives'
-  }
+    if (packageTask.name.contains("package")) {
+        packageTask.dependsOn 'copyAndroidNatives'
+    }
 }
 
 task run(type: Exec) {
-	def path
-	def localProperties = project.file("../local.properties")
-	if (localProperties.exists()) {
-		Properties properties = new Properties()
-		localProperties.withInputStream { instr ->
-			properties.load(instr)
-		}
-		def sdkDir = properties.getProperty('sdk.dir')
-		if (sdkDir) {
-			path = sdkDir
-		} else {
-			path = "$System.env.ANDROID_HOME"
-		}
-	} else {
-		path = "$System.env.ANDROID_HOME"
-	}
+    def path
+    def localProperties = project.file("../local.properties")
+    if (localProperties.exists()) {
+        Properties properties = new Properties()
+        localProperties.withInputStream { instr ->
+            properties.load(instr)
+        }
+        def sdkDir = properties.getProperty('sdk.dir')
+        if (sdkDir) {
+            path = sdkDir
+        } else {
+            path = "$System.env.ANDROID_HOME"
+        }
+    } else {
+        path = "$System.env.ANDROID_HOME"
+    }
 
-	def adb = path + "/platform-tools/adb"
-	// commandLine "$adb", 'shell', 'am', 'start', '-n', 'com.homm3.livewallpaper/com.homm3.livewallpaper.AndroidLauncher'
-	commandLine "$adb", 'shell', 'am', 'start', '-a', 'android.service.wallpaper.LIVE_WALLPAPER_CHOOSER'
+    def adb = path + "/platform-tools/adb"
+    // commandLine "$adb", 'shell', 'am', 'start', '-n', 'com.homm3.livewallpaper/com.homm3.livewallpaper.AndroidLauncher'
+    commandLine "$adb", 'shell', 'am', 'start', '-a', 'android.service.wallpaper.LIVE_WALLPAPER_CHOOSER'
 }
 
 //eclipse.project.name = appName + "-android"

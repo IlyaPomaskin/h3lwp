@@ -34,7 +34,6 @@ import java.io.InputStream
 import java.util.*
 import kotlin.concurrent.thread
 
-
 class SettingsActivity : AppCompatActivity() {
     companion object {
         const val ACTION_GET_CONTENT_RESULT_CODE = 1
