@@ -6,9 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material.Slider
 import androidx.compose.material.Switch
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,20 +30,9 @@ interface SettingsProviderInterface {
     var brightness: Int
         get() = TODO("implement")
         set(value) = TODO("implement")
-
-    fun onDestroy() {
-        TODO("implement")
-    }
 }
 
-class AndroidSettingsProvider(private val prefs: SharedPreferences) :
-    SettingsProviderInterface,
-    SharedPreferences.OnSharedPreferenceChangeListener {
-
-    init {
-        prefs.registerOnSharedPreferenceChangeListener(this)
-    }
-
+class AndroidSettingsProvider(private val prefs: SharedPreferences) : SettingsProviderInterface {
     fun getValue(name: String, default: String): String {
         return prefs.runCatching { getString(name, default) ?: default }.getOrDefault(default)
     }
@@ -94,51 +81,45 @@ class AndroidSettingsProvider(private val prefs: SharedPreferences) :
             prefs.edit().putInt(Constants.Preferences.BRIGHTNESS, value).apply()
         }
 
-    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
-        println("onSharedPreferenceChanged $key ${sharedPreferences?.all?.get(key)}")
-
-        if (key == Constants.Preferences.IS_ASSETS_READY_KEY) {
-//            findPreference<Preference>("select_file")?.isEnabled = !isAssetsReady()
-//            findPreference<Preference>("wallpaper_change")?.isVisible = isAssetsReady()
-        }
-    }
-
-    override fun onDestroy() {
-        prefs.unregisterOnSharedPreferenceChangeListener(this)
-    }
 }
 
 class SettingsComposeActivity : ComponentActivity() {
-    lateinit var settings: SettingsProviderInterface
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        settings = AndroidSettingsProvider(
-            getSharedPreferences(
-                Constants.Preferences.PREFERENCES_NAME,
-                MODE_PRIVATE
-            )
+        val settings = AndroidSettingsProvider(
+            getSharedPreferences(Constants.Preferences.PREFERENCES_NAME, MODE_PRIVATE)
         )
 
         setContent {
             SettingsFun(settings = settings)
         }
     }
-
-    override fun onDestroy() {
-        settings.onDestroy()
-        super.onDestroy()
-    }
 }
 
 @Composable
 fun SettingsFun(settings: SettingsProviderInterface) {
+    var scale by remember { mutableStateOf(settings.scale) }
+    val setScale = fun(nextValue: String) {
+        scale = nextValue
+        settings.scale = nextValue
+    }
 
-    val scale = remember { mutableStateOf(settings.scale) }
-    val updateInterval = remember { mutableStateOf(settings.updateInterval) }
-    val useScroll = remember { mutableStateOf(settings.useScroll) }
-    val brightness = remember { mutableStateOf(settings.brightness) }
+    var updateInterval by remember { mutableStateOf(settings.updateInterval) }
+    val setUpdateInterval = fun(nextValue: String) {
+        updateInterval = nextValue
+        settings.updateInterval = nextValue
+    }
+
+    var useScroll by remember { mutableStateOf(settings.useScroll) }
+    val toggleUseScroll = fun() {
+        useScroll = !useScroll;
+        settings.useScroll = !useScroll
+    }
+
+    var brightness by remember { mutableStateOf(settings.brightness) }
+    val setBrightness = fun(nextValue: Int) { brightness = nextValue; }
+    val saveBrightness = fun() { settings.brightness = brightness }
 
     H3lwpnextTheme {
         val scaleOptions = stringArrayResource(id = R.array.scale_values)
@@ -162,30 +143,30 @@ fun SettingsFun(settings: SettingsProviderInterface) {
             item {
                 SettingsDropdown(
                     title = stringResource(id = R.string.scale_title),
-                    subtitle = scaleOptions.find { it.value == scale.value }?.title.orEmpty(),
+                    subtitle = scaleOptions.find { it.value == scale }?.title.orEmpty(),
                     items = scaleOptions,
-                    selectedItemKey = scale.value,
-                    onItemSelected = { scale.value = it.value },
+                    selectedItemKey = scale,
+                    onItemSelected = { setScale(it.value) },
                 )
             }
             item {
                 SettingsDropdown(
                     title = stringResource(id = R.string.update_time_title),
-                    subtitle = updateIntervalOptions.find { it.value == updateInterval.value }?.title.orEmpty(),
+                    subtitle = updateIntervalOptions.find { it.value == updateInterval }?.title.orEmpty(),
                     items = updateIntervalOptions,
-                    selectedItemKey = updateInterval.value,
-                    onItemSelected = { updateInterval.value = it.value },
+                    selectedItemKey = updateInterval,
+                    onItemSelected = { setUpdateInterval(it.value) },
                 )
             }
             item {
                 SettingsItem(
                     title = stringResource(id = R.string.use_scroll_title),
                     subtitle = stringResource(id = R.string.use_scroll_summary),
-                    onClick = { useScroll.value = !useScroll.value },
+                    onClick = { toggleUseScroll() },
                 ) { interactionSource ->
                     Switch(
-                        checked = settings.useScroll,
-                        onCheckedChange = { useScroll.value = !useScroll.value },
+                        checked = useScroll,
+                        onCheckedChange = { toggleUseScroll() },
                         interactionSource = interactionSource
                     )
                 }
@@ -197,9 +178,10 @@ fun SettingsFun(settings: SettingsProviderInterface) {
                     onClick = { },
                 ) {
                     Slider(
-                        value = brightness.value / 100f,
+                        value = brightness / 100f,
                         valueRange = 0f..1f,
-                        onValueChange = { brightness.value = (it * 100).toInt() }
+                        onValueChangeFinished = { saveBrightness() },
+                        onValueChange = { setBrightness((it * 100).toInt()) }
                     )
                 }
             }
