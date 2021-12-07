@@ -1,6 +1,5 @@
 package com.homm3.livewallpaper.android
 
-import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,112 +13,42 @@ import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.android.ui.theme.H3lwpnextTheme
 import com.homm3.livewallpaper.core.Constants
 
-interface SettingsProviderInterface {
-    var scale: String
-        get() = TODO("implement")
-        set(value) = TODO("implement")
-
-    var updateInterval: String
-        get() = TODO("implement")
-        set(value) = TODO("implement")
-
-    var useScroll: Boolean
-        get() = TODO("implement")
-        set(value) = TODO("implement")
-
-    var brightness: Int
-        get() = TODO("implement")
-        set(value) = TODO("implement")
-}
-
-class AndroidSettingsProvider(private val prefs: SharedPreferences) : SettingsProviderInterface {
-    fun getValue(name: String, default: String): String {
-        return prefs.runCatching { getString(name, default) ?: default }.getOrDefault(default)
-    }
-
-    fun getValue(name: String, default: Int): Int {
-        return prefs.runCatching { getInt(name, default) }.getOrDefault(default)
-    }
-
-    fun getValue(name: String, default: Boolean): Boolean {
-        return prefs.runCatching { getBoolean(name, default) }.getOrDefault(default)
-    }
-
-    override var scale: String
-        get() = getValue(
-            Constants.Preferences.SCALE,
-            Constants.Preferences.DEFAULT_SCALE
-        )
-        set(value) {
-            prefs.edit().putString(Constants.Preferences.SCALE, value).apply()
-        }
-
-    override var updateInterval: String
-        get() = getValue(
-            Constants.Preferences.MAP_UPDATE_INTERVAL,
-            Constants.Preferences.DEFAULT_MAP_UPDATE_INTERVAL
-        )
-        set(value) {
-            prefs.edit().putString(Constants.Preferences.MAP_UPDATE_INTERVAL, value).apply()
-        }
-
-    override var useScroll: Boolean
-        get() = getValue(
-            Constants.Preferences.USE_SCROLL,
-            Constants.Preferences.USE_SCROLL_DEFAULT
-        )
-        set(value) {
-            prefs.edit().putBoolean(Constants.Preferences.USE_SCROLL, value).apply()
-        }
-
-    override var brightness: Int
-        get() = getValue(
-            Constants.Preferences.BRIGHTNESS,
-            Constants.Preferences.BRIGHTNESS_DEFAULT
-        )
-        set(value) {
-            prefs.edit().putInt(Constants.Preferences.BRIGHTNESS, value).apply()
-        }
-
-}
-
 class SettingsComposeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val settings = AndroidSettingsProvider(
+        val preferences = PreferencesService(
             getSharedPreferences(Constants.Preferences.PREFERENCES_NAME, MODE_PRIVATE)
         )
-
         setContent {
-            SettingsFun(settings = settings)
+            SettingsFun(preferences = preferences)
         }
     }
 }
 
 @Composable
-fun SettingsFun(settings: SettingsProviderInterface) {
-    var scale by remember { mutableStateOf(settings.scale) }
+fun SettingsFun(preferences: PreferencesService) {
+    var scale by remember { mutableStateOf(preferences.scale) }
     val setScale = fun(nextValue: String) {
         scale = nextValue
-        settings.scale = nextValue
+        preferences.scale = nextValue
     }
 
-    var updateInterval by remember { mutableStateOf(settings.updateInterval) }
+    var updateInterval by remember { mutableStateOf(preferences.updateInterval) }
     val setUpdateInterval = fun(nextValue: String) {
         updateInterval = nextValue
-        settings.updateInterval = nextValue
+        preferences.updateInterval = nextValue
     }
 
-    var useScroll by remember { mutableStateOf(settings.useScroll) }
+    var useScroll by remember { mutableStateOf(preferences.useScroll) }
     val toggleUseScroll = fun() {
         useScroll = !useScroll;
-        settings.useScroll = !useScroll
+        preferences.useScroll = !useScroll
     }
 
-    var brightness by remember { mutableStateOf(settings.brightness) }
+    var brightness by remember { mutableStateOf(preferences.brightness) }
     val setBrightness = fun(nextValue: Int) { brightness = nextValue; }
-    val saveBrightness = fun() { settings.brightness = brightness }
+    val saveBrightness = fun() { preferences.brightness = brightness }
 
     H3lwpnextTheme {
         val scaleOptions = stringArrayResource(id = R.array.scale_values)
