@@ -1,8 +1,5 @@
-package com.homm3.livewallpaper.android
+package com.homm3.livewallpaper.android.ui.components
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.material.Slider
 import androidx.compose.material.Switch
 import androidx.compose.runtime.*
@@ -10,24 +7,11 @@ import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.homm3.livewallpaper.R
+import com.homm3.livewallpaper.android.PreferencesService
 import com.homm3.livewallpaper.android.ui.theme.H3lwpnextTheme
-import com.homm3.livewallpaper.core.Constants
-
-class SettingsComposeActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        val preferences = PreferencesService(
-            getSharedPreferences(Constants.Preferences.PREFERENCES_NAME, MODE_PRIVATE)
-        )
-        setContent {
-            SettingsFun(preferences = preferences)
-        }
-    }
-}
 
 @Composable
-fun SettingsFun(preferences: PreferencesService) {
+fun SettingsScreen(preferences: PreferencesService) {
     var scale by remember { mutableStateOf(preferences.scale) }
     val setScale = fun(nextValue: String) {
         scale = nextValue
@@ -59,7 +43,7 @@ fun SettingsFun(preferences: PreferencesService) {
             .zip(stringArrayResource(id = R.array.update_timeout_entries))
             .map { SettingsDropdownItem(it.first, it.second) }
 
-        ListContainer {
+        SettingsContainer {
             item { SettingsCategory(text = "Wallpaper") }
             item {
                 SettingsItem(
@@ -128,6 +112,6 @@ fun SettingsFun(preferences: PreferencesService) {
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun DefaultPreview2() {
-    Prev()
+fun Preview() {
+    SettingsPreview()
 }

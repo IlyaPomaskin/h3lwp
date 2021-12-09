@@ -48,14 +48,6 @@
     <string name="update_timeout_1hour">1 hour</string>
     <string name="update_timeout_24hours">24 hours</string>
     <string name="update_timeout_every_switch">Every switch to home screen</string>
-    <string name="title_activity_main">MainActivity</string>
-    <!-- Strings used for fragments for navigation -->
-    <string name="first_fragment_label">First Fragment</string>
-    <string name="second_fragment_label">Second Fragment</string>
-    <string name="next">Next</string>
-    <string name="previous">Previous</string>
 
-    <string name="hello_first_fragment">Hello first fragment</string>
-    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
-    <string name="title_activity_settings_compose">SettingsComposeActivity</string>
+    <string name="settings_screen_title">Settings</string>
 </resources>
