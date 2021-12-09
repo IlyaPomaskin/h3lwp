@@ -14,6 +14,7 @@
     <string name="invalid_file_error">Error while reading while.\nTry another file.</string>
     <string name="common_error">Something went wrong.\nTry another file or reinstall the app.</string>
     <string name="wallpaper_change_button">Set wallpaper</string>
+    <string name="maps_button">Maps</string>
 
     <string name="preferences_header">Preferences</string>
 

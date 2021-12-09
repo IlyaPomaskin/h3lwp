@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.badlogic.gdx.scenes.scene2d.actions.Actions
+import com.homm3.livewallpaper.android.ui.components.SettingsItem
 import kotlinx.coroutines.launch
 
 data class SettingsDropdownItem(
@@ -26,7 +27,6 @@ fun SettingsDropdown(
     items: List<SettingsDropdownItem>,
     selectedItemKey: String,
     onItemSelected: (SettingsDropdownItem) -> Unit,
-    modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
     var dropDownExpanded by remember { mutableStateOf(false) }

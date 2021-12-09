@@ -8,10 +8,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.android.PreferencesService
+import com.homm3.livewallpaper.android.ui.components.settings.SettingsCategory
+import com.homm3.livewallpaper.android.ui.components.settings.SettingsDropdown
+import com.homm3.livewallpaper.android.ui.components.settings.SettingsDropdownItem
 import com.homm3.livewallpaper.android.ui.theme.H3lwpnextTheme
 
 @Composable
-fun SettingsScreen(preferences: PreferencesService) {
+fun SettingsScreen(preferences: PreferencesService, actions: NavigationActions) {
     var scale by remember { mutableStateOf(preferences.scale) }
     val setScale = fun(nextValue: String) {
         scale = nextValue
@@ -49,6 +52,12 @@ fun SettingsScreen(preferences: PreferencesService) {
                 SettingsItem(
                     title = stringResource(id = R.string.wallpaper_change_button),
                     onClick = { println("set wallpaper") }
+                )
+            }
+            item {
+                SettingsItem(
+                    title = stringResource(id = R.string.maps_button),
+                    onClick = { actions.maps() }
                 )
             }
 
@@ -103,7 +112,7 @@ fun SettingsScreen(preferences: PreferencesService) {
             item {
                 SettingsItem(
                     title = stringResource(id = R.string.credits_button),
-                    onClick = { },
+                    onClick = { actions.about() },
                 )
             }
         }
