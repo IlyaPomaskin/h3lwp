@@ -8,7 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.homm3.livewallpaper.android.PreferencesService
+import com.homm3.livewallpaper.android.ui.SettingsViewModel
 
 object Destinations {
     const val SETTINGS = "settings"
@@ -27,7 +27,10 @@ class NavigationActions(navController: NavHostController) {
 }
 
 @Composable
-fun NavigationHost(preferences: PreferencesService) {
+fun NavigationHost(
+    viewModel: SettingsViewModel,
+    onSetWallpaperClick: () -> Unit,
+) {
     val navController = rememberNavController()
     val actions = remember(navController) { NavigationActions(navController) }
 
@@ -36,7 +39,11 @@ fun NavigationHost(preferences: PreferencesService) {
         startDestination = Destinations.SETTINGS
     ) {
         composable(Destinations.SETTINGS) {
-            SettingsScreen(preferences = preferences, actions)
+            SettingsScreen(
+                viewModel = viewModel,
+                onSetWallpaperClick = onSetWallpaperClick,
+                actions
+            )
         }
 
         composable(Destinations.ABOUT) {

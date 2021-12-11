@@ -15,23 +15,21 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions
 import com.homm3.livewallpaper.android.ui.components.SettingsItem
 import kotlinx.coroutines.launch
 
-data class SettingsDropdownItem(
-    val value: String,
+data class SettingsDropdownItem<T>(
+    val value: T,
     val title: String
 )
 
 @Composable
-fun SettingsDropdown(
+fun <T>SettingsDropdown(
     title: String,
     subtitle: String,
-    items: List<SettingsDropdownItem>,
-    selectedItemKey: String,
-    onItemSelected: (SettingsDropdownItem) -> Unit,
+    items: List<SettingsDropdownItem<T>>,
+    selectedItemValue: T,
+    onItemSelected: (SettingsDropdownItem<T>) -> Unit,
     enabled: Boolean = true,
 ) {
     var dropDownExpanded by remember { mutableStateOf(false) }
-    val selectedItem = items.filter { it.value == selectedItemKey }[0]
-    var selectedItemIndexState by remember { mutableStateOf(items.indexOf(selectedItem)) }
     val scope = rememberCoroutineScope()
 
     Box {
@@ -47,18 +45,17 @@ fun SettingsDropdown(
             onDismissRequest = { dropDownExpanded = false },
 
             ) {
-            items.forEachIndexed { index, item ->
+            items.forEach { item ->
                 DropdownMenuItem(
                     onClick = {
                         dropDownExpanded = false
                         scope.launch {
                             Actions.delay(100F)
-                            selectedItemIndexState = index
                             onItemSelected(item)
                         }
                     },
                     Modifier.background(
-                        if (selectedItemIndexState == index) MaterialTheme.colors.primary.copy(
+                        if (selectedItemValue == item.value) MaterialTheme.colors.primary.copy(
                             alpha = 0.3f
                         ) else Color.Unspecified
                     )

@@ -2,56 +2,66 @@ package com.homm3.livewallpaper.android.ui.components
 
 import androidx.compose.material.Slider
 import androidx.compose.material.Switch
-import androidx.compose.runtime.*
-import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.homm3.livewallpaper.R
-import com.homm3.livewallpaper.android.PreferencesService
+import com.homm3.livewallpaper.android.data.MapUpdateInterval
+import com.homm3.livewallpaper.android.data.Scale
+import com.homm3.livewallpaper.android.data.WallpaperPreferences
+import com.homm3.livewallpaper.android.ui.SettingsViewModel
 import com.homm3.livewallpaper.android.ui.components.settings.SettingsCategory
 import com.homm3.livewallpaper.android.ui.components.settings.SettingsDropdown
 import com.homm3.livewallpaper.android.ui.components.settings.SettingsDropdownItem
 import com.homm3.livewallpaper.android.ui.theme.H3lwpnextTheme
 
 @Composable
-fun SettingsScreen(preferences: PreferencesService, actions: NavigationActions) {
-    var scale by remember { mutableStateOf(preferences.scale) }
-    val setScale = fun(nextValue: String) {
-        scale = nextValue
-        preferences.scale = nextValue
-    }
+fun SettingsScreen(
+    viewModel: SettingsViewModel,
+    onSetWallpaperClick: () -> Unit,
+    actions: NavigationActions
+) {
+    val prefs = viewModel.settingsUiModel.observeAsState(WallpaperPreferences()).value
 
-    var updateInterval by remember { mutableStateOf(preferences.updateInterval) }
-    val setUpdateInterval = fun(nextValue: String) {
-        updateInterval = nextValue
-        preferences.updateInterval = nextValue
-    }
+    val scaleOptions = listOf(
+        SettingsDropdownItem(Scale.DPI, stringResource(R.string.scale_by_density)),
+        SettingsDropdownItem(Scale.X1, "x1"),
+        SettingsDropdownItem(Scale.X2, "x2"),
+        SettingsDropdownItem(Scale.X3, "x3"),
+        SettingsDropdownItem(Scale.X4, "x4"),
+    )
 
-    var useScroll by remember { mutableStateOf(preferences.useScroll) }
-    val toggleUseScroll = fun() {
-        useScroll = !useScroll;
-        preferences.useScroll = !useScroll
-    }
-
-    var brightness by remember { mutableStateOf(preferences.brightness) }
-    val setBrightness = fun(nextValue: Int) { brightness = nextValue; }
-    val saveBrightness = fun() { preferences.brightness = brightness }
+    val mapUpdateIntervalOptions = listOf(
+        SettingsDropdownItem(
+            MapUpdateInterval.EVERY_SWITCH,
+            stringResource(R.string.update_timeout_every_switch)
+        ),
+        SettingsDropdownItem(
+            MapUpdateInterval.MINUTES_10,
+            stringResource(R.string.update_timeout_10minutes)
+        ),
+        SettingsDropdownItem(
+            MapUpdateInterval.MINUTES_30,
+            stringResource(R.string.update_timeout_30minutes)
+        ),
+        SettingsDropdownItem(
+            MapUpdateInterval.HOURS_2,
+            stringResource(R.string.update_timeout_2hour)
+        ),
+        SettingsDropdownItem(
+            MapUpdateInterval.HOURS_24,
+            stringResource(R.string.update_timeout_24hours)
+        ),
+    )
 
     H3lwpnextTheme {
-        val scaleOptions = stringArrayResource(id = R.array.scale_values)
-            .zip(stringArrayResource(id = R.array.scale_entries))
-            .map { SettingsDropdownItem(it.first, it.second) }
-
-        val updateIntervalOptions = stringArrayResource(id = R.array.update_timeout_values)
-            .zip(stringArrayResource(id = R.array.update_timeout_entries))
-            .map { SettingsDropdownItem(it.first, it.second) }
-
         SettingsContainer {
             item { SettingsCategory(text = "Wallpaper") }
             item {
                 SettingsItem(
                     title = stringResource(id = R.string.wallpaper_change_button),
-                    onClick = { println("set wallpaper") }
+                    onClick = { onSetWallpaperClick() }
                 )
             }
             item {
@@ -65,30 +75,30 @@ fun SettingsScreen(preferences: PreferencesService, actions: NavigationActions) 
             item {
                 SettingsDropdown(
                     title = stringResource(id = R.string.scale_title),
-                    subtitle = scaleOptions.find { it.value == scale }?.title.orEmpty(),
+                    subtitle = scaleOptions.find { it.value == prefs.scale }?.title.orEmpty(),
                     items = scaleOptions,
-                    selectedItemKey = scale,
-                    onItemSelected = { setScale(it.value) },
+                    selectedItemValue = prefs.scale,
+                    onItemSelected = { viewModel.setScale(it.value) },
                 )
             }
             item {
                 SettingsDropdown(
                     title = stringResource(id = R.string.update_time_title),
-                    subtitle = updateIntervalOptions.find { it.value == updateInterval }?.title.orEmpty(),
-                    items = updateIntervalOptions,
-                    selectedItemKey = updateInterval,
-                    onItemSelected = { setUpdateInterval(it.value) },
+                    subtitle = mapUpdateIntervalOptions.find { it.value == prefs.mapUpdateInterval }?.title.orEmpty(),
+                    items = mapUpdateIntervalOptions,
+                    selectedItemValue = prefs.mapUpdateInterval,
+                    onItemSelected = { viewModel.setMapUpdateInterval(it.value) },
                 )
             }
             item {
                 SettingsItem(
                     title = stringResource(id = R.string.use_scroll_title),
                     subtitle = stringResource(id = R.string.use_scroll_summary),
-                    onClick = { toggleUseScroll() },
+                    onClick = { viewModel.toggleUseScroll() },
                 ) { interactionSource ->
                     Switch(
-                        checked = useScroll,
-                        onCheckedChange = { toggleUseScroll() },
+                        checked = prefs.useScroll,
+                        onCheckedChange = { viewModel.toggleUseScroll() },
                         interactionSource = interactionSource
                     )
                 }
@@ -100,10 +110,9 @@ fun SettingsScreen(preferences: PreferencesService, actions: NavigationActions) 
                     onClick = { },
                 ) {
                     Slider(
-                        value = brightness / 100f,
+                        value = prefs.brightness,
                         valueRange = 0f..1f,
-                        onValueChangeFinished = { saveBrightness() },
-                        onValueChange = { setBrightness((it * 100).toInt()) }
+                        onValueChange = { viewModel.setBrightness(it) }
                     )
                 }
             }

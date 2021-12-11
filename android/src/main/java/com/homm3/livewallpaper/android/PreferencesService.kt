@@ -1,6 +1,8 @@
 package com.homm3.livewallpaper.android
 
 import android.content.SharedPreferences
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import com.homm3.livewallpaper.core.Constants
 
 class PreferencesService(private val prefs: SharedPreferences) {
@@ -51,4 +53,44 @@ class PreferencesService(private val prefs: SharedPreferences) {
         set(value) {
             prefs.edit().putInt(Constants.Preferences.BRIGHTNESS, value).apply()
         }
+
+    val abc = MutableLiveData(0)
+}
+
+class SuperheroesViewModel(val prefs: SharedPreferences) : ViewModel() {
+    val brightness: MutableLiveData<Int> = MutableLiveData()
+
+    fun setBrightness(nextValue: Int) {
+        prefs.edit().putInt(Constants.Preferences.BRIGHTNESS, nextValue).apply()
+        brightness.value = nextValue
+    }
+
+    var useScroll: Boolean
+        get() = getValue(
+            Constants.Preferences.USE_SCROLL,
+            Constants.Preferences.USE_SCROLL_DEFAULT
+        )
+        set(value) {
+            prefs.edit().putBoolean(Constants.Preferences.USE_SCROLL, value).apply()
+        }
+
+    fun getValue(name: String, default: String): String {
+        return prefs.runCatching { getString(name, default) ?: default }.getOrDefault(default)
+    }
+
+    fun getValue(name: String, default: Int): Int {
+        return prefs.runCatching { getInt(name, default) }.getOrDefault(default)
+    }
+
+    fun getValue(name: String, default: Boolean): Boolean {
+        return prefs.runCatching { getBoolean(name, default) }.getOrDefault(default)
+    }
+
+//
+//    // Added a delay of 2 seconds to emulate a network request. This method just sets the list of
+//    // superheroes to the livedata after 2 seconds.
+//    suspend fun loadSuperheroes(): List<Person> {
+//        delay(2000)
+//        return getSuperheroList()
+//    }
 }

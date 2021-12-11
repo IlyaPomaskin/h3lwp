@@ -20,7 +20,7 @@ class AndroidEngine(private val context: Context) : Engine(), AndroidWallpaperLi
     override fun onSettingsButtonClick() {
         context.startActivity(
             Intent()
-                .setClass(context, SettingsActivity::class.java)
+                .setClass(context, MainActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         )
     }

@@ -43,7 +43,7 @@ fun SettingsPreview() {
                     title = stringResource(id = R.string.scale_title),
                     subtitle = selectedScale.title,
                     items = scaleOptions,
-                    selectedItemKey = selectedScale.value,
+                    selectedItemValue = selectedScale.value,
                     onItemSelected = { selectedScale = it },
                 )
             }
@@ -52,7 +52,7 @@ fun SettingsPreview() {
                     title = stringResource(id = R.string.update_time_title),
                     subtitle = selectedUpdateInterval.title,
                     items = updateIntervalOptions,
-                    selectedItemKey = selectedUpdateInterval.value,
+                    selectedItemValue = selectedUpdateInterval.value,
                     onItemSelected = { selectedUpdateInterval = it },
                 )
             }

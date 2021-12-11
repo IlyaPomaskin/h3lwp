@@ -2,7 +2,6 @@ package com.homm3.livewallpaper.android
 
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration
 import com.badlogic.gdx.backends.android.AndroidLiveWallpaperService
-import com.homm3.livewallpaper.core.Constants
 
 class LiveWallpaperService : AndroidLiveWallpaperService() {
     override fun onCreateEngine(): Engine {
@@ -11,13 +10,6 @@ class LiveWallpaperService : AndroidLiveWallpaperService() {
 
     override fun onCreateApplication() {
         super.onCreateApplication()
-
-        SettingsActivity.convertOldPreferences(
-            getSharedPreferences(
-                Constants.Preferences.PREFERENCES_NAME,
-                MODE_PRIVATE
-            )
-        )
 
         initialize(
             AndroidEngine(baseContext),
