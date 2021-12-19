@@ -3,18 +3,24 @@ package com.homm3.livewallpaper.android
 import android.content.Context
 import android.content.Intent
 import com.badlogic.gdx.backends.android.AndroidWallpaperListener
-import com.homm3.livewallpaper.core.Constants
+import com.homm3.livewallpaper.android.data.WallpaperPreferences
+import com.homm3.livewallpaper.android.data.WallpaperPreferencesRepository
+import com.homm3.livewallpaper.android.data.dataStore
 import com.homm3.livewallpaper.core.Engine
 import com.homm3.livewallpaper.core.screens.GameScreen
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 class AndroidEngine(private val context: Context) : Engine(), AndroidWallpaperListener {
-    private var useScroll = Constants.Preferences.USE_SCROLL_DEFAULT
-    private val preferences = context.getSharedPreferences(Constants.Preferences.PREFERENCES_NAME, Context.MODE_PRIVATE)
+    private var prefs = WallpaperPreferences()
+    private val prefsRepository = WallpaperPreferencesRepository(context.dataStore)
 
-    private fun getUseScrollPreference(): Boolean {
-        return preferences
-            .runCatching { getBoolean(Constants.Preferences.USE_SCROLL, Constants.Preferences.USE_SCROLL_DEFAULT) }
-            .getOrDefault(Constants.Preferences.USE_SCROLL_DEFAULT)
+    private fun updatePreferences() {
+        CoroutineScope(Dispatchers.Default).launch {
+            prefsRepository.preferencesFlow.collect { prefs = it }
+        }
     }
 
     override fun onSettingsButtonClick() {
@@ -27,22 +33,24 @@ class AndroidEngine(private val context: Context) : Engine(), AndroidWallpaperLi
 
     override fun create() {
         super.create()
-        useScroll = getUseScrollPreference()
+        updatePreferences()
     }
 
     override fun resume() {
         super.resume()
-        useScroll = getUseScrollPreference()
+        updatePreferences()
     }
 
     override fun previewStateChange(isPreview: Boolean) {}
 
     override fun iconDropped(x: Int, y: Int) {}
 
-    override fun offsetChange(xOffset: Float, yOffset: Float,
-                              xOffsetStep: Float, yOffsetStep: Float,
-                              xPixelOffset: Int, yPixelOffset: Int) {
-        if (useScroll && screens.containsKey(GameScreen::class.java)) {
+    override fun offsetChange(
+        xOffset: Float, yOffset: Float,
+        xOffsetStep: Float, yOffsetStep: Float,
+        xPixelOffset: Int, yPixelOffset: Int
+    ) {
+        if (prefs.useScroll && screens.containsKey(GameScreen::class.java)) {
             moveCameraByOffset(xOffset);
         }
     }

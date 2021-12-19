@@ -1,7 +1,9 @@
 package com.homm3.livewallpaper.android.data
 
+import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -54,6 +56,8 @@ data class WallpaperPreferences(
     }
 }
 
+val Context.dataStore by preferencesDataStore(name = "wallpaper_preferences")
+
 class WallpaperPreferencesRepository(private val dataStore: DataStore<Preferences>) {
     companion object PreferencesKeys {
         val USE_SCROLL = booleanPreferencesKey("use_scroll")
@@ -95,7 +99,7 @@ class WallpaperPreferencesRepository(private val dataStore: DataStore<Preference
 
     private fun mapUserPreferences(preferences: Preferences): WallpaperPreferences {
         val scale = Scale.fromInt(preferences[SCALE])
-        val mapUpdateInterval = MapUpdateInterval.fromInt(preferences[MAP_UPDATE_INTERVAL],)
+        val mapUpdateInterval = MapUpdateInterval.fromInt(preferences[MAP_UPDATE_INTERVAL])
         val useScroll = preferences[USE_SCROLL] ?: WallpaperPreferences.defaultUseScroll
         val brightness = preferences[BRIGHTNESS] ?: WallpaperPreferences.defaultBrightness
 

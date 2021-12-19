@@ -2,26 +2,16 @@ package com.homm3.livewallpaper.android
 
 import android.app.WallpaperManager
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.datastore.preferences.preferencesDataStore
 import com.homm3.livewallpaper.android.data.WallpaperPreferencesRepository
+import com.homm3.livewallpaper.android.data.dataStore
 import com.homm3.livewallpaper.android.ui.SettingsViewModel
 import com.homm3.livewallpaper.android.ui.components.NavigationHost
 
-private const val PREFERENCES_NAME = "wallpaper_preferences"
 
-private val Context.dataStore by preferencesDataStore(
-    name = PREFERENCES_NAME,
-//    produceMigrations = { context ->
-//        // Since we're migrating from SharedPreferences, add a migration based on the
-//        // SharedPreferences name
-//        listOf(SharedPreferencesMigration(context, PREFERENCES_NAME))
-//    }
-)
 
 class MainActivity : ComponentActivity() {
    /* override fun onRequestPermissionsResult(

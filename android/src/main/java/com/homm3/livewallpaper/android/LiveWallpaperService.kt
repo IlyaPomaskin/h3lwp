@@ -12,12 +12,14 @@ class LiveWallpaperService : AndroidLiveWallpaperService() {
         super.onCreateApplication()
 
         initialize(
-            AndroidEngine(baseContext),
+            AndroidEngine(this),
             AndroidApplicationConfiguration().apply {
                 useAccelerometer = false
                 useCompass = false
                 disableAudio = true
             }
         )
+
+
     }
 }
