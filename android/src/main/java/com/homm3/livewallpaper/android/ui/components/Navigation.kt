@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.homm3.livewallpaper.android.data.MapsViewModel
 import com.homm3.livewallpaper.android.ui.SettingsViewModel
 
 object Destinations {
@@ -28,7 +29,8 @@ class NavigationActions(navController: NavHostController) {
 
 @Composable
 fun NavigationHost(
-    viewModel: SettingsViewModel,
+    mapViewModel: MapsViewModel,
+    settingsViewModel: SettingsViewModel,
     onSetWallpaperClick: () -> Unit,
 ) {
     val navController = rememberNavController()
@@ -40,7 +42,7 @@ fun NavigationHost(
     ) {
         composable(Destinations.SETTINGS) {
             SettingsScreen(
-                viewModel = viewModel,
+                viewModel = settingsViewModel,
                 onSetWallpaperClick = onSetWallpaperClick,
                 actions
             )
@@ -51,7 +53,7 @@ fun NavigationHost(
         }
 
         composable(Destinations.MAPS) {
-            MapsScreen(actions)
+            MapsScreen(viewModel = mapViewModel, actions)
         }
 
         composable(

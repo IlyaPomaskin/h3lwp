@@ -6,30 +6,32 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import com.homm3.livewallpaper.android.data.MapsViewModel
+import com.homm3.livewallpaper.android.data.MapsViewModelFactory
 import com.homm3.livewallpaper.android.data.WallpaperPreferencesRepository
 import com.homm3.livewallpaper.android.data.dataStore
 import com.homm3.livewallpaper.android.ui.SettingsViewModel
 import com.homm3.livewallpaper.android.ui.components.NavigationHost
 
 
-
 class MainActivity : ComponentActivity() {
-   /* override fun onRequestPermissionsResult(
-        requestCode: Int, permissions: Array<out String>, grantResults: IntAr
-        val isReadExternalPermission = requestCode == READ_EXTERNAL_STORAGE_RESULT_CODE
-        val isGranted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+    /* override fun onRequestPermissionsResult(
+         requestCode: Int, permissions: Array<out String>, grantResults: IntAr
+         val isReadExternalPermission = requestCode == READ_EXTERNAL_STORAGE_RESULT_CODE
+         val isGranted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
 
-        if (isReadExternalPermission)
-    {
-        if (isGranted) {
-            showFileSelectionDialog()
-        } else {
-            Toast
-                .makeText(requireContext(), R.string.assets_permission_canceled, Toast.LENGTH_LONG)
-                .show()
-        }
-    }
-}*/
+         if (isReadExternalPermission)
+     {
+         if (isGranted) {
+             showFileSelectionDialog()
+         } else {
+             Toast
+                 .makeText(requireContext(), R.string.assets_permission_canceled, Toast.LENGTH_LONG)
+                 .show()
+         }
+     }
+ }*/
 
 /*private fun handleFileParse(filePath: Uri) {
     GdxNativesLoader.load()
@@ -90,30 +92,43 @@ class MainActivity : ComponentActivity() {
     }
 }*/
 
-private fun setWallpaper() {
-    startActivity(
-        Intent()
-            .setAction(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
-            .putExtra(
-                WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
-                ComponentName(
-                    applicationContext,
-                    LiveWallpaperService::class.java
+    private fun setWallpaper() {
+        startActivity(
+            Intent()
+                .setAction(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
+                .putExtra(
+                    WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
+                    ComponentName(
+                        applicationContext,
+                        LiveWallpaperService::class.java
+                    )
                 )
-            )
-    )
-}
-
-override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-
-    val settingsViewModel = SettingsViewModel(WallpaperPreferencesRepository(dataStore))
-
-    setContent {
-        NavigationHost(
-            viewModel = settingsViewModel,
-            onSetWallpaperClick = { setWallpaper() }
         )
     }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+//        val applicationScope = CoroutineScope(SupervisorJob())
+//        val database by lazy { AppDatabase.getDatabase(this, applicationScope) }
+//        val mapViewModel: MapViewModel by viewModels { MapViewModelFactory(database) }
+
+        val mapsViewModel: MapsViewModel by viewModels {
+            MapsViewModelFactory(
+                contentResolver,
+                filesDir
+            )
+        }
+
+        val settingsViewModel = SettingsViewModel(WallpaperPreferencesRepository(dataStore))
+
+        setContent {
+            NavigationHost(
+                mapViewModel = mapsViewModel,
+                settingsViewModel = settingsViewModel,
+                onSetWallpaperClick = { setWallpaper() }
+            )
+        }
+    }
 }
-}
+
