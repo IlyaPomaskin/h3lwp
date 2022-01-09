@@ -109,15 +109,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-//        val applicationScope = CoroutineScope(SupervisorJob())
-//        val database by lazy { AppDatabase.getDatabase(this, applicationScope) }
-//        val mapViewModel: MapViewModel by viewModels { MapViewModelFactory(database) }
-
         val mapsViewModel: MapsViewModel by viewModels {
-            MapsViewModelFactory(
-                contentResolver,
-                filesDir
-            )
+            MapsViewModelFactory(contentResolver, filesDir)
         }
 
         val settingsViewModel = SettingsViewModel(WallpaperPreferencesRepository(dataStore))

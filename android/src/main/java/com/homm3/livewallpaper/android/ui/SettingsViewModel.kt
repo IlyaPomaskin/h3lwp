@@ -1,9 +1,9 @@
 package com.homm3.livewallpaper.android.ui
 
 import androidx.lifecycle.*
-import com.homm3.livewallpaper.android.data.MapUpdateInterval
-import com.homm3.livewallpaper.android.data.Scale
 import com.homm3.livewallpaper.android.data.WallpaperPreferencesRepository
+import com.homm3.livewallpaper.core.MapUpdateInterval
+import com.homm3.livewallpaper.core.Scale
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(

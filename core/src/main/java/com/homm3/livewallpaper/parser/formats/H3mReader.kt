@@ -10,7 +10,7 @@ import java.util.zip.GZIPInputStream
 import kotlin.math.pow
 
 
-internal class H3mReader(stream: InputStream) {
+class H3mReader(stream: InputStream) {
     private val h3m = H3m()
 
     private var reader = Reader(readWholeFile(GZIPInputStream(stream)))

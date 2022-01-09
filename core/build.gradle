@@ -1,14 +1,15 @@
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
 dependencies {
+	implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.0"
 	api "com.badlogicgames.gdx:gdx:$gdxVersion"
+	api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
 	api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 	api "io.github.libktx:ktx-style:$ktxStyleVersion"
 	api "io.github.libktx:ktx-scene2d:$ktxScene2DVersion"
 	api "io.github.libktx:ktx-preferences:$ktxPreferencesVersion"
 	api "io.github.libktx:ktx-inject:$ktxInjectVersion"
 	api "io.github.libktx:ktx-graphics:$ktxGraphicsVersion"
-	api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
 	api "io.github.libktx:ktx-freetype:$ktxFreetypeVersion"
 	api "io.github.libktx:ktx-async:$ktxAsyncVersion"
 	api "io.github.libktx:ktx-freetype-async:$ktxFreetypeAsyncVersion"

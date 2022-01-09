@@ -16,8 +16,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
+import com.homm3.livewallpaper.android.data.MapReadingException
 import com.homm3.livewallpaper.android.data.MapsViewModel
 import com.homm3.livewallpaper.android.ui.components.settings.SettingsCategory
 import com.homm3.livewallpaper.android.ui.theme.H3lwpnextTheme
@@ -62,13 +64,13 @@ class GetMultipleFiles : ActivityResultContracts.GetMultipleContents() {
 
 @Composable
 fun MapsScreen(viewModel: MapsViewModel, actions: NavigationActions) {
-    val vm = viewModel.mapsList.collectAsState().value
+    val files by viewModel.mapsList.collectAsState()
+    val readingError by viewModel.mapReadingError.collectAsState()
 
     val context = LocalContext.current
 
     val filesSelector = rememberLauncherForActivityResult(GetMultipleFiles()) { list ->
         viewModel.copyMap(list[0])
-        println("files: ${list.map { it.path }}")
     }
 
     val requestPermission = permissionGrant {
@@ -96,7 +98,7 @@ fun MapsScreen(viewModel: MapsViewModel, actions: NavigationActions) {
             SettingsContainer {
                 item { SettingsCategory(text = "Maps") }
 
-                vm.listFiles().map {
+                files.map {
                     item {
                         SettingsItem(
                             title = it.name,
@@ -105,7 +107,18 @@ fun MapsScreen(viewModel: MapsViewModel, actions: NavigationActions) {
                     }
                 }
 
-
+                item {
+                    SettingsItem(
+                        title = "err",
+                        subtitle = when (readingError) {
+                            MapReadingException.CantParseMap -> "CantParseMap"
+                            MapReadingException.CantOpenStream -> "CantOpenStream"
+                            MapReadingException.CantCopyMap -> "CantCopyMap"
+                            else -> "unknown"
+                        },
+                        onClick = { println("set wallpaper") }
+                    )
+                }
 
                 item {
                     SettingsItem(

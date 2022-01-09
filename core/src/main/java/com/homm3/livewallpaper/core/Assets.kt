@@ -5,6 +5,7 @@ import com.badlogic.gdx.assets.AssetLoaderParameters
 import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.assets.loaders.TextureAtlasLoader
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver
+import com.badlogic.gdx.assets.loaders.resolvers.LocalFileHandleResolver
 import com.badlogic.gdx.files.FileHandle
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
@@ -17,7 +18,7 @@ import ktx.collections.gdxArrayOf
 
 class Assets {
     val manager = AssetManager(InternalFileHandleResolver()).also {
-        it.setLoader(H3m::class.java, H3mLoader(it.fileHandleResolver))
+        it.setLoader(H3m::class.java, H3mLoader(LocalFileHandleResolver()))
     }
     lateinit var skin: Skin
     lateinit var i18n: I18NBundle
@@ -61,7 +62,7 @@ class Assets {
 
     fun loadMaps(onMapLoaded: (h3m: H3m) -> Unit) {
         Gdx.files
-            .internal("maps")
+            .local("user-maps")
             .list(".h3m")
             .filter { it.length() > 0L }
             .sortedBy { it.length() }
@@ -74,7 +75,7 @@ class Assets {
             onLoad(aManager.get(fileName))
         }
 
-        manager.load(fileHandle.file().toString(), parameters)
+        manager.load(fileHandle.file().name, parameters)
     }
 
     private fun getFrames(defName: String): Array<TextureAtlas.AtlasRegion> {

@@ -1,16 +1,15 @@
 package com.homm3.livewallpaper.core
 
-import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
-import com.badlogic.gdx.assets.AssetLoaderParameters
-import com.homm3.livewallpaper.parser.formats.H3m
 import com.homm3.livewallpaper.core.layers.H3mLayersGroup
 import com.homm3.livewallpaper.core.screens.GameScreen
 import com.homm3.livewallpaper.core.screens.LoadingScreen
 import com.homm3.livewallpaper.core.screens.SelectAssetsScreen
+import com.homm3.livewallpaper.parser.formats.H3m
+import kotlinx.coroutines.flow.Flow
 import ktx.app.KtxGame
 
-open class Engine : KtxGame<Screen>(null, false) {
+open class Engine(private val prefs: Flow<WallpaperPreferences>) : KtxGame<Screen>(null, false) {
     private lateinit var assets: Assets
     private lateinit var camera: Camera
 
@@ -37,7 +36,7 @@ open class Engine : KtxGame<Screen>(null, false) {
             setScreen<GameScreen>()
         })
         addScreen(SelectAssetsScreen(assets, ::onSettingsButtonClick))
-        addScreen(GameScreen(camera))
+        addScreen(GameScreen(camera, prefs))
 
         loadAndStart()
         assets.loadMaps { mapsList.add(it) }

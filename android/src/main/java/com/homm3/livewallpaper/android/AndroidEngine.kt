@@ -3,23 +3,23 @@ package com.homm3.livewallpaper.android
 import android.content.Context
 import android.content.Intent
 import com.badlogic.gdx.backends.android.AndroidWallpaperListener
-import com.homm3.livewallpaper.android.data.WallpaperPreferences
-import com.homm3.livewallpaper.android.data.WallpaperPreferencesRepository
-import com.homm3.livewallpaper.android.data.dataStore
 import com.homm3.livewallpaper.core.Engine
+import com.homm3.livewallpaper.core.WallpaperPreferences
 import com.homm3.livewallpaper.core.screens.GameScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
-class AndroidEngine(private val context: Context) : Engine(), AndroidWallpaperListener {
-    private var prefs = WallpaperPreferences()
-    private val prefsRepository = WallpaperPreferencesRepository(context.dataStore)
+class AndroidEngine(
+    private val context: Context,
+    private val prefs: Flow<WallpaperPreferences>
+) : Engine(prefs), AndroidWallpaperListener {
+    var useScroll = WallpaperPreferences.defaultUseScroll
 
-    private fun updatePreferences() {
+    init {
         CoroutineScope(Dispatchers.Default).launch {
-            prefsRepository.preferencesFlow.collect { prefs = it }
+            prefs.collect { useScroll = it.useScroll }
         }
     }
 
@@ -31,16 +31,6 @@ class AndroidEngine(private val context: Context) : Engine(), AndroidWallpaperLi
         )
     }
 
-    override fun create() {
-        super.create()
-        updatePreferences()
-    }
-
-    override fun resume() {
-        super.resume()
-        updatePreferences()
-    }
-
     override fun previewStateChange(isPreview: Boolean) {}
 
     override fun iconDropped(x: Int, y: Int) {}
@@ -50,7 +40,7 @@ class AndroidEngine(private val context: Context) : Engine(), AndroidWallpaperLi
         xOffsetStep: Float, yOffsetStep: Float,
         xPixelOffset: Int, yPixelOffset: Int
     ) {
-        if (prefs.useScroll && screens.containsKey(GameScreen::class.java)) {
+        if (useScroll && screens.containsKey(GameScreen::class.java)) {
             moveCameraByOffset(xOffset);
         }
     }
