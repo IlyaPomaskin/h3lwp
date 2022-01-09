@@ -4,11 +4,15 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.homm3.livewallpaper.core.Constants
 import com.homm3.livewallpaper.core.Engine
+import com.homm3.livewallpaper.core.WallpaperPreferences
 import com.homm3.livewallpaper.parser.AssetsConverter
+import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.File
 import java.io.InputStream
 
-class DesktopEngine : Engine() {
+val prefs = MutableStateFlow(WallpaperPreferences())
+
+class DesktopEngine : Engine(prefs) {
     private fun clearOutputDirectory(outputDirectory: File) {
         if (outputDirectory.exists()) {
             outputDirectory.deleteRecursively()

@@ -7,14 +7,14 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.homm3.livewallpaper.R
-import com.homm3.livewallpaper.android.data.MapUpdateInterval
-import com.homm3.livewallpaper.android.data.Scale
-import com.homm3.livewallpaper.android.data.WallpaperPreferences
 import com.homm3.livewallpaper.android.ui.SettingsViewModel
 import com.homm3.livewallpaper.android.ui.components.settings.SettingsCategory
 import com.homm3.livewallpaper.android.ui.components.settings.SettingsDropdown
 import com.homm3.livewallpaper.android.ui.components.settings.SettingsDropdownItem
 import com.homm3.livewallpaper.android.ui.theme.H3lwpnextTheme
+import com.homm3.livewallpaper.core.MapUpdateInterval
+import com.homm3.livewallpaper.core.Scale
+import com.homm3.livewallpaper.core.WallpaperPreferences
 
 @Composable
 fun SettingsScreen(
