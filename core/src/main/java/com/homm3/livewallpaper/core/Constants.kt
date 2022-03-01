@@ -45,7 +45,7 @@ class Constants {
             const val USE_SCROLL = "useScroll"
             const val USE_SCROLL_DEFAULT = true
             const val BRIGHTNESS = "brightness"
-            const val BRIGHTNESS_DEFAULT = 100
+            const val BRIGHTNESS_DEFAULT = 1f
         }
     }
 }

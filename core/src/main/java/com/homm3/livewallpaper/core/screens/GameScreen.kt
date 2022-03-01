@@ -50,9 +50,13 @@ class GameScreen(private val camera: Camera, private val prefs: Flow<WallpaperPr
             Gdx.input.inputProcessor = inputProcessor
         }
 
+        subscribeToPreferences()
+    }
+
+    private fun subscribeToPreferences() {
         CoroutineScope(Dispatchers.Default).launch {
             prefs.collect {
-                brightnessOverlay.brightness = it.brightness.toInt()
+                brightnessOverlay.brightness = it.brightness
 
                 viewport.unitsPerPixel = when (it.scale) {
                     Scale.DPI -> min(1 / Gdx.graphics.density, 1f)
@@ -66,10 +70,10 @@ class GameScreen(private val camera: Camera, private val prefs: Flow<WallpaperPr
 
                 mapUpdateInterval = when (it.mapUpdateInterval) {
                     MapUpdateInterval.EVERY_SWITCH -> 0f
-                    MapUpdateInterval.HOURS_2 -> 2f
-                    MapUpdateInterval.HOURS_24 -> 24f
-                    MapUpdateInterval.MINUTES_10 -> 10f
-                    MapUpdateInterval.MINUTES_30 -> 30f
+                    MapUpdateInterval.HOURS_2 -> 2f * 60f * 60f * 1000f
+                    MapUpdateInterval.HOURS_24 -> 24f * 60f * 60f * 1000f
+                    MapUpdateInterval.MINUTES_10 -> 10f * 60f * 1000f
+                    MapUpdateInterval.MINUTES_30 -> 30f * 60f * 1000f
                 }
             }
         }

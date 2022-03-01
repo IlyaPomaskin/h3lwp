@@ -6,8 +6,8 @@ import ktx.preferences.set
 class PreferenceService {
     private val prefs = Gdx.app.getPreferences(Constants.Preferences.PREFERENCES_NAME)
 
-    var brightness: Int
-        get() = prefs.getInteger(
+    var brightness: Float
+        get() = prefs.getFloat(
             Constants.Preferences.BRIGHTNESS,
             Constants.Preferences.BRIGHTNESS_DEFAULT
         )

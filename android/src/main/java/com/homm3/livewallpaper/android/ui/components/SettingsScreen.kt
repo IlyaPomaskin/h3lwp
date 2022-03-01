@@ -55,6 +55,8 @@ fun SettingsScreen(
         ),
     )
 
+    var brightnessSliderValue by remember { mutableStateOf(prefs.brightness) }
+
     H3lwpnextTheme {
         SettingsContainer {
             item { SettingsCategory(text = "Wallpaper") }
@@ -110,9 +112,10 @@ fun SettingsScreen(
                     onClick = { },
                 ) {
                     Slider(
-                        value = prefs.brightness,
+                        value = brightnessSliderValue,
                         valueRange = 0f..1f,
-                        onValueChange = { viewModel.setBrightness(it) }
+                        onValueChange = { brightnessSliderValue = it },
+                        onValueChangeFinished = { viewModel.setBrightness(brightnessSliderValue) }
                     )
                 }
             }
