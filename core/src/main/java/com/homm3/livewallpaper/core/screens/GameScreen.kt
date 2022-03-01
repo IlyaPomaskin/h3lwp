@@ -43,7 +43,7 @@ class GameScreen(private val camera: Camera, private val prefs: Flow<WallpaperPr
     private val brightnessOverlay = BrightnessOverlay(camera)
 
     private var mapUpdateInterval = 0f
-    private var lastMapUpdateTime = Long.MAX_VALUE
+    private var lastMapUpdateTime = System.currentTimeMillis()
 
     init {
         if (Gdx.app.type == Application.ApplicationType.Desktop) {
@@ -94,7 +94,7 @@ class GameScreen(private val camera: Camera, private val prefs: Flow<WallpaperPr
         if (h3mLayer != null) {
             camera.randomizeCameraPosition(h3mLayer.mapSize)
             h3mLayer.updateVisibleSprites(camera)
-            h3mLayer.isVisible = true;
+            h3mLayer.isVisible = true
         }
     }
 
