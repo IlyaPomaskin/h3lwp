@@ -48,6 +48,14 @@ class H3mLoader(private val resolver: FileHandleResolver) :
     ): H3m {
         if (map == null) {
             map = load(manager, fileName)
+
+            if (parameter?.loadedCallback != null) {
+                parameter.loadedCallback.finishedLoading(
+                    manager,
+                    fileName,
+                    H3mLoader::class.java
+                )
+            }
         } else if (map is H3m) {
             return map as H3m
         }
@@ -63,6 +71,14 @@ class H3mLoader(private val resolver: FileHandleResolver) :
     ) {
         try {
             map = load(manager, fileName)
+
+            if (parameter?.loadedCallback != null) {
+                parameter.loadedCallback.finishedLoading(
+                    manager,
+                    fileName,
+                    H3mLoader::class.java
+                )
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
