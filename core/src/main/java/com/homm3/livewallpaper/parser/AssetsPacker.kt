@@ -80,15 +80,14 @@ class AssetsPacker(private val packer: PixmapPacker) {
 
     internal fun packFrames(frames: List<Def.Frame>): PackedFrames {
         return frames.foldRight(
-            mutableMapOf(),
-            { frame, acc ->
-                when (frame.parentGroup.parentDef.lodFile.fileType) {
-                    Lod.FileType.TERRAIN -> terrainFrame(frame, acc)
-                    Lod.FileType.SPRITE -> objectFrame(frame, acc)
-                    Lod.FileType.MAP -> objectFrame(frame, acc)
-                    else -> acc
-                }
+            mutableMapOf()
+        ) { frame, acc ->
+            when (frame.parentGroup.parentDef.lodFile.fileType) {
+                Lod.FileType.TERRAIN -> terrainFrame(frame, acc)
+                Lod.FileType.SPRITE -> objectFrame(frame, acc)
+                Lod.FileType.MAP -> objectFrame(frame, acc)
+                else -> acc
             }
-        )
+        }
     }
 }

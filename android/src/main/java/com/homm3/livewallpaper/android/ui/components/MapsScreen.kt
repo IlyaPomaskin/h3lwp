@@ -49,7 +49,7 @@ fun handleFabClick(
     }
 }
 
-class GetMultipleFiles : ActivityResultContracts.GetMultipleContents() {
+class GetMultipleMapsFiles : ActivityResultContracts.GetMultipleContents() {
     override fun createIntent(context: Context, input: String): Intent {
         super.createIntent(context, input)
 
@@ -69,7 +69,7 @@ fun MapsScreen(viewModel: MapsViewModel, actions: NavigationActions) {
 
     val context = LocalContext.current
 
-    val filesSelector = rememberLauncherForActivityResult(GetMultipleFiles()) { list ->
+    val filesSelector = rememberLauncherForActivityResult(GetMultipleMapsFiles()) { list ->
         viewModel.copyMap(list[0])
     }
 
