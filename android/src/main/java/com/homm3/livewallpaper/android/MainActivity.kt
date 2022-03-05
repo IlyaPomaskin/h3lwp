@@ -33,39 +33,6 @@ class MainActivity : ComponentActivity() {
      }
  }*/
 
-/*private fun handleFileParse(filePath: Uri) {
-    GdxNativesLoader.load()
-
-    thread {
-        try {
-            updateSelectFilePreference {
-                it.summary = getString(R.string.assets_parsing_progress)
-                it.isSelectable = false
-            }
-            AssetsConverter(
-                prepareFileStream(filePath),
-                prepareOutputDirectory(Constants.Assets.ATLAS_FOLDER),
-                Constants.Assets.ATLAS_NAME
-            ).convertLodToTextureAtlas()
-            setAssetsReadyFlag(true)
-            updateSelectFilePreference {
-                it.summary = getString(R.string.assets_parsing_done)
-            }
-        } catch (ex: Exception) {
-            val errorMessage = when (ex) {
-                is InvalidFileException -> getString(R.string.invalid_file_error)
-                is OutputFileWriteException -> getString(R.string.output_error)
-                else -> getString(R.string.common_error)
-            }
-            setAssetsReadyFlag(false)
-            updateSelectFilePreference {
-                it.summary = errorMessage
-                it.isSelectable = true
-            }
-        }
-    }
-}*/
-
 /*private fun selectFileToParse() {
     if (isAssetsReady()) {
         it.isVisible = false
@@ -113,7 +80,10 @@ class MainActivity : ComponentActivity() {
             MapsViewModelFactory(contentResolver, filesDir)
         }
 
-        val settingsViewModel = SettingsViewModel(WallpaperPreferencesRepository(dataStore))
+        val settingsViewModel = SettingsViewModel(
+            application,
+            WallpaperPreferencesRepository(dataStore)
+        )
 
         setContent {
             NavigationHost(
