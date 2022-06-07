@@ -18,13 +18,16 @@ import androidx.compose.ui.unit.dp
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
+import com.homm3.livewallpaper.android.ui.components.onboarding.*
 import com.homm3.livewallpaper.android.ui.theme.H3lwpnextTheme
 import kotlinx.coroutines.launch
 
 enum class Pages(val value: Int) {
-    Start(0),
-    Explain(1),
-    Parse(2);
+    Welcome(0),
+    HowToUse(1),
+    ContentLimitations(2),
+    PhoneLimitations(3),
+    Parse(4);
 
     companion object {
         fun fromInt(value: Int) = values().find { it.value == value }
@@ -74,7 +77,7 @@ fun DotsIndicator(
 @OptIn(ExperimentalPagerApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun OnboardingScreen() {
-    val pagerState = rememberPagerState(initialPage = Pages.Start.value)
+    val pagerState = rememberPagerState(initialPage = Pages.Welcome.value)
     val scope = rememberCoroutineScope()
     val prevPage = Pages.fromInt(pagerState.currentPage - 1)
     val nextPage = Pages.fromInt(pagerState.currentPage + 1)
@@ -110,9 +113,11 @@ fun OnboardingScreen() {
                         .fillMaxWidth()
                 ) { page ->
                     when (Pages.fromInt(page)) {
-                        Pages.Start -> Text(text = "start")
-                        Pages.Explain -> Text(text = "explain")
-                        Pages.Parse -> Text(text = "parse")
+                        Pages.Welcome -> Welcome()
+                        Pages.HowToUse -> HowToUse()
+                        Pages.ContentLimitations -> ContentLimitations()
+                        Pages.PhoneLimitations -> PhoneLimitations()
+                        Pages.Parse -> Parse()
                         null -> Text(text = "null")
                     }
                 }
@@ -126,7 +131,7 @@ fun OnboardingScreen() {
                 Button(
                     modifier = Modifier.padding(12.dp),
                     enabled = prevPage != null,
-                    onClick = { handleNextClick() }
+                    onClick = { handlePrevClick() }
                 ) { Text(text = "Prev") }
 
                 DotsIndicator(
