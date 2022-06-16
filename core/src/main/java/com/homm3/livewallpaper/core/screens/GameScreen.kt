@@ -31,19 +31,10 @@ class GameScreen(private val camera: Camera, private val prefs: Flow<WallpaperPr
     }
     private val inputProcessor = InputProcessor(viewport).apply {
         onEnter = { randomizeVisibleMapPart() }
-        onSpace = {
-            tiledMap
-                .layers
-                .filter { it.isVisible }
-                .filterIsInstance(H3mLayersGroup::class.java)
-                .firstOrNull()
-                ?.updateVisibleSprites(camera)
-        }
     }
     private val brightnessOverlay = BrightnessOverlay(camera)
-
     private var mapUpdateInterval = 0f
-    private var lastMapUpdateTime = System.currentTimeMillis()
+    private var lastMapUpdateTime = 0L
 
     init {
         if (Gdx.app.type == Application.ApplicationType.Desktop) {
@@ -53,28 +44,38 @@ class GameScreen(private val camera: Camera, private val prefs: Flow<WallpaperPr
         subscribeToPreferences()
     }
 
+    private fun setUnitsPerPixelByScale(scale: Scale) {
+        val nextUnitsPerPixel = when (scale) {
+            Scale.DPI -> min(1 / Gdx.graphics.density, 1f)
+            Scale.X1 -> 1f
+            Scale.X2 -> 0.5f
+            Scale.X3 -> 0.33f
+            Scale.X4 -> 0.25f
+        }
+
+        viewport.unitsPerPixel = nextUnitsPerPixel
+
+        if (viewport.unitsPerPixel != nextUnitsPerPixel) {
+            randomizeVisibleMapPart()
+        }
+    }
+
+    private fun setMapUpdateInterval(interval: MapUpdateInterval) {
+        mapUpdateInterval = when (interval) {
+            MapUpdateInterval.EVERY_SWITCH -> 0f
+            MapUpdateInterval.HOURS_2 -> 2f * 60f * 60f * 1000f
+            MapUpdateInterval.HOURS_24 -> 24f * 60f * 60f * 1000f
+            MapUpdateInterval.MINUTES_10 -> 10f * 60f * 1000f
+            MapUpdateInterval.MINUTES_30 -> 30f * 60f * 1000f
+        }
+    }
+
     private fun subscribeToPreferences() {
         CoroutineScope(Dispatchers.Default).launch {
             prefs.collect {
                 brightnessOverlay.brightness = it.brightness
-
-                viewport.unitsPerPixel = when (it.scale) {
-                    Scale.DPI -> min(1 / Gdx.graphics.density, 1f)
-                    Scale.X1 -> 1f
-                    Scale.X2 -> 0.5f
-                    Scale.X3 -> 0.33f
-                    Scale.X4 -> 0.25f
-                }
-
-                viewport.update(Gdx.graphics.width, Gdx.graphics.height)
-
-                mapUpdateInterval = when (it.mapUpdateInterval) {
-                    MapUpdateInterval.EVERY_SWITCH -> 0f
-                    MapUpdateInterval.HOURS_2 -> 2f * 60f * 60f * 1000f
-                    MapUpdateInterval.HOURS_24 -> 24f * 60f * 60f * 1000f
-                    MapUpdateInterval.MINUTES_10 -> 10f * 60f * 1000f
-                    MapUpdateInterval.MINUTES_30 -> 30f * 60f * 1000f
-                }
+                setUnitsPerPixelByScale(it.scale)
+                setMapUpdateInterval(it.mapUpdateInterval)
             }
         }
     }
@@ -103,10 +104,14 @@ class GameScreen(private val camera: Camera, private val prefs: Flow<WallpaperPr
     }
 
     private fun shouldUpdateVisibleMapPart(): Boolean {
+        val isInitialRender = lastMapUpdateTime == 0L
+
         val currentTime = System.currentTimeMillis()
         val timeSinceLastUpdate = currentTime - lastMapUpdateTime
         val updateInterval = max(mapUpdateInterval, MINIMAL_MAP_UPDATE_INTERVAL)
-        if (timeSinceLastUpdate >= updateInterval) {
+        val isTimeToUpdate = timeSinceLastUpdate >= updateInterval
+
+        if (isInitialRender || isTimeToUpdate) {
             lastMapUpdateTime = currentTime
             return true
         }
