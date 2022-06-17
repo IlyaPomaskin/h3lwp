@@ -44,12 +44,7 @@ class Assets {
     }
 
     fun isGameAssetsAvailable(): Boolean {
-        val isAssetsReady = Gdx.app
-            .getPreferences(Constants.Preferences.PREFERENCES_NAME)
-            .getBoolean(Constants.Preferences.IS_ASSETS_READY_KEY)
-        val filesExists = Gdx.files.local(Constants.Assets.ATLAS_PATH).exists()
-
-        return isAssetsReady && filesExists
+        return Gdx.files.local(Constants.Assets.ATLAS_PATH).exists()
     }
 
     fun loadGameAssets() {

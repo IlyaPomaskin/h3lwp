@@ -68,7 +68,7 @@ fun createFileSelector(onSelect: (uri: Uri) -> Unit): () -> Unit {
     }
 }
 
-fun showDeliveryStatus(state: ParsingState): String {
+fun showParsingState(state: ParsingState): String {
     return when (state) {
         is ParsingState.Initial -> "Initial"
         is ParsingState.InProgress -> "In progress"
@@ -116,7 +116,7 @@ fun SettingsScreen(
         ),
     )
 
-    val parseStatus = showDeliveryStatus(viewModel.parsingStateUiModel)
+    val parseStatus = showParsingState(viewModel.parsingStateUiModel)
 
     var brightnessSliderValue by remember { mutableStateOf(prefs.brightness) }
 

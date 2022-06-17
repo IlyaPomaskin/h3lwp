@@ -36,7 +36,6 @@ class Constants {
         companion object {
             // Do not change this or users will be forced to parse assets again
             val PREFERENCES_NAME = Engine::class.java.`package`.name + ".PREFERENCES"
-            const val IS_ASSETS_READY_KEY = "isAssetsReady"
             const val MAP_UPDATE_INTERVAL = "mapUpdateInterval"
             const val DEFAULT_MAP_UPDATE_INTERVAL = (15f * 60f * 1000f).toString()
             const val MINIMAL_MAP_UPDATE_INTERVAL = 1000f
