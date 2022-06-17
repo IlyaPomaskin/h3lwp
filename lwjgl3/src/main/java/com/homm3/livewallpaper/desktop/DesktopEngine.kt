@@ -20,13 +20,6 @@ class DesktopEngine : Engine(prefs) {
         outputDirectory.mkdirs()
     }
 
-    private fun setAssetsReadyFlag(value: Boolean) {
-        Gdx.app
-            .getPreferences(Constants.Preferences.PREFERENCES_NAME)
-            .putBoolean(Constants.Preferences.IS_ASSETS_READY_KEY, value)
-            .flush()
-    }
-
     private fun parse(callback: () -> Unit) {
         val file = File("H3sprite.lod")
 
@@ -48,7 +41,6 @@ class DesktopEngine : Engine(prefs) {
                     outputDirectory = File(Constants.Assets.ATLAS_FOLDER)
                         .also {
                             clearOutputDirectory(it)
-                            setAssetsReadyFlag(false)
                         }
                 }
                 .onFailure { throw Exception("Can't prepare output directory") }
@@ -60,14 +52,12 @@ class DesktopEngine : Engine(prefs) {
                     ).convertLodToTextureAtlas()
                 }
                 .map {
-                    setAssetsReadyFlag(true)
                     println("Parsing successfully done!")
                     callback()
                 }
         } catch (ex: Exception) {
             outputDirectory?.run {
                 clearOutputDirectory(this)
-                setAssetsReadyFlag(false)
             }
             println("Fail: ${ex.message}")
         } finally {
