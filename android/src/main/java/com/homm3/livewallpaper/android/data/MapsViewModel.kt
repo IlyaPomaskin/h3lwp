@@ -74,8 +74,17 @@ class MapsViewModel(private val contentResolver: ContentResolver, root: File) : 
         }
     }
 
+    fun resetCopyMapError() {
+        viewModelScope.launch {
+            _mapReadingErrorState.emit(null)
+        }
+    }
+
     fun copyMap(uri: Uri) {
         viewModelScope.launch {
+            _mapReadingErrorState.emit(MapReadingException.CantCopyMap)
+            return@launch
+
             try {
                 val h3mStream = openStream(uri)
                 val h3m = parseMap(h3mStream)

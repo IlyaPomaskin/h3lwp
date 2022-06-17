@@ -9,9 +9,7 @@ import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material.FloatingActionButton
-import androidx.compose.material.Icon
-import androidx.compose.material.Scaffold
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.Composable
@@ -36,12 +34,13 @@ fun permissionGrant(onGrant: (isGranted: Boolean) -> Unit): ManagedActivityResul
 fun handleFabClick(
     context: Context,
     requestPermission: ManagedActivityResultLauncher<String, Boolean>,
-    selectFile: ManagedActivityResultLauncher<String, List<Uri>>
+    selectFile: ManagedActivityResultLauncher<String, Uri?>
 ) {
     val hasPermission = ActivityCompat.checkSelfPermission(
         context,
         Manifest.permission.READ_EXTERNAL_STORAGE
     ) == PackageManager.PERMISSION_GRANTED
+
     if (hasPermission) {
         selectFile.launch("")
     } else {
@@ -49,7 +48,7 @@ fun handleFabClick(
     }
 }
 
-class GetMultipleMapsFiles : ActivityResultContracts.GetMultipleContents() {
+class GetMapFile : ActivityResultContracts.GetContent() {
     override fun createIntent(context: Context, input: String): Intent {
         super.createIntent(context, input)
 
@@ -58,7 +57,39 @@ class GetMultipleMapsFiles : ActivityResultContracts.GetMultipleContents() {
             .addCategory(Intent.CATEGORY_OPENABLE)
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             .putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-            .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+            .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false)
+    }
+}
+
+@Composable
+fun MapLoadingErrorAlert(error: MapReadingException?, onClose: () -> Unit) {
+    if (error !== null) {
+        AlertDialog(
+            title = {
+                Text(
+                    when (error) {
+                        MapReadingException.CantParseMap -> "Can't parse content of map"
+                        MapReadingException.CantOpenStream -> "Can't open file"
+                        MapReadingException.CantCopyMap -> "Can't copy map"
+                    }
+                )
+            },
+            text = {
+                Text(
+                    when (error) {
+                        MapReadingException.CantParseMap -> "Check version of the map. App only can read maps from \"Shadow of the Death\"."
+                        MapReadingException.CantOpenStream -> "Check permission for reading files."
+                        MapReadingException.CantCopyMap -> "Probably there are already same map or no free space on the phone."
+                    }
+                )
+            },
+            confirmButton = {
+                Button(onClick = { onClose() }) {
+                    Text("Close")
+                }
+            },
+            onDismissRequest = { onClose() }
+        )
     }
 }
 
@@ -67,12 +98,13 @@ fun MapsScreen(viewModel: MapsViewModel, actions: NavigationActions) {
     val files by viewModel.mapsList.collectAsState()
     val readingError by viewModel.mapReadingError.collectAsState()
 
-    val context = LocalContext.current
-
-    val filesSelector = rememberLauncherForActivityResult(GetMultipleMapsFiles()) { list ->
-        viewModel.copyMap(list[0])
+    val filesSelector = rememberLauncherForActivityResult(GetMapFile()) { file ->
+        if (file !== null) {
+            viewModel.copyMap(file)
+        }
     }
 
+    val context = LocalContext.current
     val requestPermission = permissionGrant {
         if (it) {
             filesSelector.launch("application/octet-stream")
@@ -91,10 +123,12 @@ fun MapsScreen(viewModel: MapsViewModel, actions: NavigationActions) {
                         filesSelector
                     )
                 }) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "asdf")
+                    Icon(imageVector = Icons.Default.Add, contentDescription = "add map")
                 }
             },
         ) {
+            MapLoadingErrorAlert(error = readingError, onClose = { viewModel.resetCopyMapError() })
+
             SettingsContainer {
                 item { SettingsCategory(text = "Maps") }
 
@@ -102,36 +136,11 @@ fun MapsScreen(viewModel: MapsViewModel, actions: NavigationActions) {
                     item {
                         SettingsItem(
                             title = it.name,
-                            onClick = { println(it.absolutePath) }
+                            onClick = { actions.mapByName(it.name) }
                         )
                     }
                 }
 
-                item {
-                    SettingsItem(
-                        title = "err",
-                        subtitle = when (readingError) {
-                            MapReadingException.CantParseMap -> "CantParseMap"
-                            MapReadingException.CantOpenStream -> "CantOpenStream"
-                            MapReadingException.CantCopyMap -> "CantCopyMap"
-                            else -> "unknown"
-                        },
-                        onClick = { println("set wallpaper") }
-                    )
-                }
-
-                item {
-                    SettingsItem(
-                        title = "maps list",
-                        onClick = { println("set wallpaper") }
-                    )
-                }
-                item {
-                    SettingsItem(
-                        title = "open map qwer",
-                        onClick = { actions.mapByName("qwer") }
-                    )
-                }
                 item {
                     SettingsItem(
                         title = "back",
