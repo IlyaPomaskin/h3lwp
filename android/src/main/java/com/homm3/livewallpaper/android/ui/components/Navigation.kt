@@ -9,9 +9,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.homm3.livewallpaper.android.data.MapsViewModel
+import com.homm3.livewallpaper.android.ui.OnboardingViewModel
 import com.homm3.livewallpaper.android.ui.SettingsViewModel
 
 object Destinations {
+    const val ONBOARDING = "onboarding"
     const val SETTINGS = "settings"
     const val ABOUT = "about"
     const val MAPS = "maps"
@@ -31,15 +33,24 @@ class NavigationActions(navController: NavHostController) {
 fun NavigationHost(
     mapViewModel: MapsViewModel,
     settingsViewModel: SettingsViewModel,
+    onboardingViewModel: OnboardingViewModel,
     onSetWallpaperClick: () -> Unit,
 ) {
     val navController = rememberNavController()
     val actions = remember(navController) { NavigationActions(navController) }
+    val startDestination = when (onboardingViewModel.isGameAssetsAvailable()) {
+        true -> Destinations.SETTINGS
+        false -> Destinations.ONBOARDING
+    }
 
-    NavHost(
-        navController = navController,
-        startDestination = Destinations.SETTINGS
-    ) {
+    NavHost(navController, startDestination) {
+        composable(Destinations.ONBOARDING) {
+            OnboardingScreen(
+                viewModel = onboardingViewModel,
+                actions
+            )
+        }
+
         composable(Destinations.SETTINGS) {
             SettingsScreen(
                 viewModel = settingsViewModel,

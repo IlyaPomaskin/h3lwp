@@ -9,27 +9,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.homm3.livewallpaper.android.ui.OnboardingViewModel
+import com.homm3.livewallpaper.android.ui.components.createFileSelector
+import com.homm3.livewallpaper.android.ui.components.showParsingState
 
 @Composable
-fun Parse() {
+fun Parse(viewModel: OnboardingViewModel) {
+    val openFileSelector = createFileSelector { viewModel.parseFile(it) }
+    val parseStatus = showParsingState(viewModel.parsingStateUiModel)
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = Modifier.padding(24.dp)
     ) {
-        Button(onClick = { println("parse click") }) {
+        Button(onClick = { openFileSelector() }) {
             Text(
                 textAlign = TextAlign.Center,
-                text = "Parse"
+                text = "Parse $parseStatus"
             )
         }
     }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun ParsePreview() {
-    Parse()
 }

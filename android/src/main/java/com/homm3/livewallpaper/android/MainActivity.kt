@@ -11,54 +11,12 @@ import com.homm3.livewallpaper.android.data.MapsViewModel
 import com.homm3.livewallpaper.android.data.MapsViewModelFactory
 import com.homm3.livewallpaper.android.data.WallpaperPreferencesRepository
 import com.homm3.livewallpaper.android.data.dataStore
+import com.homm3.livewallpaper.android.ui.OnboardingViewModel
 import com.homm3.livewallpaper.android.ui.SettingsViewModel
 import com.homm3.livewallpaper.android.ui.components.NavigationHost
 
 
 class MainActivity : ComponentActivity() {
-    /* override fun onRequestPermissionsResult(
-         requestCode: Int, permissions: Array<out String>, grantResults: IntAr
-         val isReadExternalPermission = requestCode == READ_EXTERNAL_STORAGE_RESULT_CODE
-         val isGranted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
-
-         if (isReadExternalPermission)
-     {
-         if (isGranted) {
-             showFileSelectionDialog()
-         } else {
-             Toast
-                 .makeText(requireContext(), R.string.assets_permission_canceled, Toast.LENGTH_LONG)
-                 .show()
-         }
-     }
- }*/
-
-/*private fun selectFileToParse() {
-    if (isAssetsReady()) {
-        it.isVisible = false
-    } else {
-        it.summary = ResourceBundle
-            .getBundle("assets/${Constants.Assets.I18N_PATH}")
-            .getString("instructions")
-        it.onPreferenceClickListener = Preference.OnPreferenceClickListener {
-            val hasReadStoragePermission = ContextCompat.checkSelfPermission(
-                requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED
-
-            if (!hasReadStoragePermission) {
-                ActivityCompat.requestPermissions(
-                    requireActivity(),
-                    Array(1) { Manifest.permission.READ_EXTERNAL_STORAGE },
-                    READ_EXTERNAL_STORAGE_RESULT_CODE
-                )
-            } else {
-                showFileSelectionDialog()
-            }
-            true
-        }
-    }
-}*/
-
     private fun setWallpaper() {
         startActivity(
             Intent()
@@ -84,11 +42,15 @@ class MainActivity : ComponentActivity() {
             application,
             WallpaperPreferencesRepository(dataStore)
         )
+        val onboardingViewModel = OnboardingViewModel(
+            application
+        )
 
         setContent {
             NavigationHost(
                 mapViewModel = mapsViewModel,
                 settingsViewModel = settingsViewModel,
+                onboardingViewModel = onboardingViewModel,
                 onSetWallpaperClick = { setWallpaper() }
             )
         }

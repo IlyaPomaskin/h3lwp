@@ -13,11 +13,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
+import com.homm3.livewallpaper.android.ui.OnboardingViewModel
 import com.homm3.livewallpaper.android.ui.components.onboarding.*
 import com.homm3.livewallpaper.android.ui.theme.H3lwpnextTheme
 import kotlinx.coroutines.launch
@@ -76,7 +76,10 @@ fun DotsIndicator(
 
 @OptIn(ExperimentalPagerApi::class, ExperimentalAnimationApi::class)
 @Composable
-fun OnboardingScreen() {
+fun OnboardingScreen(
+    viewModel: OnboardingViewModel,
+    actions: NavigationActions
+) {
     val pagerState = rememberPagerState(initialPage = Pages.Welcome.value)
     val scope = rememberCoroutineScope()
     val prevPage = Pages.fromInt(pagerState.currentPage - 1)
@@ -117,7 +120,7 @@ fun OnboardingScreen() {
                         Pages.HowToUse -> HowToUse()
                         Pages.ContentLimitations -> ContentLimitations()
                         Pages.PhoneLimitations -> PhoneLimitations()
-                        Pages.Parse -> Parse()
+                        Pages.Parse -> Parse(viewModel)
                         null -> Text(text = "null")
                     }
                 }
@@ -149,11 +152,4 @@ fun OnboardingScreen() {
             }
         }
     }
-}
-
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun OnboardingScreenPreview() {
-    OnboardingScreen()
 }

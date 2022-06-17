@@ -84,7 +84,6 @@ fun SettingsScreen(
     actions: NavigationActions
 ) {
     val prefs by viewModel.settingsUiModel.observeAsState(WallpaperPreferences())
-    val openFileSelector = createFileSelector { viewModel.parseFile(it) }
 
     val scaleOptions = listOf(
         SettingsDropdownItem(Scale.DPI, stringResource(R.string.scale_by_density)),
@@ -116,8 +115,6 @@ fun SettingsScreen(
         ),
     )
 
-    val parseStatus = showParsingState(viewModel.parsingStateUiModel)
-
     var brightnessSliderValue by remember { mutableStateOf(prefs.brightness) }
 
     H3lwpnextTheme {
@@ -129,17 +126,14 @@ fun SettingsScreen(
                     onClick = { onSetWallpaperClick() }
                 )
             }
+
+            item { SettingsCategory(text = "Preferences") }
             item {
                 SettingsItem(
                     title = stringResource(id = R.string.maps_button),
                     onClick = { actions.maps() }
                 )
             }
-            item {
-                SettingsItem(title = "Parse: $parseStatus", onClick = openFileSelector)
-            }
-
-            item { SettingsCategory(text = "Preferences") }
             item {
                 SettingsDropdown(
                     title = stringResource(id = R.string.scale_title),
