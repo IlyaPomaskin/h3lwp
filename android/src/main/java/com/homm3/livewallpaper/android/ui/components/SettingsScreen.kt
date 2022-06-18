@@ -17,7 +17,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
 import com.homm3.livewallpaper.R
-import com.homm3.livewallpaper.android.ui.ParsingState
 import com.homm3.livewallpaper.android.ui.SettingsViewModel
 import com.homm3.livewallpaper.android.ui.components.settings.SettingsCategory
 import com.homm3.livewallpaper.android.ui.components.settings.SettingsDropdown
@@ -65,15 +64,6 @@ fun createFileSelector(onSelect: (uri: Uri) -> Unit): () -> Unit {
         } else {
             requestPermission.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
-    }
-}
-
-fun showParsingState(state: ParsingState): String {
-    return when (state) {
-        is ParsingState.Initial -> "Initial"
-        is ParsingState.InProgress -> "In progress"
-        is ParsingState.Error -> "Error ${state.ex.message}"
-        is ParsingState.Done -> "Done"
     }
 }
 

@@ -11,7 +11,7 @@ import com.homm3.livewallpaper.android.data.MapsViewModel
 import com.homm3.livewallpaper.android.data.MapsViewModelFactory
 import com.homm3.livewallpaper.android.data.WallpaperPreferencesRepository
 import com.homm3.livewallpaper.android.data.dataStore
-import com.homm3.livewallpaper.android.ui.OnboardingViewModel
+import com.homm3.livewallpaper.android.ui.ParsingViewModel
 import com.homm3.livewallpaper.android.ui.SettingsViewModel
 import com.homm3.livewallpaper.android.ui.components.NavigationHost
 
@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
             application,
             WallpaperPreferencesRepository(dataStore)
         )
-        val onboardingViewModel = OnboardingViewModel(
+        val onboardingViewModel = ParsingViewModel(
             application
         )
 
@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
             NavigationHost(
                 mapViewModel = mapsViewModel,
                 settingsViewModel = settingsViewModel,
-                onboardingViewModel = onboardingViewModel,
+                parsingViewModel = onboardingViewModel,
                 onSetWallpaperClick = { setWallpaper() }
             )
         }

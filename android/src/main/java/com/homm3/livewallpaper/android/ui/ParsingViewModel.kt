@@ -16,14 +16,19 @@ import kotlin.concurrent.thread
 sealed class ParsingState {
     object Initial : ParsingState()
     object InProgress : ParsingState()
-    data class Error(val ex: Exception) : ParsingState()
     object Done : ParsingState()
+    object Error : ParsingState()
 }
 
-class OnboardingViewModel(
+class ParsingViewModel(
     private val application: Application
 ) : ViewModel() {
     var parsingStateUiModel by mutableStateOf<ParsingState>(ParsingState.Initial)
+    var parsingError by mutableStateOf<Exception?>(null)
+
+    fun clearParsingError() {
+        parsingStateUiModel = ParsingState.Initial
+    }
 
     fun isGameAssetsAvailable(): Boolean {
         return application
@@ -72,7 +77,8 @@ class OnboardingViewModel(
 
                 parsingStateUiModel = ParsingState.Done
             } catch (ex: Exception) {
-                parsingStateUiModel = ParsingState.Error(ex)
+                parsingError = ex
+                parsingStateUiModel = ParsingState.Error
             }
         }
     }
