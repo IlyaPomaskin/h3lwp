@@ -9,6 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.android.data.MapReadingException
 import com.homm3.livewallpaper.android.data.MapsViewModel
 import com.homm3.livewallpaper.android.ui.components.settings.SettingsCategory
@@ -21,24 +23,24 @@ fun MapLoadingErrorAlert(error: MapReadingException?, onClose: () -> Unit) {
             title = {
                 Text(
                     when (error) {
-                        MapReadingException.CantParseMap -> "Can't parse content of map"
-                        MapReadingException.CantOpenStream -> "Can't open file"
-                        MapReadingException.CantCopyMap -> "Can't copy map"
+                        MapReadingException.CantParseMap -> stringResource(R.string.maps_error_parse_title)
+                        MapReadingException.CantOpenStream -> stringResource(R.string.maps_error_open_title)
+                        MapReadingException.CantCopyMap -> stringResource(R.string.maps_error_copy_title)
                     }
                 )
             },
             text = {
                 Text(
                     when (error) {
-                        MapReadingException.CantParseMap -> "Check version of the map. App only can read maps from \"Shadow of the Death\"."
-                        MapReadingException.CantOpenStream -> "Check permission for reading files."
-                        MapReadingException.CantCopyMap -> "Probably there are already same map or no free space on the phone."
+                        MapReadingException.CantParseMap -> stringResource(R.string.maps_error_parse_text)
+                        MapReadingException.CantOpenStream -> stringResource(R.string.maps_error_open_title)
+                        MapReadingException.CantCopyMap -> stringResource(R.string.maps_error_copy_title)
                     }
                 )
             },
             confirmButton = {
                 Button(onClick = { onClose() }) {
-                    Text("Close")
+                    Text(stringResource(R.string.maps_error_button))
                 }
             },
             onDismissRequest = { onClose() }
@@ -66,7 +68,11 @@ fun MapsScreen(viewModel: MapsViewModel, actions: NavigationActions) {
                             filesSelector()
                         } else {
                             Toast
-                                .makeText(context, "Too much maps", Toast.LENGTH_LONG)
+                                .makeText(
+                                    context,
+                                    context.getText(R.string.maps_toast_too_much_maps),
+                                    Toast.LENGTH_LONG
+                                )
                                 .show()
                         }
                     })
@@ -75,7 +81,7 @@ fun MapsScreen(viewModel: MapsViewModel, actions: NavigationActions) {
             MapLoadingErrorAlert(error = readingError, onClose = { viewModel.resetCopyMapError() })
 
             SettingsContainer {
-                item { SettingsCategory(text = "Maps") }
+                item { SettingsCategory(text = stringResource(R.string.maps_title)) }
 
                 items(files, key = { it.name }) {
                     ListItem(

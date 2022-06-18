@@ -68,4 +68,14 @@
     <string name="parsing_error_cant_parse_header">Can\'t parse file</string>
     <string name="parsing_error_cant_parse_text">Check file permissions or make sure you are using file from Shadow of the Death</string>
     <string name="parsing_error_cant_parse_button">Close</string>
+
+    <string name="maps_error_parse_title">Can\'t parse content of map</string>
+    <string name="maps_error_parse_text">Check version of the map. App only can read maps from "Shadow of the Death".</string>
+    <string name="maps_error_open_title">Can\'t open file</string>
+    <string name="maps_error_open_text">Check permission for reading files.</string>
+    <string name="maps_error_copy_title">Can\'t copy map</string>
+    <string name="maps_error_copy_text">Probably there are already same map or no free space on the phone.</string>
+    <string name="maps_error_button">Close</string>
+    <string name="maps_toast_too_much_maps">Too much maps</string>
+    <string name="maps_title">Maps</string>
 </resources>
