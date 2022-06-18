@@ -53,11 +53,13 @@ class GameScreen(private val camera: Camera, private val prefs: Flow<WallpaperPr
             Scale.X4 -> 0.25f
         }
 
-        viewport.unitsPerPixel = nextUnitsPerPixel
-
         if (viewport.unitsPerPixel != nextUnitsPerPixel) {
+//            FIXME update visible parts after changing scale
+//    FIXME add borders for big scale
             randomizeVisibleMapPart()
         }
+
+        viewport.unitsPerPixel = nextUnitsPerPixel
     }
 
     private fun setMapUpdateInterval(interval: MapUpdateInterval) {
