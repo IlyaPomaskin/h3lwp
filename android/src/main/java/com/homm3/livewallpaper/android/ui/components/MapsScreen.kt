@@ -66,11 +66,7 @@ fun MapsScreen(viewModel: MapsViewModel, actions: NavigationActions) {
                             filesSelector()
                         } else {
                             Toast
-                                .makeText(
-                                    context,
-                                    "Too much maps",
-                                    Toast.LENGTH_LONG
-                                )
+                                .makeText(context, "Too much maps", Toast.LENGTH_LONG)
                                 .show()
                         }
                     })
