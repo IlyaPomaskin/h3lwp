@@ -128,14 +128,6 @@ fun SettingsScreen(
                         )
                     }
                 }
-
-                item { SettingsCategory(text = "Credits") }
-                item {
-                    SettingsItem(
-                        title = stringResource(id = R.string.credits_button),
-                        onClick = { actions.about() },
-                    )
-                }
             }
         }
     }
