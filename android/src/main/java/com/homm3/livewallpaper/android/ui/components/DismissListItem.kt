@@ -36,7 +36,6 @@ fun DismissListItem(
 
     SwipeToDismiss(
         state = dismissState,
-        modifier = Modifier.padding(vertical = 4.dp),
         directions = setOf(DismissDirection.EndToStart),
         dismissThresholds = { FractionalThreshold(0.25f) },
         background = {

@@ -1,16 +1,13 @@
-package com.homm3.livewallpaper.android.ui
+package com.homm3.livewallpaper.android.data
 
-import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
-import com.homm3.livewallpaper.android.data.WallpaperPreferencesRepository
 import com.homm3.livewallpaper.core.MapUpdateInterval
 import com.homm3.livewallpaper.core.Scale
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(
-    private val application: Application,
     private val wallpaperPreferencesRepository: WallpaperPreferencesRepository
 ) : ViewModel() {
     val settingsUiModel = wallpaperPreferencesRepository.preferencesFlow.asLiveData()

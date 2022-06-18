@@ -96,6 +96,14 @@ class MapsViewModel(private val contentResolver: ContentResolver, root: File) : 
             }
         }
     }
+
+    fun removeMap(name: String) {
+        viewModelScope.launch {
+            mapsFolder.resolve(name).delete()
+
+            updateFilesList()
+        }
+    }
 }
 
 

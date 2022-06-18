@@ -17,8 +17,8 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.homm3.livewallpaper.android.ui.ParsingState
-import com.homm3.livewallpaper.android.ui.ParsingViewModel
+import com.homm3.livewallpaper.android.data.ParsingState
+import com.homm3.livewallpaper.android.data.ParsingViewModel
 import com.homm3.livewallpaper.android.ui.theme.H3lwpnextTheme
 
 inline fun <R : Any> AnnotatedString.Builder.boldText(

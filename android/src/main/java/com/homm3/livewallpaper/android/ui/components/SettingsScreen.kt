@@ -7,10 +7,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.homm3.livewallpaper.R
-import com.homm3.livewallpaper.android.ui.SettingsViewModel
+import com.homm3.livewallpaper.android.data.SettingsViewModel
 import com.homm3.livewallpaper.android.ui.components.settings.SettingsCategory
 import com.homm3.livewallpaper.android.ui.components.settings.SettingsDropdown
 import com.homm3.livewallpaper.android.ui.components.settings.SettingsDropdownItem
@@ -85,15 +84,6 @@ fun SettingsScreen(
                 }
 
                 item {
-                    DismissListItem(onDismiss = { println("Deleted") }) {
-                        SettingsItem(
-                            title = stringResource(R.string.maps_button),
-                            onClick = { actions.maps() }
-                        )
-                    }
-                }
-
-                item {
                     SettingsDropdown(
                         title = stringResource(id = R.string.scale_title),
                         subtitle = scaleOptions.find { it.value == prefs.scale }?.title.orEmpty(),
@@ -149,10 +139,4 @@ fun SettingsScreen(
             }
         }
     }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun Preview() {
-    SettingsPreview()
 }

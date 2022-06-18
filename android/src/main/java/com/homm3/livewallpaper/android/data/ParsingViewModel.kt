@@ -1,4 +1,4 @@
-package com.homm3.livewallpaper.android.ui
+package com.homm3.livewallpaper.android.data
 
 import android.app.Application
 import android.net.Uri
@@ -8,6 +8,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.homm3.livewallpaper.core.Constants
+import com.homm3.livewallpaper.core.Constants.Assets.Companion.DEFAULT_MAPS_FOLDER
+import com.homm3.livewallpaper.core.Constants.Assets.Companion.USER_MAPS_FOLDER
 import com.homm3.livewallpaper.parser.AssetsConverter
 import java.io.File
 import java.io.InputStream
@@ -62,6 +64,25 @@ class ParsingViewModel(
             .getOrElse { throw Exception("Can't prepare output directory") }
     }
 
+    fun copyDefaultMap() {
+        val userMapsFolder = application
+            .applicationContext
+            .filesDir
+            .resolve(USER_MAPS_FOLDER)
+
+        userMapsFolder.mkdir()
+
+        application
+            .assets
+            .list(DEFAULT_MAPS_FOLDER)
+            ?.forEach {
+                application
+                    .assets
+                    .open("${DEFAULT_MAPS_FOLDER}/${it}")
+                    .copyTo(userMapsFolder.resolve(it).outputStream())
+            }
+    }
+
     fun parseFile(file: Uri) {
         GdxNativesLoader.load()
 
@@ -74,6 +95,8 @@ class ParsingViewModel(
                     prepareOutputFile(),
                     Constants.Assets.ATLAS_NAME
                 ).convertLodToTextureAtlas()
+
+                copyDefaultMap()
 
                 parsingStateUiModel = ParsingState.Done
             } catch (ex: Exception) {

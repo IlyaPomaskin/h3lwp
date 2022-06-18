@@ -65,18 +65,15 @@ fun MapsScreen(viewModel: MapsViewModel, actions: NavigationActions) {
 
                 files.map {
                     item {
-                        SettingsItem(
-                            title = it.name,
-                            onClick = { actions.mapByName(it.name) }
-                        )
+                        DismissListItem(onDismiss = {
+                            viewModel.removeMap(it.name)
+                        }) {
+                            SettingsItem(
+                                title = it.name,
+                                onClick = { actions.mapByName(it.name) }
+                            )
+                        }
                     }
-                }
-
-                item {
-                    SettingsItem(
-                        title = "back",
-                        onClick = { actions.navigateUp() }
-                    )
                 }
             }
         }

@@ -7,12 +7,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import com.homm3.livewallpaper.android.data.MapsViewModel
-import com.homm3.livewallpaper.android.data.MapsViewModelFactory
-import com.homm3.livewallpaper.android.data.WallpaperPreferencesRepository
-import com.homm3.livewallpaper.android.data.dataStore
-import com.homm3.livewallpaper.android.ui.ParsingViewModel
-import com.homm3.livewallpaper.android.ui.SettingsViewModel
+import com.homm3.livewallpaper.android.data.*
 import com.homm3.livewallpaper.android.ui.components.NavigationHost
 
 
@@ -37,20 +32,19 @@ class MainActivity : ComponentActivity() {
         val mapsViewModel: MapsViewModel by viewModels {
             MapsViewModelFactory(contentResolver, filesDir)
         }
-
         val settingsViewModel = SettingsViewModel(
-            application,
             WallpaperPreferencesRepository(dataStore)
         )
-        val onboardingViewModel = ParsingViewModel(
-            application
-        )
+        val parsingViewModel = ParsingViewModel(application)
+
+//        FIXME delete
+//        parsingViewModel.copyDefaultMap()
 
         setContent {
             NavigationHost(
                 mapViewModel = mapsViewModel,
                 settingsViewModel = settingsViewModel,
-                parsingViewModel = onboardingViewModel,
+                parsingViewModel = parsingViewModel,
                 onSetWallpaperClick = { setWallpaper() }
             )
         }
