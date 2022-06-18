@@ -1,5 +1,6 @@
 package com.homm3.livewallpaper.android.ui.components
 
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -63,16 +64,12 @@ fun MapsScreen(viewModel: MapsViewModel, actions: NavigationActions) {
             SettingsContainer {
                 item { SettingsCategory(text = "Maps") }
 
-                files.map {
-                    item {
-                        DismissListItem(onDismiss = {
-                            viewModel.removeMap(it.name)
-                        }) {
-                            SettingsItem(
-                                title = it.name,
-                                onClick = { actions.mapByName(it.name) }
-                            )
-                        }
+                items(files, key = { it.name }) {
+                    DismissListItem(onDismiss = { viewModel.removeMap(it.name) }) {
+                        SettingsItem(
+                            title = it.name,
+                            onClick = { actions.mapByName(it.name) }
+                        )
                     }
                 }
             }
