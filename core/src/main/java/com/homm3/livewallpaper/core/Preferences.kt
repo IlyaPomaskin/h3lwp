@@ -42,6 +42,6 @@ data class WallpaperPreferences(
         val defaultScale = Scale.DPI
         val defaultMapUpdateInterval = MapUpdateInterval.MINUTES_10
         const val defaultUseScroll = false
-        const val defaultBrightness = 0.7f
+        const val defaultBrightness = 1f
     }
 }
