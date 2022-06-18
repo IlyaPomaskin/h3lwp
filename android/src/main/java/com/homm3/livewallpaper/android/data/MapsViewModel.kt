@@ -5,7 +5,6 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.homm3.livewallpaper.parser.formats.H3m
 import com.homm3.livewallpaper.parser.formats.H3mReader
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -44,9 +43,11 @@ class MapsViewModel(private val contentResolver: ContentResolver, root: File) : 
         }
     }
 
-    private fun copyMapToFile(stream: InputStream, filename: String) {
+    private fun copyMapToFile(uri: Uri, filename: String) {
         try {
+            val stream = openStream(uri)
             stream.copyTo(FileOutputStream(mapsFolder.resolve(filename)))
+            stream.close()
         } catch (ex: Exception) {
             throw MapReadingException.CantCopyMap
         }
@@ -66,9 +67,13 @@ class MapsViewModel(private val contentResolver: ContentResolver, root: File) : 
         }
     }
 
-    private fun parseMap(stream: InputStream): H3m {
+    private fun parseMap(uri: Uri): String {
         try {
-            return H3mReader(stream).read()
+            val stream = openStream(uri)
+            val h3m = H3mReader(stream).read()
+            stream.close()
+
+            return h3m.header.title
         } catch (ex: Exception) {
             throw MapReadingException.CantParseMap
         }
@@ -83,13 +88,8 @@ class MapsViewModel(private val contentResolver: ContentResolver, root: File) : 
     fun copyMap(uri: Uri) {
         viewModelScope.launch {
             try {
-                val h3mStream = openStream(uri)
-                val h3m = parseMap(h3mStream)
-                h3mStream.close()
-
-                val fileStream = openStream(uri)
-                copyMapToFile(fileStream, "${h3m.header.title}.h3m")
-                fileStream.close()
+                val filename = parseMap(uri)
+                copyMapToFile(uri, "${filename}.h3m")
 
                 updateFilesList()
             } catch (ex: MapReadingException) {
