@@ -2,6 +2,7 @@ package com.homm3.livewallpaper.android.ui.components
 
 import androidx.compose.runtime.Composable
 import com.homm3.livewallpaper.android.ui.components.settings.SettingsCategory
+import com.homm3.livewallpaper.android.ui.components.settings.SettingsItem
 import com.homm3.livewallpaper.android.ui.theme.H3lwpnextTheme
 
 @Composable

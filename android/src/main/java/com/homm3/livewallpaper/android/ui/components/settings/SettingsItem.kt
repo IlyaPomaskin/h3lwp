@@ -1,4 +1,4 @@
-package com.homm3.livewallpaper.android.ui.components
+package com.homm3.livewallpaper.android.ui.components.settings
 
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable

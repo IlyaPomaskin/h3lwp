@@ -104,15 +104,13 @@ fun ParsingScreen(viewModel: ParsingViewModel, actions: NavigationActions) {
                         )
                     }
                     ParsingState.Done -> {
-                        LaunchedEffect(key1 = "done", block = {
-                            actions.phoneLimitations()
-                        })
+                        LaunchedEffect(key1 = "done", block = { actions.phoneLimitations() })
                     }
                     ParsingState.Error -> {
                         AlertDialog(
-                            title = { Text("Can't parse filed") },
+                            title = { Text("Can't parse file") },
                             text = {
-                                Text("Check access permissions or make sure you using a file from Shadow of the Death")
+                                Text("Check file permissions or make sure you are using file from Shadow of the Death")
                             },
                             confirmButton = {
                                 Button(onClick = { viewModel.clearParsingError() }) {

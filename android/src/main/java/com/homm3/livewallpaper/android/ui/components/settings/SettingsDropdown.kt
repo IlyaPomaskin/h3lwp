@@ -12,7 +12,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.badlogic.gdx.scenes.scene2d.actions.Actions
-import com.homm3.livewallpaper.android.ui.components.SettingsItem
 import kotlinx.coroutines.launch
 
 data class SettingsDropdownItem<T>(

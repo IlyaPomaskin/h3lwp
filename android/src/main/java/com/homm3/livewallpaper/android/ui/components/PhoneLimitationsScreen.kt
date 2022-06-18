@@ -31,7 +31,7 @@ fun PhoneLimitations(actions: NavigationActions) {
             Row(modifier = Modifier.padding(vertical = 8.dp)) {
                 Text(
                     textAlign = TextAlign.Center,
-                    text = "Most of the phones with MIUI and some Samsung phones don't allow to set live wallpapers on the lock screen"
+                    text = "Most of the phones with MIUI and some other phones don't allow to set live wallpapers on the lock screen"
                 )
             }
 
@@ -43,7 +43,7 @@ fun PhoneLimitations(actions: NavigationActions) {
             }
 
             Button(modifier = Modifier.padding(vertical = 8.dp),
-                onClick = { actions.settings }) {
+                onClick = { actions.settings() }) {
                 Text(text = "Okay")
             }
         }
