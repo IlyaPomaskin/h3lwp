@@ -77,7 +77,7 @@ fun SettingsScreen(
 
     val scaleOptions = listOf(
         SettingsDropdownItem(Scale.DPI, stringResource(R.string.scale_by_density)),
-        SettingsDropdownItem(Scale.X1, "x1"),
+//        SettingsDropdownItem(Scale.X1, "x1"),
         SettingsDropdownItem(Scale.X2, "x2"),
         SettingsDropdownItem(Scale.X3, "x3"),
         SettingsDropdownItem(Scale.X4, "x4"),
