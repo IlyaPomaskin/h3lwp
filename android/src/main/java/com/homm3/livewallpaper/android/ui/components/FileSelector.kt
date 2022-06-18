@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
+import com.homm3.livewallpaper.R
 
 const val mimeType = "application/octet-stream"
 
@@ -54,7 +55,7 @@ fun createFileSelector(onSelect: (uri: Uri) -> Unit): () -> Unit {
             Toast
                 .makeText(
                     context,
-                    "Give permission to read files!",
+                    context.getText(R.string.file_selector_toast),
                     Toast.LENGTH_LONG
                 )
                 .show()

@@ -78,4 +78,6 @@
     <string name="maps_error_button">Close</string>
     <string name="maps_toast_too_much_maps">Too much maps</string>
     <string name="maps_title">Maps</string>
+
+    <string name="file_selector_toast">Give permission to read files!</string>
 </resources>
