@@ -58,4 +58,5 @@
     <string name="maps_error_button">Закрыть</string>
     <string name="maps_toast_too_much_maps">Слишком много карт</string>
     <string name="file_selector_toast">Выдайте разрешение на чтение файлов</string>
+    <string name="maps_item">Карты</string>
 </resources>

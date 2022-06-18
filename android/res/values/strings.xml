@@ -20,7 +20,7 @@
 
     <string name="scale_title">Image scale</string>
     <string name="update_time_title">Change map interval</string>
-    <string name="maps_title">Maps</string>
+    <string name="maps_item">Maps</string>
     <string name="maps_add">Add maps</string>
 
     <string name="use_scroll_title">Use scroll</string>
