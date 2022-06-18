@@ -75,7 +75,7 @@ fun SettingsScreen(
             },
         ) {
             SettingsContainer {
-                item { SettingsCategory(text = "Preferences") }
+                item { SettingsCategory(text = stringResource(id = R.string.preferences_header)) }
                 item {
                     SettingsItem(
                         title = stringResource(id = R.string.maps_button),

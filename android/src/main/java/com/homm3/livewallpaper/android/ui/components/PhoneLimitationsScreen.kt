@@ -6,8 +6,10 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.android.ui.theme.H3lwpnextTheme
 
 @Composable
@@ -24,27 +26,27 @@ fun PhoneLimitations(actions: NavigationActions) {
             Row(modifier = Modifier.padding(vertical = 8.dp)) {
                 Text(
                     textAlign = TextAlign.Center,
-                    text = "Please note few things:"
+                    text = stringResource(id = R.string.phone_limitation_note)
                 )
             }
 
             Row(modifier = Modifier.padding(vertical = 8.dp)) {
                 Text(
                     textAlign = TextAlign.Center,
-                    text = "Most of the phones with MIUI and some other phones don't allow to set live wallpapers on the lock screen"
+                    text = stringResource(id = R.string.phone_limitation_miui)
                 )
             }
 
             Row(modifier = Modifier.padding(vertical = 8.dp)) {
                 Text(
                     textAlign = TextAlign.Center,
-                    text = "And some phones don't allow to set live wallpapers at all"
+                    text = stringResource(id = R.string.phone_limitation_no)
                 )
             }
 
             Button(modifier = Modifier.padding(vertical = 8.dp),
                 onClick = { actions.settings() }) {
-                Text(text = "Okay")
+                Text(text = stringResource(id = R.string.phone_limitation_okay))
             }
         }
     }

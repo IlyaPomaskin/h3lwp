@@ -11,12 +11,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.android.data.ParsingState
 import com.homm3.livewallpaper.android.data.ParsingViewModel
 import com.homm3.livewallpaper.android.ui.theme.H3lwpnextTheme
@@ -50,24 +52,24 @@ fun ParsingScreen(viewModel: ParsingViewModel, actions: NavigationActions) {
             Text(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(vertical = 8.dp),
-                text = "At first you need to upload file with images from original game"
+                text = stringResource(id = R.string.parsing_upload)
             )
 
             Text(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(vertical = 8.dp),
-                text = " Due to copyright restrictions we can't distribute this file with the app"
+                text = stringResource(id = R.string.parsing_restictions)
             )
 
             Text(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(vertical = 8.dp),
                 text = buildAnnotatedString {
-                    append("Upload file ")
-                    boldText { append("'Heroes 3/Data/H3Sprites.lod'") }
-                    append(" to phone from your copy of ")
-                    boldText { append("Heroes of Might and Magic® III Shadow of the Death") }
-                    append(". Also you can upload your favorite maps.")
+                    append(stringResource(id = R.string.parsing_how_to_upload_1))
+                    boldText { append(stringResource(id = R.string.parsing_how_to_upload_2)) }
+                    append(stringResource(id = R.string.parsing_how_to_upload_3))
+                    boldText { append(stringResource(id = R.string.parsing_how_to_upload_4)) }
+                    append(stringResource(id = R.string.parsing_how_to_upload_5))
                 }
             )
 
@@ -76,7 +78,7 @@ fun ParsingScreen(viewModel: ParsingViewModel, actions: NavigationActions) {
                 modifier = Modifier
                     .padding(vertical = 8.dp)
                     .alpha(0.6f),
-                text = "Please note that 'HD version', 'The Restoration of Erathia', 'Armageddon blade' and 'WoG' will not work. HotA should be OK."
+                text = stringResource(id = R.string.parsing_note)
             )
 
             Button(
@@ -93,7 +95,7 @@ fun ParsingScreen(viewModel: ParsingViewModel, actions: NavigationActions) {
                     ParsingState.Initial -> {
                         Text(
                             textAlign = TextAlign.Center,
-                            text = "Select H3Sprites.lod"
+                            text = stringResource(id = R.string.parsing_button)
                         )
                     }
                     ParsingState.InProgress -> {
@@ -108,13 +110,13 @@ fun ParsingScreen(viewModel: ParsingViewModel, actions: NavigationActions) {
                     }
                     ParsingState.Error -> {
                         AlertDialog(
-                            title = { Text("Can't parse file") },
+                            title = { stringResource(id = R.string.parsing_error_cant_parse_header) },
                             text = {
-                                Text("Check file permissions or make sure you are using file from Shadow of the Death")
+                                Text(stringResource(id = R.string.parsing_error_cant_parse_text))
                             },
                             confirmButton = {
                                 Button(onClick = { viewModel.clearParsingError() }) {
-                                    Text("Close")
+                                    Text(stringResource(id = R.string.parsing_error_cant_parse_button))
                                 }
                             },
                             onDismissRequest = { viewModel.clearParsingError() }
