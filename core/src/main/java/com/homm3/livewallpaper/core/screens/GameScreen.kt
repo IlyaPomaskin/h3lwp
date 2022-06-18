@@ -30,7 +30,7 @@ class GameScreen(private val camera: Camera, private val prefs: Flow<WallpaperPr
         }
     }
     private val inputProcessor = InputProcessor(viewport).apply {
-        onEnter = { randomizeVisibleMapPart() }
+        onEnter = { randomizeVisibleMapPart(true) }
     }
     private val brightnessOverlay = BrightnessOverlay(camera)
     private var mapUpdateInterval = 0f
@@ -45,6 +45,9 @@ class GameScreen(private val camera: Camera, private val prefs: Flow<WallpaperPr
     }
 
     private fun setUnitsPerPixelByScale(scale: Scale) {
+        // FIXME switching from x4 to x1 doesn't correctly update visible sprites
+        // FIXME add borders for x1 scale
+
         val nextUnitsPerPixel = when (scale) {
             Scale.DPI -> min(1 / Gdx.graphics.density, 1f)
             Scale.X1 -> 1f
@@ -54,12 +57,10 @@ class GameScreen(private val camera: Camera, private val prefs: Flow<WallpaperPr
         }
 
         if (viewport.unitsPerPixel != nextUnitsPerPixel) {
-//            FIXME update visible parts after changing scale
-//    FIXME add borders for big scale
-            randomizeVisibleMapPart()
+            viewport.unitsPerPixel = nextUnitsPerPixel
+            randomizeVisibleMapPart(true)
         }
 
-        viewport.unitsPerPixel = nextUnitsPerPixel
     }
 
     private fun setMapUpdateInterval(interval: MapUpdateInterval) {
@@ -90,7 +91,27 @@ class GameScreen(private val camera: Camera, private val prefs: Flow<WallpaperPr
         }
     }
 
-    private fun randomizeVisibleMapPart() {
+    private fun shouldUpdateVisibleMapPart(force: Boolean): Boolean {
+        val isInitialRender = lastMapUpdateTime == 0L
+
+        val currentTime = System.currentTimeMillis()
+        val timeSinceLastUpdate = currentTime - lastMapUpdateTime
+        val updateInterval = max(mapUpdateInterval, MINIMAL_MAP_UPDATE_INTERVAL)
+        val isTimeToUpdate = timeSinceLastUpdate >= updateInterval
+
+        if (force || isInitialRender || isTimeToUpdate) {
+            lastMapUpdateTime = currentTime
+            return true
+        }
+
+        return false
+    }
+
+    private fun randomizeVisibleMapPart(force: Boolean = false) {
+        if (!shouldUpdateVisibleMapPart(force)) {
+            return
+        }
+
         val h3mLayer = tiledMap
             .layers
             .onEach { it.isVisible = false }
@@ -105,26 +126,8 @@ class GameScreen(private val camera: Camera, private val prefs: Flow<WallpaperPr
         }
     }
 
-    private fun shouldUpdateVisibleMapPart(): Boolean {
-        val isInitialRender = lastMapUpdateTime == 0L
-
-        val currentTime = System.currentTimeMillis()
-        val timeSinceLastUpdate = currentTime - lastMapUpdateTime
-        val updateInterval = max(mapUpdateInterval, MINIMAL_MAP_UPDATE_INTERVAL)
-        val isTimeToUpdate = timeSinceLastUpdate >= updateInterval
-
-        if (isInitialRender || isTimeToUpdate) {
-            lastMapUpdateTime = currentTime
-            return true
-        }
-
-        return false
-    }
-
     override fun show() {
-        if (shouldUpdateVisibleMapPart()) {
-            randomizeVisibleMapPart()
-        }
+        randomizeVisibleMapPart()
     }
 
     override fun resize(width: Int, height: Int) {
