@@ -52,14 +52,14 @@
     <string name="settings_screen_title">Settings</string>
 
     <string name="phone_limitation_note">Please note few things:</string>
-    <string name="phone_limitation_miui">Most of the phones with MIUI and some other phones don\'t allow to set live wallpapers on the lock screen</string>
+    <string name="phone_limitation_miui">Some phones don\'t allow to set live wallpapers on the lock screen</string>
     <string name="phone_limitation_no">And some phones don\'t allow to set live wallpapers at all</string>
     <string name="phone_limitation_okay">Okay</string>
 
     <string name="parsing_upload">At first you need to upload file with images from original game</string>
     <string name="parsing_restictions">Due to copyright restrictions we can\'t distribute this file with the app</string>
     <string name="parsing_how_to_upload_1">Upload file </string>
-    <string name="parsing_how_to_upload_2">\'Heroes 3/Data/H3Sprites.lod\'</string>
+    <string name="parsing_how_to_upload_2" translatable="false">\'Heroes 3/Data/H3Sprite.lod\'</string>
     <string name="parsing_how_to_upload_3"> to phone from your copy of </string>
     <string name="parsing_how_to_upload_4">Heroes of Might and Magic® III Shadow of the Death</string>
     <string name="parsing_how_to_upload_5">. Also you can upload your favorite maps.</string>
@@ -79,5 +79,8 @@
     <string name="maps_toast_too_much_maps">Too much maps</string>
     <string name="maps_title">Maps</string>
 
-    <string name="file_selector_toast">Give permission to read files!</string>
+    <string name="file_selector_toast">Give permission to read files</string>
+    <string name="update_timeout_5minutes">5 minutes</string>
+    <string name="update_timeout_15minutes">15 minutes</string>
+    <string name="update_timeout_1hour">1 hour</string>
 </resources>
