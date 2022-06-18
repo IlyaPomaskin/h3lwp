@@ -3,7 +3,6 @@ package com.homm3.livewallpaper.android.ui.components
 import androidx.compose.animation.*
 import androidx.compose.animation.core.ExperimentalTransitionApi
 import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -19,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @OptIn(
@@ -45,6 +45,7 @@ fun DismissListItem(
         background = {
             val color by animateColorAsState(
                 when (dismissState.targetValue) {
+                    DismissValue.Default -> Color.Gray
                     DismissValue.DismissedToStart -> MaterialTheme.colors.error
                     else -> MaterialTheme.colors.background
                 },
@@ -69,10 +70,6 @@ fun DismissListItem(
             }
         },
         dismissContent = {
-            val elevation by animateDpAsState(
-                if (dismissState.dismissDirection == DismissDirection.EndToStart) 4.dp else 0.dp
-            )
-
             val state = remember { MutableTransitionState(!isDismissed) }
             state.targetState = !isDismissed
 
@@ -85,9 +82,7 @@ fun DismissListItem(
                 enter = expandVertically(),
                 exit = shrinkVertically()
             ) {
-                Surface(elevation = elevation) {
-                    content()
-                }
+                content()
             }
         }
     )

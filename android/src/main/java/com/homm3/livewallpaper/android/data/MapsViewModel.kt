@@ -89,7 +89,8 @@ class MapsViewModel(private val contentResolver: ContentResolver, root: File) : 
 
                 val fileStream = openStream(uri)
                 copyMapToFile(fileStream, "${h3m.header.title}.h3m")
-                h3mStream.close()
+                fileStream.close()
+
                 updateFilesList()
             } catch (ex: MapReadingException) {
                 _mapReadingErrorState.emit(ex)
