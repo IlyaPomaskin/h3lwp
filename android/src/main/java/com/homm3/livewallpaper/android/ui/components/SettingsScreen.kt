@@ -1,10 +1,10 @@
 package com.homm3.livewallpaper.android.ui.components
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -20,6 +20,7 @@ import com.homm3.livewallpaper.core.MapUpdateInterval
 import com.homm3.livewallpaper.core.Scale
 import com.homm3.livewallpaper.core.WallpaperPreferences
 
+@OptIn(ExperimentalMaterialApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
@@ -82,6 +83,16 @@ fun SettingsScreen(
                         onClick = { actions.maps() }
                     )
                 }
+
+                item {
+                    DismissListItem(onDismiss = { println("Deleted") }) {
+                        SettingsItem(
+                            title = stringResource(R.string.maps_button),
+                            onClick = { actions.maps() }
+                        )
+                    }
+                }
+
                 item {
                     SettingsDropdown(
                         title = stringResource(id = R.string.scale_title),
