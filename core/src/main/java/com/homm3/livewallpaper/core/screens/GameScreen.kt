@@ -25,7 +25,7 @@ class GameScreen(private val camera: Camera, private val prefs: Flow<WallpaperPr
     private val renderer = object : OrthogonalTiledMapRenderer(tiledMap) {
         override fun renderObjects(layer: MapLayer?) {
             if (layer is ObjectsLayer) {
-                layer.render(batch)
+                layer.render(this)
             }
         }
     }
@@ -121,7 +121,6 @@ class GameScreen(private val camera: Camera, private val prefs: Flow<WallpaperPr
 
         if (h3mLayer != null) {
             camera.randomizeCameraPosition(h3mLayer.mapSize)
-            h3mLayer.updateVisibleSprites(camera)
             h3mLayer.isVisible = true
         }
     }

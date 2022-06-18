@@ -1,7 +1,7 @@
 package com.homm3.livewallpaper.core.layers
 
-import com.badlogic.gdx.graphics.Camera
 import com.badlogic.gdx.maps.MapGroupLayer
+import com.badlogic.gdx.maps.tiled.renderers.BatchTiledMapRenderer
 import com.homm3.livewallpaper.core.Assets
 import com.homm3.livewallpaper.parser.formats.H3m
 
@@ -13,9 +13,5 @@ class H3mLayersGroup(assets: Assets, h3m: H3m) : MapGroupLayer() {
     init {
         layers.add(terrainLayer)
         layers.add(objectsLayer)
-    }
-
-    fun updateVisibleSprites(camera: Camera) {
-        objectsLayer.updateVisibleSprites(camera)
     }
 }

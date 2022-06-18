@@ -8,7 +8,6 @@ import com.badlogic.gdx.maps.tiled.tiles.AnimatedTiledMapTile
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile
 import com.badlogic.gdx.utils.Array
 import com.homm3.livewallpaper.core.Assets
-import com.homm3.livewallpaper.core.Constants
 import com.homm3.livewallpaper.core.Constants.Companion.FRAME_TIME
 import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.parser.formats.H3m
