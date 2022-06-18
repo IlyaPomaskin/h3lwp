@@ -2,10 +2,9 @@ package com.homm3.livewallpaper.android.ui.components
 
 import android.widget.Toast
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.Button
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -13,7 +12,6 @@ import androidx.compose.ui.platform.LocalContext
 import com.homm3.livewallpaper.android.data.MapReadingException
 import com.homm3.livewallpaper.android.data.MapsViewModel
 import com.homm3.livewallpaper.android.ui.components.settings.SettingsCategory
-import com.homm3.livewallpaper.android.ui.components.settings.SettingsItem
 import com.homm3.livewallpaper.android.ui.theme.H3lwpnextTheme
 
 @Composable
@@ -48,6 +46,7 @@ fun MapLoadingErrorAlert(error: MapReadingException?, onClose: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun MapsScreen(viewModel: MapsViewModel, actions: NavigationActions) {
     val context = LocalContext.current
@@ -80,14 +79,20 @@ fun MapsScreen(viewModel: MapsViewModel, actions: NavigationActions) {
                 item { SettingsCategory(text = "Maps") }
 
                 items(files, key = { it.name }) {
-                    DismissListItem(
-                        disabled = !isRemoveEnabled,
-                        onDismiss = { viewModel.removeMap(it.name) }) {
-                        SettingsItem(
-                            title = it.name,
-                            onClick = { actions.mapByName(it.name) }
-                        )
-                    }
+                    ListItem(
+                        text = { Text(it.name) },
+                        trailing = {
+                            IconButton(
+                                enabled = isRemoveEnabled,
+                                onClick = { viewModel.removeMap(it.name) }) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = "Delete map",
+                                )
+                            }
+
+                        }
+                    )
                 }
             }
         }
