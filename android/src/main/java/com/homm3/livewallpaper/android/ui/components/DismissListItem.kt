@@ -27,15 +27,20 @@ import androidx.compose.ui.unit.dp
 )
 @Composable
 fun DismissListItem(
+    disabled: Boolean = false,
     onDismiss: () -> Unit,
     content: @Composable () -> Unit
 ) {
     val dismissState = rememberDismissState(initialValue = DismissValue.Default)
     val isDismissed = dismissState.isDismissed(DismissDirection.EndToStart)
+    val directions = when (disabled) {
+        true -> emptySet()
+        false -> setOf(DismissDirection.EndToStart)
+    }
 
     SwipeToDismiss(
         state = dismissState,
-        directions = setOf(DismissDirection.EndToStart),
+        directions = directions,
         dismissThresholds = { FractionalThreshold(0.25f) },
         background = {
             val color by animateColorAsState(

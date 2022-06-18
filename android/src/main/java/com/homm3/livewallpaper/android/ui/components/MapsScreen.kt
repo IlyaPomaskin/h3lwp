@@ -65,7 +65,9 @@ fun MapsScreen(viewModel: MapsViewModel, actions: NavigationActions) {
                 item { SettingsCategory(text = "Maps") }
 
                 items(files, key = { it.name }) {
-                    DismissListItem(onDismiss = { viewModel.removeMap(it.name) }) {
+                    DismissListItem(
+                        disabled = files.size == 1,
+                        onDismiss = { viewModel.removeMap(it.name) }) {
                         SettingsItem(
                             title = it.name,
                             onClick = { actions.mapByName(it.name) }
