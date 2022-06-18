@@ -11,11 +11,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.homm3.livewallpaper.android.ui.ParsingState
 import com.homm3.livewallpaper.android.ui.ParsingViewModel
 import com.homm3.livewallpaper.android.ui.theme.H3lwpnextTheme
+
+inline fun <R : Any> AnnotatedString.Builder.boldText(
+    crossinline block: AnnotatedString.Builder.() -> R
+): R {
+    val index = pushStyle(SpanStyle(fontWeight = FontWeight.Bold))
+    return try {
+        block(this)
+    } finally {
+        pop(index)
+    }
+}
 
 @Composable
 fun ParsingScreen(viewModel: ParsingViewModel, actions: NavigationActions) {
@@ -47,7 +62,13 @@ fun ParsingScreen(viewModel: ParsingViewModel, actions: NavigationActions) {
             Text(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(vertical = 8.dp),
-                text = "Upload file 'Heroes 3/Data/H3Sprites.lod' to phone from your copy of 'Heroes of Might and Magic III Shadow of the Death'"
+                text = buildAnnotatedString {
+                    append("Upload file ")
+                    boldText { append("'Heroes 3/Data/H3Sprites.lod'") }
+                    append(" to phone from your copy of ")
+                    boldText { append("Heroes of Might and Magic® III Shadow of the Death") }
+                    append(". Also you can upload your favorite maps.")
+                }
             )
 
             Text(
