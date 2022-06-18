@@ -19,20 +19,14 @@ private object NoRippleTheme : RippleTheme {
 }
 
 @Composable
-fun Fab(disabled: Boolean = true, onClick: () -> Unit, onDisabledClick: () -> Unit) {
+fun Fab(disabled: Boolean = true, onClick: () -> Unit) {
     CompositionLocalProvider(
         LocalRippleTheme provides
             if (disabled) NoRippleTheme else LocalRippleTheme.current
     ) {
         FloatingActionButton(
-            backgroundColor = if (disabled) Color.Gray else MaterialTheme.colors.secondary ,
-            onClick = {
-                if (disabled) {
-                    onDisabledClick()
-                } else {
-                    onClick()
-                }
-            },
+            backgroundColor = if (disabled) Color.Gray else MaterialTheme.colors.secondary,
+            onClick = { onClick() },
         ) {
             Icon(
                 tint = if (disabled) {

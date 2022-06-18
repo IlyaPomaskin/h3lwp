@@ -61,15 +61,18 @@ fun MapsScreen(viewModel: MapsViewModel, actions: NavigationActions) {
             floatingActionButton = {
                 Fab(
                     disabled = !isAddEnabled,
-                    onClick = { filesSelector() },
-                    onDisabledClick = {
-                        Toast
-                            .makeText(
-                                context,
-                                "Too much maps",
-                                Toast.LENGTH_LONG
-                            )
-                            .show()
+                    onClick = {
+                        if (isAddEnabled) {
+                            filesSelector()
+                        } else {
+                            Toast
+                                .makeText(
+                                    context,
+                                    "Too much maps",
+                                    Toast.LENGTH_LONG
+                                )
+                                .show()
+                        }
                     })
             },
         ) {
