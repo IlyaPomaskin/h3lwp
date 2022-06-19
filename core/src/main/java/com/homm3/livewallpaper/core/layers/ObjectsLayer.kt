@@ -3,14 +3,13 @@ package com.homm3.livewallpaper.core.layers
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.tiled.renderers.BatchTiledMapRenderer
+import com.badlogic.gdx.math.Rectangle
 import com.homm3.livewallpaper.core.Assets
 import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.core.Constants.Companion.VISIBLE_TILES_OFFSET
 import com.homm3.livewallpaper.core.ObjectsRandomizer
 import com.homm3.livewallpaper.core.Sprite
 import com.homm3.livewallpaper.parser.formats.H3m
-import kotlin.math.nextDown
-import kotlin.math.nextUp
 
 // TODO underground rendering
 
@@ -46,17 +45,22 @@ class ObjectsLayer(private val assets: Assets, h3m: H3m, isUnderground: Boolean)
             }
     }
 
-    fun render(batch: BatchTiledMapRenderer) {
-        val startY = (batch.viewBounds.y / TILE_SIZE).nextDown()
-            .toInt() - VISIBLE_TILES_OFFSET
-        val endY = ((batch.viewBounds.y + batch.viewBounds.height) / TILE_SIZE).nextUp()
-            .toInt() + VISIBLE_TILES_OFFSET
-        val startX = (batch.viewBounds.x / TILE_SIZE).nextDown()
-            .toInt() - VISIBLE_TILES_OFFSET
-        val endX = ((batch.viewBounds.x + batch.viewBounds.width) / TILE_SIZE).nextUp()
-            .toInt() + VISIBLE_TILES_OFFSET
+    private var lastViewPort = ""
+    private val visibleIndices = mutableListOf<Int>()
+    private val visibleSprites = mutableListOf<Sprite>()
 
-        val visibleIndices = mutableListOf<Int>()
+    private fun updateVisibleObjects(viewBounds: Rectangle) {
+        if (lastViewPort == viewBounds.toString()) {
+            return
+        }
+
+        val startY = (viewBounds.y / TILE_SIZE).toInt() - VISIBLE_TILES_OFFSET
+        val endY = ((viewBounds.y + viewBounds.height) / TILE_SIZE).toInt() + VISIBLE_TILES_OFFSET
+        val startX = (viewBounds.x / TILE_SIZE).toInt() - VISIBLE_TILES_OFFSET
+        val endX = ((viewBounds.x + viewBounds.width) / TILE_SIZE).toInt() + VISIBLE_TILES_OFFSET
+
+        visibleSprites.clear()
+        visibleIndices.clear()
         for (y in startY..endY) {
             val column = this.spritesIndices[y] ?: continue
 
@@ -67,8 +71,14 @@ class ObjectsLayer(private val assets: Assets, h3m: H3m, isUnderground: Boolean)
             }
         }
         visibleIndices.sort()
-        visibleIndices.forEach { id ->
-            sprites[id].render(batch, Gdx.graphics.deltaTime)
-        }
+        visibleIndices.forEach { id -> visibleSprites.add(sprites[id]) }
+
+        lastViewPort = viewBounds.toString()
+    }
+
+    fun render(batch: BatchTiledMapRenderer) {
+        updateVisibleObjects(batch.viewBounds)
+
+        visibleSprites.forEach { it.render(batch, Gdx.graphics.deltaTime) }
     }
 }
