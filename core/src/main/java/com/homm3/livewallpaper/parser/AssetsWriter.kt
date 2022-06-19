@@ -11,27 +11,31 @@ import java.io.OutputStream
 import java.util.*
 import java.util.zip.Deflater
 
-class AssetsWriter(private val packer: PixmapPacker, private val outputDirectory: File, private val atlasName: String) {
-    private val writer = outputDirectory.resolve("${atlasName}.atlas").writer()
+class AssetsWriter(
+    private val packer: PixmapPacker,
+    private val outputDirectory: File,
+    private val atlasName: String
+) {
+    private var atlas = String()
 
     private fun atlasPage(filename: String) {
-        writer.append("\n")
-        writer.append("$filename\n")
-        writer.append("size: ${packer.pageWidth},${packer.pageHeight}\n")
-        writer.append("format: ${packer.pageFormat.name}\n")
-        writer.append("filter: Nearest,Nearest\n")
-        writer.append("repeat: none\n")
+        atlas += "\n"
+        atlas += "$filename\n"
+        atlas += "size: ${packer.pageWidth},${packer.pageHeight}\n"
+        atlas += "format: ${packer.pageFormat.name}\n"
+        atlas += "filter: Nearest,Nearest\n"
+        atlas += "repeat: none\n"
     }
 
     private fun atlasFrame(name: String, index: String, rect: Rectangle, frame: Def.Frame) {
         val spriteName = name.lowercase(Locale.ROOT).replace(".def", "")
-        writer.append("$spriteName\n")
-        writer.append("  rotate: false\n")
-        writer.append("  xy: ${rect.x.toInt()}, ${rect.y.toInt()}\n")
-        writer.append("  size: ${frame.width}, ${frame.height}\n")
-        writer.append("  orig: ${frame.fullWidth}, ${frame.fullHeight}\n")
-        writer.append("  offset: ${frame.x}, ${frame.y}\n")
-        writer.append("  index: ${index}\n")
+        atlas += "$spriteName\n"
+        atlas += "  rotate: false\n"
+        atlas += "  xy: ${rect.x.toInt()}, ${rect.y.toInt()}\n"
+        atlas += "  size: ${frame.width}, ${frame.height}\n"
+        atlas += "  orig: ${frame.fullWidth}, ${frame.fullHeight}\n"
+        atlas += "  offset: ${frame.x}, ${frame.y}\n"
+        atlas += "  index: ${index}\n"
     }
 
     private fun writePng(stream: OutputStream, pixmap: Pixmap) {
@@ -80,7 +84,7 @@ class AssetsWriter(private val packer: PixmapPacker, private val outputDirectory
             .forEachIndexed { index, fileName ->
                 if (fileName != frameName) return@forEachIndexed
 
-                atlasFrame( "$defName/$index", rotationIndex, rectangle, frame)
+                atlasFrame("$defName/$index", rotationIndex, rectangle, frame)
             }
     }
 
@@ -106,6 +110,11 @@ class AssetsWriter(private val packer: PixmapPacker, private val outputDirectory
                 }
         }
 
+        packer.dispose()
+
+        val writer = outputDirectory.resolve("${atlasName}.atlas").writer()
+        writer.write(atlas)
         writer.close()
+
     }
 }

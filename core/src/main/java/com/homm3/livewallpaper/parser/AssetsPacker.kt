@@ -36,6 +36,7 @@ class AssetsPacker(private val packer: PixmapPacker) {
         val image = makePixmap(frame)
         val fullImage = Pixmap(frame.fullWidth, frame.fullHeight, Pixmap.Format.RGBA4444)
         fullImage.drawPixmap(image, frame.x, frame.y)
+        image.dispose()
         return fullImage
     }
 
@@ -57,7 +58,9 @@ class AssetsPacker(private val packer: PixmapPacker) {
         var rotationStep = 0
         do {
             val frameName = frame.parentGroup.parentDef.lodFile.name + "/" + frame.frameName + "/" + rotationStep
-            packer.pack(frameName, makeTerrainPixmap(frame))
+            val pixmap = makeTerrainPixmap(frame)
+            packer.pack(frameName, pixmap)
+            pixmap.dispose()
             acc[frameName] = frame
             rotations.forEach { rotatePalette(def.rawPalette, it.first, it.second) }
             rotationStep++
@@ -73,7 +76,9 @@ class AssetsPacker(private val packer: PixmapPacker) {
 
     private fun objectFrame(frame: Def.Frame, acc: PackedFrames): PackedFrames {
         val frameName = frame.parentGroup.parentDef.lodFile.name + "/" + frame.frameName
-        packer.pack(frameName, makePixmap(frame))
+        val pixmap = makePixmap(frame)
+        packer.pack(frameName, pixmap)
+        pixmap.dispose()
         acc[frameName] = frame
         return acc
     }

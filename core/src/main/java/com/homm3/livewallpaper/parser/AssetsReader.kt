@@ -26,8 +26,9 @@ class AssetsReader(lodFileInputStream: InputStream) {
     private val lodReader = LodReader(lodFileInputStream)
 
     private fun readDefFromLod(file: Lod.File): Def {
-        val defContentStream = lodReader.readFileContent(file)
-        val defReader = DefReader(defContentStream)
+        val stream = lodReader.readFileContent(file)
+        val defReader = DefReader(stream)
+//        stream.close()
         val def = defReader.read()
         def.lodFile = file
         System.arraycopy(fixedPalette, 0, def.rawPalette, 0, fixedPalette.size)
