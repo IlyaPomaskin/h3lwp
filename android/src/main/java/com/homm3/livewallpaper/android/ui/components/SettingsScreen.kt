@@ -3,6 +3,8 @@ package com.homm3.livewallpaper.android.ui.components
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.List
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
@@ -79,6 +81,12 @@ fun SettingsScreen(
                 item {
                     SettingsItem(
                         title = stringResource(id = R.string.maps_item),
+                        icon = {
+                            Icon(
+                                Icons.Filled.List,
+                                contentDescription = "Maps list",
+                            )
+                        },
                         onClick = { actions.maps() }
                     )
                 }

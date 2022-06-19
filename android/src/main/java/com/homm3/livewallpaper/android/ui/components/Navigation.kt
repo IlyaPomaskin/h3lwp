@@ -57,7 +57,7 @@ fun NavigationHost(
         }
 
         composable(Destinations.MAPS) {
-            MapsScreen(viewModel = mapViewModel, actions)
+            MapsScreen(viewModel = mapViewModel)
         }
     }
 }

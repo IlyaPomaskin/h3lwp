@@ -50,7 +50,7 @@ fun MapLoadingErrorAlert(error: MapReadingException?, onClose: () -> Unit) {
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun MapsScreen(viewModel: MapsViewModel, actions: NavigationActions) {
+fun MapsScreen(viewModel: MapsViewModel) {
     val context = LocalContext.current
     val filesSelector = createFileSelector { file -> viewModel.copyMap(file) }
     val files by viewModel.mapsList.collectAsState()

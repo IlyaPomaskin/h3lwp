@@ -20,7 +20,8 @@ data class SettingsDropdownItem<T>(
 )
 
 @Composable
-fun <T>SettingsDropdown(
+fun <T> SettingsDropdown(
+    icon: @Composable () -> Unit = {},
     title: String,
     subtitle: String,
     items: List<SettingsDropdownItem<T>>,
@@ -33,6 +34,7 @@ fun <T>SettingsDropdown(
 
     Box {
         SettingsItem(
+            icon = icon,
             title = title,
             subtitle = subtitle,
             enabled = enabled,

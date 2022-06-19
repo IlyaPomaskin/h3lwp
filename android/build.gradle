@@ -36,8 +36,8 @@ android {
         applicationId 'com.homm3.livewallpaper'
         minSdkVersion 21
         targetSdkVersion 31
-        versionCode 1
-        versionName "1.0"
+        versionCode 302
+        versionName "3.0.2"
         multiDexEnabled true
         vectorDrawables {
             useSupportLibrary true

@@ -21,6 +21,7 @@ fun SettingsItem(
     subtitle: String = "",
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    icon: @Composable () -> Unit = {},
     interactionSource: MutableInteractionSource = MutableInteractionSource(),
     enabled: Boolean = true,
     nextLine: Boolean = false,
@@ -45,6 +46,8 @@ fun SettingsItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            icon()
+
             Column {
                 Text(
                     title,
