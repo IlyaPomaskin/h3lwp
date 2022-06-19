@@ -10,7 +10,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -38,7 +37,6 @@ inline fun <R : Any> AnnotatedString.Builder.boldText(
 fun ParsingScreen(viewModel: ParsingViewModel, actions: NavigationActions) {
     val openFileSelector = createFileSelector { viewModel.parseFile(it) }
     val parseStatus = viewModel.parsingStateUiModel
-    val isButtonEnabled = parseStatus === ParsingState.Initial
 
     H3lwpnextTheme {
         Column(
@@ -81,48 +79,49 @@ fun ParsingScreen(viewModel: ParsingViewModel, actions: NavigationActions) {
                 text = stringResource(id = R.string.parsing_note)
             )
 
-            Button(
-                modifier = Modifier
-                    .padding(vertical = 8.dp)
-                    .defaultMinSize(minWidth = 40.dp),
-                enabled = isButtonEnabled,
-                onClick = {
-                    if (isButtonEnabled) {
-                        openFileSelector()
-                    }
-                }) {
-                when (parseStatus) {
-                    ParsingState.Initial -> {
+            when (parseStatus) {
+                ParsingState.Done -> {
+                    LaunchedEffect(key1 = "done", block = { actions.phoneLimitations() })
+                }
+                ParsingState.Error -> {
+                    AlertDialog(
+                        title = { stringResource(id = R.string.parsing_error_cant_parse_header) },
+                        text = {
+                            Text(stringResource(id = R.string.parsing_error_cant_parse_text))
+                        },
+                        confirmButton = {
+                            Button(onClick = { viewModel.clearParsingError() }) {
+                                Text(stringResource(id = R.string.parsing_error_cant_parse_button))
+                            }
+                        },
+                        onDismissRequest = { viewModel.clearParsingError() }
+                    )
+                }
+                else -> {}
+            }
+
+            when (parseStatus) {
+                ParsingState.Initial -> {
+                    Button(
+                        modifier = Modifier
+                            .padding(vertical = 8.dp)
+                            .defaultMinSize(minWidth = 40.dp),
+                        onClick = { openFileSelector() }) {
                         Text(
                             textAlign = TextAlign.Center,
                             text = stringResource(id = R.string.parsing_button)
                         )
                     }
-                    ParsingState.InProgress -> {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp
-                        )
-                    }
-                    ParsingState.Done -> {
-                        LaunchedEffect(key1 = "done", block = { actions.phoneLimitations() })
-                    }
-                    ParsingState.Error -> {
-                        AlertDialog(
-                            title = { stringResource(id = R.string.parsing_error_cant_parse_header) },
-                            text = {
-                                Text(stringResource(id = R.string.parsing_error_cant_parse_text))
-                            },
-                            confirmButton = {
-                                Button(onClick = { viewModel.clearParsingError() }) {
-                                    Text(stringResource(id = R.string.parsing_error_cant_parse_button))
-                                }
-                            },
-                            onDismissRequest = { viewModel.clearParsingError() }
-                        )
-                    }
                 }
+                ParsingState.InProgress -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .padding(vertical = 8.dp)
+                            .size(32.dp),
+                        strokeWidth = 4.dp
+                    )
+                }
+                else -> {}
             }
         }
     }
