@@ -90,6 +90,13 @@ fun SettingsScreen(
     val prefs by viewModel.settingsUiModel.observeAsState(WallpaperPreferences())
     var brightnessSliderValue by remember { mutableStateOf(prefs.brightness) }
 
+    // FIXME rewrite setting of initial brightness value
+    if (brightnessSliderValue == WallpaperPreferences.Defaults.defaultBrightness
+        && prefs.brightness != WallpaperPreferences.Defaults.defaultBrightness
+    ) {
+        brightnessSliderValue = prefs.brightness
+    }
+
     H3lwpnextTheme {
         Scaffold(
             floatingActionButton = {
@@ -143,7 +150,7 @@ fun SettingsScreen(
                     ) {
                         Slider(
                             value = brightnessSliderValue,
-                            valueRange = 0f..1f,
+                            valueRange = 0f..0.99f,
                             onValueChange = { brightnessSliderValue = it },
                             onValueChangeFinished = { viewModel.setBrightness(brightnessSliderValue) }
                         )
