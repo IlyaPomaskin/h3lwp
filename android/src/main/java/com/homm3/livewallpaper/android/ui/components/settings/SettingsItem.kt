@@ -17,10 +17,10 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun SettingsItem(
+    modifier: Modifier = Modifier,
     title: String,
     subtitle: String = "",
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
     icon: @Composable () -> Unit = {},
     interactionSource: MutableInteractionSource = MutableInteractionSource(),
     enabled: Boolean = true,
@@ -30,17 +30,20 @@ fun SettingsItem(
     val context = LocalContext.current.resources
     val displayMetrics = context.displayMetrics
     val screenWidth = displayMetrics.widthPixels / displayMetrics.density
+    val surfaceModifier = modifier
+        .fillMaxWidth()
+        .also {
+            if (onClick != null) {
+                it.clickable(
+                    interactionSource = interactionSource,
+                    indication = LocalIndication.current,
+                    enabled = enabled,
+                    onClick = onClick
+                )
+            }
+        }
 
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(
-                interactionSource = interactionSource,
-                indication = LocalIndication.current,
-                enabled = enabled,
-                onClick = onClick
-            )
-    ) {
+    Surface(modifier = surfaceModifier) {
         Row(
             Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -57,6 +60,7 @@ fun SettingsItem(
                         ContentAlpha.disabled
                     )
                 )
+
                 if (subtitle.isNotEmpty()) {
                     Text(
                         subtitle,
@@ -67,6 +71,7 @@ fun SettingsItem(
                         )
                     )
                 }
+
                 if (nextLine) {
                     action(interactionSource)
                 }

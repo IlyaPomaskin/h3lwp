@@ -21,6 +21,35 @@ import com.homm3.livewallpaper.core.MapUpdateInterval
 import com.homm3.livewallpaper.core.Scale
 import com.homm3.livewallpaper.core.WallpaperPreferences
 
+@Composable
+fun SetWallpaperFab(onClick: () -> Unit) {
+    var isWallpaperLimitationVisible by remember { mutableStateOf(false) }
+
+    if (isWallpaperLimitationVisible) {
+        AlertDialog(
+            title = { Text(stringResource(R.string.wallpaper_change_limitation_title)) },
+            text = { Text(stringResource(R.string.wallpaper_change_limitation_text)) },
+            confirmButton = {
+                Button(onClick = {
+                    isWallpaperLimitationVisible = false
+                    onClick()
+                }) { Text(stringResource(R.string.wallpaper_change_limitation_button)) }
+            },
+            onDismissRequest = { isWallpaperLimitationVisible = false }
+        )
+    }
+
+    FloatingActionButton(
+        backgroundColor = MaterialTheme.colors.primary,
+        onClick = { isWallpaperLimitationVisible = true }
+    ) {
+        Text(
+            modifier = Modifier.padding(horizontal = 24.dp),
+            text = stringResource(R.string.wallpaper_change_button)
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterialApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun SettingsScreen(
@@ -28,8 +57,6 @@ fun SettingsScreen(
     onSetWallpaperClick: () -> Unit,
     actions: NavigationActions
 ) {
-    val prefs by viewModel.settingsUiModel.observeAsState(WallpaperPreferences())
-
     val scaleOptions = listOf(
         SettingsDropdownItem(Scale.DPI, stringResource(R.string.scale_by_density)),
 //        SettingsDropdownItem(Scale.X1, "x1"),
@@ -60,33 +87,21 @@ fun SettingsScreen(
         ),
     )
 
+    val prefs by viewModel.settingsUiModel.observeAsState(WallpaperPreferences())
     var brightnessSliderValue by remember { mutableStateOf(prefs.brightness) }
 
     H3lwpnextTheme {
         Scaffold(
             floatingActionButton = {
-                FloatingActionButton(
-                    backgroundColor = MaterialTheme.colors.primary,
-                    onClick = { onSetWallpaperClick() }
-                ) {
-                    Text(
-                        modifier = Modifier.padding(horizontal = 24.dp),
-                        text = stringResource(R.string.wallpaper_change_button)
-                    )
-                }
+                SetWallpaperFab(onClick = { onSetWallpaperClick() })
             },
         ) {
             SettingsContainer {
-                item { SettingsCategory(text = stringResource(id = R.string.preferences_header)) }
+                item { SettingsCategory(text = stringResource(R.string.preferences_header)) }
                 item {
                     SettingsItem(
-                        title = stringResource(id = R.string.maps_item),
-                        icon = {
-                            Icon(
-                                Icons.Filled.List,
-                                contentDescription = "Maps list",
-                            )
-                        },
+                        title = stringResource(R.string.maps_item),
+                        icon = { Icon(Icons.Filled.List, contentDescription = "Maps list") },
                         onClick = { actions.maps() }
                     )
                 }
