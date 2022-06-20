@@ -18,6 +18,11 @@ import ktx.collections.gdxArrayOf
 
 class Assets {
     val manager = AssetManager(InternalFileHandleResolver()).also {
+        it.setLoader(
+            TextureAtlas::class.java,
+            Constants.Assets.ATLAS_PATH,
+            TextureAtlasLoader(LocalFileHandleResolver())
+        )
         it.setLoader(H3m::class.java, H3mLoader(LocalFileHandleResolver()))
     }
     lateinit var skin: Skin
