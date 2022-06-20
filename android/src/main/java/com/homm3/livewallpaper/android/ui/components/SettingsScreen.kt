@@ -90,10 +90,9 @@ fun SettingsScreen(
                         onClick = { actions.maps() }
                     )
                 }
-
                 item {
                     SettingsDropdown(
-                        title = stringResource(id = R.string.scale_title),
+                        title = stringResource(R.string.scale_title),
                         subtitle = scaleOptions.find { it.value == prefs.scale }?.title.orEmpty(),
                         items = scaleOptions,
                         selectedItemValue = prefs.scale,
@@ -102,7 +101,7 @@ fun SettingsScreen(
                 }
                 item {
                     SettingsDropdown(
-                        title = stringResource(id = R.string.update_time_title),
+                        title = stringResource(R.string.update_time_title),
                         subtitle = mapUpdateIntervalOptions.find { it.value == prefs.mapUpdateInterval }?.title.orEmpty(),
                         items = mapUpdateIntervalOptions,
                         selectedItemValue = prefs.mapUpdateInterval,
@@ -111,8 +110,8 @@ fun SettingsScreen(
                 }
                 item {
                     SettingsItem(
-                        title = stringResource(id = R.string.use_scroll_title),
-                        subtitle = stringResource(id = R.string.use_scroll_summary),
+                        title = stringResource(R.string.use_scroll_title),
+                        subtitle = stringResource(R.string.use_scroll_summary),
                         onClick = { viewModel.toggleUseScroll() },
                     ) { interactionSource ->
                         Switch(
@@ -124,9 +123,8 @@ fun SettingsScreen(
                 }
                 item {
                     SettingsItem(
-                        title = stringResource(id = R.string.brightness_title),
+                        title = stringResource(R.string.brightness_title),
                         nextLine = true,
-                        onClick = { },
                     ) {
                         Slider(
                             value = brightnessSliderValue,

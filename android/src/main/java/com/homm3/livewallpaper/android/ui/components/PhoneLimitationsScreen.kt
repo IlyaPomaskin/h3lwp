@@ -26,27 +26,27 @@ fun PhoneLimitations(actions: NavigationActions) {
             Row(modifier = Modifier.padding(vertical = 8.dp)) {
                 Text(
                     textAlign = TextAlign.Center,
-                    text = stringResource(id = R.string.phone_limitation_note)
+                    text = stringResource(R.string.phone_limitation_note)
                 )
             }
 
             Row(modifier = Modifier.padding(vertical = 8.dp)) {
                 Text(
                     textAlign = TextAlign.Center,
-                    text = stringResource(id = R.string.phone_limitation_miui)
+                    text = stringResource(R.string.phone_limitation_miui)
                 )
             }
 
             Row(modifier = Modifier.padding(vertical = 8.dp)) {
                 Text(
                     textAlign = TextAlign.Center,
-                    text = stringResource(id = R.string.phone_limitation_no)
+                    text = stringResource(R.string.phone_limitation_no)
                 )
             }
 
             Button(modifier = Modifier.padding(vertical = 8.dp),
                 onClick = { actions.settings() }) {
-                Text(text = stringResource(id = R.string.phone_limitation_okay))
+                Text(text = stringResource(R.string.phone_limitation_okay))
             }
         }
     }

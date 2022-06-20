@@ -13,18 +13,8 @@
     <string name="output_error">Can\'t save files.\nCheck free space or try reinstall the app.</string>
     <string name="invalid_file_error">Error while reading while.\nTry another file.</string>
     <string name="common_error">Something went wrong.\nTry another file or reinstall the app.</string>
-    <string name="wallpaper_change_button">Set wallpaper</string>
-    <string name="maps_button">Maps</string>
-
-    <string name="preferences_header">Preferences</string>
-
-    <string name="scale_title">Image scale</string>
-    <string name="update_time_title">Change map interval</string>
-    <string name="maps_item">Maps</string>
-    <string name="maps_add">Add maps</string>
-
-    <string name="use_scroll_title">Use scroll</string>
-    <string name="use_scroll_summary">Scroll map while switching home screen\nSome phones don\'t support this feature</string>
+    <string name="wallpaper_change_limitation_title">Please note</string>
+    <string name="wallpaper_change_limitation_text">Some phones don\'t allow to set live wallpapers on the lock screen or don\'t allow to set live wallpapers at all!</string>
 
     <string name="brightness_title">Brightness</string>
 
@@ -58,11 +48,11 @@
 
     <string name="parsing_upload">At first you need to upload file with images from original game</string>
     <string name="parsing_restictions">Due to copyright restrictions we can\'t distribute this file with the app</string>
-    <string name="parsing_how_to_upload_1">Upload file </string>
+    <string name="parsing_how_to_upload_1">Upload file</string>
     <string name="parsing_how_to_upload_2" translatable="false">\'Heroes 3/Data/H3Sprite.lod\'</string>
-    <string name="parsing_how_to_upload_3"> to phone from your copy of </string>
-    <string name="parsing_how_to_upload_4">Heroes of Might and Magic® III Shadow of the Death</string>
-    <string name="parsing_how_to_upload_5">. Also you can upload your favorite maps.</string>
+    <string name="parsing_how_to_upload_3">to phone from your copy of </string>
+    <string name="parsing_how_to_upload_4">Heroes of Might and Magic® III Shadow of the Death.</string>
+    <string name="parsing_how_to_upload_5">Also you can upload your favorite maps.</string>
     <string name="parsing_note">Please note that \'HD version\', \'The Restoration of Erathia\', \'Armageddon blade\' and \'WoG\' will not work. HotA should be OK.</string>
     <string name="parsing_button">Select H3Sprite.lod</string>
     <string name="parsing_error_cant_parse_header">Can\'t parse file</string>
@@ -83,4 +73,13 @@
     <string name="update_timeout_5minutes">5 minutes</string>
     <string name="update_timeout_15minutes">15 minutes</string>
     <string name="update_timeout_1hour">1 hour</string>
+    <string name="wallpaper_change_button">Set wallpapers</string>
+    <string name="preferences_header">Preferences</string>
+    <string name="scale_title">Scale</string>
+    <string name="update_time_title">Update timeout</string>
+    <string name="use_scroll_title">Scroll map</string>
+    <string name="use_scroll_summary">Scroll map while switching screens\nNote: Some phones doesn\'t support it</string>
+    <string name="maps_button">Maps</string>
+    <string name="maps_item">Maps</string>
+    <string name="wallpaper_change_limitation_button">OK</string>
 </resources>

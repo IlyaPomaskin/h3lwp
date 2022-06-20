@@ -10,7 +10,6 @@
     <string name="scale_title">Масштаб карты</string>
     <string name="update_time_title">Частота смены карты</string>
     <string name="maps_title">Карты</string>
-    <string name="maps_add">Добавить карты</string>
     <string name="credits_header">Благодарности</string>
     <string name="credits_button">Открыть</string>
     <string name="credits_title">Благодарности</string>
@@ -40,10 +39,10 @@
     <string name="phone_limitation_okay">Ладно</string>
     <string name="parsing_upload">Для начала нужно загрузить файл с ресурсами из игры</string>
     <string name="parsing_restictions">Из-за авторских прав нет возможности распространять этот файл вместе с приложением</string>
-    <string name="parsing_how_to_upload_1">"Загрузите файл "</string>
-    <string name="parsing_how_to_upload_3">" на телефон из вашей копии"</string>
-    <string name="parsing_how_to_upload_4">Герои Меча и Магии 3® Дыхание Смерти</string>
-    <string name="parsing_how_to_upload_5">. За одно можете загрузить ваши любимые карты.</string>
+    <string name="parsing_how_to_upload_1">Загрузите файл</string>
+    <string name="parsing_how_to_upload_3">на телефон из вашей копии</string>
+    <string name="parsing_how_to_upload_4">Герои Меча и Магии 3® Дыхание Смерти.</string>
+    <string name="parsing_how_to_upload_5">За одно можете загрузить ваши любимые карты.</string>
     <string name="parsing_note">Учтите, версия \'HD\' из стима, \'Возрождение Эрафии\', \'Клинок Армагеддона\' и \'WoG\' работать не будут. Файл из HotA должен подойти.</string>
     <string name="parsing_button">Выбрать H3Sprite.lod</string>
     <string name="parsing_error_cant_parse_header">Не удалось прочитать файл</string>
@@ -59,4 +58,7 @@
     <string name="maps_toast_too_much_maps">Слишком много карт</string>
     <string name="file_selector_toast">Выдайте разрешение на чтение файлов</string>
     <string name="maps_item">Карты</string>
+    <string name="wallpaper_change_limitation_title">Пожалуйста, учтите</string>
+    <string name="wallpaper_change_limitation_text">Некоторые телефоны не разрешают устанавливать обои на экран блокировки или не разрешают их использовать вообще!</string>
+    <string name="wallpaper_change_limitation_button">OK</string>
 </resources>
