@@ -53,7 +53,7 @@
     <string name="parsing_how_to_upload_3">to phone from your copy of </string>
     <string name="parsing_how_to_upload_4">Heroes of Might and Magic® III Shadow of the Death.</string>
     <string name="parsing_how_to_upload_5">Also you can upload your favorite maps.</string>
-    <string name="parsing_note">Please note that \'HD version\', \'The Restoration of Erathia\', \'Armageddon blade\' and \'WoG\' will not work. HotA should be OK.</string>
+    <string name="parsing_note">Please note that \'HD version\', \'The Restoration of Erathia\', \'Armageddon blade\' and \'WoG\' will not work. 'Complete Edition' and HotA should be OK.</string>
     <string name="parsing_button">Select H3Sprite.lod</string>
     <string name="parsing_error_cant_parse_header">Can\'t parse file</string>
     <string name="parsing_error_cant_parse_text">Check file permissions or make sure you are using file from Shadow of the Death</string>

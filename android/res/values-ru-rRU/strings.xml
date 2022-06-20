@@ -43,7 +43,7 @@
     <string name="parsing_how_to_upload_3">на телефон из вашей копии</string>
     <string name="parsing_how_to_upload_4">Герои Меча и Магии 3® Дыхание Смерти.</string>
     <string name="parsing_how_to_upload_5">За одно можете загрузить ваши любимые карты.</string>
-    <string name="parsing_note">Учтите, версия \'HD\' из стима, \'Возрождение Эрафии\', \'Клинок Армагеддона\' и \'WoG\' работать не будут. Файл из HotA должен подойти.</string>
+    <string name="parsing_note">Учтите, версия \'HD\' из стима, \'Возрождение Эрафии\', \'Клинок Армагеддона\' и \'WoG\' работать не будут. Файл из 'Полного издания' или HotA должен подойти.</string>
     <string name="parsing_button">Выбрать H3Sprite.lod</string>
     <string name="parsing_error_cant_parse_header">Не удалось прочитать файл</string>
     <string name="parsing_error_cant_parse_button">Закрыть</string>
