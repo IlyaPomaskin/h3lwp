@@ -3,15 +3,17 @@ package com.homm3.livewallpaper.android
 import android.app.WallpaperManager
 import android.content.ComponentName
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.android.data.*
 import com.homm3.livewallpaper.android.ui.components.NavigationHost
 
 
-class MainActivity : ComponentActivity() {
+class MainActivity() : ComponentActivity() {
     private fun setWallpaper() {
         startActivity(
             Intent()
@@ -26,6 +28,15 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private fun openIconAuthorUrl() {
+        startActivity(
+            Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse(getString(R.string.icon_author_url))
+            )
+        )
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -33,19 +44,17 @@ class MainActivity : ComponentActivity() {
             MapsViewModelFactory(contentResolver, filesDir)
         }
         val settingsViewModel = SettingsViewModel(
-            WallpaperPreferencesRepository(dataStore)
+            WallpaperPreferencesRepository(dataStore),
+            setWallpaper = ::setWallpaper,
+            openIconAuthorUrl = ::openIconAuthorUrl
         )
         val parsingViewModel = ParsingViewModel(application)
-
-//        FIXME delete
-//        parsingViewModel.copyDefaultMap()
 
         setContent {
             NavigationHost(
                 mapViewModel = mapsViewModel,
                 settingsViewModel = settingsViewModel,
                 parsingViewModel = parsingViewModel,
-                onSetWallpaperClick = { setWallpaper() }
             )
         }
     }

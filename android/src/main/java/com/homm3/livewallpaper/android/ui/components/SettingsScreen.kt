@@ -21,6 +21,7 @@ import com.homm3.livewallpaper.core.MapUpdateInterval
 import com.homm3.livewallpaper.core.Scale
 import com.homm3.livewallpaper.core.WallpaperPreferences
 
+
 @Composable
 fun SetWallpaperFab(onClick: () -> Unit) {
     var isWallpaperLimitationVisible by remember { mutableStateOf(false) }
@@ -54,7 +55,6 @@ fun SetWallpaperFab(onClick: () -> Unit) {
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
-    onSetWallpaperClick: () -> Unit,
     actions: NavigationActions
 ) {
     val scaleOptions = listOf(
@@ -100,7 +100,7 @@ fun SettingsScreen(
     H3lwpnextTheme {
         Scaffold(
             floatingActionButton = {
-                SetWallpaperFab(onClick = { onSetWallpaperClick() })
+                SetWallpaperFab(onClick = { viewModel.onSetWallpaper() })
             },
         ) {
             SettingsContainer {
@@ -155,6 +155,13 @@ fun SettingsScreen(
                             onValueChangeFinished = { viewModel.setBrightness(brightnessSliderValue) }
                         )
                     }
+                }
+                item {
+                    SettingsItem(
+                        title = stringResource(R.string.icon_author_title),
+                        subtitle = stringResource(R.string.icon_author_url),
+                        onClick = { viewModel.onOpenIconAuthorUrl() }
+                    )
                 }
             }
         }

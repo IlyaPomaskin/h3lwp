@@ -8,7 +8,9 @@ import com.homm3.livewallpaper.core.Scale
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(
-    private val wallpaperPreferencesRepository: WallpaperPreferencesRepository
+    private val wallpaperPreferencesRepository: WallpaperPreferencesRepository,
+    private val setWallpaper: () -> Unit,
+    private val openIconAuthorUrl: () -> Unit
 ) : ViewModel() {
     val settingsUiModel = wallpaperPreferencesRepository.preferencesFlow.asLiveData()
 
@@ -34,5 +36,13 @@ class SettingsViewModel(
         viewModelScope.launch {
             wallpaperPreferencesRepository.setBrightness(value)
         }
+    }
+
+    fun onSetWallpaper() {
+        setWallpaper()
+    }
+
+    fun onOpenIconAuthorUrl() {
+        openIconAuthorUrl()
     }
 }

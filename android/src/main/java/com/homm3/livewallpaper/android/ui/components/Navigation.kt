@@ -13,7 +13,7 @@ import com.homm3.livewallpaper.android.data.SettingsViewModel
 object Destinations {
     const val PARSING = "parsing"
     const val SETTINGS = "settings"
-    const val MAPS_LIST = "maps"
+    const val MAPS_LIST = "maps_list"
     const val PHONE_LIMITATION = "phone_limitation"
 }
 
@@ -27,7 +27,6 @@ fun NavigationHost(
     mapViewModel: MapsViewModel,
     settingsViewModel: SettingsViewModel,
     parsingViewModel: ParsingViewModel,
-    onSetWallpaperClick: () -> Unit,
 ) {
     val navController = rememberNavController()
     val actions = remember(navController) { NavigationActions(navController) }
@@ -48,7 +47,6 @@ fun NavigationHost(
         composable(Destinations.SETTINGS) {
             SettingsScreen(
                 viewModel = settingsViewModel,
-                onSetWallpaperClick = onSetWallpaperClick,
                 actions
             )
         }

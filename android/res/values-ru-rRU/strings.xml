@@ -61,4 +61,5 @@
     <string name="wallpaper_change_limitation_title">Пожалуйста, учтите</string>
     <string name="wallpaper_change_limitation_text">Некоторые телефоны не разрешают устанавливать обои на экран блокировки или не разрешают их использовать вообще!</string>
     <string name="wallpaper_change_limitation_button">OK</string>
+    <string name="icon_author_title" translatable="false">Спасибо за иконку Wit Olszewski!</string>
 </resources>
