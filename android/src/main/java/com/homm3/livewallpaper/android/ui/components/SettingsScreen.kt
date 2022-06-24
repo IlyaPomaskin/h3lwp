@@ -109,7 +109,7 @@ fun SettingsScreen(
                     SettingsItem(
                         title = stringResource(R.string.maps_item),
                         icon = { Icon(Icons.Filled.List, contentDescription = "Maps list") },
-                        onClick = { actions.maps() }
+                        onClick = { actions.mapsList() }
                     )
                 }
                 item {

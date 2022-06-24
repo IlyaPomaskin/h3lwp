@@ -13,16 +13,13 @@ import com.homm3.livewallpaper.android.data.SettingsViewModel
 object Destinations {
     const val PARSING = "parsing"
     const val SETTINGS = "settings"
-    const val MAPS = "maps"
+    const val MAPS_LIST = "maps"
     const val PHONE_LIMITATION = "phone_limitation"
 }
 
 class NavigationActions(navController: NavHostController) {
     val settings: () -> Unit = { navController.navigate(Destinations.SETTINGS) }
-    val maps: () -> Unit = { navController.navigate(Destinations.MAPS) }
-    val navigateUp: () -> Unit = { navController.navigateUp() }
-    val phoneLimitations: () -> Unit =
-        { navController.navigate(Destinations.PHONE_LIMITATION) }
+    val mapsList: () -> Unit = { navController.navigate(Destinations.MAPS_LIST) }
 }
 
 @Composable
@@ -56,7 +53,7 @@ fun NavigationHost(
             )
         }
 
-        composable(Destinations.MAPS) {
+        composable(Destinations.MAPS_LIST) {
             MapsScreen(viewModel = mapViewModel)
         }
     }
