@@ -17,7 +17,6 @@ class Constants {
 
     class Assets {
         companion object {
-            const val DEFAULT_MAPS_FOLDER = "maps"
             const val USER_MAPS_FOLDER = "user-maps"
             const val ATLAS_FOLDER = "sprites"
             const val ATLAS_NAME = "images"
@@ -46,7 +45,7 @@ class Constants {
             const val USE_SCROLL = "useScroll"
             const val USE_SCROLL_DEFAULT = true
             const val BRIGHTNESS = "brightness"
-            const val BRIGHTNESS_DEFAULT = 1f
+            const val BRIGHTNESS_DEFAULT = 0.6f
         }
     }
 }

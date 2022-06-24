@@ -8,7 +8,6 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.homm3.livewallpaper.core.Constants
-import com.homm3.livewallpaper.core.Constants.Assets.Companion.DEFAULT_MAPS_FOLDER
 import com.homm3.livewallpaper.core.Constants.Assets.Companion.USER_MAPS_FOLDER
 import com.homm3.livewallpaper.parser.AssetsConverter
 import java.io.File
@@ -64,7 +63,7 @@ class ParsingViewModel(
             .getOrElse { throw Exception("Can't prepare output directory") }
     }
 
-    fun copyDefaultMap() {
+    private fun copyDefaultMap() {
         val userMapsFolder = application
             .applicationContext
             .filesDir
@@ -74,11 +73,11 @@ class ParsingViewModel(
 
         application
             .assets
-            .list(DEFAULT_MAPS_FOLDER)
+            .list("maps")
             ?.forEach {
                 application
                     .assets
-                    .open("${DEFAULT_MAPS_FOLDER}/${it}")
+                    .open("maps/${it}")
                     .copyTo(userMapsFolder.resolve(it).outputStream())
             }
     }
