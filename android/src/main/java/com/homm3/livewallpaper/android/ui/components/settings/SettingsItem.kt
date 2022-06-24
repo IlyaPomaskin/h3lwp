@@ -30,18 +30,16 @@ fun SettingsItem(
     val context = LocalContext.current.resources
     val displayMetrics = context.displayMetrics
     val screenWidth = displayMetrics.widthPixels / displayMetrics.density
-    val surfaceModifier = modifier
-        .fillMaxWidth()
-        .also {
-            if (onClick != null) {
-                it.clickable(
-                    interactionSource = interactionSource,
-                    indication = LocalIndication.current,
-                    enabled = enabled,
-                    onClick = onClick
-                )
-            }
-        }
+    var surfaceModifier = modifier.fillMaxWidth()
+
+    if (onClick != null) {
+        surfaceModifier = surfaceModifier.clickable(
+            interactionSource = interactionSource,
+            indication = LocalIndication.current,
+            enabled = enabled,
+            onClick = onClick
+        )
+    }
 
     Surface(modifier = surfaceModifier) {
         Row(
