@@ -140,6 +140,7 @@ class ObjectsRandomizer {
             H3mObjects.Object.RANDOM_DWELLING_FACTION -> randomDwelling(null, null)
             H3mObjects.Object.EVENT,
             H3mObjects.Object.GRAIL,
+            H3mObjects.Object.RANDOM_HERO,
             H3mObjects.Object.HERO_PLACEHOLDER,
             H3mObjects.Object.HERO -> "empty"
             else -> obj.def.spriteName
