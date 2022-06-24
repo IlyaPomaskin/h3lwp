@@ -6,7 +6,6 @@ import com.homm3.livewallpaper.android.data.WallpaperPreferencesRepository
 import com.homm3.livewallpaper.android.data.dataStore
 
 class LiveWallpaperService : AndroidLiveWallpaperService() {
-    private val prefs = WallpaperPreferencesRepository(dataStore)
 
     override fun onCreateEngine(): Engine {
         return AndroidWallpaperEngine()
@@ -14,6 +13,8 @@ class LiveWallpaperService : AndroidLiveWallpaperService() {
 
     override fun onCreateApplication() {
         super.onCreateApplication()
+
+        val prefs = WallpaperPreferencesRepository(dataStore)
 
         initialize(
             AndroidEngine(this, prefs.preferencesFlow),
