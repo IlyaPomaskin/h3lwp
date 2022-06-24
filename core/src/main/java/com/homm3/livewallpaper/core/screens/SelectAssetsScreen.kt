@@ -5,13 +5,23 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.scenes.scene2d.ui.VerticalGroup
 import com.badlogic.gdx.utils.Align
+import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.homm3.livewallpaper.core.Assets
+import ktx.actors.onClick
+import ktx.actors.stage
 import ktx.app.KtxScreen
-import ktx.actors.*
 import ktx.app.clearScreen
+import kotlin.math.min
 
-class SelectAssetsScreen(private val assets: Assets, private val onSettingsButtonClick: () -> Unit) : KtxScreen {
-    private val stage = stage()
+class SelectAssetsScreen(
+    private val assets: Assets,
+    private val onSettingsButtonClick: () -> Unit
+) : KtxScreen {
+    private val viewport = ScreenViewport()
+        .apply {
+            unitsPerPixel = min(1 / Gdx.graphics.density, 1f)
+        }
+    private val stage = stage(viewport = viewport)
 
     init {
         stage.addActor(

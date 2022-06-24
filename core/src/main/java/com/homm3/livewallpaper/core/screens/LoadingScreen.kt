@@ -1,12 +1,14 @@
 package com.homm3.livewallpaper.core.screens
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.scenes.scene2d.ui.Label
-import com.badlogic.gdx.scenes.scene2d.ui.ProgressBar
 import com.badlogic.gdx.utils.Align
+import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.homm3.livewallpaper.core.Assets
 import ktx.actors.stage
 import ktx.app.KtxScreen
 import ktx.app.clearScreen
+import kotlin.math.min
 
 class LoadingScreen(private val assets: Assets, val onLoadDone: () -> Unit) : KtxScreen {
     private val label =
@@ -16,11 +18,16 @@ class LoadingScreen(private val assets: Assets, val onLoadDone: () -> Unit) : Kt
                 setAlignment(Align.center)
                 setWrap(true)
             }
-    private val loadingStage = stage().apply { addActor(label) }
+    private val viewport = ScreenViewport()
+        .apply {
+            unitsPerPixel = min(1 / Gdx.graphics.density, 1f)
+        }
+    private val stage = stage(viewport = viewport)
+        .apply { addActor(label) }
 
     override fun render(delta: Float) {
         clearScreen(0f, 0f, 0f, 1f)
-        loadingStage.draw()
+        stage.draw()
 
         if (assets.manager.update()) {
             onLoadDone()
@@ -28,10 +35,10 @@ class LoadingScreen(private val assets: Assets, val onLoadDone: () -> Unit) : Kt
     }
 
     override fun resize(width: Int, height: Int) {
-        loadingStage.viewport.update(width, height, true)
+        stage.viewport.update(width, height, true)
     }
 
     override fun dispose() {
-        loadingStage.dispose()
+        stage.dispose()
     }
 }
