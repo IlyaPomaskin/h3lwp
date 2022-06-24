@@ -35,6 +35,7 @@ class GameScreen(private val camera: Camera, private val prefs: Flow<WallpaperPr
     private val brightnessOverlay = BrightnessOverlay(camera)
     private var mapUpdateInterval = 0f
     private var lastMapUpdateTime = 0L
+    private var isPrefsInit = true
 
     init {
         if (Gdx.app.type == Application.ApplicationType.Desktop) {
@@ -58,14 +59,18 @@ class GameScreen(private val camera: Camera, private val prefs: Flow<WallpaperPr
 
         if (viewport.unitsPerPixel != nextUnitsPerPixel) {
             viewport.unitsPerPixel = nextUnitsPerPixel
-            randomizeVisibleMapPart(true)
+
+            if (!isPrefsInit) {
+                randomizeVisibleMapPart(true)
+            }
         }
 
+        isPrefsInit = false
     }
 
     private fun setMapUpdateInterval(interval: MapUpdateInterval) {
         mapUpdateInterval = when (interval) {
-            MapUpdateInterval.EVERY_SWITCH -> 0f
+            MapUpdateInterval.EVERY_SWITCH -> 1000f
             MapUpdateInterval.HOURS_2 -> 2f * 60f * 60f * 1000f
             MapUpdateInterval.HOURS_24 -> 24f * 60f * 60f * 1000f
             MapUpdateInterval.MINUTES_10 -> 10f * 60f * 1000f
