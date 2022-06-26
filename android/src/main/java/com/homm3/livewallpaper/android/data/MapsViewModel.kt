@@ -35,7 +35,7 @@ class MapsViewModel(private val contentResolver: ContentResolver, root: File) : 
         viewModelScope.launch { updateFilesList() }
     }
 
-    private suspend fun updateFilesList() {
+    suspend fun updateFilesList() {
         val files = mapsFolder.listFiles()
 
         if (files !== null) {

@@ -6,6 +6,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
@@ -57,6 +58,10 @@ fun MapsScreen(viewModel: MapsViewModel) {
     val readingError by viewModel.mapReadingError.collectAsState()
     val isAddEnabled = files.size < 5
     val isRemoveEnabled = files.size > 1
+
+    LaunchedEffect(true) {
+        viewModel.updateFilesList()
+    }
 
     H3lwpnextTheme {
         Scaffold(
