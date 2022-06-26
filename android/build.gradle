@@ -12,6 +12,7 @@ android {
             res.srcDirs = ['res']
             assets.srcDirs = ['../assets']
             jniLibs.srcDirs = ['libs']
+
         }
     }
     packagingOptions {
@@ -36,8 +37,8 @@ android {
         applicationId 'com.homm3.livewallpaper'
         minSdkVersion 21
         targetSdkVersion 31
-        versionCode 302
-        versionName "3.0.2"
+        versionCode 306
+        versionName "3.0.6"
         multiDexEnabled true
         vectorDrawables {
             useSupportLibrary true
@@ -47,6 +48,9 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
         coreLibraryDesugaringEnabled true
+    }
+    kotlin.sourceSets.all {
+        languageSettings.useExperimentalAnnotation("kotlin.RequiresOptIn")
     }
     kotlinOptions {
         jvmTarget = "1.8"
