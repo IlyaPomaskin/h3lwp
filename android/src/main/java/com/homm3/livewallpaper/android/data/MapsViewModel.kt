@@ -73,7 +73,14 @@ class MapsViewModel(private val contentResolver: ContentResolver, root: File) : 
             val h3m = H3mReader(stream).read()
             stream.close()
 
-            return h3m.header.title
+            val fileName = uri.normalizeScheme().path
+                ?.split("/")
+                ?.last()
+                ?.split(".")
+                ?.dropLast(1)
+                ?.joinToString(".")
+
+            return fileName ?: h3m.header.title
         } catch (ex: Exception) {
             throw MapReadingException.CantParseMap
         }

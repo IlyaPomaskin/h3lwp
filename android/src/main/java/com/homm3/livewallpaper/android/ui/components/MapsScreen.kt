@@ -76,7 +76,7 @@ fun MapsScreen(viewModel: MapsViewModel) {
                                 .makeText(
                                     context,
                                     context.getText(R.string.maps_toast_too_much_maps),
-                                    Toast.LENGTH_LONG
+                                    Toast.LENGTH_SHORT
                                 )
                                 .show()
                         }
