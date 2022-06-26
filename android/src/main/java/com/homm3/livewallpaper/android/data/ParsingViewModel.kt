@@ -63,7 +63,7 @@ class ParsingViewModel(
             .getOrElse { throw Exception("Can't prepare output directory") }
     }
 
-    private fun copyDefaultMap() {
+    fun copyDefaultMap() {
         val userMapsFolder = application
             .applicationContext
             .filesDir

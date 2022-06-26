@@ -8,9 +8,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.runtime.LaunchedEffect
 import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.android.data.*
 import com.homm3.livewallpaper.android.ui.components.NavigationHost
+import kotlinx.coroutines.flow.first
 
 
 class MainActivity() : ComponentActivity() {
@@ -51,6 +53,12 @@ class MainActivity() : ComponentActivity() {
         val parsingViewModel = ParsingViewModel(application)
 
         setContent {
+            LaunchedEffect(true) {
+                if (mapsViewModel.mapsList.first().isEmpty()) {
+                    parsingViewModel.copyDefaultMap()
+                }
+            }
+
             NavigationHost(
                 mapViewModel = mapsViewModel,
                 settingsViewModel = settingsViewModel,
