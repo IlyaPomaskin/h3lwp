@@ -13,8 +13,6 @@ class Constants {
         const val SCROLL_OFFSET = 3 * TILE_SIZE
         const val BORDER_SIZE = ((VISIBLE_BORDER_SIZE + SCROLL_OFFSET) / TILE_SIZE).toInt()
         const val VISIBLE_TILES_OFFSET = 4
-        const val MAX_RANDOMIZE_RECT_TRIES = 10
-        const val MAX_RANDOMIZE_EMPTY_TILES_PERCENT = 30
     }
 
     class Assets {

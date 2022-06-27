@@ -5,12 +5,8 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.tiled.TiledMap
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
-import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.homm3.livewallpaper.core.*
-import com.homm3.livewallpaper.core.Constants.Companion.MAX_RANDOMIZE_EMPTY_TILES_PERCENT
-import com.homm3.livewallpaper.core.Constants.Companion.MAX_RANDOMIZE_RECT_TRIES
-import com.homm3.livewallpaper.core.Constants.Companion.TILE_SIZE
 import com.homm3.livewallpaper.core.Constants.Preferences.Companion.MINIMAL_MAP_UPDATE_INTERVAL
 import com.homm3.livewallpaper.core.layers.H3mLayersGroup
 import com.homm3.livewallpaper.core.layers.ObjectsLayer
@@ -21,13 +17,8 @@ import kotlinx.coroutines.launch
 import ktx.app.KtxScreen
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.roundToInt
-import kotlin.random.Random
 
-class GameScreen(
-    private val camera: Camera,
-    private val prefs: Flow<WallpaperPreferences>
-) :
+class GameScreen(private val camera: Camera, private val prefs: Flow<WallpaperPreferences>) :
     KtxScreen {
     private val viewport = ScreenViewport(camera)
     private val tiledMap = TiledMap()
@@ -134,48 +125,9 @@ class GameScreen(
             .randomOrNull()
 
         if (h3mLayer != null) {
-            val rect = getBestNextPosition(h3mLayer)
-            camera.set(
-                (rect.x + rect.width / 2) * TILE_SIZE,
-                (rect.y + rect.height / 2) * TILE_SIZE
-            )
-
+            camera.randomizeCameraPosition(h3mLayer.mapSize)
             h3mLayer.isVisible = true
         }
-    }
-
-    private fun getRandomMapRectangle(mapSize: Int): Rectangle {
-        val viewportWidth = (camera.viewportWidth / TILE_SIZE) + 1
-        val nextX = Random.nextInt(0, max(mapSize - viewportWidth.roundToInt(), 1)).toFloat()
-
-        val viewportHeight = (camera.viewportHeight / TILE_SIZE) + 1
-        val nextY = Random.nextInt(0, max(mapSize - viewportHeight.roundToInt(), 1)).toFloat()
-
-        return Rectangle(nextX, nextY, viewportWidth, viewportHeight)
-    }
-
-    private fun getBestNextPosition(h3mLayer: H3mLayersGroup): Rectangle {
-        var bestRectangle = Rectangle()
-        var bestRectanglePercentage = 0
-        var tries = 0
-
-        do {
-            val rectangle = getRandomMapRectangle(h3mLayer.mapSize)
-            val percent = h3mLayer.terrain.getFillingPercentage(rectangle)
-
-            if (percent < MAX_RANDOMIZE_EMPTY_TILES_PERCENT) {
-                return rectangle
-            }
-
-            if (percent < bestRectanglePercentage) {
-                bestRectanglePercentage = percent
-                bestRectangle = rectangle
-            }
-
-            tries++
-        } while (tries < MAX_RANDOMIZE_RECT_TRIES)
-
-        return bestRectangle
     }
 
     override fun show() {
