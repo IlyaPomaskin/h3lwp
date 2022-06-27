@@ -6,6 +6,7 @@ import com.badlogic.gdx.maps.tiled.TiledMapTile
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer
 import com.badlogic.gdx.maps.tiled.tiles.AnimatedTiledMapTile
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile
+import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.utils.Array
 import com.homm3.livewallpaper.core.Assets
 import com.homm3.livewallpaper.core.Constants.Companion.FRAME_TIME
@@ -111,11 +112,15 @@ class TerrainGroupLayer(private val assets: Assets, h3m: H3m, isUnderground: Boo
         }
     }
 
+    private val mapSize = h3m.header.size
+    private val terrainLayer =
+        TiledMapTileLayer(mapSize, mapSize, TILE_SIZE.toInt(), TILE_SIZE.toInt())
+    private val riverLayer =
+        TiledMapTileLayer(mapSize, mapSize, TILE_SIZE.toInt(), TILE_SIZE.toInt())
+    private val roadLayer =
+        TiledMapTileLayer(mapSize, mapSize, TILE_SIZE.toInt(), TILE_SIZE.toInt())
+
     init {
-        val mapSize = h3m.header.size
-        val terrainLayer = TiledMapTileLayer(mapSize, mapSize, TILE_SIZE.toInt(), TILE_SIZE.toInt())
-        val riverLayer = TiledMapTileLayer(mapSize, mapSize, TILE_SIZE.toInt(), TILE_SIZE.toInt())
-        val roadLayer = TiledMapTileLayer(mapSize, mapSize, TILE_SIZE.toInt(), TILE_SIZE.toInt())
         roadLayer.offsetY = -(TILE_SIZE / 2)
 
         val tileOffset = if (isUnderground) mapSize * mapSize else 0
@@ -140,5 +145,32 @@ class TerrainGroupLayer(private val assets: Assets, h3m: H3m, isUnderground: Boo
         layers.add(riverLayer)
         layers.add(roadLayer)
         name = "terrain"
+    }
+
+    private val empty = listOf(
+        "rocktl/0", "rocktl/1", "rocktl/2", "rocktl/3",
+        "rocktl/4", "rocktl/5", "rocktl/6", "rocktl/7",
+    )
+
+    fun getFillingPercentage(rectangle: Rectangle): Int {
+        val xStart = rectangle.x.toInt()
+        val xEnd = (rectangle.x + rectangle.width).toInt()
+        val yStart = rectangle.y.toInt()
+        val yEnd = (rectangle.y + rectangle.height).toInt()
+
+        val tilesCount = (xEnd - xStart) * (yEnd - yStart)
+        var emptyTiles = 0
+
+        for (x in xStart until xEnd) {
+            for (y in yStart until yEnd) {
+                val texture = terrainLayer.getCell(x, y).tile.textureRegion
+
+                if (texture is AtlasRegion && empty.contains(texture.name)) {
+                    emptyTiles++
+                }
+            }
+        }
+
+        return emptyTiles * 100 / tilesCount
     }
 }
