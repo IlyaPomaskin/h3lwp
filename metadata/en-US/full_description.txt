@@ -1,0 +1,18 @@
+***ATTENTION***
+Due to copyright restrictions to use this application you must provide file from your copy of Heroes 3 SoD or Complete. HD Edition will not work.
+
+FAQ
+Q: Why I can't set it on lock screen?
+A: It's your phone limitation. I can't do anything about it. It mostly happens for MIUI and Samsung.
+
+Q: Why I can't set it at all?
+A: Phone limitations. There is nothing I can do about it.
+
+Q: Will it drain my battery?
+A: No. It working only on lock screen and main screen. It takes about few minutes a day.
+
+Q: Where I can find source code?
+A: https://github.com/IlyaPomaskin/h3lwp/
+
+Q: How can I donate?
+A: Donate to charity of your chose and send me a receipt at iph3apps@gmail.com
