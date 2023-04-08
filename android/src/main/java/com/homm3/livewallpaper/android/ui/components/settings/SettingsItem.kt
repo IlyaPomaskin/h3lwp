@@ -47,12 +47,14 @@ fun SettingsItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            icon()
+            Column(Modifier.padding(PaddingValues(end = 4.dp))) {
+                icon()
+            }
 
             Column {
                 Text(
                     title,
-                    Modifier.width(screenWidth.times(0.8f).dp),
+                    Modifier.fillMaxWidth(),
                     style = MaterialTheme.typography.body1,
                     color = if (enabled) Color.Unspecified else MaterialTheme.colors.onSurface.copy(
                         ContentAlpha.disabled
@@ -62,7 +64,9 @@ fun SettingsItem(
                 if (subtitle.isNotEmpty()) {
                     Text(
                         subtitle,
-                        Modifier.width(screenWidth.times(0.8f).dp),
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(),
                         style = MaterialTheme.typography.body2,
                         color = if (enabled) MaterialTheme.colors.onSurface.copy(0.5f) else MaterialTheme.colors.onSurface.copy(
                             ContentAlpha.disabled

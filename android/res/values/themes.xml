@@ -5,8 +5,7 @@
         <item name="android:windowNoTitle">true</item>
     </style>
 
-    <style name="Theme.AppCompat.DayNight" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:statusBarColor">#FF6200EE</item>
+    <style name="Theme.AppCompat.Light.NoActionBar" parent="android:Theme.Material.Light.NoActionBar">
     </style>
 
     <!--    <style name="AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />-->
