@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.File
 import java.io.InputStream
 
-val prefs = MutableStateFlow(WallpaperPreferences())
+val prefs = MutableStateFlow(WallpaperPreferences(brightness = 1f))
 
 class DesktopEngine : Engine(prefs) {
     private fun clearOutputDirectory(outputDirectory: File) {

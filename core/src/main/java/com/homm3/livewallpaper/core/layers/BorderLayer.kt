@@ -1,15 +1,15 @@
 package com.homm3.livewallpaper.core.layers
 
-import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile
 import com.badlogic.gdx.math.Rectangle
+import com.homm3.livewallpaper.core.Assets
 import com.homm3.livewallpaper.core.Constants
 import kotlin.random.Random
 
 class BorderLayer(
-    private val manager: AssetManager,
+    private val assets: Assets,
     private val mapSize: Int,
     borderWidth: Int,
     borderHeight: Int
@@ -20,7 +20,8 @@ class BorderLayer(
     Constants.TILE_SIZE.toInt()
 ) {
     private fun getBorderFrame(index: Int): TextureAtlas.AtlasRegion {
-         manager
+        assets
+            .manager
             .get<TextureAtlas>(Constants.Assets.ATLAS_PATH)
             .findRegions("edg/$index")
             .run {
