@@ -19,8 +19,9 @@ class Constants {
         companion object {
             const val USER_MAPS_FOLDER = "user-maps"
             const val ATLAS_FOLDER = "sprites"
-            const val ATLAS_NAME = "images"
+            const val ATLAS_NAME = "objects"
             const val ATLAS_PATH = "$ATLAS_FOLDER/$ATLAS_NAME.atlas"
+            const val TERRAIN_ATLAS_PATH = "$ATLAS_FOLDER/fh-sprites.atlas"
             const val SKIN_PATH = "skin/uiskin.json"
             const val I18N_PATH = "i18n/Bundle"
             val emptyPixmap = TextureAtlas.AtlasRegion(

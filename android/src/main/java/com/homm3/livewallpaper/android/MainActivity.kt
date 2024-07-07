@@ -10,8 +10,15 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.runtime.LaunchedEffect
 import com.homm3.livewallpaper.R
-import com.homm3.livewallpaper.android.data.*
+import com.homm3.livewallpaper.android.data.MapsViewModel
+import com.homm3.livewallpaper.android.data.MapsViewModelFactory
+import com.homm3.livewallpaper.android.data.ParsingViewModel
+import com.homm3.livewallpaper.android.data.SettingsViewModel
+import com.homm3.livewallpaper.android.data.WallpaperPreferencesRepository
+import com.homm3.livewallpaper.android.data.dataStore
 import com.homm3.livewallpaper.android.ui.components.NavigationHost
+import com.homm3.livewallpaper.fhParser.repackObjectsFolder
+import com.homm3.livewallpaper.fhParser.repackTerrainFolder
 import kotlinx.coroutines.flow.first
 
 
@@ -41,6 +48,10 @@ class MainActivity() : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val ext = getExternalFilesDir(null) ?: throw Error("fail")
+        repackTerrainFolder(ext.resolve("Adventure/Terrain"))
+        repackObjectsFolder(ext.resolve("Adventure"))
 
         val mapsViewModel: MapsViewModel by viewModels {
             MapsViewModelFactory(contentResolver, filesDir)

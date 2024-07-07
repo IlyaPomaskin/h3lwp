@@ -12,6 +12,7 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.I18NBundle
+import com.homm3.livewallpaper.core.Constants.Assets.Companion.TERRAIN_ATLAS_PATH
 import com.homm3.livewallpaper.parser.formats.H3m
 import ktx.assets.load
 import ktx.collections.gdxArrayOf
@@ -58,6 +59,12 @@ class Assets {
                 Constants.Assets.ATLAS_PATH,
                 TextureAtlasLoader.TextureAtlasParameter(true)
             )
+
+        manager
+            .load<TextureAtlas>(
+                TERRAIN_ATLAS_PATH,
+                TextureAtlasLoader.TextureAtlasParameter(true)
+            )
     }
 
     fun loadMaps(onMapLoaded: (h3m: H3m) -> Unit) {
@@ -84,7 +91,7 @@ class Assets {
             .findRegions(defName)
             .run {
                 return if (isEmpty) {
-                    println("Can't find terrain def $defName")
+                    println("Can't find obj def $defName")
                     return gdxArrayOf(Constants.Assets.emptyPixmap)
                 } else {
                     this
@@ -93,7 +100,20 @@ class Assets {
     }
 
     fun getTerrainFrames(defName: String, index: Int): Array<TextureAtlas.AtlasRegion> {
-        return getFrames("$defName/$index")
+        val terDefName = "$defName/$index"
+
+        manager
+            .get<TextureAtlas>(TERRAIN_ATLAS_PATH)
+            .findRegions(terDefName)
+            .run {
+                return if (isEmpty) {
+                    println("Can't find terrain def $terDefName")
+                    return gdxArrayOf(Constants.Assets.emptyPixmap)
+                } else {
+                    this
+                }
+            }
+//        return getFrames("$defName/$index")
     }
 
     fun getObjectFrames(defName: String): Array<TextureAtlas.AtlasRegion> {

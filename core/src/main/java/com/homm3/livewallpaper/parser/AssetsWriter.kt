@@ -8,7 +8,7 @@ import com.homm3.livewallpaper.parser.formats.Def
 import com.homm3.livewallpaper.parser.formats.Lod
 import java.io.File
 import java.io.OutputStream
-import java.util.*
+import java.util.Locale
 import java.util.zip.Deflater
 
 class AssetsWriter(
@@ -17,8 +17,9 @@ class AssetsWriter(
     private val atlasName: String
 ) {
     private var atlas = String()
+    val writer = outputDirectory.resolve("${atlasName}.atlas").writer()
 
-    private fun atlasPage(filename: String) {
+    fun atlasPage(filename: String) {
         atlas += "\n"
         atlas += "$filename\n"
         atlas += "size: ${packer.pageWidth},${packer.pageHeight}\n"
@@ -38,7 +39,32 @@ class AssetsWriter(
         atlas += "  index: ${index}\n"
     }
 
-    private fun writePng(stream: OutputStream, pixmap: Pixmap) {
+    fun atlasPageWriter(filename: String) {
+        var atlasq = "\n"
+        atlasq += "$filename\n"
+        atlasq += "size: ${packer.pageWidth},${packer.pageHeight}\n"
+        atlasq += "format: ${packer.pageFormat.name}\n"
+        atlasq += "filter: Nearest,Nearest\n"
+        atlasq += "repeat: none\n"
+
+        writer.write(atlasq)
+    }
+
+    fun atlasFrame(name: String, index: String, rect: Rectangle) {
+        val spriteName = name.lowercase(Locale.ROOT).replace(".def", "")
+        var atlasq = ""
+        atlasq += "$spriteName\n"
+        atlasq += "  rotate: false\n"
+        atlasq += "  xy: ${rect.x.toInt()}, ${rect.y.toInt()}\n"
+        atlasq += "  size: ${rect.width.toInt()}, ${rect.height.toInt()}\n"
+        atlasq += "  orig: ${rect.width.toInt()}, ${rect.height.toInt()}\n"
+        atlasq += "  offset: 0, 0\n"
+        atlasq += "  index: ${index}\n"
+
+        writer.write(atlasq)
+    }
+
+    fun writePng(stream: OutputStream, pixmap: Pixmap) {
         val pngFile = PixmapIO.PNG(pixmap.width * pixmap.height * 1.5f.toInt())
         try {
             pngFile.setFlipY(false)
@@ -86,6 +112,45 @@ class AssetsWriter(
 
                 atlasFrame("$defName/$index", rotationIndex, rectangle, frame)
             }
+    }
+
+    fun writePackerContent(p: PixmapPacker) {
+//        private val packer: PixmapPacker,
+
+        p.pages.forEachIndexed { index, page ->
+            val pngName = "${atlasName}_${index}.png"
+            println("write $pngName")
+            atlasPageWriter(pngName)
+            writePng(outputDirectory.resolve(pngName).outputStream(), page.pixmap)
+            println("atlas $pngName written")
+
+            page
+                .rects
+                .forEach { entry ->
+                    val rectangleName = entry.key
+                    val rectangle: PixmapPacker.PixmapPackerRectangle = entry.value
+
+                    println("$rectangleName $rectangle")
+
+                    val rectangleParts = rectangleName.split("/")
+
+                    if (rectangleParts.size == 3) {
+//                        Terrain
+                        val defName = rectangleParts[0]
+                        val frameName = rectangleParts[1]
+                        val rotationIndex = rectangleParts[2]
+                        atlasFrame("$defName/$frameName", rotationIndex, rectangle)
+                    } else {
+//                        object
+                        val defName = rectangleParts[0]
+                        val rotationIndex = rectangleParts[1]
+                        atlasFrame(defName, rotationIndex, rectangle)
+                    }
+                }
+        }
+
+        p.dispose()
+        writer.close()
     }
 
     internal fun writePackerContent(sprites: PackedFrames) {

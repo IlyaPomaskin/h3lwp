@@ -3,8 +3,10 @@ package com.homm3.livewallpaper.parser
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.g2d.PixmapPacker
 import com.homm3.livewallpaper.parser.formats.Def
-import java.io.*
-import kotlin.Exception
+import java.io.File
+import java.io.InputStream
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTime
 
 internal typealias PackedFrames = MutableMap<String, Def.Frame>
 
@@ -18,19 +20,32 @@ class AssetsConverter(lodFileInputStream: InputStream, outputDirectory: File, at
     private val assetsPacker = AssetsPacker(packer)
     private val assetsWriter = AssetsWriter(packer, outputDirectory, atlasName)
 
+    @OptIn(ExperimentalTime::class)
+    fun <T> logTime(prefix: String, block: () -> T): T {
+        var result: T
+
+        val time = measureTime {
+            result = block()
+        }
+
+        println("FN_TIME $prefix : $time")
+
+        return result
+    }
+
     @Throws(InvalidFileException::class, OutputFileWriteException::class)
     fun convertLodToTextureAtlas() {
-        runCatching(assetsReader::readFilesList)
+        runCatching { logTime("readFilesList") { assetsReader.readFilesList() } }
             .onFailure { throw InvalidFileException("Can't parse. Try another file.") }
-            .mapCatching(assetsReader::readDefs)
+            .mapCatching { logTime("readDefs") { assetsReader.readDefs(it) } }
             .onFailure { throw InvalidFileException("Can't read content. Try another file.") }
             .also { defs ->
                 if (defs.getOrDefault(emptyList()).size < minimalDefCount) {
                     throw InvalidFileException("Wrong file selected. Try another file.")
                 }
             }
-            .mapCatching(assetsPacker::packFrames)
-            .mapCatching(assetsWriter::writePackerContent)
+            .mapCatching { logTime("packFrames") { assetsPacker.packFrames(it) } }
+            .mapCatching { logTime("writePackerContent") { assetsWriter.writePackerContent(it) } }
             .onFailure { throw OutputFileWriteException("Can't save files. Check free space.") }
     }
 }

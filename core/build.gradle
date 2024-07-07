@@ -1,6 +1,7 @@
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
 dependencies {
+	implementation 'com.google.code.gson:gson:2.10.1'
 	implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.0"
 	api "com.badlogicgames.gdx:gdx:$gdxVersion"
 	api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
