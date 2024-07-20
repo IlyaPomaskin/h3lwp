@@ -1,28 +1,33 @@
 package com.homm3.livewallpaper.parser.formats
 
 import java.io.InputStream
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 
 open class Reader(private val stream: InputStream) {
     var position: Long = 0
+    var lastInfo: Any = 0
+
+    private fun <T : Any> saveInfo(cb: () -> T): T {
+        val result = cb()
+        lastInfo = result
+        return result
+    }
 
     fun readBool(): Boolean {
-        return readByte() == 1
+        return saveInfo { readByte() == 1 }
     }
 
     open fun readByte(): Int {
-        return convertByteArrayToInt(readBytes(1))
+        return saveInfo { convertByteArrayToInt(readBytes(1)) }
     }
 
     open fun readShort(): Int {
-        return convertByteArrayToInt(readBytes(2))
+        return saveInfo { convertByteArrayToInt(readBytes(2)) }
     }
 
     open fun readInt(): Int {
         //TODO change return type to Long
-        return convertByteArrayToInt(readBytes(4))
+        return saveInfo { convertByteArrayToInt(readBytes(4)) }
     }
 
     private fun convertByteArrayToInt(data: ByteArray): Int {
@@ -38,17 +43,17 @@ open class Reader(private val stream: InputStream) {
     }
 
     open fun readString(): String {
-        return readString(readInt())
+        return saveInfo { readString(readInt()) }
     }
 
     fun readString(length: Int): String {
-        return String(readBytes(length)).replace("\u0000.*".toRegex(), "")
+        return saveInfo { String(readBytes(length)).replace("\u0000.*".toRegex(), "") }
     }
 
     open fun readBytes(length: Int): ByteArray {
         val buffer = ByteArray(length)
         read(buffer, 0, length)
-        return buffer
+        return saveInfo { buffer }
     }
 
     @Synchronized
@@ -82,5 +87,9 @@ open class Reader(private val stream: InputStream) {
     fun seek(offset: Long) {
         reset()
         skip(offset)
+    }
+
+    fun getPosition(): String {
+        return String.format("0x%016X", position);
     }
 }

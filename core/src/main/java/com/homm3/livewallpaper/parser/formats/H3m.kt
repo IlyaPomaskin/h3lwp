@@ -1,12 +1,15 @@
 package com.homm3.livewallpaper.parser.formats
 
-import java.util.*
+import java.util.BitSet
 
 class H3m {
     enum class Version(val value: Int) {
         ROE(0x0e),
         AB(0x15),
-        SOD(0x1c);
+        SOD(0x1c),
+        HOTA1(0x1e),
+        HOTA2(0x1f),
+        HOTA3(0x20);
 
         companion object {
             fun fromInt(value: Int): Version {
@@ -71,9 +74,10 @@ class H3m {
         var y = 0
         var z = 0
         lateinit var def: DefInfo
-        lateinit var obj: H3mObjects.Object
+        var obj: H3mObjects.Object = H3mObjects.Object.NO_OBJ
+        var objSubId: H3mObjects.ObjectSubId = H3mObjects.ObjectSubId.Nothing
 
-        private fun <T>compare2way(x: T, y: T, predicate: (x: T, y: T) -> Boolean): Int {
+        private fun <T> compare2way(x: T, y: T, predicate: (x: T, y: T) -> Boolean): Int {
             return when {
                 predicate(x, y) -> -1
                 predicate(y, x) -> 1
@@ -86,6 +90,7 @@ class H3m {
                 when {
                     a.def.placementOrder != b.def.placementOrder ->
                         a.def.placementOrder > b.def.placementOrder
+
                     a.y != b.y -> a.y < b.y
                     b.obj == H3mObjects.Object.HERO && a.obj != H3mObjects.Object.HERO -> true
                     b.obj != H3mObjects.Object.HERO && a.obj == H3mObjects.Object.HERO -> false
@@ -106,7 +111,8 @@ class H3m {
         var players = mutableListOf<Player>()
     }
 
-    var version: Version? = null
+    lateinit var version: Version
+    var hotaVersion = 0
     lateinit var header: Header
     lateinit var terrainTiles: MutableList<Tile>
     lateinit var defs: MutableList<DefInfo>

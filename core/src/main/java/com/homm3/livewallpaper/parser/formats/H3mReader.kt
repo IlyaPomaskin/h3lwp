@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.util.zip.GZIPInputStream
+import kotlin.math.ceil
 import kotlin.math.pow
 
 
@@ -31,6 +32,24 @@ class H3mReader(stream: InputStream) {
     @Throws(IOException::class)
     fun read(): H3m {
         h3m.version = H3m.Version.fromInt(reader.readInt())
+
+        if (h3m.version > H3m.Version.HOTA1) {
+            h3m.hotaVersion = reader.readInt()
+
+            if (h3m.hotaVersion >= 1) {
+                reader.readByte() // hota_data_1
+                reader.readByte() // is_arena
+            }
+            if (h3m.hotaVersion >= 2) {
+                reader.readInt()
+            }
+            if (h3m.hotaVersion >= 4) { //hotaVersion >= 5 ?
+                reader.readInt() // town type count, always 0x0b?
+                reader.readBool() // fixed difficulty level
+            }
+        }
+
+
         h3m.header = readHeader()
         h3m.terrainTiles = readTerrain()
         h3m.defs = readDefs()
@@ -47,7 +66,7 @@ class H3mReader(stream: InputStream) {
         header.description = reader.readString()
         reader.readByte() // difficulty
 
-        if (h3m.version != H3m.Version.ROE) {
+        if (h3m.version > H3m.Version.ROE) {
             reader.readByte() // levelLimit
         }
 
@@ -56,12 +75,37 @@ class H3mReader(stream: InputStream) {
         readTeamInfo()
         readAllowedHeroes()
         readDisposedHeroes()
+        reader.readBytes(31) // placeholder
+        readHota()
         readAllowedArtifacts()
         readAllowedSpellsAbilities()
+//        FIXME lost uint32 between allowed heroes and rumors.
+//        Hota check for '16' const is okay, maybe problem in arts
+        reader.readInt() // unknown
         readRumors()
         readPredefinedHeroes()
 
         return header
+    }
+
+    private fun readHota() {
+        if (h3m.version < H3m.Version.HOTA1) {
+            return
+        }
+
+        reader.readInt() // allowSpecialWeeks
+        val unknown1 = reader.readShort() // unknown1 // 16
+        assert(unknown1 == 16)
+        reader.readInt() // unknown2 // 0
+
+        if (h3m.hotaVersion >= 3) {
+            reader.readInt() // round limit
+        }
+
+        if (h3m.hotaVersion >= 5) {
+            reader.readInt() // unknown3
+            reader.readInt() // unknown4
+        }
     }
 
     private fun readPlayerInfo(): MutableList<Player> {
@@ -73,24 +117,18 @@ class H3mReader(stream: InputStream) {
 
             val canHumanPlay = reader.readBool()
             val canPCPlay = reader.readBool()
-            if (!(canHumanPlay || canPCPlay)) {
-                when (h3m.version) {
-                    H3m.Version.SOD -> reader.readBytes(13)
-                    H3m.Version.AB -> reader.readBytes(12)
-                    H3m.Version.ROE -> reader.readBytes(6)
-                }
-                continue
-            }
 
             reader.readByte() //ai behavior
 
-            if (h3m.version === H3m.Version.SOD) {
-                reader.readBool() // isTownsSet
+            if (h3m.version >= H3m.Version.SOD) {
+                reader.readByte() // allowedAlignments // unused?
             }
 
-            reader.readByte() // allowedFactions
-            if (h3m.version != H3m.Version.ROE) {
-                reader.readByte() // conflux?
+            // townTypes
+            if (h3m.version === H3m.Version.ROE) {
+                reader.readByte()
+            } else {
+                reader.readShort()
             }
 
             reader.readBool() // isRandomTown
@@ -105,22 +143,20 @@ class H3mReader(stream: InputStream) {
                 player.mainTownZ = reader.readByte()
             }
 
-            //has random hero
-            reader.readBool()
-            //main custom hero id
-            val heroId = reader.readByte()
+            reader.readBool() //has random hero
+
+            val heroId = reader.readByte() //main custom hero id
             if (heroId != 0xFF) {
-                //portrait
-                reader.readByte()
-                reader.readString()
+                reader.readByte() // portrait
+                reader.readString() // name
             }
-            if (h3m.version !== H3m.Version.ROE) {
-                //unknown byte
-                reader.readByte()
+
+            if (h3m.version > H3m.Version.ROE) {
+                reader.readByte() //unknown byte
+
                 val heroCount: Int = reader.readInt()
                 for (k in 0 until heroCount) {
-                    //hero id
-                    reader.skip(1)
+                    reader.readByte() // hero id
                     reader.readString()
                 }
             }
@@ -145,6 +181,7 @@ class H3mReader(stream: InputStream) {
                     reader.readByte()
                 }
             }
+
             1 -> {
                 //GATHERTROOP
                 reader.readByte() //obj terrain
@@ -153,32 +190,37 @@ class H3mReader(stream: InputStream) {
                 }
                 reader.readInt() //value
             }
+
             2 -> {
                 //GATHERRESOURCE
                 reader.readByte() //obj terrain
                 reader.readInt() //value
             }
+
             3 -> {
                 //BUILDCITY
                 reader.readBytes(3) //coords
                 reader.readByte() //obj terrain village
                 reader.readByte() //obj terrain form
             }
+
             4 -> reader.readBytes(3) //BUILDGRAIL coords
             5 -> reader.readBytes(3) //BEATHERO coords
             6 -> reader.readBytes(3) //CAPTURECITY coords
-            7 -> reader.readBytes(3) // BEATMONSTER coords
+            7 -> reader.readBytes(3) //BEATMONSTER coords
             10 -> {
                 //TRANSPORTITEM
                 reader.readByte() //obj terrain
                 reader.readBytes(3) //coords
             }
+
+            12 -> reader.readInt() //SURVIVE days
         }
 
         when (reader.readByte()) { // lossCondition
             0 -> reader.readBytes(3) //LOSSCASTLE
             1 -> reader.readBytes(3) //LOSSHERO
-            2 -> reader.readBytes(2) //TIMEEXPIRES
+            2 -> reader.readShort() //TIMEEXPIRES
         }
     }
 
@@ -190,17 +232,29 @@ class H3mReader(stream: InputStream) {
     }
 
     private fun readAllowedHeroes() {
-        val bytesCount = if (h3m.version === H3m.Version.ROE) 16 else 20
-        reader.readBytes(bytesCount)
+        when (h3m.version) {
+            H3m.Version.ROE -> reader.readBytes(16)
+            H3m.Version.SOD -> reader.readBytes(20)
+            H3m.Version.AB -> reader.readBytes(20)
+            H3m.Version.HOTA1,
+            H3m.Version.HOTA2,
+            H3m.Version.HOTA3 -> {
+                // dynamic?
+                // https://github.com/mapron/FreeHeroes/blob/5bb6d8d41de47d8f016512a1844796ba4b1f86ce/src/Core/MapUtil/H3MMap.cpp#L415
+                val heroesCount = ceil(reader.readInt().toDouble() / 8).toInt()
+//                reader.readBytes(heroesCount)
+                reader.readBytes(25)
+            }
+        }
 
-        if (h3m.version !== H3m.Version.ROE) {
+        if (h3m.version > H3m.Version.ROE) {
             val placeholderSize = reader.readInt()
             reader.readBytes(placeholderSize)
         }
     }
 
     private fun readDisposedHeroes() {
-        if (h3m.version === H3m.Version.SOD) {
+        if (h3m.version > H3m.Version.SOD) {
             val heroesCount = reader.readByte()
             for (i in 0 until heroesCount) {
                 reader.readByte() //hero id
@@ -209,22 +263,31 @@ class H3mReader(stream: InputStream) {
                 reader.readByte() //players
             }
         }
-
-        reader.readBytes(31) // placeholder
     }
 
     private fun readAllowedArtifacts() {
-        // Reading allowed artifacts: 17 or 18 bytes
-        if (h3m.version !== H3m.Version.ROE) {
-            val bytesCount = if (h3m.version === H3m.Version.AB) 17 else 18
-            reader.readBytes(bytesCount)
+        val artifactsBits = when (h3m.version) {
+            H3m.Version.ROE -> 128
+            H3m.Version.AB -> 129
+            H3m.Version.SOD -> 141
+            H3m.Version.HOTA1 -> 165
+            H3m.Version.HOTA2 -> 165
+            H3m.Version.HOTA3 -> {
+                if (h3m.hotaVersion >= 5) {
+                    166
+                } else {
+                    165
+                }
+            }
         }
+        val artifactsBytes = ceil(artifactsBits.toDouble() / 8).toInt()
+        reader.readBytes(artifactsBytes)
     }
 
     private fun readAllowedSpellsAbilities() {
-        if (h3m.version === H3m.Version.SOD) {
+        if (h3m.version >= H3m.Version.SOD) {
             reader.readBytes(9) //spells
-            reader.readBytes(4) //abillities
+            reader.readBytes(4) //abilities
         }
     }
 
@@ -272,11 +335,17 @@ class H3mReader(stream: InputStream) {
     }
 
     private fun readPredefinedHeroes() {
-        if (h3m.version !== H3m.Version.SOD) {
+        if (h3m.version < H3m.Version.SOD) {
             return
         }
 
-        for (i in 0..155) {
+        val size = if (h3m.version >= H3m.Version.HOTA1) {
+            reader.readInt()
+        } else {
+            155
+        }
+
+        for (i in 0 until size) {
             //skip if hero doesnt have settings
             if (!reader.readBool()) {
                 continue
@@ -309,6 +378,12 @@ class H3mReader(stream: InputStream) {
             if (reader.readBool()) {
                 reader.readBytes(4) //primary skills
             }
+        }
+
+        for (i in 0 until size) {
+            reader.readBool() // always_add_skills
+            reader.readBool() // cannot_gain_xp
+            reader.readInt() // level
         }
     }
 
@@ -367,6 +442,7 @@ class H3mReader(stream: InputStream) {
             val index = reader.readInt()
             obj.def = h3m.defs[index]
             obj.obj = H3mObjects.Object.fromInt(obj.def.objectId)
+            obj.objSubId = H3mObjects.ObjectSubId.fromInt((obj.def.objectClassSubId))
 
             reader.readBytes(5)
 
@@ -375,6 +451,7 @@ class H3mReader(stream: InputStream) {
                 H3mObjects.Object.HERO,
                 H3mObjects.Object.RANDOM_HERO,
                 H3mObjects.Object.PRISON -> objectsReader.readHero()
+
                 H3mObjects.Object.MONSTER,
                 H3mObjects.Object.RANDOM_MONSTER,
                 H3mObjects.Object.RANDOM_MONSTER_L1,
@@ -384,13 +461,16 @@ class H3mReader(stream: InputStream) {
                 H3mObjects.Object.RANDOM_MONSTER_L5,
                 H3mObjects.Object.RANDOM_MONSTER_L6,
                 H3mObjects.Object.RANDOM_MONSTER_L7 -> objectsReader.readMonster()
+
                 H3mObjects.Object.OCEAN_BOTTLE,
                 H3mObjects.Object.SIGN -> objectsReader.readSign()
+
                 H3mObjects.Object.SEER_HUT -> objectsReader.readSeerHut()
                 H3mObjects.Object.WITCH_HUT -> objectsReader.readWitchHut()
                 H3mObjects.Object.SCHOLAR -> objectsReader.readScholar()
                 H3mObjects.Object.GARRISON,
                 H3mObjects.Object.GARRISON2 -> objectsReader.readGarrison()
+
                 H3mObjects.Object.ARTIFACT,
                 H3mObjects.Object.RANDOM_ART,
                 H3mObjects.Object.RANDOM_TREASURE_ART,
@@ -398,10 +478,13 @@ class H3mReader(stream: InputStream) {
                 H3mObjects.Object.RANDOM_MAJOR_ART,
                 H3mObjects.Object.RANDOM_RELIC_ART,
                 H3mObjects.Object.SPELL_SCROLL -> objectsReader.readArtifact(obj.obj)
+
                 H3mObjects.Object.RANDOM_RESOURCE,
                 H3mObjects.Object.RESOURCE -> objectsReader.readResource()
+
                 H3mObjects.Object.RANDOM_TOWN,
                 H3mObjects.Object.TOWN -> objectsReader.readTown()
+
                 H3mObjects.Object.MINE,
                 H3mObjects.Object.ABANDONED_MINE,
                 H3mObjects.Object.SHRINE_OF_MAGIC_INCANTATION,
@@ -410,14 +493,17 @@ class H3mReader(stream: InputStream) {
                 H3mObjects.Object.SHIPYARD,
                 H3mObjects.Object.LIGHTHOUSE,
                 H3mObjects.Object.GRAIL -> reader.skip(4)
+
                 H3mObjects.Object.CREATURE_GENERATOR1,
                 H3mObjects.Object.CREATURE_GENERATOR2,
                 H3mObjects.Object.CREATURE_GENERATOR3,
                 H3mObjects.Object.CREATURE_GENERATOR4 -> reader.skip(4)
+
                 H3mObjects.Object.PANDORAS_BOX -> objectsReader.readPandorasBox()
                 H3mObjects.Object.RANDOM_DWELLING,
                 H3mObjects.Object.RANDOM_DWELLING_LVL,
                 H3mObjects.Object.RANDOM_DWELLING_FACTION -> objectsReader.readRandomDwelling(obj.obj)
+
                 H3mObjects.Object.QUEST_GUARD -> objectsReader.readQuestGuard()
                 H3mObjects.Object.HERO_PLACEHOLDER -> objectsReader.readHeroPlaceholder()
                 else -> Unit
