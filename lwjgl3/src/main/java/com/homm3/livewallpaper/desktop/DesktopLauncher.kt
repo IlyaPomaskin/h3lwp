@@ -2,11 +2,18 @@ package com.homm3.livewallpaper.desktop
 
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
+import com.homm3.livewallpaper.parser.formats.H3mReader
+import java.io.File
 
 object Lwjgl3Launcher {
     @JvmStatic
     fun main(args: Array<String>) {
-        createApplication()
+        val stream = File("gr.h3m").inputStream()
+        val h3m = H3mReader(stream).read()
+        println(h3m)
+        stream.close()
+
+//        createApplication()
     }
 
     private fun createApplication(): Lwjgl3Application {
