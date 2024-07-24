@@ -99,6 +99,7 @@ class Assets {
             }
     }
 
+    @Suppress("DefaultLocale")
     fun getTerrainFrames(defName: String, index: Int): Array<TextureAtlas.AtlasRegion> {
         if (defName.startsWith("wstlt") || defName.startsWith("hglnt")) {
             return getFrames(String.format("%s%03d", defName, index))

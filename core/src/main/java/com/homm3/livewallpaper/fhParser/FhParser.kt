@@ -50,7 +50,7 @@ fun getFilesListFromFolder(folders: List<File>): MutableList<File> {
 fun repackTerrainFolder(folders: List<File>, output: File, onDone: () -> Unit) {
     GdxNativesLoader.load()
 
-    val packer = PixmapPacker(2048, 2048, Pixmap.Format.RGBA4444, 0, false)
+    val packer = PixmapPacker(4096, 4096, Pixmap.Format.RGBA4444, 0, false)
 
     thread {
         val assetsWriter = AssetsWriter(packer, output, "terrain")
@@ -94,7 +94,7 @@ fun repackTerrainFolder(folders: List<File>, output: File, onDone: () -> Unit) {
 fun repackObjectsFolder(folders: List<File>, output: File, onDone: () -> Unit) {
     GdxNativesLoader.load()
 
-    val packer = PixmapPacker(2048, 2048, Pixmap.Format.RGBA4444, 0, false)
+    val packer = PixmapPacker(4096, 4096, Pixmap.Format.RGBA4444, 2, false)
 
     thread {
         println("repackObjectsFolder START")
@@ -107,8 +107,11 @@ fun repackObjectsFolder(folders: List<File>, output: File, onDone: () -> Unit) {
 
             val group = json.groups[0]
             group.value.frames.forEachIndexed { index, it ->
-                val newPixmap =
-                    Pixmap(json.boundarySize.w, json.boundarySize.w, Pixmap.Format.RGBA4444)
+                val newPixmap = Pixmap(
+                    it.bitmapSize?.w ?: 0,
+                    it.bitmapSize?.h ?: 0,
+                    Pixmap.Format.RGBA4444
+                )
 
                 newPixmap.drawPixmap(
                     srcPixmap,
@@ -116,8 +119,8 @@ fun repackObjectsFolder(folders: List<File>, output: File, onDone: () -> Unit) {
                     it.bitmapOffset?.y ?: 0,
                     it.bitmapSize?.w ?: 0,
                     it.bitmapSize?.h ?: 0,
-                    it.padding?.x ?: 0,
-                    it.padding?.y ?: 0,
+                    0,
+                    0,
                     it.bitmapSize?.w ?: 0,
                     it.bitmapSize?.h ?: 0,
                 )
