@@ -85,7 +85,9 @@ fun repackTerrainFolder(folders: List<File>, output: File, onDone: () -> Unit) {
                 }
             }
 
-        assetsWriter.writePackerContent(packer)
+        assetsWriter.writePackerContent(packer) {
+            throw Exception("Should not be called for terrain")
+        }
         println("repackTerrainFolder DONE")
         onDone()
     }
@@ -99,6 +101,7 @@ fun repackObjectsFolder(folders: List<File>, output: File, onDone: () -> Unit) {
     thread {
         println("repackObjectsFolder START")
         val assetsWriter = AssetsWriter(packer, output, "objects")
+        val frameByDefName = mutableMapOf<String, Frame>()
 
         getFilesListFromFolder(folders).forEach { file ->
             val json = parseSpriteJson(file.readText())
@@ -125,11 +128,12 @@ fun repackObjectsFolder(folders: List<File>, output: File, onDone: () -> Unit) {
                     it.bitmapSize?.h ?: 0,
                 )
 
+                frameByDefName["$defName/$index"] = it
                 packer.pack("$defName/$index", newPixmap)
             }
         }
 
-        assetsWriter.writePackerContent(packer)
+        assetsWriter.writePackerContent(packer) { frameName -> frameByDefName[frameName] }
         println("repackObjectsFolder DONE")
         onDone()
     }

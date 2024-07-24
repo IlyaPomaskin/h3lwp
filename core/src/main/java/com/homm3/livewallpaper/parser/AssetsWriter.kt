@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.PixmapIO
 import com.badlogic.gdx.graphics.g2d.PixmapPacker
 import com.badlogic.gdx.math.Rectangle
+import com.homm3.livewallpaper.fhParser.Frame
 import com.homm3.livewallpaper.parser.formats.Def
 import com.homm3.livewallpaper.parser.formats.Lod
 import java.io.File
@@ -64,6 +65,22 @@ class AssetsWriter(
         writer.write(atlasq)
     }
 
+
+    fun atlasFrame(name: String, index: String, rect: Rectangle, frame: Frame) {
+        val spriteName = name.lowercase(Locale.ROOT).replace(".def", "")
+
+        var atlas = ""
+        atlas += "$spriteName\n"
+        atlas += "  rotate: false\n"
+        atlas += "  xy: ${rect.x.toInt()}, ${rect.y.toInt()}\n"
+        atlas += "  size: ${rect.width.toInt()}, ${rect.height.toInt()}\n"
+        atlas += "  orig: ${frame.boundarySize?.w ?: 0}, ${frame.boundarySize?.h ?: 0}\n"
+        atlas += "  offset: ${frame.padding?.x ?: 0}, ${frame.padding?.y ?: 0}\n"
+        atlas += "  index: ${index}\n"
+
+        writer.write(atlas)
+    }
+
     fun writePng(stream: OutputStream, pixmap: Pixmap) {
         val pngFile = PixmapIO.PNG(pixmap.width * pixmap.height * 1.5f.toInt())
         try {
@@ -114,9 +131,10 @@ class AssetsWriter(
             }
     }
 
-    fun writePackerContent(p: PixmapPacker) {
-//        private val packer: PixmapPacker,
-
+    fun writePackerContent(
+        p: PixmapPacker,
+        getFrameByDefName: (defName: String) -> Frame?
+    ) {
         p.pages.forEachIndexed { index, page ->
             val pngName = "${atlasName}_${index}.png"
             println("write $pngName")
@@ -135,16 +153,27 @@ class AssetsWriter(
                     val rectangleParts = rectangleName.split("/")
 
                     if (rectangleParts.size == 3) {
-//                        Terrain
+                        // Terrain
                         val defName = rectangleParts[0]
                         val frameName = rectangleParts[1]
                         val rotationIndex = rectangleParts[2]
-                        atlasFrame("$defName/$frameName", rotationIndex, rectangle)
+                        atlasFrame(
+                            "$defName/$frameName",
+                            rotationIndex,
+                            rectangle,
+                        )
                     } else {
-//                        object
+                        // object
                         val defName = rectangleParts[0]
                         val rotationIndex = rectangleParts[1]
-                        atlasFrame(defName, rotationIndex, rectangle)
+                        getFrameByDefName(rectangleName)?.let {
+                            atlasFrame(
+                                defName,
+                                rotationIndex,
+                                rectangle,
+                                it
+                            )
+                        }
                     }
                 }
         }
