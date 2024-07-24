@@ -22,7 +22,7 @@ class BorderLayer(
     private fun getBorderFrame(index: Int): TextureAtlas.AtlasRegion {
         assets
             .manager
-            .get<TextureAtlas>(Constants.Assets.ATLAS_PATH)
+            .get<TextureAtlas>(Constants.Assets.TERRAIN_ATLAS_PATH)
             .findRegions("edg/$index")
             .run {
                 return if (isEmpty) {
