@@ -26,7 +26,9 @@ class TerrainGroupLayer(private val assets: Assets, h3m: H3m, isUnderground: Boo
         subbtl(6),
         lavatl(7),
         watrtl(8),
-        rocktl(9);
+        rocktl(9),
+        hglnt(10),
+        wstlt(11);
 
         companion object {
             fun byInt(int: Int): String {

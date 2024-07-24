@@ -5,6 +5,8 @@ import com.badlogic.gdx.utils.GdxNativesLoader
 import com.homm3.livewallpaper.core.Constants
 import com.homm3.livewallpaper.core.Engine
 import com.homm3.livewallpaper.core.WallpaperPreferences
+import com.homm3.livewallpaper.fhParser.repackObjectsFolder
+import com.homm3.livewallpaper.fhParser.repackTerrainFolder
 import com.homm3.livewallpaper.parser.AssetsConverter
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.File
@@ -65,7 +67,29 @@ class DesktopEngine : Engine(prefs) {
         }
     }
 
+    private fun fhParse(callback: () -> Unit) {
+        var fd = false
+        val cb = { ->
+            if (fd) {
+                callback()
+            } else {
+                fd = true
+            }
+        }
+
+        repackTerrainFolder(
+            listOf(File("sod-Adventure/Terrain"), File("hota-Adventure/Terrain")),
+            File("sprites"),
+            cb
+        )
+        repackObjectsFolder(
+            listOf(File("sod-Adventure"), File("hota-Adventure")),
+            File("sprites"),
+            cb
+        )
+    }
+
     override fun onSettingsButtonClick() {
-        parse { Gdx.app.postRunnable { create() } }
+        fhParse { Gdx.app.postRunnable { create() } }
     }
 }

@@ -100,6 +100,10 @@ class Assets {
     }
 
     fun getTerrainFrames(defName: String, index: Int): Array<TextureAtlas.AtlasRegion> {
+        if (defName.startsWith("wstlt") || defName.startsWith("hglnt")) {
+            return getFrames(String.format("%s%03d", defName, index))
+        }
+
         val terDefName = "$defName/$index"
 
         manager
@@ -113,7 +117,6 @@ class Assets {
                     this
                 }
             }
-//        return getFrames("$defName/$index")
     }
 
     fun getObjectFrames(defName: String): Array<TextureAtlas.AtlasRegion> {

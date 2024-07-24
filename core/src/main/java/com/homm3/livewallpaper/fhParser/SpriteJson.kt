@@ -21,8 +21,8 @@ data class GroupValue(
 )
 
 data class Frame(
-    val bitmapSize: Size,
-    val boundarySize: Size,
+    val bitmapSize: Size? = Size(0, 0),
+    val boundarySize: Size? = Size(0, 0),
     val bitmapOffset: Offset? = Offset(0, 0),
     val padding: Offset? = Offset(0, 0)
 )

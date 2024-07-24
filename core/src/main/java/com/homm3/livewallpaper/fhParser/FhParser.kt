@@ -18,24 +18,50 @@ fun parseSpriteJson(json: String): FhSpriteRoot {
     return gson.fromJson(json, fhSpriteRootType)
 }
 
-fun repackTerrainFolder(folder: File) {
+fun addFiles(list: MutableList<File>, directory: File) {
+    directory.listFiles { it -> it.isDirectory }?.forEach { addFiles(list, it) }
+
+    directory
+        .listFiles { it -> it.isFile && it.extension == "json" }
+        ?.forEach { nextFile ->
+            val existingFile = list.find { listFile -> listFile.name == nextFile.name }
+            if (existingFile != null) {
+                println("DOUBLE ${existingFile.name} NEW ${nextFile.name}")
+                list.remove(existingFile)
+            }
+            list.add(nextFile)
+        }
+}
+
+fun getFilesListFromFolder(folders: List<File>): MutableList<File> {
+    val files = mutableListOf<File>()
+
+    folders.forEach { folder ->
+        folder
+            .listFiles { it -> it.isDirectory }
+            ?.forEach { directory -> addFiles(files, directory) }
+
+        addFiles(files, folder)
+    }
+
+    return files
+}
+
+fun repackTerrainFolder(folders: List<File>, output: File, onDone: () -> Unit) {
     GdxNativesLoader.load()
 
     val packer = PixmapPacker(2048, 2048, Pixmap.Format.RGBA4444, 0, false)
 
     thread {
-//        folder.resolve("../../terrain").mkdirs()
-        val assetsWriter = AssetsWriter(packer, folder.resolve("../../"), "terrain")
-//        val spritesToGroup = mutableMapOf<String, Group>()
+        val assetsWriter = AssetsWriter(packer, output, "terrain")
 
         println("repackTerrainFolder START")
 
-        folder
-            .listFiles { it -> it.extension == "json" }
-            ?.forEach { file ->
+        getFilesListFromFolder(folders)
+            .forEach { file ->
                 val json = parseSpriteJson(file.readText())
                 val defName = file.name.replace(".fhsprite.json", "")
-                val srcPixmap = Pixmap(FileHandle(folder.resolve("${defName}.png")))
+                val srcPixmap = Pixmap(FileHandle(file.parentFile.resolve("${defName}.png")))
 
                 json.groups.forEachIndexed { groupIndex, group ->
                     group.value.frames.forEachIndexed { index, it ->
@@ -46,66 +72,35 @@ fun repackTerrainFolder(folder: File) {
                             srcPixmap,
                             it.bitmapOffset?.x ?: 0,
                             it.bitmapOffset?.y ?: 0,
-                            it.bitmapSize.w,
-                            it.bitmapSize.h,
+                            it.bitmapSize?.w ?: 0,
+                            it.bitmapSize?.h ?: 0,
                             it.padding?.x ?: 0,
                             it.padding?.y ?: 0,
-                            it.bitmapSize.w,
-                            it.bitmapSize.h,
+                            it.bitmapSize?.w ?: 0,
+                            it.bitmapSize?.h ?: 0,
                         )
 
                         packer.pack("$defName/$groupIndex/$index", newPixmap)
                     }
-//                    spritesToGroup[defName] = group
                 }
             }
 
         assetsWriter.writePackerContent(packer)
         println("repackTerrainFolder DONE")
+        onDone()
     }
 }
 
-
-fun repackObjectsFolder(folder: File) {
+fun repackObjectsFolder(folders: List<File>, output: File, onDone: () -> Unit) {
     GdxNativesLoader.load()
 
     val packer = PixmapPacker(2048, 2048, Pixmap.Format.RGBA4444, 0, false)
 
     thread {
         println("repackObjectsFolder START")
-//        folder.resolve("../objects").mkdirs()
-        val assetsWriter = AssetsWriter(packer, folder.resolve("../"), "objects")
-//        val spritesToGroup = mutableMapOf<String, Group>()
+        val assetsWriter = AssetsWriter(packer, output, "objects")
 
-        val files = mutableListOf<File>()
-
-        folder.resolve("./Artifact").listFiles { it -> it.extension == "json" }
-            ?.let { it1 -> files.addAll(it1) }
-        folder.resolve("./Hero").listFiles { it -> it.extension == "json" }
-            ?.let { it1 -> files.addAll(it1) }
-        folder.resolve("./Creature/Castle").listFiles { it -> it.extension == "json" }
-            ?.let { it1 -> files.addAll(it1) }
-        folder.resolve("./Creature/Conflux").listFiles { it -> it.extension == "json" }
-            ?.let { it1 -> files.addAll(it1) }
-        folder.resolve("./Creature/Dungeon").listFiles { it -> it.extension == "json" }
-            ?.let { it1 -> files.addAll(it1) }
-        folder.resolve("./Creature/Fortress").listFiles { it -> it.extension == "json" }
-            ?.let { it1 -> files.addAll(it1) }
-        folder.resolve("./Creature/Inferno").listFiles { it -> it.extension == "json" }
-            ?.let { it1 -> files.addAll(it1) }
-        folder.resolve("./Creature/Necropolis").listFiles { it -> it.extension == "json" }
-            ?.let { it1 -> files.addAll(it1) }
-        folder.resolve("./Creature/Neutral").listFiles { it -> it.extension == "json" }
-            ?.let { it1 -> files.addAll(it1) }
-        folder.resolve("./Creature/Rampart").listFiles { it -> it.extension == "json" }
-            ?.let { it1 -> files.addAll(it1) }
-        folder.resolve("./Creature/Stronghold").listFiles { it -> it.extension == "json" }
-            ?.let { it1 -> files.addAll(it1) }
-        folder.resolve("./Creature/Tower").listFiles { it -> it.extension == "json" }
-            ?.let { it1 -> files.addAll(it1) }
-        folder.listFiles { it -> it.extension == "json" }?.let { it1 -> files.addAll(it1) }
-
-        files.forEach { file ->
+        getFilesListFromFolder(folders).forEach { file ->
             val json = parseSpriteJson(file.readText())
             val defName = file.name.replace(".fhsprite.json", "")
             val srcPixmap = Pixmap(FileHandle(file.parentFile.resolve("${defName}.png")))
@@ -119,12 +114,12 @@ fun repackObjectsFolder(folder: File) {
                     srcPixmap,
                     it.bitmapOffset?.x ?: 0,
                     it.bitmapOffset?.y ?: 0,
-                    it.bitmapSize.w,
-                    it.bitmapSize.h,
+                    it.bitmapSize?.w ?: 0,
+                    it.bitmapSize?.h ?: 0,
                     it.padding?.x ?: 0,
                     it.padding?.y ?: 0,
-                    it.bitmapSize.w,
-                    it.bitmapSize.h,
+                    it.bitmapSize?.w ?: 0,
+                    it.bitmapSize?.h ?: 0,
                 )
 
                 packer.pack("$defName/$index", newPixmap)
@@ -133,5 +128,6 @@ fun repackObjectsFolder(folder: File) {
 
         assetsWriter.writePackerContent(packer)
         println("repackObjectsFolder DONE")
+        onDone()
     }
 }

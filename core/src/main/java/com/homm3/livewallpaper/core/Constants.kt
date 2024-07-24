@@ -21,7 +21,7 @@ class Constants {
             const val ATLAS_FOLDER = "sprites"
             const val ATLAS_NAME = "objects"
             const val ATLAS_PATH = "$ATLAS_FOLDER/$ATLAS_NAME.atlas"
-            const val TERRAIN_ATLAS_PATH = "$ATLAS_FOLDER/fh-sprites.atlas"
+            const val TERRAIN_ATLAS_PATH = "$ATLAS_FOLDER/terrain.atlas"
             const val SKIN_PATH = "skin/uiskin.json"
             const val I18N_PATH = "i18n/Bundle"
             val emptyPixmap = TextureAtlas.AtlasRegion(
