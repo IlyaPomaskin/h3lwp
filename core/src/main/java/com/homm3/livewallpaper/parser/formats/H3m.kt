@@ -75,7 +75,6 @@ class H3m {
         var z = 0
         lateinit var def: DefInfo
         var obj: H3mObjects.Object = H3mObjects.Object.NO_OBJ
-        var objSubId: H3mObjects.ObjectSubId = H3mObjects.ObjectSubId.Nothing
 
         private fun <T> compare2way(x: T, y: T, predicate: (x: T, y: T) -> Boolean): Int {
             return when {

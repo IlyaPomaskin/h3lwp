@@ -430,86 +430,208 @@ class H3mReader(stream: InputStream) {
         return defs
     }
 
+    val CHECK_PADDING = 10
+
+    private fun readObject(objectsReader: H3mObjects): H3m.Object {
+        val obj = H3m.Object()
+        obj.x = reader.readByte()
+        obj.y = reader.readByte()
+        obj.z = reader.readByte()
+
+        val isIncorrectZ = if (h3m.header.hasUnderground) (obj.z > 1) else (obj.z > 0)
+        if (isIncorrectZ) throw Exception("Wrong z: ${obj.z}")
+        if (obj.x > h3m.header.size + CHECK_PADDING) throw Exception("Wrong x: ${obj.x}")
+        if (obj.y > h3m.header.size + CHECK_PADDING) throw Exception("Wrong y: ${obj.z}")
+
+        val index = reader.readInt()
+
+        if (index > h3m.defs.size) throw Exception("Wrong def index $index of ${h3m.defs.size}")
+
+        obj.def = h3m.defs[index]
+        obj.obj = H3mObjects.Object.fromInt(obj.def.objectId)
+
+        reader.readBytes(5)
+
+        when (obj.obj) {
+            H3mObjects.Object.EVENT -> objectsReader.readEvent()
+            H3mObjects.Object.HERO,
+            H3mObjects.Object.RANDOM_HERO,
+            H3mObjects.Object.PRISON -> objectsReader.readHero()
+
+            H3mObjects.Object.MONSTER,
+            H3mObjects.Object.RANDOM_MONSTER,
+            H3mObjects.Object.RANDOM_MONSTER_L1,
+            H3mObjects.Object.RANDOM_MONSTER_L2,
+            H3mObjects.Object.RANDOM_MONSTER_L3,
+            H3mObjects.Object.RANDOM_MONSTER_L4,
+            H3mObjects.Object.RANDOM_MONSTER_L5,
+            H3mObjects.Object.RANDOM_MONSTER_L6,
+            H3mObjects.Object.RANDOM_MONSTER_L7 -> objectsReader.readMonster()
+
+            H3mObjects.Object.OCEAN_BOTTLE,
+            H3mObjects.Object.SIGN -> objectsReader.readSign()
+
+            H3mObjects.Object.SEER_HUT -> objectsReader.readSeerHut()
+            H3mObjects.Object.WITCH_HUT -> objectsReader.readWitchHut()
+            H3mObjects.Object.SCHOLAR -> objectsReader.readScholar()
+            H3mObjects.Object.GARRISON,
+            H3mObjects.Object.GARRISON2 -> objectsReader.readGarrison()
+
+            H3mObjects.Object.ARTIFACT,
+            H3mObjects.Object.RANDOM_ART,
+            H3mObjects.Object.RANDOM_TREASURE_ART,
+            H3mObjects.Object.RANDOM_MINOR_ART,
+            H3mObjects.Object.RANDOM_MAJOR_ART,
+            H3mObjects.Object.RANDOM_RELIC_ART,
+            H3mObjects.Object.SPELL_SCROLL -> objectsReader.readArtifact(obj.obj)
+
+            H3mObjects.Object.RANDOM_RESOURCE,
+            H3mObjects.Object.RESOURCE -> objectsReader.readResource()
+
+            H3mObjects.Object.RANDOM_TOWN,
+            H3mObjects.Object.TOWN -> objectsReader.readTown()
+
+            H3mObjects.Object.MINE,
+            H3mObjects.Object.ABANDONED_MINE,
+            H3mObjects.Object.SHRINE_OF_MAGIC_INCANTATION,
+            H3mObjects.Object.SHRINE_OF_MAGIC_GESTURE,
+            H3mObjects.Object.SHRINE_OF_MAGIC_THOUGHT,
+            H3mObjects.Object.SHIPYARD,
+            H3mObjects.Object.LIGHTHOUSE,
+            H3mObjects.Object.GRAIL -> reader.skip(4)
+
+            H3mObjects.Object.CREATURE_GENERATOR1,
+            H3mObjects.Object.CREATURE_GENERATOR2,
+            H3mObjects.Object.CREATURE_GENERATOR3,
+            H3mObjects.Object.CREATURE_GENERATOR4 -> reader.skip(4)
+
+            H3mObjects.Object.PANDORAS_BOX -> objectsReader.readPandorasBox()
+            H3mObjects.Object.RANDOM_DWELLING,
+            H3mObjects.Object.RANDOM_DWELLING_LVL,
+            H3mObjects.Object.RANDOM_DWELLING_FACTION -> objectsReader.readRandomDwelling(obj.obj)
+
+            H3mObjects.Object.QUEST_GUARD -> objectsReader.readQuestGuard()
+            H3mObjects.Object.HERO_PLACEHOLDER -> objectsReader.readHeroPlaceholder()
+
+            H3mObjects.Object.HOTA_COLLECTIBLE -> {
+                val collectibleId = H3mObjects.HotACollectible.fromInt(obj.def.objectClassSubId)
+                when (collectibleId) {
+                    H3mObjects.HotACollectible.ANCIENT_LAMP -> {
+                        reader.readInt() // content
+                        reader.readBytes(4) // unknown
+                        reader.readInt() // amount
+                        reader.readBytes(6) // unknown
+                    }
+
+                    H3mObjects.HotACollectible.SEA_BARREL -> {
+                        reader.readInt() // contents
+                        reader.readBytes(4) // unknown
+                        reader.readInt() // amount
+                        reader.readByte() // resource
+                        reader.readBytes(5) // unknown
+                    }
+
+                    H3mObjects.HotACollectible.JETSAM -> {
+                        reader.readInt() // contents
+                        reader.readInt() // unknown
+                    }
+
+                    H3mObjects.HotACollectible.VIAL_OF_MANA -> {
+                        reader.readInt() // contents
+                        reader.readBytes(4) // unknown
+                    }
+                }
+            }
+
+            H3mObjects.Object.BLACK_MARKET -> {
+                if (h3m.hotaVersion >= 4) {
+                    reader.readBytes(7 * 4)
+                }
+            }
+
+            H3mObjects.Object.CREATURE_BANK,
+            H3mObjects.Object.DERELICT_SHIP,
+            H3mObjects.Object.DRAGON_UTOPIA,
+            H3mObjects.Object.CRYPT,
+            H3mObjects.Object.SHIPWRECK -> {
+                if (h3m.hotaVersion >= 3) {
+                    reader.readInt() // variant
+                    reader.readBool() // upgraded
+                    val artsCount = reader.readInt()
+                    reader.skip(artsCount * 4)
+                }
+            }
+
+            H3mObjects.Object.UNIVERSITY -> {
+                if (h3m.hotaVersion >= 4) {
+                    reader.skip(8)
+                }
+            }
+
+            H3mObjects.Object.FLOTSAM -> {
+                reader.readInt() // floatsam
+                reader.skip(4) // unknown
+            }
+
+            H3mObjects.Object.CORPSE,
+            H3mObjects.Object.SEA_CHEST,
+            H3mObjects.Object.SHIPWRECK_SURVIVOR,
+            H3mObjects.Object.TREASURE_CHEST,
+            H3mObjects.Object.TREE_OF_KNOWLEDGE -> {
+                if (h3m.hotaVersion >= 4) {
+                    reader.readInt()
+                    reader.readInt()
+                }
+            }
+
+            H3mObjects.Object.WARRIORS_TOMB,
+            H3mObjects.Object.PYRAMID-> {
+                reader.readInt()
+                reader.readInt()
+            }
+
+            H3mObjects.Object.BORDER_GATE -> {
+                if (obj.def.objectClassSubId == 1000) {
+                    objectsReader.readQuestGuard()
+                } else if (obj.def.objectClassSubId == 1001) {
+                    reader.readInt() // content
+                    reader.readInt() // artifact
+                    reader.readInt() // amount
+                    reader.readByte() // resource
+                    reader.skip(5) // unknown
+                }
+            }
+
+            H3mObjects.Object.CAMPFIRE -> {
+                reader.skip(8)
+                reader.skip(8)
+                reader.skip(2)
+            }
+
+            else -> Unit
+        }
+
+        return obj
+    }
+
     private fun readObjects(): MutableList<H3m.Object> {
         val objects = mutableListOf<H3m.Object>()
         val objectsReader = H3mObjects(h3m, reader)
         val objectsCount = reader.readInt() - 1
         for (objectIndex in 0..objectsCount) {
-            val obj = H3m.Object()
-            obj.x = reader.readByte()
-            obj.y = reader.readByte()
-            obj.z = reader.readByte()
-            val index = reader.readInt()
-            obj.def = h3m.defs[index]
-            obj.obj = H3mObjects.Object.fromInt(obj.def.objectId)
-            obj.objSubId = H3mObjects.ObjectSubId.fromInt((obj.def.objectClassSubId))
-
-            reader.readBytes(5)
-
-            when (obj.obj) {
-                H3mObjects.Object.EVENT -> objectsReader.readEvent()
-                H3mObjects.Object.HERO,
-                H3mObjects.Object.RANDOM_HERO,
-                H3mObjects.Object.PRISON -> objectsReader.readHero()
-
-                H3mObjects.Object.MONSTER,
-                H3mObjects.Object.RANDOM_MONSTER,
-                H3mObjects.Object.RANDOM_MONSTER_L1,
-                H3mObjects.Object.RANDOM_MONSTER_L2,
-                H3mObjects.Object.RANDOM_MONSTER_L3,
-                H3mObjects.Object.RANDOM_MONSTER_L4,
-                H3mObjects.Object.RANDOM_MONSTER_L5,
-                H3mObjects.Object.RANDOM_MONSTER_L6,
-                H3mObjects.Object.RANDOM_MONSTER_L7 -> objectsReader.readMonster()
-
-                H3mObjects.Object.OCEAN_BOTTLE,
-                H3mObjects.Object.SIGN -> objectsReader.readSign()
-
-                H3mObjects.Object.SEER_HUT -> objectsReader.readSeerHut()
-                H3mObjects.Object.WITCH_HUT -> objectsReader.readWitchHut()
-                H3mObjects.Object.SCHOLAR -> objectsReader.readScholar()
-                H3mObjects.Object.GARRISON,
-                H3mObjects.Object.GARRISON2 -> objectsReader.readGarrison()
-
-                H3mObjects.Object.ARTIFACT,
-                H3mObjects.Object.RANDOM_ART,
-                H3mObjects.Object.RANDOM_TREASURE_ART,
-                H3mObjects.Object.RANDOM_MINOR_ART,
-                H3mObjects.Object.RANDOM_MAJOR_ART,
-                H3mObjects.Object.RANDOM_RELIC_ART,
-                H3mObjects.Object.SPELL_SCROLL -> objectsReader.readArtifact(obj.obj)
-
-                H3mObjects.Object.RANDOM_RESOURCE,
-                H3mObjects.Object.RESOURCE -> objectsReader.readResource()
-
-                H3mObjects.Object.RANDOM_TOWN,
-                H3mObjects.Object.TOWN -> objectsReader.readTown()
-
-                H3mObjects.Object.MINE,
-                H3mObjects.Object.ABANDONED_MINE,
-                H3mObjects.Object.SHRINE_OF_MAGIC_INCANTATION,
-                H3mObjects.Object.SHRINE_OF_MAGIC_GESTURE,
-                H3mObjects.Object.SHRINE_OF_MAGIC_THOUGHT,
-                H3mObjects.Object.SHIPYARD,
-                H3mObjects.Object.LIGHTHOUSE,
-                H3mObjects.Object.GRAIL -> reader.skip(4)
-
-                H3mObjects.Object.CREATURE_GENERATOR1,
-                H3mObjects.Object.CREATURE_GENERATOR2,
-                H3mObjects.Object.CREATURE_GENERATOR3,
-                H3mObjects.Object.CREATURE_GENERATOR4 -> reader.skip(4)
-
-                H3mObjects.Object.PANDORAS_BOX -> objectsReader.readPandorasBox()
-                H3mObjects.Object.RANDOM_DWELLING,
-                H3mObjects.Object.RANDOM_DWELLING_LVL,
-                H3mObjects.Object.RANDOM_DWELLING_FACTION -> objectsReader.readRandomDwelling(obj.obj)
-
-                H3mObjects.Object.QUEST_GUARD -> objectsReader.readQuestGuard()
-                H3mObjects.Object.HERO_PLACEHOLDER -> objectsReader.readHeroPlaceholder()
-                else -> Unit
+            try {
+                objects.add(readObject(objectsReader))
+            } catch (e: Exception) {
+                println("index: $objectIndex / $objectsCount")
+                println("prev item: ${objects[objectIndex - 1].obj}")
+                println(
+                    "Last items: ${
+                        objects.takeLast(20).reversed().joinToString(", ") { it.obj.name }
+                    }"
+                )
+                println("Error $e")
+                throw e
             }
-
-            objects.add(obj)
         }
 
         return objects

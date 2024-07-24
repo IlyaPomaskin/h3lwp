@@ -4,6 +4,7 @@ package com.homm3.livewallpaper.parser.formats
 class H3mObjects(private val h3m: H3m, private val stream: Reader) {
     enum class Object(val value: Int) {
         NO_OBJ(-1),
+        NOTHING(0),
         ALTAR_OF_SACRIFICE(2),
         ANCHOR_POINT(3),
         ARENA(4),
@@ -42,6 +43,7 @@ class H3mObjects(private val h3m: H3m, private val stream: Reader) {
         HUT_OF_MAGI(37),
         IDOL_OF_FORTUNE(38),
         LEAN_TO(39),
+        MARKET_OF_TIME(40),
         LIBRARY_OF_ENLIGHTENMENT(41),
         LIGHTHOUSE(42),
         MONOLITH_ONE_WAY_ENTRANCE(43),
@@ -115,10 +117,104 @@ class H3mObjects(private val h3m: H3m, private val stream: Reader) {
         WHIRLPOOL(111),
         WINDMILL(112),
         WITCH_HUT(113),
+        BRUSH(114),
+        BUSH(115),
+        CACTUS(116),
+        CANYON(117),
+        CRATER(118),
+        DEAD_VEGETATION(119),
+        FLOWERS(120),
+        FROZEN_LAKE(121),
+        HEDGE(122),
+        HILL(123),
         HOLE(124),
+        KELP(125),
+        LAKE(126),
+        LAVA_FLOW(127),
+        LAVA_LAKE(128),
+        MUSHROOMS(129),
+        LOG(130),
+        MANDRAKE(131),
+        MOSS(132),
+        MOUND(133),
+        MOUNTAIN(134),
+        OAK_TREES(135),
+        OUTCROPPING(136),
+        PINE_TREES(137),
+        PLANT(138),
+        HOTA_DECORATION_1(139),
+        HOTA_DECORATION_2(140),
+        HOTA_GROUND(141),
+        HOTA_WAREHOUSE(142),
+        RIVER_DELTA(143),
+        HOTA_VISITABLE_1(144),
+        HOTA_COLLECTIBLE(145),
+        HOTA_VISITABLE_2(146),
+        ROCK(147),
+        SAND_DUNE(148),
+        SAND_PIT(149),
+        SHRUB(150),
+        SKULL(151),
+        STALAGMITE(152),
+        STUMP(153),
+        TAR_PIT(154),
+        TREES(155),
+        VINE(156),
+        VOLCANIC_VENT(157),
+        VOLCANO(158),
+        WILLOW_TREES(159),
+        YUCCA_TREES(160),
+        REEF(161),
         RANDOM_MONSTER_L5(162),
         RANDOM_MONSTER_L6(163),
         RANDOM_MONSTER_L7(164),
+        BRUSH_2(165),
+        BUSH_2(166),
+        CACTUS_2(167),
+        CANYON_2(168),
+        CRATER_2(169),
+        DEAD_VEGETATION_2(170),
+        FLOWERS_2(171),
+        FROZEN_LAKE_2(172),
+        HEDGE_2(173),
+        HILL_2(174),
+        HOLE_2(175),
+        KELP_2(176),
+        LAKE_2(177),
+        LAVA_FLOW_2(178),
+        LAVA_LAKE_2(179),
+        MUSHROOMS_2(180),
+        LOG_2(181),
+        MANDRAKE_2(182),
+        MOSS_2(183),
+        MOUND_2(184),
+        MOUNTAIN_2(185),
+        OAK_TREES_2(186),
+        OUTCROPPING_2(187),
+        PINE_TREES_2(188),
+        PLANT_2(189),
+        RIVER_DELTA_2(190),
+        ROCK_2(191),
+        SAND_DUNE_2(192),
+        SAND_PIT_2(193),
+        SHRUB_2(194),
+        SKULL_2(195),
+        STALAGMITE_2(196),
+        STUMP_2(197),
+        TAR_PIT_2(198),
+        TREES_2(199),
+        VINE_2(200),
+        VOLCANIC_VENT_2(201),
+        VOLCANO_2(202),
+        WILLOW_TREES_2(203),
+        YUCCA_TREES_2(204),
+        REEF_2(205),
+        DESERT_HILLS(206),
+        DIRT_HILLS(207),
+        GRASS_HILLS(208),
+        ROUGH_HILLS(209),
+        SUBTERRANEAN_ROCKS(210),
+        SWAMP_FOLIAGE(211),
         BORDER_GATE(212),
         FREELANCERS_GUILD(213),
         HERO_PLACEHOLDER(214),
@@ -138,265 +234,163 @@ class H3mObjects(private val h3m: H3m, private val stream: Reader) {
         LUCID_POOLS(228),
         MAGIC_CLOUDS(229),
         MAGIC_PLAINS2(230),
-        ROCKLANDS(231),
-
-        //
-        HOTA_VISITABLE_2(145),
-        HOTA_VISITABLE_3(146);
+        ROCKLANDS(231);
 
         companion object {
             fun fromInt(value: Int?): Object {
                 return values().find { it.value == value }
                     ?: NO_OBJ
-//                    ?: throw Exception("Unknown map object")
             }
         }
     }
 
-    enum class ObjectSubId(val value: Int) {
-        Nothing(0),
-
-        // 1
-        Altar_of_Sacrifice(2),
-        Anchor_Point(3),
-        Arena(4),
-        Artifact(5),
-        Pandoras_Box(6),
-        Black_Market(7),
-        Boat(8),
-        Border_Guard(9),
-        Keymasters_Tent(10),
-        Buoy(11),
-        Campfire(12),
-        Cartographer(13),
-        Swan_Pond(14),
-        Cover_of_Darkness(15),
-        Creature_Bank(16),
-        Creature_Generator_1(17),
-        Creature_Generator_2(18),
-        Creature_Generator_3(19),
-        Creature_Generator_4(20),
-        Cursed_Ground_RoE(21),
-        Corpse(22),
-        Marletto_Tower(23),
-        Derelict_Ship(24),
-        Dragon_Utopia(25),
-        Event(26),
-        Eye_of_the_Magi(27),
-        Faerie_Ring(28),
-        Flotsam(29),
-        Fountain_of_Fortune(30),
-        Fountain_of_Youth(31),
-        Garden_of_Revelation(32),
-        Garrison(33),
-        Hero(34),
-        Hill_Fort(35),
-        Grail(36),
-        Hut_of_the_Magi(37),
-        Idol_of_Fortune(38),
-        Lean_To(39),
-
-        // 40
-        Library_of_Enlightenment(41),
-        Lighthouse(42),
-        Monolith_One_Way_Entrance(43),
-        Monolith_One_Way_Exit(44),
-        Two_Way_Monolith(45),
-        Magic_Plains_RoE(46),
-        School_of_Magic(47),
-        Magic_Spring(48),
-        Magic_Well(49),
-        Market_of_Time(50),
-        Mercenary_Camp(51),
-        Mermaids(52),
-        Mine(53),
-        Monster(54),
-        Mystical_Garden(55),
-        Oasis(56),
-        Obelisk(57),
-        Redwood_Observatory(58),
-        Ocean_Bottle(59),
-        Pillar_of_Fire(60),
-        Star_Axis(61),
-        Prison(62),
-        Pyramid(63),
-        Rally_Flag(64),
-        Random_Artifact(65),
-        Random_Treasure_Artifact(66),
-        Random_Minor_Artifact(67),
-        Random_Major_Artifact(68),
-        Random_Relic(69),
-        Random_Hero(70),
-        Random_Monster(71),
-        Random_Monster_1(72),
-        Random_Monster_2(73),
-        Random_Monster_3(74),
-        Random_Monster_4(75),
-        Random_Resource(76),
-        Random_Town(77),
-        Refugee_Camp(78),
-        Resource(79),
-        Sanctuary(80),
-        Scholar(81),
-        Sea_Chest(82),
-        Seers_Hut(83),
-        Crypt(84),
-        Shipwreck(85),
-        Shipwreck_Survivor(86),
-        Shipyard(87),
-        Shrine_of_Magic_Incantation(88),
-        Shrine_of_Magic_Gesture(89),
-        Shrine_of_Magic_Thought(90),
-        Sign(91),
-        Sirens(92),
-        Spell_Scroll(93),
-        Stables(94),
-        Tavern(95),
-        Temple(96),
-        Den_of_Thieves(97),
-        Town(98),
-        Trading_Post(99),
-        Learning_Stone(100),
-        Treasure_Chest(101),
-        Tree_of_Knowledge(102),
-        Subterranean_Gate(103),
-        University(104),
-        Wagon(105),
-        War_Machine_Factory(106),
-        School_of_War(107),
-        Warriors_Tomb(108),
-        Water_Wheel(109),
-        Watering_Hole(110),
-        Whirlpool(111),
-        Windmill(112),
-        Witch_Hut(113),
-        Brush(114),
-        Bush(115),
-        Cactus(116),
-        Canyon(117),
-        Crater(118),
-        Dead_Vegetation(119),
-        Flowers(120),
-        Frozen_Lake(121),
-        Hedge(122),
-        Hill(123),
-        Hole(124),
-        Kelp(125),
-        Lake(126),
-        Lava_Flow(127),
-        Lava_Lake(128),
-        Mushrooms(129),
-        Log(130),
-        Mandrake(131),
-        Moss(132),
-        Mound(133),
-        Mountain(134),
-        Oak_Trees(135),
-        Outcropping(136),
-        Pine_Trees(137),
-        Plant(138),
-        HotA_Decoration_1(139), // HotA
-        HotA_Decoration_2(140), // HotA
-        HotA_Ground(141), // HotA
-        HotA_Warehouse(142), // HotA
-        River_Delta(143),
-        HotA_Visitable_1(144), // HotA
-        HotA_Collectible(145), // HotA
-        HotA_Visitable_2(146), // HotA
-        Rock(147),
-        Sand_Dune(148),
-        Sand_Pit(149),
-        Shrub(150),
-        Skull(151),
-        Stalagmite(152),
-        Stump(153),
-        Tar_Pit(154),
-        Trees(155),
-        Vine(156),
-        Volcanic_Vent(157),
-        Volcano(158),
-        Willow_Trees(159),
-        Yucca_Trees(160),
-        Reef(161),
-        Random_Monster_5(162),
-        Random_Monster_6(163),
-        Random_Monster_7(164),
-        Brush_2(165),
-        Bush_2(166),
-        Cactus_2(167),
-        Canyon_2(168),
-        Crater_2(169),
-        Dead_Vegetation_2(170),
-        Flowers_2(171),
-        Frozen_Lake_2(172),
-        Hedge_2(173),
-        Hill_2(174),
-        Hole_2(175),
-        Kelp_2(176),
-        Lake_2(177),
-        Lava_Flow_2(178),
-        Lava_Lake_2(179),
-        Mushrooms_2(180),
-        Log_2(181),
-        Mandrake_2(182),
-        Moss_2(183),
-        Mound_2(184),
-        Mountain_2(185),
-        Oak_Trees_2(186),
-        Outcropping_2(187),
-        Pine_Trees_2(188),
-        Plant_2(189),
-        River_Delta_2(190),
-        Rock_2(191),
-        Sand_Dune_2(192),
-        Sand_Pit_2(193),
-        Shrub_2(194),
-        Skull_2(195),
-        Stalagmite_2(196),
-        Stump_2(197),
-        Tar_Pit_2(198),
-        Trees_2(199),
-        Vine_2(200),
-        Volcanic_Vent_2(201),
-        Volcano_2(202),
-        Willow_Trees_2(203),
-        Yucca_Trees_2(204),
-        Reef_2(205),
-        Desert_Hills(206),
-        Dirt_Hills(207),
-        Grass_Hills(208),
-        Rough_Hills(209),
-        Subterranean_Rocks(210),
-        Swamp_Foliage(211),
-        Border_Gate(212),
-        Freelancers_Guild(213),
-        Hero_Placeholder(214),
-        Quest_Guard(215),
-        Random_Dwelling(216),
-        Random_Dwelling_Leveled(217),
-        Random_Dwelling_Faction(218),
-        Garrison_Vertical(219),
-        Abandoned_Mine(220),
-        Trading_Post_Snow(221),
-        Clover_Field(222),
-        Cursed_Ground(223),
-        Evil_Fog(224),
-        Favorable_Winds(225),
-        Fiery_Fields(226),
-        Holy_Ground(227),
-        Lucid_Pools(228),
-        Magic_Clouds(229),
-        Magic_Plains(230),
-        Rocklands(231);
+    enum class Quest(val value: Int) {
+        NONE(0),
+        ACHIEVE_EXPERIENCE_LEVEL(1),
+        ACHIEVE_PRIMARY_SKILL_LEVEL(2),
+        DEFEAT_SPECIFIC_HERO(3),
+        DEFEAT_SPECIFIC_MONSTER(4),
+        RETURN_WITH_ARTIFACTS(5),
+        RETURN_WITH_CREATURES(6),
+        RETURN_WITH_RESOURCES(7),
+        BE_SPECIFIC_HERO(8),
+        BELONG_TO_SPECIFIC_PLAYER(9),
+        HOTA_QUEST(10);
 
         companion object {
-            private val map = values().associateBy(ObjectSubId::value)
-            fun fromInt(type: Int): ObjectSubId {
-                return map[type] ?: throw Exception("unknown obj sub id: $type")
-            }
+            fun fromInt(value: Int) = Quest.values().find { it.value == value }
+                ?: throw IllegalArgumentException("Invalid WarMachineFactory value: $value")
+        }
+
+    }
+
+    enum class WarMachineFactory(val value: Int) {
+        NORMAL(0),
+        CANNON(1);
+
+        companion object {
+            fun fromInt(value: Int) = values().find { it.value == value }
+                ?: throw IllegalArgumentException("Invalid WarMachineFactory value: $value")
         }
     }
 
+    enum class HotADecoration1(val value: Int) {
+        CRATE(0),
+        CRATES(1),
+        SACK(2),
+        BARRELS(3),
+        JAW(4),
+        ROPE(5),
+        FROG(6),
+        FROGS(7),
+        CHICKEN(8),
+        ROOSTER(9),
+        SEAWEED(10),
+        CRUMBLED_CAMP(11),
+        CRUMBLED_FOUNTAIN(12),
+        PIG(13),
+        ANCIENT_ALTAR(14),
+        ABANDONED_BOAT(15),
+        FENCE(16),
+        WATERFALLS(17),
+        FIRE(18),
+        CRUMBLED_EDIFICE(19),
+        CARNIVOROUS_PLANT(20),
+        BRIDGE(21),
+        BONE(22),
+        SACKS(23),
+        PUDDLES(24),
+        RUBBLE(25),
+        LIMESTONE_PUDDLES(26),
+        PILLARS(27),
+        REED(28),
+        FISSURES(29),
+        BURNT_STRUCTURE(30),
+        STELE(31);
+
+        companion object {
+            fun fromInt(value: Int) = values().find { it.value == value }
+                ?: throw IllegalArgumentException("Invalid HotADecoration1 value: $value")
+        }
+    }
+
+    enum class HotADecoration2(val value: Int) {
+        BOULDER(0),
+        STONE(1),
+        PALMS(2),
+        ICE_BLOCK(3),
+        PILE_OF_STONES(4),
+        SNOW_HILLS(5),
+        BARCHAN_DUNES(6),
+        SPRUCES(7),
+        LIMESTONE_LAKE(8),
+        WALL(9),
+        STAIRS(10),
+        PREDATORY_PLANTS(11),
+        MAPLE_TREES(12),
+        NATURAL_ARCH(13);
+
+        companion object {
+            fun fromInt(value: Int) = values().find { it.value == value }
+                ?: throw IllegalArgumentException("Invalid HotADecoration2 value: $value")
+        }
+    }
+
+    enum class HotAGround(val value: Int) {
+        CRACKED_ICE(0),
+        DUNES(1),
+        FIELDS_OF_GLORY(2);
+
+        companion object {
+            fun fromInt(value: Int) = values().find { it.value == value }
+                ?: throw IllegalArgumentException("Invalid HotAGround value: $value")
+        }
+    }
+
+    enum class HotAVisitable1(val value: Int) {
+        TEMPLE_OF_LOYALTY(0),
+        SKELETON_TRANSFORMER(1),
+        COLOSSEUM_OF_THE_MAGI(2),
+        WATERING_PLACE(3),
+        MINERAL_SPRING(4),
+        HERMITS_SHACK(5),
+        GAZEBO(6),
+        JUNKMAN(7),
+        DERRICK(8),
+        WARLOCKS_LAB(9),
+        PROSPECTOR(10),
+        TRAILBLAZER(11);
+
+        companion object {
+            fun fromInt(value: Int) = values().find { it.value == value }
+                ?: throw IllegalArgumentException("Invalid HotAVisitable1 value: $value")
+        }
+    }
+
+    enum class HotACollectible(val value: Int) {
+        ANCIENT_LAMP(0),
+        SEA_BARREL(1),
+        JETSAM(2),
+        VIAL_OF_MANA(3);
+
+        companion object {
+            fun fromInt(value: Int) = values().find { it.value == value }
+                ?: throw IllegalArgumentException("Invalid HotACollectible value: $value")
+        }
+    }
+
+    enum class HotAVisitable2(val value: Int) {
+        SEAFARING_ACADEMY(0),
+        OBSERVATORY(1),
+        ALTAR_OF_MANA(2),
+        TOWN_GATE(3),
+        ANCIENT_ALTAR(4);
+
+        companion object {
+            fun fromInt(value: Int) = values().find { it.value == value }
+                ?: throw IllegalArgumentException("Invalid HotAVisitable2 value: $value")
+        }
+    }
 
     enum class SeerHutRewardType(var value: Int) {
         NOTHING(0),
@@ -475,24 +469,40 @@ class H3mObjects(private val h3m: H3m, private val stream: Reader) {
     }
 
     private fun readQuest(missionType: Int) {
-        when (missionType) {
-            0 -> return
-            2 -> stream.skip(4)
-            1, 3, 4 -> stream.skip(4)
-            5 -> {
-                val artNum = stream.readByte()
-                stream.skip(artNum * 2)
+        val type = Quest.fromInt(missionType)
+        when (type) {
+            Quest.NONE -> return
+
+            Quest.DEFEAT_SPECIFIC_HERO,
+            Quest.DEFEAT_SPECIFIC_MONSTER,
+            Quest.ACHIEVE_PRIMARY_SKILL_LEVEL,
+            Quest.ACHIEVE_EXPERIENCE_LEVEL -> stream.skip(4)
+
+            Quest.RETURN_WITH_ARTIFACTS -> {
+                val amount = stream.readByte()
+                stream.skip(amount * 4)
             }
 
-            6 -> {
-                val typeNum = stream.readByte()
-                stream.skip(typeNum * 2 * 2)
+            Quest.RETURN_WITH_CREATURES -> {
+                val amount = stream.readByte()
+                stream.skip(amount * 2 * 2)
             }
 
-            7 -> stream.skip(7 * 4)
-            8, 9 -> stream.skip(1)
+            Quest.RETURN_WITH_RESOURCES -> stream.skip(7 * 4)
+            Quest.BE_SPECIFIC_HERO -> stream.readByte()
+            Quest.BELONG_TO_SPECIFIC_PLAYER -> stream.readByte()
+            Quest.HOTA_QUEST -> {
+                val questType = stream.readInt()
+                if (questType == 0) { // belong to class
+                    stream.readInt()
+                    stream.readBytes(3)
+                } else if (questType == 1) { // date
+                    stream.readInt()
+                }
+            }
         }
-        stream.skip(4)
+
+        stream.readInt() // deadline
         stream.readString() //first visit
         stream.readString() //next visit
         stream.readString() //completed
@@ -583,9 +593,21 @@ class H3mObjects(private val h3m: H3m, private val stream: Reader) {
                 stream.readShort()
             }
         }
-        stream.readByte() //never fless
+        stream.readByte() //never flees
         stream.readByte() //not grown
         stream.skip(2)
+
+        if (h3m.hotaVersion >= 3) {
+            stream.readInt() // character spec
+            stream.readByte() // money join
+            stream.readInt() // percent join
+            stream.readInt() // upgraded stack
+            stream.readInt() // stacks count
+        }
+
+        if (h3m.hotaVersion >= 4) {
+            stream.readBytes(5)
+        }
     }
 
     fun readSign() {
@@ -593,56 +615,77 @@ class H3mObjects(private val h3m: H3m, private val stream: Reader) {
         stream.skip(4)
     }
 
-    fun readSeerHut() {
-        var missionType: Int
-        if (h3m.version !== H3m.Version.ROE) {
-            missionType = stream.readByte()
-            readQuest(missionType)
-        } else {
-            val artId = stream.readByte()
-            missionType = if (artId != 255) 1 else 0
-        }
+    fun readSeerHutReward() {
+        when (SeerHutRewardType.fromInt(stream.readByte())) {
+            SeerHutRewardType.EXPERIENCE,
+            SeerHutRewardType.MANA_POINTS -> stream.readInt()
 
-        if (missionType > 0) {
-            when (SeerHutRewardType.fromInt(stream.readByte())) {
-                SeerHutRewardType.EXPERIENCE -> stream.readInt()
-                SeerHutRewardType.MANA_POINTS -> stream.readInt()
-                SeerHutRewardType.MORALE_BONUS -> stream.readByte()
-                SeerHutRewardType.LUCK_BONUS -> stream.readByte()
-                SeerHutRewardType.RESOURCES -> {
-                    stream.readByte()
-                    stream.readInt()
-                }
+            SeerHutRewardType.MORALE_BONUS,
+            SeerHutRewardType.SPELL,
+            SeerHutRewardType.LUCK_BONUS -> stream.readByte()
 
-                SeerHutRewardType.PRIMARY_SKILL -> {
-                    stream.readByte()
-                    stream.readByte()
-                }
-
-                SeerHutRewardType.SECONDARY_SKILL -> {
-                    stream.readByte()
-                    stream.readByte()
-                }
-
-                SeerHutRewardType.ARTIFACT -> {
-                    if (h3m.version === H3m.Version.ROE) {
-                        stream.readByte()
-                    } else {
-                        stream.readShort()
-                    }
-                }
-
-                SeerHutRewardType.SPELL -> stream.readByte()
-                SeerHutRewardType.CREATURE -> {
-                    stream.skip(if (h3m.version === H3m.Version.ROE) 3 else 4)
-                }
-
-                else -> {}
+            SeerHutRewardType.RESOURCES -> {
+                stream.readByte()
+                stream.readInt()
             }
-            stream.skip(2)
-        } else {
-            stream.skip(3)
+
+            SeerHutRewardType.PRIMARY_SKILL,
+            SeerHutRewardType.SECONDARY_SKILL-> {
+                stream.readByte()
+                stream.readByte()
+            }
+
+            SeerHutRewardType.ARTIFACT -> {
+                if (h3m.version === H3m.Version.ROE) {
+                    stream.readByte()
+                } else if (h3m.hotaVersion >= 4) {
+                    stream.readInt()
+                } else {
+                    stream.readShort()
+                }
+            }
+
+            SeerHutRewardType.CREATURE -> {
+                stream.skip(if (h3m.version === H3m.Version.ROE) 3 else 4)
+            }
+
+            else -> {}
         }
+    }
+
+    fun readSeerHut() {
+        if (h3m.hotaVersion >= 3) {
+            val oneTimeQuests = stream.readInt()
+            for (i in 0 until oneTimeQuests) {
+                readQuest(stream.readByte())
+                readSeerHutReward()
+            }
+
+            val repeatableQuests = stream.readInt()
+            for (i in 0 until repeatableQuests) {
+                readQuest(stream.readByte())
+                readSeerHutReward()
+            }
+        } else {
+            var missionType: Int
+
+            if (h3m.version == H3m.Version.ROE) {
+                val artId = stream.readByte()
+                missionType = if (artId != 255) 1 else 0
+            } else {
+                missionType = stream.readByte()
+                readQuest(missionType)
+            }
+
+            if (missionType > 0) {
+                readSeerHutReward()
+                stream.skip(2)
+            } else {
+                stream.skip(1)
+            }
+        }
+
+        stream.skip(2)
     }
 
     fun readWitchHut() {
@@ -671,6 +714,10 @@ class H3mObjects(private val h3m: H3m, private val stream: Reader) {
         if (obj === Object.SPELL_SCROLL) {
             stream.readInt()
         }
+
+        if (h3m.hotaVersion >= 4 && obj !== Object.SPELL_SCROLL) {
+            stream.readBytes(5)
+        }
     }
 
     fun readResource() {
@@ -698,27 +745,43 @@ class H3mObjects(private val h3m: H3m, private val stream: Reader) {
             stream.readBool() //has fort
         }
         if (h3m.version !== H3m.Version.ROE) {
-            stream.skip(9) //spells?
+            stream.skip(9) //spells must appear
         }
-        stream.skip(9) //more spells?
+        stream.skip(9) //spells cant appear
+
+        if (h3m.hotaVersion >= 1) {
+            stream.readByte() // spell research
+        }
+        if (h3m.hotaVersion >= 4) {
+            val settingsCount = stream.readInt() // unknown
+            stream.readBytes(settingsCount)
+        }
+
         val castleEvents = stream.readInt()
         for (i in 0 until castleEvents) {
             stream.readString() //name
             stream.readString() //message
             readResources()
             stream.readByte() // players
-            if (h3m.version == H3m.Version.SOD) {
+            if (h3m.version > H3m.Version.AB) {
                 stream.readByte() //humanAffected
             }
             stream.skip(1) //computerAffected
             stream.skip(2) //firstOccurence
-            stream.skip(1) //nextOccurence
-            stream.skip(17) //gap
+            stream.skip(2) //nextOccurence
+            stream.skip(16) //gap
+
+            if (h3m.hotaVersion >= 4) {
+                stream.readInt() // hota_lvl_7b
+                stream.readInt() // hota_amount
+                stream.readBytes(6) // unknown
+            }
+
             stream.skip(6) //new buildings
             stream.skip(7 * 2) //creatures
             stream.skip(4)
         }
-        if (h3m.version !== H3m.Version.ROE && h3m.version !== H3m.Version.AB) {
+        if (h3m.version > H3m.Version.AB) {
             stream.skip(1) //alignment
         }
         stream.skip(3)
