@@ -19,6 +19,7 @@
     <string name="asset_setup_description">This wallpaper uses sprites from Heroes of Might and Magic III. Due to copyright restrictions, game assets cannot be included in the app.\n\nPlease select the h3sprite.lod file from your Heroes III installation. It is usually located in the Data folder of the game directory.</string>
     <string name="asset_setup_select_button">Select h3sprite.lod</string>
 
+    <string name="asset_setup_title_short">Game assets</string>
     <string name="maps_title">Maps</string>
     <string name="maps_empty">No maps added yet</string>
     <string name="maps_add_button">Add map</string>

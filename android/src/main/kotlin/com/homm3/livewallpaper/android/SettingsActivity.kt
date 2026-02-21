@@ -33,6 +33,10 @@ class SettingsActivity : ComponentActivity() {
         startActivity(Intent(this, MapsActivity::class.java))
     }
 
+    private fun openAssetSetup() {
+        startActivity(Intent(this, AssetSetupActivity::class.java))
+    }
+
     private fun setWallpaper() {
         startActivity(
             Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).putExtra(
@@ -61,6 +65,7 @@ class SettingsActivity : ComponentActivity() {
                     viewModel = viewModel,
                     onSetWallpaper = ::setWallpaper,
                     onOpenMaps = ::openMaps,
+                    onOpenAssetSetup = ::openAssetSetup,
                 )
             }
         }
@@ -72,6 +77,7 @@ private fun SettingsScreen(
     viewModel: SettingsViewModel,
     onSetWallpaper: () -> Unit,
     onOpenMaps: () -> Unit,
+    onOpenAssetSetup: () -> Unit,
 ) {
     val prefs by viewModel.preferences.collectAsStateWithLifecycle()
 
@@ -95,6 +101,12 @@ private fun SettingsScreen(
                 SettingsItem(
                     title = stringResource(R.string.maps_title),
                     onClick = onOpenMaps,
+                )
+            }
+            item {
+                SettingsItem(
+                    title = stringResource(R.string.asset_setup_title_short),
+                    onClick = onOpenAssetSetup,
                 )
             }
         }
