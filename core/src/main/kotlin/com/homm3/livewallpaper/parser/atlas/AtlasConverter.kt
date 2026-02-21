@@ -57,7 +57,11 @@ class AtlasConverter(
             .also { onProgress("Packing atlas frames...") }
             .mapCatching(atlasPacker::packFrames)
             .also { onProgress("Writing atlas files...") }
-            .mapCatching(atlasWriter::writePackerContent)
+            .mapCatching { sprites ->
+                atlasWriter.writePackerContent(sprites) { current, total ->
+                    onProgress("Writing atlas files... ($current/$total)")
+                }
+            }
             .onFailure { throw OutputFileWriteException("Can't save files. Check free space.") }
         onProgress("Done!")
     }

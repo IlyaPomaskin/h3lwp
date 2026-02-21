@@ -84,8 +84,10 @@ class AtlasWriter(
         }
     }
 
-    fun writePackerContent(sprites: PackedFrames) {
+    fun writePackerContent(sprites: PackedFrames, onProgress: (Int, Int) -> Unit = { _, _ -> }) {
+        val totalPages = packer.pages.size
         packer.pages.forEachIndexed { index, page ->
+            onProgress(index + 1, totalPages)
             val pngName = "${atlasName}_${index}.png"
             atlasPage(pngName)
             writePng(outputDirectory.resolve(pngName).outputStream(), page.pixmap)
