@@ -53,6 +53,10 @@ class GameScreen(
         }
     }
 
+    init {
+        Gdx.input.inputProcessor = inputProcessor
+    }
+
     override fun show() {
         var isFirst = true
         prefsJob = KtxAsync.launch {
