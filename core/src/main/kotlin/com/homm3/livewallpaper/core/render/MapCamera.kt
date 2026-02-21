@@ -14,16 +14,16 @@ class MapCamera : OrthographicCamera() {
 
     fun randomizePosition(mapSize: Int) {
         val mapSizePixels = mapSize * GameConfig.TILE_SIZE
-        val safetyPadding = 2 * GameConfig.TILE_SIZE
+        val rightBottomPadding = GameConfig.TILE_SIZE
 
         val halfWidth = viewportWidth / 2
-        val xStart = halfWidth + safetyPadding
-        val xEnd = mapSizePixels - halfWidth - safetyPadding
+        val xStart = halfWidth
+        val xEnd = mapSizePixels - halfWidth - rightBottomPadding
         val nextCameraX = xStart + Random.nextFloat() * (xEnd - xStart).coerceAtLeast(0f)
 
         val halfHeight = viewportHeight / 2
-        val yStart = halfHeight + safetyPadding
-        val yEnd = mapSizePixels - halfHeight - safetyPadding
+        val yStart = halfHeight
+        val yEnd = mapSizePixels - halfHeight - rightBottomPadding
         val nextCameraY = yStart + Random.nextFloat() * (yEnd - yStart).coerceAtLeast(0f)
 
         cameraPoint.set(nextCameraX, nextCameraY)

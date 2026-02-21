@@ -6,11 +6,14 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import android.os.Build
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.*
+import androidx.compose.material3.*
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.homm3.livewallpaper.R
@@ -42,7 +45,14 @@ class SettingsActivity : ComponentActivity() {
         )
 
         setContent {
-            MaterialTheme {
+            val darkTheme = isSystemInDarkTheme()
+            val colorScheme = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val context = LocalContext.current
+                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            } else {
+                if (darkTheme) darkColorScheme() else lightColorScheme()
+            }
+            MaterialTheme(colorScheme = colorScheme) {
                 SettingsScreen(viewModel)
             }
         }
@@ -92,7 +102,6 @@ private fun SettingsScreen(viewModel: SettingsViewModel) {
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                backgroundColor = MaterialTheme.colors.primary,
                 onClick = { viewModel.onSetWallpaper() }
             ) {
                 Text(

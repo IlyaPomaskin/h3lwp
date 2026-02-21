@@ -11,7 +11,9 @@ import kotlin.math.min
 class CameraInputProcessor(private val viewport: ScreenViewport) : KtxInputAdapter {
     var onSpace: () -> Unit = {}
     var onEnter: () -> Unit = {}
+    var onTap: () -> Unit = {}
     private val pressedKeys = mutableSetOf<Int>()
+    private var dragged = false
 
     override fun keyDown(keycode: Int): Boolean {
         pressedKeys.add(keycode)
@@ -72,8 +74,21 @@ class CameraInputProcessor(private val viewport: ScreenViewport) : KtxInputAdapt
         }
     }
 
+    override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
+        dragged = false
+        return super.touchDown(screenX, screenY, pointer, button)
+    }
+
     override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
+        dragged = true
         viewport.camera.translate(Gdx.input.deltaX.toFloat(), Gdx.input.deltaY.toFloat(), 0f)
         return super.touchDragged(screenX, screenY, pointer)
+    }
+
+    override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
+        if (!dragged) {
+            onTap()
+        }
+        return super.touchUp(screenX, screenY, pointer, button)
     }
 }

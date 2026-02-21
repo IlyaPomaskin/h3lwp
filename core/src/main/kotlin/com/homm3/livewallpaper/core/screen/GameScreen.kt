@@ -1,6 +1,5 @@
 package com.homm3.livewallpaper.core.screen
 
-import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.tiled.TiledMap
@@ -39,6 +38,7 @@ class GameScreen(
     }
     private val inputProcessor = CameraInputProcessor(viewport).apply {
         onEnter = { randomizeVisibleMapPart(force = true) }
+        onTap = { randomizeVisibleMapPart(force = true) }
     }
     private val brightnessOverlay = BrightnessOverlay(camera)
     private var mapUpdateInterval = 0f
@@ -54,9 +54,7 @@ class GameScreen(
     }
 
     override fun show() {
-        if (Gdx.app.type == Application.ApplicationType.Desktop) {
-            Gdx.input.inputProcessor = inputProcessor
-        }
+        Gdx.input.inputProcessor = inputProcessor
 
         var isFirst = true
         prefsJob = KtxAsync.launch {
@@ -105,6 +103,7 @@ class GameScreen(
 
         if (viewport.unitsPerPixel != nextUnitsPerPixel) {
             viewport.unitsPerPixel = nextUnitsPerPixel
+            viewport.update(Gdx.graphics.width, Gdx.graphics.height)
 
             if (!isFirst) {
                 randomizeVisibleMapPart(force = true)

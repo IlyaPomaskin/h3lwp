@@ -2,10 +2,10 @@ package com.homm3.livewallpaper.android.ui.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,18 +42,17 @@ fun <T> SettingsDropdown(
         ) {
             items.forEach { item ->
                 DropdownMenuItem(
+                    text = { Text(item.title) },
                     onClick = {
                         dropDownExpanded = false
                         onItemSelected(item)
                     },
-                    Modifier.background(
-                        if (selectedItemValue == item.value) MaterialTheme.colors.primary.copy(
+                    modifier = Modifier.background(
+                        if (selectedItemValue == item.value) MaterialTheme.colorScheme.primary.copy(
                             alpha = 0.3f
                         ) else Color.Unspecified
                     )
-                ) {
-                    Text(item.title)
-                }
+                )
             }
         }
     }
