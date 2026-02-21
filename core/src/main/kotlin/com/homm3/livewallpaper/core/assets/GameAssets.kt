@@ -87,6 +87,8 @@ class GameAssets : Disposable {
     }
 
     private fun getFrames(defName: String): Array<TextureAtlas.AtlasRegion> {
+        if (defName.isEmpty()) return gdxArrayOf(emptyRegion)
+
         return atlas
             .findRegions(defName)
             .let { regions ->

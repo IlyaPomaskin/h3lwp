@@ -25,14 +25,20 @@ class AtlasWriter(
         atlas += "repeat: none\n"
     }
 
-    private fun atlasFrame(name: String, index: String, rect: PixmapPacker.PixmapPackerRectangle, pf: PackableFrame) {
+    private fun atlasFrame(name: String, index: String, rect: PixmapPacker.PixmapPackerRectangle, pf: PackableFrame, isTerrain: Boolean) {
         val spriteName = name.lowercase(Locale.ROOT).replace(".def", "")
         atlas += "$spriteName\n"
         atlas += "  rotate: false\n"
         atlas += "  xy: ${rect.x.toInt()}, ${rect.y.toInt()}\n"
-        atlas += "  size: ${pf.frame.width}, ${pf.frame.height}\n"
-        atlas += "  orig: ${pf.frame.fullWidth}, ${pf.frame.fullHeight}\n"
-        atlas += "  offset: ${pf.frame.x}, ${pf.frame.y}\n"
+        if (isTerrain) {
+            atlas += "  size: ${pf.frame.fullWidth}, ${pf.frame.fullHeight}\n"
+            atlas += "  orig: ${pf.frame.fullWidth}, ${pf.frame.fullHeight}\n"
+            atlas += "  offset: 0, 0\n"
+        } else {
+            atlas += "  size: ${pf.frame.width}, ${pf.frame.height}\n"
+            atlas += "  orig: ${pf.frame.fullWidth}, ${pf.frame.fullHeight}\n"
+            atlas += "  offset: ${pf.frame.x}, ${pf.frame.y}\n"
+        }
         atlas += "  index: $index\n"
     }
 
@@ -58,7 +64,7 @@ class AtlasWriter(
 
         pf.groupFilenames.forEachIndexed { index, fileName ->
             if (fileName != frameName) return@forEachIndexed
-            atlasFrame(defName, index.toString(), rectangle, pf)
+            atlasFrame(defName, index.toString(), rectangle, pf, isTerrain = false)
         }
     }
 
@@ -74,7 +80,7 @@ class AtlasWriter(
 
         pf.groupFilenames.forEachIndexed { index, fileName ->
             if (fileName != frameName) return@forEachIndexed
-            atlasFrame("$defName/$index", rotationIndex, rectangle, pf)
+            atlasFrame("$defName/$index", rotationIndex, rectangle, pf, isTerrain = true)
         }
     }
 
