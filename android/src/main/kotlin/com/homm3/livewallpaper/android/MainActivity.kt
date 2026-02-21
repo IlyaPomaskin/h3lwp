@@ -114,5 +114,9 @@ class MainActivity : ComponentActivity() {
             )
             startActivity(intent)
         }
+
+        findViewById<Button>(R.id.btn_settings).setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
     }
 }

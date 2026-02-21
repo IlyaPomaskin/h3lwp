@@ -5,18 +5,32 @@ import android.content.Intent
 import com.badlogic.gdx.backends.android.AndroidWallpaperListener
 import com.homm3.livewallpaper.core.Engine
 import com.homm3.livewallpaper.core.WallpaperPreferences
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 
-class AndroidEngine(private val context: Context) :
+class AndroidEngine(
+    private val context: Context,
+    private val prefs: Flow<WallpaperPreferences>
+) :
     Engine(
-        prefs = MutableStateFlow(WallpaperPreferences()),
+        prefs = prefs,
         onSettingsButtonClick = { _, _ ->
-            val intent = Intent(context, MainActivity::class.java)
+            val intent = Intent(context, SettingsActivity::class.java)
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(intent)
         }
     ),
     AndroidWallpaperListener {
+
+    private var useScroll = WallpaperPreferences.defaultUseScroll
+
+    init {
+        CoroutineScope(Dispatchers.Default).launch {
+            prefs.collect { useScroll = it.useScroll }
+        }
+    }
 
     override fun offsetChange(
         xOffset: Float,
@@ -26,7 +40,9 @@ class AndroidEngine(private val context: Context) :
         xPixelOffset: Int,
         yPixelOffset: Int
     ) {
-        moveCameraByOffset(xOffset)
+        if (useScroll) {
+            moveCameraByOffset(xOffset)
+        }
     }
 
     override fun previewStateChange(isPreview: Boolean) {}

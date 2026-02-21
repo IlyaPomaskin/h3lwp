@@ -28,5 +28,9 @@
                 android:name="android.service.wallpaper"
                 android:resource="@xml/livewallpaper" />
         </service>
+
+        <activity
+            android:name=".android.SettingsActivity"
+            android:exported="true" />
     </application>
 </manifest>

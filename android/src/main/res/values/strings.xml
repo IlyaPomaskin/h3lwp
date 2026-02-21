@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">H3 LiveWallpaper</string>
+
+    <string name="preferences_header">Preferences</string>
+    <string name="scale_title">Scale</string>
+    <string name="scale_by_density">Based on display density</string>
+    <string name="update_time_title">Update timeout</string>
+    <string name="update_timeout_every_switch">Every switch to home screen</string>
+    <string name="update_timeout_10minutes">10 minutes</string>
+    <string name="update_timeout_30minutes">30 minutes</string>
+    <string name="update_timeout_2hour">2 hour</string>
+    <string name="update_timeout_24hours">24 hours</string>
+    <string name="use_scroll_title">Scroll map</string>
+    <string name="use_scroll_summary">Scroll map while switching screens\nNote: Some phones doesn\'t support it</string>
+    <string name="brightness_title">Brightness</string>
+    <string name="wallpaper_change_button">Set wallpapers</string>
 </resources>
