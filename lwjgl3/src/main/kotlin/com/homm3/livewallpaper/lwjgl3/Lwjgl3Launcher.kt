@@ -2,16 +2,29 @@
 
 package com.homm3.livewallpaper.lwjgl3
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
-import com.homm3.livewallpaper.Main
+import com.homm3.livewallpaper.core.AssetPaths
+import com.homm3.livewallpaper.core.Engine
+import com.homm3.livewallpaper.core.WallpaperPreferences
+import com.homm3.livewallpaper.parser.atlas.AtlasConverter
+import kotlinx.coroutines.flow.MutableStateFlow
+import javax.swing.JFileChooser
+import javax.swing.filechooser.FileNameExtensionFilter
+import kotlin.concurrent.thread
 
 /** Launches the desktop (LWJGL3) application. */
 fun main() {
     // This handles macOS support and helps on Windows.
     if (StartupHelper.startNewJvmIfRequired())
       return
-    Lwjgl3Application(Main(), Lwjgl3ApplicationConfiguration().apply {
+    Lwjgl3Application(
+        Engine(
+            prefs = MutableStateFlow(WallpaperPreferences()),
+            onSettingsButtonClick = ::selectLodFile
+        ),
+        Lwjgl3ApplicationConfiguration().apply {
         setTitle("Heroes 3 LiveWallpaper")
         //// Vsync limits the frames per second to what your hardware can display, and helps eliminate
         //// screen tearing. This setting doesn't always work on Linux, so the line after is a safeguard.
@@ -40,4 +53,23 @@ fun main() {
 //        setOpenGLEmulation(Lwjgl3ApplicationConfiguration.GLEmulation.ANGLE_GLES20, 0, 0)
 
     })
+}
+
+private fun selectLodFile() {
+    thread(isDaemon = true) {
+        val chooser = JFileChooser().apply {
+            dialogTitle = "Select h3sprite.lod"
+            fileFilter = FileNameExtensionFilter("HoMM3 LOD files (*.lod)", "lod")
+        }
+        if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+            val outputDir = Gdx.files.local(AssetPaths.ATLAS_FOLDER).file()
+            outputDir.mkdirs()
+            val converter = AtlasConverter(
+                chooser.selectedFile.inputStream(),
+                outputDir,
+                AssetPaths.ATLAS_NAME
+            )
+            converter.convert()
+        }
+    }
 }
