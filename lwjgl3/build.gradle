@@ -36,6 +36,11 @@ dependencies {
   implementation "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
   implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
   implementation project(':core')
+  implementation "org.lwjgl:lwjgl-tinyfd:3.3.3"
+  runtimeOnly "org.lwjgl:lwjgl-tinyfd:3.3.3:natives-linux"
+  runtimeOnly "org.lwjgl:lwjgl-tinyfd:3.3.3:natives-macos"
+  runtimeOnly "org.lwjgl:lwjgl-tinyfd:3.3.3:natives-macos-arm64"
+  runtimeOnly "org.lwjgl:lwjgl-tinyfd:3.3.3:natives-windows"
 
   if(enableGraalNative == 'true') {
     implementation "io.github.berstanio:gdx-svmhelper-backend-lwjgl3:$graalHelperVersion"
