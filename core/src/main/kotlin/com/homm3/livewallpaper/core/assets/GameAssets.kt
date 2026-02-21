@@ -19,8 +19,8 @@ import ktx.log.logger
 import kotlinx.coroutines.runBlocking
 
 class GameAssets : Disposable {
-    private val storage = AssetStorage().also {
-        it.setLoader<TextureAtlas>(suffix = AssetPaths.ATLAS_PATH) {
+    private val storage = AssetStorage(fileResolver = LocalFileHandleResolver()).also {
+        it.setLoader<TextureAtlas> {
             TextureAtlasLoader(LocalFileHandleResolver())
         }
         it.setLoader<H3mMap> {
