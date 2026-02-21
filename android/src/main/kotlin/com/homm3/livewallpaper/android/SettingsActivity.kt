@@ -92,10 +92,11 @@ private fun SettingsScreen(
 @Composable
 private fun ScaleDropdown(selected: Scale, onSelected: (Scale) -> Unit) {
     val options = listOf(
-        SettingsDropdownItem(Scale.DPI, stringResource(R.string.scale_by_density)),
+        SettingsDropdownItem(Scale.X1, "x1"),
         SettingsDropdownItem(Scale.X2, "x2"),
         SettingsDropdownItem(Scale.X3, "x3"),
         SettingsDropdownItem(Scale.X4, "x4"),
+        SettingsDropdownItem(Scale.X5, "x5"),
     )
 
     SettingsDropdown(

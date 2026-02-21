@@ -4,7 +4,6 @@
 
     <string name="preferences_header">Preferences</string>
     <string name="scale_title">Scale</string>
-    <string name="scale_by_density">Based on display density</string>
     <string name="update_time_title">Update timeout</string>
     <string name="update_timeout_every_switch">Every switch to home screen</string>
     <string name="update_timeout_10minutes">10 minutes</string>

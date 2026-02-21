@@ -89,11 +89,11 @@ class GameScreen(
 
     private fun setUnitsPerPixelByScale(scale: Scale, isFirst: Boolean) {
         val nextUnitsPerPixel = when (scale) {
-            Scale.DPI -> min(1 / Gdx.graphics.density, 1f)
             Scale.X1 -> 1f
             Scale.X2 -> 0.5f
             Scale.X3 -> 0.33f
             Scale.X4 -> 0.25f
+            Scale.X5 -> 0.2f
         }
 
         if (viewport.unitsPerPixel != nextUnitsPerPixel) {

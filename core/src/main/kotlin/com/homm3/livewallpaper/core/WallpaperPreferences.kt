@@ -17,11 +17,11 @@ enum class MapUpdateInterval(val value: Int) {
 }
 
 enum class Scale(val value: Int) {
-    DPI(0),
     X1(1),
     X2(2),
     X3(3),
-    X4(4);
+    X4(4),
+    X5(5);
 
     companion object {
         fun fromInt(value: Int?): Scale {
@@ -39,7 +39,7 @@ data class WallpaperPreferences(
     val brightness: Float = defaultBrightness,
 ) {
     companion object Defaults {
-        val defaultScale = Scale.DPI
+        val defaultScale = Scale.X1
         val defaultMapUpdateInterval = MapUpdateInterval.MINUTES_10
         const val defaultUseScroll = true
         const val defaultBrightness = 0.6f
