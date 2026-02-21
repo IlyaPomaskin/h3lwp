@@ -138,7 +138,10 @@ enum class H3mObjectType(val value: Int) {
     LUCID_POOLS(228),
     MAGIC_CLOUDS(229),
     MAGIC_PLAINS2(230),
-    ROCKLANDS(231);
+    ROCKLANDS(231),
+    HOTA_CUSTOM_OBJECT_1(232),
+    HOTA_CUSTOM_OBJECT_2(233),
+    HOTA_CUSTOM_OBJECT_3(234);
 
     companion object {
         fun fromInt(value: Int?): H3mObjectType {
@@ -168,7 +171,11 @@ enum class SeerHutRewardType(val id: Int) {
     }
 }
 
-class H3mObjectDataReader(private val version: H3mVersion, private val stream: BinaryReader) {
+class H3mObjectDataReader(
+    private val version: H3mVersion,
+    private val stream: BinaryReader,
+    private val hotaSubVersion: Int = 0
+) {
 
     private fun readCreatureSet(count: Int) {
         for (i in 0 until count) {
@@ -198,6 +205,9 @@ class H3mObjectDataReader(private val version: H3mVersion, private val stream: B
         } else {
             stream.readShort()
         }
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+            stream.readShort() // scroll spell ID
+        }
     }
 
     private fun loadArtifactsOfHero() {
@@ -206,12 +216,12 @@ class H3mObjectDataReader(private val version: H3mVersion, private val stream: B
         for (j in 0..15) {
             loadArtifactToSlot()
         }
-        if (version === H3mVersion.SOD) {
-            loadArtifactToSlot()
+        if (version === H3mVersion.SOD || version === H3mVersion.HOTA) {
+            loadArtifactToSlot() // misc5 slot
         }
-        loadArtifactToSlot()
+        loadArtifactToSlot() // spellbook
         if (version !== H3mVersion.ROE) {
-            loadArtifactToSlot()
+            loadArtifactToSlot() // misc4
         } else {
             stream.readByte()
         }
@@ -243,31 +253,59 @@ class H3mObjectDataReader(private val version: H3mVersion, private val stream: B
         stream.readString()
     }
 
-    fun readEvent() {
+    private fun readBoxContent() {
         readMessageAndGuards()
-        stream.skip(4)
-        stream.skip(4)
-        stream.skip(1)
-        stream.skip(1)
+        stream.skip(4) // heroExperience
+        stream.skip(4) // manaDiff
+        stream.skip(1) // morale
+        stream.skip(1) // luck
         readResources()
-        stream.skip(4)
-        stream.skip(stream.readByte() * 2)
-        stream.skip(stream.readByte() * if (version === H3mVersion.ROE) 1 else 2)
-        stream.skip(stream.readByte())
-        readCreatureSet(stream.readByte())
-        stream.skip(8)
-        stream.skip(1)
-        stream.skip(1)
-        stream.skip(1)
-        stream.skip(4)
+        stream.skip(4) // primarySkills
+        stream.skip(stream.readByte() * 2) // gained abilities
+        val artSize = when {
+            version === H3mVersion.ROE -> 1
+            version == H3mVersion.HOTA && hotaSubVersion >= 5 -> 4
+            else -> 2
+        }
+        stream.skip(stream.readByte() * artSize) // gained artifacts (+ scroll spell for HotA5+)
+        stream.skip(stream.readByte()) // gained spells
+        readCreatureSet(stream.readByte()) // gained creatures
+        stream.skip(8) // reserved
+    }
+
+    private fun readBoxHotaContent() {
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+            stream.skip(8) // movementMode(4) + movementAmount(4)
+        }
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 6) {
+            stream.skip(4) // allowedDifficultiesMask
+        }
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 9) {
+            val usesEventSystem = stream.readBool()
+            if (usesEventSystem) {
+                stream.skip(5) // eventID(4) + syncObjects(1)
+            }
+        }
+    }
+
+    fun readEvent() {
+        readBoxContent()
+        stream.skip(1) // availableFor
+        stream.skip(1) // computerActivate
+        stream.skip(1) // removeAfterVisit
+        stream.skip(4) // reserved
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 3) {
+            stream.skip(1) // humanActivate
+        }
+        readBoxHotaContent()
     }
 
     fun readHero() {
         if (version !== H3mVersion.ROE) {
             stream.skip(4)
         }
-        stream.skip(1)
-        stream.skip(1)
+        stream.skip(1) // owner
+        stream.skip(1) // heroType
         if (stream.readBool()) {
             stream.readString()
         }
@@ -279,7 +317,7 @@ class H3mObjectDataReader(private val version: H3mVersion, private val stream: B
             stream.readInt()
         }
         if (stream.readBool()) {
-            stream.readByte()
+            stream.readByte() // portrait
         }
         if (stream.readBool()) {
             val skillsCount = stream.readInt()
@@ -288,48 +326,59 @@ class H3mObjectDataReader(private val version: H3mVersion, private val stream: B
         if (stream.readBool()) {
             readCreatureSet(7)
         }
-        stream.readByte()
+        stream.readByte() // formation
         loadArtifactsOfHero()
-        stream.readByte()
+        stream.readByte() // patrolRadius
         if (version !== H3mVersion.ROE) {
             if (stream.readBool()) {
-                stream.readString()
+                stream.readString() // biography
             }
-            stream.readByte()
+            stream.readByte() // gender
         }
         if (version !== H3mVersion.ROE && version !== H3mVersion.AB) {
             if (stream.readBool()) {
-                stream.skip(9)
+                stream.skip(9) // spells bitmask
             }
         } else if (version === H3mVersion.AB) {
-            stream.skip(1)
+            stream.skip(1) // single spell byte
         }
         if (version !== H3mVersion.ROE && version !== H3mVersion.AB) {
             if (stream.readBool()) {
-                stream.skip(4)
+                stream.skip(4) // primary skills
             }
         }
-        stream.skip(16)
+        stream.skip(16) // placeholder
+
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+            stream.skip(6) // alwaysAddSkills (bool) + cannotGainXP (bool) + level (int32)
+        }
     }
 
     fun readMonster() {
         if (version !== H3mVersion.ROE) {
             stream.skip(4)
         }
-        stream.readShort()
-        stream.readByte()
+        stream.readShort() // count
+        stream.readByte() // character
         if (stream.readBool()) {
-            stream.readString()
+            stream.readString() // message
             readResources()
             if (version === H3mVersion.ROE) {
-                stream.readByte()
+                stream.readByte() // gained artifact
             } else {
-                stream.readShort()
+                stream.readShort() // gained artifact (2 bytes)
             }
         }
-        stream.readByte()
-        stream.readByte()
-        stream.skip(2)
+        stream.readByte() // neverFlees
+        stream.readByte() // notGrowingTeam
+        stream.skip(2) // reserved
+
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 3) {
+            stream.skip(17) // agression(4) + joinOnlyForMoney(1) + joiningPercentage(4) + upgradedStackPresence(4) + stacksCount(4)
+        }
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+            stream.skip(5) // sizeByValue(1) + targetValue(4)
+        }
     }
 
     fun readSign() {
@@ -338,6 +387,26 @@ class H3mObjectDataReader(private val version: H3mVersion, private val stream: B
     }
 
     fun readSeerHut() {
+        var questsCount = 1
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 3) {
+            questsCount = stream.readInt()
+        }
+
+        for (q in 0 until questsCount) {
+            readSeerHutQuest()
+        }
+
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 3) {
+            val repeatableQuestsCount = stream.readInt()
+            for (q in 0 until repeatableQuestsCount) {
+                readSeerHutQuest()
+            }
+        }
+
+        stream.skip(2) // reserved
+    }
+
+    private fun readSeerHutQuest() {
         var missionType: Int
         if (version !== H3mVersion.ROE) {
             missionType = stream.readByte()
@@ -371,6 +440,9 @@ class H3mObjectDataReader(private val version: H3mVersion, private val stream: B
                     } else {
                         stream.readShort()
                     }
+                    if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+                        stream.readShort() // scroll spell ID
+                    }
                 }
                 SeerHutRewardType.SPELL -> stream.readByte()
                 SeerHutRewardType.CREATURE -> {
@@ -378,9 +450,8 @@ class H3mObjectDataReader(private val version: H3mVersion, private val stream: B
                 }
                 else -> {}
             }
-            stream.skip(2)
         } else {
-            stream.skip(3)
+            stream.skip(1) // skip 1 byte for no-quest (missionType==255 case reads 1 zero byte)
         }
     }
 
@@ -410,6 +481,9 @@ class H3mObjectDataReader(private val version: H3mVersion, private val stream: B
         if (objType === H3mObjectType.SPELL_SCROLL) {
             stream.readInt()
         }
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+            stream.skip(5) // pickupMode(4) + pickupFlags(1)
+        }
     }
 
     fun readResource() {
@@ -420,62 +494,87 @@ class H3mObjectDataReader(private val version: H3mVersion, private val stream: B
 
     fun readTown() {
         if (version !== H3mVersion.ROE) {
-            stream.readInt()
+            stream.readInt() // identifier
         }
-        stream.readByte()
+        stream.readByte() // owner
         if (stream.readBool()) {
-            stream.readString()
+            stream.readString() // name
         }
         if (stream.readBool()) {
-            readCreatureSet(7)
+            readCreatureSet(7) // garrison
         }
-        stream.readByte()
-        if (stream.readBool()) {
-            stream.skip(6)
-            stream.skip(6)
+        stream.readByte() // formation
+        if (stream.readBool()) { // hasCustomBuildings
+            stream.skip(6) // builtBuildings bitmask
+            stream.skip(6) // forbiddenBuildings bitmask
         } else {
-            stream.readBool()
+            stream.readBool() // hasFort
         }
         if (version !== H3mVersion.ROE) {
-            stream.skip(9)
+            stream.skip(9) // obligatorySpells bitmask
         }
-        stream.skip(9)
+        stream.skip(9) // possibleSpells bitmask
+
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 1) {
+            stream.skip(1) // spellResearchAllowed
+        }
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+            val specialBuildingsSize = stream.readInt()
+            stream.skip(specialBuildingsSize) // 1 byte per special building
+        }
+
         val castleEvents = stream.readInt()
         for (i in 0 until castleEvents) {
-            stream.readString()
-            stream.readString()
-            readResources()
-            stream.readByte()
-            if (version == H3mVersion.SOD) {
-                stream.readByte()
-            }
-            stream.skip(1)
-            stream.skip(2)
-            stream.skip(1)
-            stream.skip(17)
-            stream.skip(6)
-            stream.skip(7 * 2)
-            stream.skip(4)
+            readTownEvent()
         }
+
         if (version !== H3mVersion.ROE && version !== H3mVersion.AB) {
-            stream.skip(1)
+            stream.skip(1) // alignment
         }
-        stream.skip(3)
+        stream.skip(3) // reserved
+    }
+
+    private fun readTownEvent() {
+        stream.readString() // event name
+        stream.readString() // event message
+        readResources()
+        stream.readByte() // players bitmask
+        if (version == H3mVersion.SOD || version == H3mVersion.HOTA) {
+            stream.readByte() // humanAffected
+        }
+        stream.skip(1) // computerAffected
+        stream.skip(2) // firstOccurrence
+        stream.skip(2) // nextOccurrence (was stream.skip(1))
+        stream.skip(16) // reserved
+
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 7) {
+            stream.skip(4) // affectedDifficulties
+        }
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 9) {
+            val usesEventSystem = stream.readBool()
+            if (usesEventSystem) {
+                stream.skip(5) // eventID(4) + syncObjects(1)
+            }
+        }
+
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+            stream.skip(14) // creatureGrowth8(4) + hotaAmount(4) + hotaSpecialA(4) + hotaSpecialB(2)
+        }
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 7) {
+            stream.skip(1) // neutralAffected
+        }
+
+        stream.skip(6) // newBuildings bitmask
+        stream.skip(7 * 2) // creature growth
+        stream.skip(4) // reserved
     }
 
     fun readPandorasBox() {
-        readMessageAndGuards()
-        stream.skip(4)
-        stream.skip(4)
-        stream.skip(1)
-        stream.skip(1)
-        readResources()
-        stream.skip(4)
-        stream.skip(stream.readByte() * 2)
-        stream.skip(stream.readByte() * if (version === H3mVersion.ROE) 1 else 2)
-        stream.skip(stream.readByte())
-        readCreatureSet(stream.readByte())
-        stream.skip(8)
+        readBoxContent()
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+            stream.skip(1) // unknown (always 0)
+        }
+        readBoxHotaContent()
     }
 
     fun readRandomDwelling(objType: H3mObjectType?) {
@@ -503,5 +602,100 @@ class H3mObjectDataReader(private val version: H3mVersion, private val stream: B
         if (heroTypeId == 255) {
             stream.skip(1)
         }
+    }
+
+    fun readBorderGate(subId: Int) {
+        when (subId) {
+            1000 -> readQuestGuard() // Quest Gate
+            1001 -> { // HotA Grave
+                if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+                    stream.skip(18) // content(4) + data/garbage(14)
+                }
+            }
+            // else: regular border gate, no data
+        }
+    }
+
+    fun readBank() {
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 3) {
+            stream.readInt() // guardsPresetIndex
+            stream.readByte() // upgradedStackPresence
+            val artNumber = stream.readInt()
+            stream.skip(artNumber * 4) // artifact IDs (32-bit each)
+        }
+    }
+
+    fun readAbandonedMine() {
+        stream.skip(4) // abandonedMineResources bitmask (4 bytes)
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+            stream.skip(13) // hasCustomGuards(1) + creature/unused(4) + minAmount/unused(4) + maxAmount/unused(4)
+        }
+    }
+
+    fun readHotaCustomObject(objectType: H3mObjectType, subId: Int) {
+        if (version != H3mVersion.HOTA) return
+        // Most HotA custom objects only have data with subVer >= 5
+        // Reference: VCMI readRewardWithGarbage, readLeanTo, readRewardWithAmount, readGeneric, readHotaTrapperLodge
+        when (objectType) {
+            H3mObjectType.HOTA_CUSTOM_OBJECT_1 -> readHotaCustomObject1(subId)
+            H3mObjectType.HOTA_CUSTOM_OBJECT_2 -> readHotaCustomObject2(subId)
+            H3mObjectType.HOTA_CUSTOM_OBJECT_3 -> readHotaCustomObject3(subId)
+            else -> {}
+        }
+    }
+
+    // HotA5+ adds variable-length data to many object types that were "no data" in SOD
+    fun readHotaRewardShort() {
+        // readRewardWithGarbage / readRewardWithArtifact / readPyramid pattern: 8 bytes
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+            stream.skip(8) // content(4) + data/garbage(4)
+        }
+    }
+
+    fun readHotaRewardLong() {
+        // readLeanTo / readCampfire / readWagon / readRewardWithAmount pattern: 18 bytes
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+            stream.skip(18) // content(4) + data/garbage(14)
+        }
+    }
+
+    fun readBlackMarket() {
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+            stream.skip(28) // 7 * (artifact(2) + scrollSpell(2))
+        }
+    }
+
+    fun readUniversity() {
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+            stream.skip(8) // customized(4) + skillsBitmask(4)
+        }
+    }
+
+    private fun readHotaCustomObject1(subId: Int) {
+        // subid 0 = Ancient Lamp (readRewardWithAmount): 4+14=18 bytes
+        // subid 1 = Sea Barrel (readLeanTo): 4+14=18 bytes
+        // subid 2,3 = Jetsam, Vial of Mana (readRewardWithGarbage): 4+4=8 bytes
+        if (hotaSubVersion >= 5) {
+            when (subId) {
+                0, 1 -> stream.skip(18) // content(4) + data/garbage(14)
+                else -> stream.skip(8) // content(4) + garbage(4)
+            }
+        }
+    }
+
+    private fun readHotaCustomObject2(subId: Int) {
+        // subid 0 = Seafaring Academy (readUniversity)
+        if (hotaSubVersion >= 5 && subId == 0) {
+            stream.skip(8) // customized(4) + skillsBitmask(4)
+        }
+        // other subids: readGeneric = no data
+    }
+
+    private fun readHotaCustomObject3(subId: Int) {
+        // subid 12 = Trapper Lodge
+        if (hotaSubVersion >= 9 && subId == 12) {
+            stream.skip(16) // content(4) + goldAmount(4) + creatureAmount(4) + creatureType(4)
+        }
+        // other subids: readGeneric = no data
     }
 }

@@ -4,6 +4,7 @@ import java.util.BitSet
 
 data class H3mMap(
     val version: H3mVersion,
+    val hotaSubVersion: Int = 0,
     val header: H3mHeader,
     val tiles: List<H3mTile>,
     val defs: List<H3mDef>,
@@ -13,7 +14,8 @@ data class H3mMap(
 enum class H3mVersion(val value: Int) {
     ROE(0x0e),
     AB(0x15),
-    SOD(0x1c);
+    SOD(0x1c),
+    HOTA(0x20);
 
     companion object {
         fun fromInt(value: Int): H3mVersion {

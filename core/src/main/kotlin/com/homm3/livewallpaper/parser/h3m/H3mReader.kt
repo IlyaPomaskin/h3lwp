@@ -11,6 +11,7 @@ import kotlin.math.pow
 class H3mReader(stream: InputStream) {
     private val reader = BinaryReader(readWholeStream(GZIPInputStream(stream)))
     private lateinit var version: H3mVersion
+    private var hotaSubVersion: Int = 0
 
     private fun readWholeStream(input: InputStream): ByteArrayInputStream {
         val output = ByteArrayOutputStream()
@@ -27,11 +28,14 @@ class H3mReader(stream: InputStream) {
 
     fun read(): H3mMap {
         version = H3mVersion.fromInt(reader.readInt())
+        if (version == H3mVersion.HOTA) {
+            hotaSubVersion = reader.readInt()
+        }
         val header = readHeader()
         val tiles = readTerrain(header)
         val defs = readDefs()
         val objects = readObjects(defs)
-        return H3mMap(version, header, tiles, defs, objects)
+        return H3mMap(version, hotaSubVersion, header, tiles, defs, objects)
     }
 
     private fun readHeader(): H3mHeader {
@@ -46,11 +50,17 @@ class H3mReader(stream: InputStream) {
             reader.readByte() // levelLimit
         }
 
+        if (version == H3mVersion.HOTA) {
+            readHotaHeaderFields()
+        }
+
         readPlayerInfo()
         readVictoryLossConditions()
         readTeamInfo()
         readAllowedHeroes()
         readDisposedHeroes()
+        readMapOptions()
+        readHotaScripts()
         readAllowedArtifacts()
         readAllowedSpellsAbilities()
         readRumors()
@@ -65,6 +75,7 @@ class H3mReader(stream: InputStream) {
             val canPCPlay = reader.readBool()
             if (!(canHumanPlay || canPCPlay)) {
                 when (version) {
+                    H3mVersion.HOTA -> reader.readBytes(13)
                     H3mVersion.SOD -> reader.readBytes(13)
                     H3mVersion.AB -> reader.readBytes(12)
                     H3mVersion.ROE -> reader.readBytes(6)
@@ -74,13 +85,17 @@ class H3mReader(stream: InputStream) {
 
             reader.readByte() // ai behavior
 
-            if (version === H3mVersion.SOD) {
+            if (version === H3mVersion.SOD || version === H3mVersion.HOTA) {
                 reader.readBool() // isTownsSet
             }
 
-            reader.readByte() // allowedFactions
-            if (version != H3mVersion.ROE) {
-                reader.readByte() // conflux
+            if (version == H3mVersion.HOTA) {
+                reader.readShort() // allowedFactions (2-byte bitmask)
+            } else {
+                reader.readByte() // allowedFactions
+                if (version != H3mVersion.ROE) {
+                    reader.readByte() // conflux
+                }
             }
 
             reader.readBool() // isRandomTown
@@ -161,8 +176,13 @@ class H3mReader(stream: InputStream) {
     }
 
     private fun readAllowedHeroes() {
-        val bytesCount = if (version === H3mVersion.ROE) 16 else 20
-        reader.readBytes(bytesCount)
+        if (version == H3mVersion.HOTA) {
+            val bytesCount = reader.readInt()
+            reader.readBytes(bytesCount)
+        } else {
+            val bytesCount = if (version === H3mVersion.ROE) 16 else 20
+            reader.readBytes(bytesCount)
+        }
 
         if (version !== H3mVersion.ROE) {
             val placeholderSize = reader.readInt()
@@ -171,7 +191,7 @@ class H3mReader(stream: InputStream) {
     }
 
     private fun readDisposedHeroes() {
-        if (version === H3mVersion.SOD) {
+        if (version === H3mVersion.SOD || version === H3mVersion.HOTA) {
             val heroesCount = reader.readByte()
             for (i in 0 until heroesCount) {
                 reader.readByte() // hero id
@@ -184,17 +204,384 @@ class H3mReader(stream: InputStream) {
         reader.readBytes(31) // placeholder
     }
 
+    private fun readHotaHeaderFields() {
+        if (hotaSubVersion >= 8) {
+            reader.skip(12) // version triplet: 3 × uint32
+        }
+        if (hotaSubVersion >= 1) {
+            reader.skip(2) // isMirrorMap + isArenaMap
+        }
+        if (hotaSubVersion >= 2) {
+            reader.skip(4) // terrainTypesCount
+        }
+        if (hotaSubVersion >= 5) {
+            reader.skip(4) // townTypesCount
+            reader.skip(1) // allowedDifficultiesMask
+        }
+        if (hotaSubVersion >= 7) {
+            reader.skip(1) // canHireDefeatedHeroes
+        }
+        if (hotaSubVersion >= 8) {
+            reader.skip(1) // forceMatchingVersion
+        }
+        if (hotaSubVersion >= 9) {
+            reader.skip(4) // unknown int32
+        }
+    }
+
+    private fun readMapOptions() {
+        if (version != H3mVersion.HOTA) return
+
+        if (hotaSubVersion >= 0) {
+            reader.skip(4) // allowSpecialMonths (bool) + 3 padding bytes
+        }
+        if (hotaSubVersion >= 1) {
+            val combinedArtCount = reader.readInt()
+            val combinedArtBytes = (combinedArtCount + 7) / 8
+            reader.readBytes(combinedArtBytes)
+        }
+        if (hotaSubVersion >= 3) {
+            reader.skip(4) // roundLimit
+        }
+        if (hotaSubVersion >= 5) {
+            reader.skip(8) // 8 × bool heroRecruitmentBlocked
+        }
+    }
+
+    private fun readHotaScripts() {
+        if (version != H3mVersion.HOTA || hotaSubVersion < 9) return
+
+        val eventsSystemActive = reader.readBool()
+        if (!eventsSystemActive) return
+
+        // Read 4 event lists (hero, player, town, quest)
+        repeat(4) {
+            val eventsCount = reader.readInt()
+            for (i in 0 until eventsCount) {
+                reader.readInt() // eventID
+                skipHotaScriptActions()
+                reader.readString() // eventName
+            }
+        }
+
+        // Next ID counters
+        reader.skip(20) // 5 × int32
+
+        // Variables
+        val variablesCount = reader.readInt()
+        for (i in 0 until variablesCount) {
+            reader.readInt() // uniqueID
+            reader.readString() // variableID
+            reader.skip(2) // two bools
+            reader.readInt() // initialValue
+        }
+
+        // 5 event maps
+        repeat(5) {
+            val mappingSize = reader.readInt()
+            reader.skip(mappingSize * 4)
+        }
+    }
+
+    private fun skipHotaScriptActions() {
+        reader.readInt() // event type (always 1)
+        reader.readByte() // unknown (always 0)
+
+        val actionsCount = reader.readInt()
+        for (j in 0 until actionsCount) {
+            val actionType = reader.readInt()
+            when (actionType) {
+                1 -> { // CONDITIONAL_CHAIN
+                    while (true) {
+                        skipHotaScriptCondition()
+                        skipHotaScriptActions()
+                        reader.readBool() // unknown
+                        val continueChain = reader.readInt()
+                        if (continueChain == 0) break
+                    }
+                    reader.readInt() // unknown
+                }
+                2 -> { // SET_VARIABLE_CONDITIONAL
+                    reader.readInt() // variableID
+                    skipHotaScriptCondition()
+                    skipHotaScriptExpression()
+                    skipHotaScriptExpression()
+                }
+                3 -> { // MODIFY_VARIABLE
+                    reader.readInt() // variableID
+                    reader.readByte() // mode
+                    skipHotaScriptExpressionInternal()
+                }
+                4 -> { // RESOURCES
+                    reader.readByte() // mode
+                    repeat(7) { skipHotaScriptExpression() }
+                    reader.readBool() // showMessage
+                }
+                5 -> {} // REMOVE_CURRENT_OBJECT / FINISH_QUEST - no data
+                6 -> { // SHOW_REWARDS_MESSAGE
+                    reader.readString() // text
+                    skipHotaScriptActions()
+                }
+                7 -> { // QUEST_ACTION
+                    skipHotaScriptCondition()
+                    reader.readString() // proposal
+                    reader.readString() // progression
+                    reader.readString() // completion
+                    reader.readString() // hint
+                    skipHotaScriptActions()
+                    reader.readBool() // unknown
+                }
+                8 -> { // CREATURES
+                    reader.readBool() // takeCreatures
+                    reader.readInt() // creatureID (32-bit)
+                    skipHotaScriptExpression()
+                    reader.readBool() // showMessage
+                }
+                9 -> { // ARTIFACT
+                    reader.readBool() // takeArtifact
+                    reader.readInt() // artifactID (32-bit)
+                    reader.readInt() // scrollSpellID (32-bit)
+                    reader.readBool() // showMessage
+                }
+                10 -> { // CONSTRUCT_BUILDING
+                    reader.readInt() // buildingID
+                    reader.readShort() // unknownA
+                    reader.readShort() // unknownB
+                    reader.readBool() // showMessage
+                }
+                11 -> { // SET_QUEST_HINT
+                    reader.readString() // message
+                    val numberOfImages = reader.readInt()
+                    for (k in 0 until numberOfImages) {
+                        reader.readInt() // imageType
+                        reader.readInt() // imageSubtype
+                        skipHotaScriptExpression()
+                    }
+                    reader.readBool() // showInLog
+                }
+                12 -> { // SHOW_QUESTION
+                    val imageShowType = reader.readByte()
+                    reader.readString() // message
+                    skipHotaScriptActions()
+                    skipHotaScriptActions()
+                    if (imageShowType == 2) {
+                        skipHotaScriptActions()
+                    }
+                    var numberOfImages = 2
+                    if (imageShowType == 0 || imageShowType == 3) {
+                        numberOfImages = reader.readInt()
+                    }
+                    for (k in 0 until numberOfImages) {
+                        reader.readInt() // imageType
+                        reader.readInt() // imageSubtype
+                        skipHotaScriptExpression()
+                    }
+                    if (imageShowType == 1 || imageShowType == 2) {
+                        reader.readBool() // showOrBetweenImages
+                        reader.readInt() // unknown
+                    }
+                }
+                13 -> { // CONDITIONAL
+                    skipHotaScriptCondition()
+                    skipHotaScriptActions()
+                    skipHotaScriptActions()
+                }
+                14 -> { // CREATURES_TO_HIRE
+                    reader.readInt() // dwelling
+                    skipHotaScriptExpression() // amount
+                    reader.readInt() // unknown
+                    reader.readBool() // showMessage
+                }
+                15 -> { // SPELL
+                    reader.readInt() // spellID (32-bit)
+                    reader.readBool() // showMessage
+                }
+                16 -> { // EXPERIENCE
+                    skipHotaScriptExpression()
+                    reader.readBool() // showMessage
+                }
+                17 -> { // SPELL_POINTS
+                    skipHotaScriptExpression()
+                    reader.readInt() // mode
+                    reader.readBool() // showMessage
+                }
+                18 -> { // MOVEMENT_POINTS
+                    skipHotaScriptExpression()
+                    reader.readInt() // mode
+                    reader.readBool() // showMessage
+                }
+                19 -> { // PRIMARY_SKILL
+                    skipHotaScriptExpression()
+                    reader.readInt() // skill
+                    reader.readBool() // showMessage
+                }
+                20 -> { // SECONDARY_SKILL
+                    reader.readInt() // masteryLevel
+                    reader.readInt() // skillID (32-bit)
+                    reader.readBool() // showMessage
+                }
+                21 -> { // LUCK
+                    reader.readInt() // amount
+                    reader.readBool() // showMessage
+                }
+                22 -> { // MORALE
+                    reader.readInt() // amount
+                    reader.readBool() // showMessage
+                }
+                23 -> { // START_COMBAT
+                    for (k in 0 until 7) {
+                        skipHotaScriptExpression()
+                        reader.readInt() // creatureID (32-bit)
+                    }
+                }
+                24 -> { // EXECUTE_EVENT
+                    reader.readInt() // eventType
+                    reader.readInt() // eventID
+                }
+                25 -> { // WAR_MACHINE
+                    reader.readBool() // takeMachine
+                    reader.readInt() // artifactID (32-bit)
+                    reader.skip(4) // garbage
+                    reader.readBool() // showMessage
+                }
+                26 -> { // SPELLBOOK
+                    reader.readBool() // takeSpellbook
+                    reader.skip(8) // garbage
+                    reader.readBool() // showMessage
+                }
+                27 -> {} // DISABLE_EVENT - no data
+                28 -> { // LOOP_FOR
+                    skipHotaScriptActions() // loop body
+                    skipHotaScriptExpression() // initial value
+                    skipHotaScriptExpression() // final value
+                    reader.readInt() // variableID
+                }
+                29 -> { // SHOW_MESSAGE
+                    reader.readString() // text
+                    val numberOfImages = reader.readInt()
+                    for (k in 0 until numberOfImages) {
+                        reader.readInt() // imageType
+                        reader.readInt() // imageSubtype
+                        skipHotaScriptExpression()
+                    }
+                }
+                else -> throw IllegalArgumentException("Unknown HotA script action type: $actionType")
+            }
+        }
+    }
+
+    private fun skipHotaScriptCondition() {
+        reader.readBool() // unknown (always true)
+        skipHotaScriptConditionInternal()
+    }
+
+    private fun skipHotaScriptConditionInternal() {
+        val conditionCode = reader.readInt()
+        when (conditionCode) {
+            0 -> reader.readBool() // CONSTANT
+            1, 2 -> { // ALL_OF, ANY_OF
+                val argumentsCount = reader.readInt()
+                repeat(argumentsCount) { skipHotaScriptConditionInternal() }
+            }
+            3, 4, 5, 8, 9, 10 -> { // comparison operators
+                skipHotaScriptExpression()
+                skipHotaScriptExpression()
+            }
+            6 -> skipHotaScriptCondition() // NOT
+            7 -> { // HAS_ARTIFACT
+                reader.readInt() // artifactID (32-bit)
+                reader.readInt() // scrollSpellID (32-bit)
+            }
+            11 -> reader.readInt() // CURRENT_PLAYER - playerID (32-bit)
+            12 -> { // HERO_OWNER
+                reader.readInt() // heroID (32-bit)
+                reader.readInt() // playerID (32-bit)
+            }
+            14, 15 -> { // PLAYER_DEFEATED_MONSTER, PLAYER_DEFEATED_HERO
+                reader.readInt() // playerID (32-bit)
+                reader.readInt() // targetObjectID
+            }
+            16 -> { // HERO_SECONDARY_SKILL
+                reader.readInt() // skillID (32-bit)
+                reader.readInt() // expectedMastery
+            }
+            17 -> reader.readInt() // PLAYER_DEFEATED - playerID (32-bit)
+            18 -> { // PLAYER_OWNS_TOWN
+                reader.readInt() // playerID (32-bit)
+                reader.readInt() // targetObjectID
+            }
+            19 -> reader.readInt() // PLAYER_IS_HUMAN - playerID (32-bit)
+            20 -> { // PLAYER_STARTING_FACTION
+                reader.readInt() // playerID (32-bit)
+                reader.readInt() // factionID (32-bit)
+            }
+            21 -> {} // TOWN_IS_NEUTRAL - no data
+            else -> throw IllegalArgumentException("Unknown HotA script condition: $conditionCode")
+        }
+    }
+
+    private fun skipHotaScriptExpression() {
+        val isExpression = reader.readBool()
+        if (!isExpression) {
+            reader.readInt() // raw value
+            return
+        }
+        skipHotaScriptExpressionInternal()
+    }
+
+    private fun skipHotaScriptExpressionInternal() {
+        reader.readBool() // unknown (always true)
+        val expressionCode = reader.readInt()
+        when (expressionCode) {
+            0 -> reader.readInt() // INTEGER_VALUE
+            1 -> reader.readInt() // VARIABLE_VALUE
+            2 -> { // NEGATE
+                reader.readInt() // unknown
+                skipHotaScriptExpression()
+            }
+            3, 4, 6, 7, 8 -> { // arithmetic: ADD, SUBTRACT, MULTIPLY, DIVIDE, REMAINDER
+                skipHotaScriptExpressionInternal()
+                skipHotaScriptExpressionInternal()
+            }
+            5 -> { // RESOURCE
+                reader.readByte() // player
+                reader.readInt() // resourceID (32-bit)
+            }
+            9 -> reader.readInt() // CREATURE_COUNT_IN_ARMY - creatureID (32-bit)
+            10 -> {} // CURRENT_DIFFICULTY - no data
+            11 -> reader.readInt() // COMPARE_DIFFICULTY
+            12 -> {} // CURRENT_DATE - no data
+            13 -> {} // HERO_EXPERIENCE - no data
+            14 -> {} // HERO_LEVEL - no data
+            15 -> reader.readInt() // HERO_PRIMARY_SKILL - skillID (32-bit)
+            16 -> { // RANDOM_NUMBER
+                skipHotaScriptExpression()
+                skipHotaScriptExpression()
+            }
+            17 -> { // HERO_OWNED_ARTIFACTS
+                reader.readInt() // artifactID (32-bit)
+                reader.readInt() // scrollSpellID (32-bit)
+            }
+            else -> throw IllegalArgumentException("Unknown HotA script expression: $expressionCode")
+        }
+    }
+
     private fun readAllowedArtifacts() {
         if (version !== H3mVersion.ROE) {
-            val bytesCount = if (version === H3mVersion.AB) 17 else 18
-            reader.readBytes(bytesCount)
+            if (version == H3mVersion.HOTA) {
+                val bytesCount = reader.readInt()
+                reader.readBytes(bytesCount)
+            } else {
+                val bytesCount = if (version === H3mVersion.AB) 17 else 18
+                reader.readBytes(bytesCount)
+            }
         }
     }
 
     private fun readAllowedSpellsAbilities() {
-        if (version === H3mVersion.SOD) {
-            reader.readBytes(9)
-            reader.readBytes(4)
+        if (version === H3mVersion.SOD || version === H3mVersion.HOTA) {
+            reader.readBytes(9) // spells bitmask
+            reader.readBytes(4) // skills bitmask
         }
     }
 
@@ -212,6 +599,9 @@ class H3mReader(stream: InputStream) {
         } else {
             reader.readShort()
         }
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+            reader.readShort() // scroll spell ID
+        }
     }
 
     private fun loadArtifactsOfHero() {
@@ -220,12 +610,12 @@ class H3mReader(stream: InputStream) {
         for (j in 0..15) {
             loadArtifactToSlot()
         }
-        if (version === H3mVersion.SOD) {
-            loadArtifactToSlot()
+        if (version === H3mVersion.SOD || version === H3mVersion.HOTA) {
+            loadArtifactToSlot() // misc5 slot
         }
         loadArtifactToSlot() // spellbook
         if (version !== H3mVersion.ROE) {
-            loadArtifactToSlot()
+            loadArtifactToSlot() // misc4
         } else {
             reader.readByte()
         }
@@ -236,9 +626,11 @@ class H3mReader(stream: InputStream) {
     }
 
     private fun readPredefinedHeroes() {
-        if (version !== H3mVersion.SOD) return
+        if (version !== H3mVersion.SOD && version !== H3mVersion.HOTA) return
 
-        for (i in 0..155) {
+        val heroesCount = if (version == H3mVersion.HOTA) reader.readInt() else 156
+
+        for (i in 0 until heroesCount) {
             if (!reader.readBool()) continue
 
             if (reader.readBool()) {
@@ -267,6 +659,12 @@ class H3mReader(stream: InputStream) {
 
             if (reader.readBool()) {
                 reader.readBytes(4)
+            }
+        }
+
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+            for (i in 0 until heroesCount) {
+                reader.skip(6) // alwaysAddSkills (bool) + cannotGainXP (bool) + level (int32)
             }
         }
     }
@@ -323,7 +721,7 @@ class H3mReader(stream: InputStream) {
     private fun readObjects(defs: List<H3mDef>): List<H3mObject> {
         val objects = mutableListOf<H3mObject>()
         val objectsCount = reader.readInt() - 1
-        val objectsReader = H3mObjectDataReader(version, reader)
+        val objectsReader = H3mObjectDataReader(version, reader, hotaSubVersion)
         for (objectIndex in 0..objectsCount) {
             val x = reader.readByte()
             val y = reader.readByte()
@@ -367,23 +765,47 @@ class H3mReader(stream: InputStream) {
                 H3mObjectType.RANDOM_TOWN,
                 H3mObjectType.TOWN -> objectsReader.readTown()
                 H3mObjectType.MINE,
-                H3mObjectType.ABANDONED_MINE,
                 H3mObjectType.SHRINE_OF_MAGIC_INCANTATION,
                 H3mObjectType.SHRINE_OF_MAGIC_GESTURE,
                 H3mObjectType.SHRINE_OF_MAGIC_THOUGHT,
                 H3mObjectType.SHIPYARD,
                 H3mObjectType.LIGHTHOUSE,
                 H3mObjectType.GRAIL -> reader.skip(4)
+                H3mObjectType.ABANDONED_MINE -> objectsReader.readAbandonedMine()
                 H3mObjectType.CREATURE_GENERATOR1,
                 H3mObjectType.CREATURE_GENERATOR2,
                 H3mObjectType.CREATURE_GENERATOR3,
                 H3mObjectType.CREATURE_GENERATOR4 -> reader.skip(4)
                 H3mObjectType.PANDORAS_BOX -> objectsReader.readPandorasBox()
+                H3mObjectType.CREATURE_BANK,
+                H3mObjectType.DERELICT_SHIP,
+                H3mObjectType.DRAGON_UTOPIA,
+                H3mObjectType.CRYPT,
+                H3mObjectType.SHIPWRECK -> objectsReader.readBank()
                 H3mObjectType.RANDOM_DWELLING,
                 H3mObjectType.RANDOM_DWELLING_LVL,
                 H3mObjectType.RANDOM_DWELLING_FACTION -> objectsReader.readRandomDwelling(objectType)
                 H3mObjectType.QUEST_GUARD -> objectsReader.readQuestGuard()
                 H3mObjectType.HERO_PLACEHOLDER -> objectsReader.readHeroPlaceholder()
+                H3mObjectType.BORDER_GATE -> objectsReader.readBorderGate(def.objectClassSubId)
+                // Objects that gain HotA5+ short reward data (8 bytes)
+                H3mObjectType.TREASURE_CHEST,
+                H3mObjectType.CORPSE,
+                H3mObjectType.WARRIORS_TOMB,
+                H3mObjectType.SHIPWRECK_SURVIVOR,
+                H3mObjectType.SEA_CHEST,
+                H3mObjectType.FLOTSAM,
+                H3mObjectType.TREE_OF_KNOWLEDGE,
+                H3mObjectType.PYRAMID -> objectsReader.readHotaRewardShort()
+                // Objects that gain HotA5+ long reward data (18 bytes)
+                H3mObjectType.LEAN_TO,
+                H3mObjectType.WAGON,
+                H3mObjectType.CAMPFIRE -> objectsReader.readHotaRewardLong()
+                H3mObjectType.BLACK_MARKET -> objectsReader.readBlackMarket()
+                H3mObjectType.UNIVERSITY -> objectsReader.readUniversity()
+                H3mObjectType.HOTA_CUSTOM_OBJECT_1,
+                H3mObjectType.HOTA_CUSTOM_OBJECT_2,
+                H3mObjectType.HOTA_CUSTOM_OBJECT_3 -> objectsReader.readHotaCustomObject(objectType, def.objectClassSubId)
                 else -> Unit
             }
 
