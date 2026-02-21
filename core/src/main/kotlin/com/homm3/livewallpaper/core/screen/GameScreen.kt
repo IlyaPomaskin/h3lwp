@@ -54,7 +54,9 @@ class GameScreen(
     }
 
     init {
-        Gdx.input.inputProcessor = inputProcessor
+        if (Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.Desktop) {
+            Gdx.input.inputProcessor = inputProcessor
+        }
     }
 
     override fun show() {
