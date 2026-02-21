@@ -33,5 +33,9 @@
         <activity
             android:name=".android.SettingsActivity"
             android:exported="true" />
+
+        <activity
+            android:name=".android.AssetSetupActivity"
+            android:exported="false" />
     </application>
 </manifest>

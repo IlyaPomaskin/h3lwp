@@ -14,4 +14,8 @@
     <string name="use_scroll_summary">Scroll map while switching screens\nNote: Some phones doesn\'t support it</string>
     <string name="brightness_title">Brightness</string>
     <string name="wallpaper_change_button">Set wallpapers</string>
+
+    <string name="asset_setup_title">Game assets required</string>
+    <string name="asset_setup_description">This wallpaper uses sprites from Heroes of Might and Magic III. Due to copyright restrictions, game assets cannot be included in the app.\n\nPlease select the h3sprite.lod file from your Heroes III installation. It is usually located in the Data folder of the game directory.</string>
+    <string name="asset_setup_select_button">Select h3sprite.lod</string>
 </resources>
