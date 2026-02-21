@@ -48,6 +48,8 @@ class AssetSetupActivity : ComponentActivity() {
                     runOnUiThread { statusMessage = progress }
                 }
 
+                copyBundledMaps()
+
                 runOnUiThread {
                     isConverting = false
                     startActivity(Intent(this, SettingsActivity::class.java))
@@ -58,6 +60,20 @@ class AssetSetupActivity : ComponentActivity() {
                     statusMessage = "Error: ${e.message}"
                     isConverting = false
                 }
+            }
+        }
+    }
+
+    private fun copyBundledMaps() {
+        val mapsDir = filesDir.resolve(AssetPaths.USER_MAPS_FOLDER)
+        mapsDir.mkdirs()
+        val bundled = assets.list(AssetPaths.USER_MAPS_FOLDER) ?: return
+        for (name in bundled) {
+            if (!name.endsWith(".h3m", ignoreCase = true)) continue
+            val target = mapsDir.resolve(name)
+            if (target.exists()) continue
+            assets.open("${AssetPaths.USER_MAPS_FOLDER}/$name").use { input ->
+                target.outputStream().use { output -> input.copyTo(output) }
             }
         }
     }
