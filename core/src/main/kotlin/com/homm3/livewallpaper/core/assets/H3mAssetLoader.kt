@@ -49,27 +49,11 @@ class H3mAssetLoader(private val resolver: FileHandleResolver) :
         parameter: H3mLoaderParams?
     ): H3mMap {
         val loadedMap = map
+        map = null
         if (loadedMap != null) {
-            if (parameter?.loadedCallback != null) {
-                parameter.loadedCallback.finishedLoading(
-                    manager,
-                    fileName,
-                    H3mAssetLoader::class.java
-                )
-            }
             return loadedMap
         }
-
-        val freshMap = loadMap(manager, fileName)
-        map = freshMap
-        if (parameter?.loadedCallback != null) {
-            parameter.loadedCallback.finishedLoading(
-                manager,
-                fileName,
-                H3mAssetLoader::class.java
-            )
-        }
-        return freshMap
+        return loadMap(manager, fileName)
     }
 
     private fun loadMap(manager: AssetManager?, fileName: String?): H3mMap {

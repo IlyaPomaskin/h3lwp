@@ -11,7 +11,7 @@ import ktx.scene2d.actors
 import ktx.scene2d.label
 import kotlin.math.min
 
-class LoadingScreen(private val assets: GameAssets, private val onLoadDone: () -> Unit) : KtxScreen {
+class LoadingScreen(private val assets: GameAssets) : KtxScreen {
 
     private val viewport = ScreenViewport().apply {
         unitsPerPixel = min(1 / Gdx.graphics.density, 1f)
@@ -29,10 +29,6 @@ class LoadingScreen(private val assets: GameAssets, private val onLoadDone: () -
     override fun render(delta: Float) {
         clearScreen(0f, 0f, 0f, 1f)
         stage.draw()
-
-        if (assets.manager.isFinished) {
-            onLoadDone()
-        }
     }
 
     override fun resize(width: Int, height: Int) {

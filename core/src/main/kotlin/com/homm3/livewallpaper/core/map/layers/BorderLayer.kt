@@ -4,7 +4,6 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile
 import com.badlogic.gdx.math.Rectangle
-import com.homm3.livewallpaper.core.AssetPaths
 import com.homm3.livewallpaper.core.GameConfig
 import com.homm3.livewallpaper.core.assets.GameAssets
 import ktx.log.logger
@@ -61,14 +60,11 @@ class BorderLayer(
     }
 
     private fun getBorderFrame(index: Int): TextureAtlas.AtlasRegion {
-        val regions = assets.manager
-            .get<TextureAtlas>(AssetPaths.ATLAS_PATH)
-            .findRegions("edg/$index")
+        val regions = assets.findAtlasRegions("edg/$index")
 
         return if (regions.isEmpty) {
             log.error { "Can't find border frame edg/$index" }
-            assets.manager.get<TextureAtlas>(AssetPaths.ATLAS_PATH)
-                .findRegions("edg/0").first()
+            assets.findAtlasRegions("edg/0").first()
         } else {
             regions.first()
         }

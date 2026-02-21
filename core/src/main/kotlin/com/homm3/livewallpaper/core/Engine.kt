@@ -8,6 +8,7 @@ import com.homm3.livewallpaper.core.screen.AssetSetupScreen
 import com.homm3.livewallpaper.core.screen.GameScreen
 import com.homm3.livewallpaper.core.screen.LoadingScreen
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 import ktx.app.KtxGame
 import ktx.async.KtxAsync
 
@@ -29,17 +30,11 @@ class Engine(
         assets = GameAssets()
         assets.loadUiAssets()
 
-        addScreen(LoadingScreen(assets) {
-            assets.loadedMaps.forEach {
-                getScreen<GameScreen>().addMap(GameMap(assets, it))
-            }
-            setScreen<GameScreen>()
-        })
+        addScreen(LoadingScreen(assets))
         addScreen(AssetSetupScreen(assets, onSettingsButtonClick))
         addScreen(GameScreen(camera, prefs))
 
         loadAndStart()
-        assets.loadMaps()
     }
 
     override fun resume() {
@@ -52,23 +47,21 @@ class Engine(
         }
     }
 
-    override fun render() {
-        assets.manager.update()
-        super.render()
-    }
-
     override fun dispose() {
         super.dispose()
         assets.dispose()
     }
 
     private fun loadAndStart() {
-        setScreen<LoadingScreen>()
-
-        if (assets.isGameAssetsAvailable()) {
-            assets.loadGameAssets()
-        } else {
+        if (!assets.isGameAssetsAvailable()) {
             setScreen<AssetSetupScreen>()
+            return
+        }
+        setScreen<LoadingScreen>()
+        KtxAsync.launch {
+            val maps = assets.loadGameAssets()
+            maps.forEach { getScreen<GameScreen>().addMap(GameMap(assets, it)) }
+            setScreen<GameScreen>()
         }
     }
 }
