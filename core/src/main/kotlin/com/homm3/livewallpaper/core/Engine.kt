@@ -1,5 +1,6 @@
 package com.homm3.livewallpaper.core
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
 import com.homm3.livewallpaper.core.assets.GameAssets
 import com.homm3.livewallpaper.core.map.GameMap
@@ -16,7 +17,7 @@ open class Engine(
     private val prefs: Flow<WallpaperPreferences>,
     private val onSettingsButtonClick: (onProgress: (String) -> Unit, onDone: () -> Unit) -> Unit = { _, _ -> }
 ) : KtxGame<Screen>(null, false) {
-    private lateinit var assets: GameAssets
+    private var assets: GameAssets? = null
     private lateinit var camera: MapCamera
 
     fun moveCameraByOffset(offset: Float) {
@@ -27,11 +28,12 @@ open class Engine(
         KtxAsync.initiate()
 
         camera = MapCamera()
-        assets = GameAssets()
-        assets.loadUiAssets()
+        val gameAssets = GameAssets()
+        assets = gameAssets
+        gameAssets.loadUiAssets()
 
-        addScreen(LoadingScreen(assets))
-        addScreen(AssetSetupScreen(assets, onSettingsButtonClick, onConversionDone = ::loadAndStart))
+        addScreen(LoadingScreen(gameAssets))
+        addScreen(AssetSetupScreen(gameAssets, onSettingsButtonClick, onConversionDone = ::loadAndStart))
         addScreen(GameScreen(camera, prefs))
 
         loadAndStart()
@@ -40,28 +42,36 @@ open class Engine(
     override fun resume() {
         super.resume()
 
-        if (assets.isGameAssetsLoaded()) {
-            getScreen<GameScreen>().randomizeVisibleMapPart()
+        val a = assets ?: return
+        if (a.isGameAssetsLoaded()) {
             setScreen<GameScreen>()
         } else {
             loadAndStart()
         }
     }
 
+    fun onVisibilityChanged(visible: Boolean) {
+        val a = assets ?: return
+        if (visible && a.isGameAssetsLoaded()) {
+            Gdx.app.postRunnable { getScreen<GameScreen>().randomizeVisibleMapPart() }
+        }
+    }
+
     override fun dispose() {
         super.dispose()
-        assets.dispose()
+        assets?.dispose()
     }
 
     private fun loadAndStart() {
-        if (!assets.isGameAssetsAvailable()) {
+        val a = assets ?: return
+        if (!a.isGameAssetsAvailable()) {
             setScreen<AssetSetupScreen>()
             return
         }
         setScreen<LoadingScreen>()
         KtxAsync.launch {
-            val maps = assets.loadGameAssets()
-            maps.forEach { getScreen<GameScreen>().addMap(GameMap(assets, it)) }
+            val maps = a.loadGameAssets()
+            maps.forEach { getScreen<GameScreen>().addMap(GameMap(a, it)) }
             setScreen<GameScreen>()
         }
     }

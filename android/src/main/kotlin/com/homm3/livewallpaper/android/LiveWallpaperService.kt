@@ -6,15 +6,26 @@ import com.homm3.livewallpaper.android.data.WallpaperPreferencesRepository
 import com.homm3.livewallpaper.android.data.dataStore
 
 class LiveWallpaperService : AndroidLiveWallpaperService() {
-    override fun onCreateEngine(): Engine = AndroidWallpaperEngine()
+    private var androidEngine: AndroidEngine? = null
+
+    override fun onCreateEngine(): Engine {
+        return object : AndroidWallpaperEngine() {
+            override fun onVisibilityChanged(visible: Boolean) {
+                super.onVisibilityChanged(visible)
+                androidEngine?.onVisibilityChanged(visible)
+            }
+        }
+    }
 
     override fun onCreateApplication() {
         super.onCreateApplication()
 
         val prefs = WallpaperPreferencesRepository(dataStore)
+        val engine = AndroidEngine(this, prefs.preferencesFlow)
+        androidEngine = engine
 
         initialize(
-            AndroidEngine(this, prefs.preferencesFlow),
+            engine,
             AndroidApplicationConfiguration().apply {
                 useAccelerometer = false
                 useCompass = false

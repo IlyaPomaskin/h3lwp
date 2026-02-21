@@ -54,7 +54,6 @@ class GameScreen(
     }
 
     override fun show() {
-
         var isFirst = true
         prefsJob = KtxAsync.launch {
             prefs.collect {
@@ -64,8 +63,6 @@ class GameScreen(
                 isFirst = false
             }
         }
-
-        randomizeVisibleMapPart()
     }
 
     override fun resize(width: Int, height: Int) {
