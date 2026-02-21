@@ -42,9 +42,11 @@ class AtlasConverter(
     )
 
     @Throws(InvalidFileException::class, OutputFileWriteException::class)
-    fun convert() {
+    fun convert(onProgress: (String) -> Unit = {}) {
+        onProgress("Reading LOD archive...")
         runCatching(::readFilesList)
             .onFailure { throw InvalidFileException("Can't parse. Try another file.") }
+            .also { onProgress("Reading sprite definitions...") }
             .mapCatching(::readDefs)
             .onFailure { throw InvalidFileException("Can't read content. Try another file.") }
             .also { defs ->
@@ -52,9 +54,12 @@ class AtlasConverter(
                     throw InvalidFileException("Wrong file selected. Try another file.")
                 }
             }
+            .also { onProgress("Packing atlas frames...") }
             .mapCatching(atlasPacker::packFrames)
+            .also { onProgress("Writing atlas files...") }
             .mapCatching(atlasWriter::writePackerContent)
             .onFailure { throw OutputFileWriteException("Can't save files. Check free space.") }
+        onProgress("Done!")
     }
 
     private fun readFilesList(): List<LodEntry> {

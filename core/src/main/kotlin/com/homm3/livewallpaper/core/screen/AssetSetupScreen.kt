@@ -1,6 +1,7 @@
 package com.homm3.livewallpaper.core.screen
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.homm3.livewallpaper.core.assets.GameAssets
@@ -16,12 +17,13 @@ import kotlin.math.min
 
 class AssetSetupScreen(
     private val assets: GameAssets,
-    private val onSettingsButtonClick: () -> Unit
+    private val onSettingsButtonClick: (onProgress: (String) -> Unit) -> Unit
 ) : KtxScreen {
 
     private val viewport = ScreenViewport().apply {
         unitsPerPixel = min(1 / Gdx.graphics.density, 1f)
     }
+    private lateinit var statusLabel: Label
     private val stage = stage(viewport = viewport).apply {
         actors {
             verticalGroup {
@@ -35,7 +37,15 @@ class AssetSetupScreen(
                     setAlignment(Align.center)
                 }
                 textButton(assets.i18n.get("openSettings"), skin = assets.skin) {
-                    onClick { onSettingsButtonClick() }
+                    onClick {
+                        onSettingsButtonClick { status ->
+                            Gdx.app.postRunnable { statusLabel.setText(status) }
+                        }
+                    }
+                }
+                this@AssetSetupScreen.statusLabel = label("", skin = assets.skin) {
+                    setWrap(true)
+                    setAlignment(Align.center)
                 }
             }
         }

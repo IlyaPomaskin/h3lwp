@@ -10,9 +10,10 @@ import com.homm3.livewallpaper.core.Engine
 import com.homm3.livewallpaper.core.WallpaperPreferences
 import com.homm3.livewallpaper.parser.atlas.AtlasConverter
 import kotlinx.coroutines.flow.MutableStateFlow
-import javax.swing.JFileChooser
-import javax.swing.filechooser.FileNameExtensionFilter
-import kotlin.concurrent.thread
+import java.awt.FileDialog
+import java.awt.Frame
+import java.io.File
+import javax.swing.SwingUtilities
 
 /** Launches the desktop (LWJGL3) application. */
 fun main() {
@@ -55,21 +56,23 @@ fun main() {
     })
 }
 
-private fun selectLodFile() {
-    thread(isDaemon = true) {
-        val chooser = JFileChooser().apply {
-            dialogTitle = "Select h3sprite.lod"
-            fileFilter = FileNameExtensionFilter("HoMM3 LOD files (*.lod)", "lod")
+private fun selectLodFile(onProgress: (String) -> Unit) {
+    SwingUtilities.invokeLater {
+        val dialog = FileDialog(null as Frame?, "Select h3sprite.lod", FileDialog.LOAD).apply {
+            setFilenameFilter { _, name -> name.endsWith(".lod", ignoreCase = true) }
         }
-        if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-            val outputDir = Gdx.files.local(AssetPaths.ATLAS_FOLDER).file()
-            outputDir.mkdirs()
-            val converter = AtlasConverter(
-                chooser.selectedFile.inputStream(),
-                outputDir,
-                AssetPaths.ATLAS_NAME
-            )
-            converter.convert()
+        dialog.isVisible = true
+
+        val file = dialog.file ?: return@invokeLater
+        val selected = File(dialog.directory, file)
+
+        val outputDir = Gdx.files.local(AssetPaths.ATLAS_FOLDER).file()
+        outputDir.mkdirs()
+        try {
+            AtlasConverter(selected.inputStream(), outputDir, AssetPaths.ATLAS_NAME)
+                .convert(onProgress)
+        } catch (e: Exception) {
+            onProgress(e.message ?: "Conversion failed")
         }
     }
 }
