@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.PixmapIO
 import com.badlogic.gdx.graphics.g2d.PixmapPacker
 import com.homm3.livewallpaper.parser.lod.LodFileType
+import java.io.BufferedOutputStream
 import java.io.File
 import java.io.OutputStream
 import java.util.Locale
@@ -14,39 +15,39 @@ class AtlasWriter(
     private val outputDirectory: File,
     private val atlasName: String
 ) {
-    private var atlas = String()
+    private val atlas = StringBuilder()
 
     private fun atlasPage(filename: String) {
-        atlas += "\n"
-        atlas += "$filename\n"
-        atlas += "size: ${packer.pageWidth},${packer.pageHeight}\n"
-        atlas += "format: ${packer.pageFormat.name}\n"
-        atlas += "filter: Nearest,Nearest\n"
-        atlas += "repeat: none\n"
+        atlas.append('\n')
+        atlas.append(filename).append('\n')
+        atlas.append("size: ").append(packer.pageWidth).append(',').append(packer.pageHeight).append('\n')
+        atlas.append("format: ").append(packer.pageFormat.name).append('\n')
+        atlas.append("filter: Nearest,Nearest\n")
+        atlas.append("repeat: none\n")
     }
 
     private fun atlasFrame(name: String, index: String, rect: PixmapPacker.PixmapPackerRectangle, pf: PackableFrame, isTerrain: Boolean) {
         val spriteName = name.lowercase(Locale.ROOT).replace(".def", "")
-        atlas += "$spriteName\n"
-        atlas += "  rotate: false\n"
-        atlas += "  xy: ${rect.x.toInt()}, ${rect.y.toInt()}\n"
+        atlas.append(spriteName).append('\n')
+        atlas.append("  rotate: false\n")
+        atlas.append("  xy: ").append(rect.x.toInt()).append(", ").append(rect.y.toInt()).append('\n')
         if (isTerrain) {
-            atlas += "  size: ${pf.frame.fullWidth}, ${pf.frame.fullHeight}\n"
-            atlas += "  orig: ${pf.frame.fullWidth}, ${pf.frame.fullHeight}\n"
-            atlas += "  offset: 0, 0\n"
+            atlas.append("  size: ").append(pf.frame.fullWidth).append(", ").append(pf.frame.fullHeight).append('\n')
+            atlas.append("  orig: ").append(pf.frame.fullWidth).append(", ").append(pf.frame.fullHeight).append('\n')
+            atlas.append("  offset: 0, 0\n")
         } else {
-            atlas += "  size: ${pf.frame.width}, ${pf.frame.height}\n"
-            atlas += "  orig: ${pf.frame.fullWidth}, ${pf.frame.fullHeight}\n"
-            atlas += "  offset: ${pf.frame.x}, ${pf.frame.y}\n"
+            atlas.append("  size: ").append(pf.frame.width).append(", ").append(pf.frame.height).append('\n')
+            atlas.append("  orig: ").append(pf.frame.fullWidth).append(", ").append(pf.frame.fullHeight).append('\n')
+            atlas.append("  offset: ").append(pf.frame.x).append(", ").append(pf.frame.y).append('\n')
         }
-        atlas += "  index: $index\n"
+        atlas.append("  index: ").append(index).append('\n')
     }
 
     private fun writePng(stream: OutputStream, pixmap: Pixmap) {
         val pngFile = PixmapIO.PNG((pixmap.width * pixmap.height * 1.5f).toInt())
         try {
             pngFile.setFlipY(false)
-            pngFile.setCompression(Deflater.DEFAULT_COMPRESSION)
+            pngFile.setCompression(Deflater.BEST_SPEED)
             pngFile.write(stream, pixmap)
         } finally {
             pngFile.dispose()
@@ -90,7 +91,7 @@ class AtlasWriter(
             onProgress(index + 1, totalPages)
             val pngName = "${atlasName}_${index}.png"
             atlasPage(pngName)
-            writePng(outputDirectory.resolve(pngName).outputStream(), page.pixmap)
+            writePng(BufferedOutputStream(outputDirectory.resolve(pngName).outputStream()), page.pixmap)
 
             page.rects.forEach { entry ->
                 val rectangleName = entry.key
@@ -108,8 +109,8 @@ class AtlasWriter(
 
         packer.dispose()
 
-        val writer = outputDirectory.resolve("${atlasName}.atlas").writer()
-        writer.write(atlas)
-        writer.close()
+        outputDirectory.resolve("${atlasName}.atlas").bufferedWriter().use {
+            it.write(atlas.toString())
+        }
     }
 }
