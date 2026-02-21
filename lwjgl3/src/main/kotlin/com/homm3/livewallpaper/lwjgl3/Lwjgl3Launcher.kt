@@ -14,6 +14,7 @@ import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
 import javax.swing.SwingUtilities
+import kotlin.concurrent.thread
 
 /** Launches the desktop (LWJGL3) application. */
 fun main() {
@@ -66,13 +67,15 @@ private fun selectLodFile(onProgress: (String) -> Unit) {
         val file = dialog.file ?: return@invokeLater
         val selected = File(dialog.directory, file)
 
-        val outputDir = Gdx.files.local(AssetPaths.ATLAS_FOLDER).file()
-        outputDir.mkdirs()
-        try {
-            AtlasConverter(selected.inputStream(), outputDir, AssetPaths.ATLAS_NAME)
-                .convert(onProgress)
-        } catch (e: Exception) {
-            onProgress(e.message ?: "Conversion failed")
+        thread(isDaemon = true) {
+            val outputDir = Gdx.files.local(AssetPaths.ATLAS_FOLDER).file()
+            outputDir.mkdirs()
+            try {
+                AtlasConverter(selected.inputStream(), outputDir, AssetPaths.ATLAS_NAME)
+                    .convert(onProgress)
+            } catch (e: Exception) {
+                onProgress(e.message ?: "Conversion failed")
+            }
         }
     }
 }
