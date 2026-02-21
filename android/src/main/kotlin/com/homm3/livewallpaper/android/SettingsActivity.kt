@@ -29,6 +29,10 @@ import com.homm3.livewallpaper.core.WallpaperPreferences
 
 class SettingsActivity : ComponentActivity() {
 
+    private fun openMaps() {
+        startActivity(Intent(this, MapsActivity::class.java))
+    }
+
     private fun setWallpaper() {
         startActivity(
             Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).putExtra(
@@ -55,7 +59,8 @@ class SettingsActivity : ComponentActivity() {
                 val viewModel: SettingsViewModel = viewModel(factory = factory)
                 SettingsScreen(
                     viewModel = viewModel,
-                    onSetWallpaper = ::setWallpaper
+                    onSetWallpaper = ::setWallpaper,
+                    onOpenMaps = ::openMaps,
                 )
             }
         }
@@ -65,7 +70,8 @@ class SettingsActivity : ComponentActivity() {
 @Composable
 private fun SettingsScreen(
     viewModel: SettingsViewModel,
-    onSetWallpaper: () -> Unit
+    onSetWallpaper: () -> Unit,
+    onOpenMaps: () -> Unit,
 ) {
     val prefs by viewModel.preferences.collectAsStateWithLifecycle()
 
@@ -85,6 +91,12 @@ private fun SettingsScreen(
             item { UpdateIntervalDropdown(prefs.mapUpdateInterval, viewModel::setMapUpdateInterval) }
             item { UseScrollToggle(prefs.useScroll, viewModel::toggleUseScroll) }
             item { BrightnessSlider(prefs.brightness, viewModel::setBrightness) }
+            item {
+                SettingsItem(
+                    title = stringResource(R.string.maps_title),
+                    onClick = onOpenMaps,
+                )
+            }
         }
     }
 }

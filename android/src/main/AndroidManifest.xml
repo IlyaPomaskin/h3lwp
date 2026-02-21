@@ -37,5 +37,9 @@
         <activity
             android:name=".android.AssetSetupActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".android.MapsActivity"
+            android:exported="false" />
     </application>
 </manifest>
