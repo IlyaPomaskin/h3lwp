@@ -12,8 +12,8 @@ android {
     applicationId 'com.homm3.livewallpaper'
     minSdk 24
     targetSdk 34
-    versionCode 1
-    versionName "$projectVersion"
+    versionCode 308
+    versionName "3.0.8"
   }
 
   sourceSets {
