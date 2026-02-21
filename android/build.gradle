@@ -5,7 +5,7 @@ plugins {
 
 android {
   namespace 'com.homm3.livewallpaper'
-  compileSdk 34
+  compileSdk 35
 
   defaultConfig {
     applicationId 'com.homm3.livewallpaper'
@@ -19,6 +19,7 @@ android {
     main {
       assets.srcDirs = ['../assets']
       java.srcDirs = ['src/main/kotlin']
+      jniLibs.srcDirs = ['libs']
     }
   }
 

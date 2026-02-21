@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 import ktx.app.KtxGame
 import ktx.async.KtxAsync
 
-class Engine(
+open class Engine(
     private val prefs: Flow<WallpaperPreferences>,
     private val onSettingsButtonClick: (onProgress: (String) -> Unit, onDone: () -> Unit) -> Unit = { _, _ -> }
 ) : KtxGame<Screen>(null, false) {
@@ -41,6 +41,7 @@ class Engine(
         super.resume()
 
         if (assets.isGameAssetsLoaded()) {
+            getScreen<GameScreen>().randomizeVisibleMapPart()
             setScreen<GameScreen>()
         } else {
             loadAndStart()

@@ -20,6 +20,20 @@
         android:text="Select h3sprite.lod"
         android:layout_marginBottom="16dp" />
 
+    <Button
+        android:id="@+id/btn_upload_map"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Upload map"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btn_set_wallpaper"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Set live wallpaper"
+        android:layout_marginBottom="16dp" />
+
     <TextView
         android:id="@+id/tv_status"
         android:layout_width="match_parent"

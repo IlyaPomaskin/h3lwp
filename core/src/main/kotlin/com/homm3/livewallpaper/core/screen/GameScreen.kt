@@ -138,7 +138,7 @@ class GameScreen(
         return false
     }
 
-    private fun randomizeVisibleMapPart(force: Boolean = false) {
+    fun randomizeVisibleMapPart(force: Boolean = false) {
         if (!shouldUpdateVisibleMapPart(force)) {
             return
         }
