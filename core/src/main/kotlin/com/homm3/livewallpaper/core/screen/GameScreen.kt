@@ -54,7 +54,6 @@ class GameScreen(
     }
 
     override fun show() {
-        Gdx.input.inputProcessor = inputProcessor
 
         var isFirst = true
         prefsJob = KtxAsync.launch {
@@ -83,7 +82,6 @@ class GameScreen(
 
     override fun hide() {
         prefsJob?.cancel()
-        Gdx.input.inputProcessor = null
     }
 
     override fun dispose() {
