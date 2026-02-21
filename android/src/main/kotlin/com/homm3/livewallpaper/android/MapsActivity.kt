@@ -23,6 +23,7 @@ import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.core.AssetPaths
 import com.homm3.livewallpaper.parser.h3m.H3mReader
 import com.homm3.livewallpaper.parser.h3m.H3mVersion
+import android.provider.OpenableColumns
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -79,7 +80,10 @@ class MapsActivity : ComponentActivity() {
                 // Step 2: Full map parsing validation
                 H3mReader(bytes.inputStream()).read()
 
-                val fileName = uri.lastPathSegment?.substringAfterLast('/') ?: "map.h3m"
+                val fileName = contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (cursor.moveToFirst() && nameIndex >= 0) cursor.getString(nameIndex) else null
+                } ?: "map.h3m"
                 val safeName = if (fileName.endsWith(".h3m", ignoreCase = true)) fileName else "$fileName.h3m"
                 val mapsDir = filesDir.resolve(AssetPaths.USER_MAPS_FOLDER)
                 mapsDir.mkdirs()
