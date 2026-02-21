@@ -33,10 +33,13 @@ class GameAssets : Disposable {
 
     private lateinit var atlas: TextureAtlas
 
+    private val lazyEmptyTexture = lazy {
+        val pixmap = Pixmap(1, 1, Pixmap.Format.RGBA8888)
+        Texture(pixmap).also { pixmap.dispose() }
+    }
+    private val emptyTexture: Texture by lazyEmptyTexture
     private val emptyRegion: TextureAtlas.AtlasRegion by lazy {
-        TextureAtlas.AtlasRegion(
-            TextureRegion(Texture(Pixmap(1, 1, Pixmap.Format.RGBA8888)))
-        )
+        TextureAtlas.AtlasRegion(TextureRegion(emptyTexture))
     }
 
     fun loadUiAssets() {
@@ -78,7 +81,8 @@ class GameAssets : Disposable {
     }
 
     override fun dispose() {
-        skin.dispose()
+        if (::skin.isInitialized) skin.dispose()
+        if (lazyEmptyTexture.isInitialized()) emptyTexture.dispose()
         runBlocking { storage.dispose() }
     }
 
