@@ -8,7 +8,7 @@ buildscript {
   }
   dependencies {
     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
-
+    classpath "com.android.tools.build:gradle:8.7.3"
   }
 }
 
@@ -25,7 +25,7 @@ allprojects {
   }
 }
 
-configure(subprojects) {
+configure(subprojects.findAll { it.name != 'android' }) {
   apply plugin: 'java-library'
   apply plugin: 'kotlin'
   java.sourceCompatibility = 8
@@ -63,6 +63,7 @@ subprojects {
   ext.appName = 'Heroes 3 LiveWallpaper'
   repositories {
     mavenCentral()
+    google()
     // You may want to remove the following line if you have errors downloading dependencies.
     mavenLocal()
     maven { url = 'https://central.sonatype.com/repository/maven-snapshots/' }
