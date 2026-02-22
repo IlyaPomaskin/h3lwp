@@ -86,12 +86,8 @@ class GameAssets : Disposable {
             mapFiles.map { it.file().name }
         ) { fileName ->
             sizeCache.getOrPut(fileName) {
-                try {
-                    val fileHandle = Gdx.files.local("${AssetPaths.USER_MAPS_FOLDER}/$fileName")
-                    H3mHeaderReader.readMapSize(fileHandle.read())
-                } catch (e: Exception) {
-                    36
-                }
+                val fileHandle = Gdx.files.local("${AssetPaths.USER_MAPS_FOLDER}/$fileName")
+                H3mHeaderReader.readMapSize(fileHandle.read())
             }
         }
 
