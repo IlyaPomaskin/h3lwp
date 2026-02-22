@@ -10,6 +10,8 @@ import com.homm3.livewallpaper.parser.lod.LodReader
 import com.homm3.livewallpaper.parser.pcx.PcxReader
 import java.io.File
 import java.io.InputStream
+import java.util.logging.Level
+import java.util.logging.Logger
 
 class InvalidFileException(msg: String) : Exception(msg)
 class OutputFileWriteException(msg: String) : Exception(msg)
@@ -93,7 +95,8 @@ class AtlasConverter(
 
         val readTasks = lodFiles.mapNotNull { file ->
             if (file.name.endsWith(".pcx", true)) {
-                ReadTask(file, terrainPcxDefName(file.name))
+                val terrainDefName = terrainPcxDefName(file.name)
+                if (terrainDefName != null) ReadTask(file, terrainDefName) else null
             } else {
                 val isTerrain = file.fileType == LodFileType.TERRAIN
                 val isExtraSprite = file.fileType == LodFileType.SPRITE
@@ -111,14 +114,19 @@ class AtlasConverter(
         return readTasks
             .sortedBy { it.entry.offset }
             .flatMap { task ->
-                when {
-                    task.entry.name.endsWith(".def", true) -> readDefFromLod(task.entry)
-                    task.terrainDefName != null -> readTerrainPcxFromLod(
-                        task.entry,
-                        task.terrainDefName,
-                        terrainGroupFilenames[task.terrainDefName]!!
-                    )
-                    else -> readPcxFromLod(task.entry)
+                try {
+                    when {
+                        task.entry.name.endsWith(".def", true) -> readDefFromLod(task.entry)
+                        task.terrainDefName != null -> readTerrainPcxFromLod(
+                            task.entry,
+                            task.terrainDefName,
+                            terrainGroupFilenames[task.terrainDefName]!!
+                        )
+                        else -> readPcxFromLod(task.entry)
+                    }
+                } catch (e: Exception) {
+                    log.log(Level.WARNING, "Failed to read ${task.entry.name} (type=${task.entry.fileType}, size=${task.entry.size})", e)
+                    emptyList()
                 }
             }
             .distinctBy { it.defName + it.frame.frameName }
@@ -206,5 +214,9 @@ class AtlasConverter(
                 PackableFrame(frame, entry.name, entry.fileType, palette.clone(), group.filenames)
             }
         }
+    }
+
+    companion object {
+        private val log = Logger.getLogger(AtlasConverter::class.java.name)
     }
 }

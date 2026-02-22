@@ -5,6 +5,8 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.BitSet
+import java.util.logging.Level
+import java.util.logging.Logger
 import java.util.zip.GZIPInputStream
 import kotlin.math.pow
 
@@ -31,14 +33,32 @@ class H3mReader(stream: InputStream) {
         if (version == H3mVersion.HOTA) {
             hotaSubVersion = reader.readInt()
         }
+        log.info("Parsing map: version=$version, hotaSubVersion=$hotaSubVersion")
         val header = readHeader()
+        log.info("Header: size=${header.size}, underground=${header.hasUnderground}")
+        logSection("readTerrain")
         val tiles = readTerrain(header)
+        val terrainSample = tiles.take(20).map { "t${it.terrain}:${it.terrainIndex}" }
+        val terrainDistinct = tiles.map { it.terrain }.distinct().sorted()
+        log.info("Terrain sample: $terrainSample")
+        log.info("Terrain types found: $terrainDistinct (${tiles.size} tiles)")
+        logSection("readDefs")
         val defs = readDefs()
+        log.info("Defs count: ${defs.size}, first 5: ${defs.take(5).map { it.spriteName }}")
+        logSection("readObjects")
         val objects = readObjects(defs)
         return H3mMap(version, hotaSubVersion, header, tiles, defs, objects)
     }
 
+    private fun logSection(name: String) {
+        log.info("$name @ offset ${reader.position}")
+    }
+
     private fun readHeader(): H3mHeader {
+        if (version == H3mVersion.HOTA) {
+            readHotaHeaderFields()
+        }
+
         reader.readByte() // hasPlayers
         val size = reader.readInt()
         val hasUnderground = reader.readBool()
@@ -50,20 +70,27 @@ class H3mReader(stream: InputStream) {
             reader.readByte() // levelLimit
         }
 
-        if (version == H3mVersion.HOTA) {
-            readHotaHeaderFields()
-        }
-
+        logSection("readPlayerInfo")
         readPlayerInfo()
+        logSection("readVictoryLossConditions")
         readVictoryLossConditions()
+        logSection("readTeamInfo")
         readTeamInfo()
+        logSection("readAllowedHeroes")
         readAllowedHeroes()
+        logSection("readDisposedHeroes")
         readDisposedHeroes()
+        logSection("readMapOptions")
         readMapOptions()
+        logSection("readHotaScripts")
         readHotaScripts()
+        logSection("readAllowedArtifacts")
         readAllowedArtifacts()
+        logSection("readAllowedSpellsAbilities")
         readAllowedSpellsAbilities()
+        logSection("readRumors")
         readRumors()
+        logSection("readPredefinedHeroes")
         readPredefinedHeroes()
 
         return H3mHeader(size, hasUnderground)
@@ -159,6 +186,8 @@ class H3mReader(stream: InputStream) {
                 reader.readByte()
                 reader.readBytes(3)
             }
+            11 -> {} // HotA: eliminate all monsters - no extra data
+            12 -> reader.readInt() // HotA: survive for N days
         }
 
         when (reader.readByte()) { // lossCondition
@@ -177,16 +206,16 @@ class H3mReader(stream: InputStream) {
 
     private fun readAllowedHeroes() {
         if (version == H3mVersion.HOTA) {
-            val bytesCount = reader.readInt()
-            reader.readBytes(bytesCount)
+            val heroesCount = reader.readInt()
+            reader.readBytes((heroesCount + 7) / 8)
         } else {
             val bytesCount = if (version === H3mVersion.ROE) 16 else 20
             reader.readBytes(bytesCount)
         }
 
         if (version !== H3mVersion.ROE) {
-            val placeholderSize = reader.readInt()
-            reader.readBytes(placeholderSize)
+            val placeholderCount = reader.readInt()
+            reader.skip(placeholderCount) // 1 byte per hero ID
         }
     }
 
@@ -569,8 +598,8 @@ class H3mReader(stream: InputStream) {
     private fun readAllowedArtifacts() {
         if (version !== H3mVersion.ROE) {
             if (version == H3mVersion.HOTA) {
-                val bytesCount = reader.readInt()
-                reader.readBytes(bytesCount)
+                val artifactsCount = reader.readInt()
+                reader.readBytes((artifactsCount + 7) / 8)
             } else {
                 val bytesCount = if (version === H3mVersion.AB) 17 else 18
                 reader.readBytes(bytesCount)
@@ -727,6 +756,10 @@ class H3mReader(stream: InputStream) {
             val y = reader.readByte()
             val z = reader.readByte()
             val index = reader.readInt()
+            if (index < 0 || index >= defs.size) {
+                log.warning("Invalid def index $index at object $objectIndex/${objectsCount + 1}, stopping object parsing")
+                break
+            }
             val def = defs[index]
             val objectType = H3mObjectType.fromInt(def.objectId)
 
@@ -813,5 +846,9 @@ class H3mReader(stream: InputStream) {
         }
 
         return objects
+    }
+
+    companion object {
+        private val log = Logger.getLogger(H3mReader::class.java.name)
     }
 }
