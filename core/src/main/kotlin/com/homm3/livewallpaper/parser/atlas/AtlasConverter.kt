@@ -54,17 +54,31 @@ class AtlasConverter(
         onProgress("Reading LOD archive...")
         runCatching(::readFilesList)
             .onFailure { throw InvalidFileException("Can't parse. Try another file.") }
-            .also { onProgress("Reading sprite definitions...") }
+            .also { files ->
+                val list = files.getOrDefault(emptyList())
+                val defCount = list.count { it.name.endsWith(".def", true) }
+                val pcxCount = list.count { it.name.endsWith(".pcx", true) }
+                val types = list.mapNotNull { it.fileType }.distinct().sorted()
+                val nullTypeCount = list.count { it.fileType == null }
+                log.info("LOD entries: ${list.size} total ($defCount DEF, $pcxCount PCX), types=$types, nullType=$nullTypeCount")
+                onProgress("Reading sprite definitions (${list.size} files)...")
+            }
             .mapCatching(::readDefs)
             .onFailure { throw InvalidFileException("Can't read content. Try another file.") }
             .also { defs ->
-                if (defs.getOrDefault(emptyList()).size < minimalDefCount) {
+                val frames = defs.getOrDefault(emptyList())
+                log.info("Read ${frames.size} frames from LOD")
+                if (frames.size < minimalDefCount) {
                     throw InvalidFileException("Wrong file selected. Try another file.")
                 }
             }
             .also { onProgress("Packing atlas frames...") }
             .mapCatching(atlasPacker::packFrames)
-            .also { onProgress("Writing atlas files...") }
+            .also { packed ->
+                val count = packed.getOrDefault(mutableMapOf()).size
+                log.info("Packed $count unique sprites")
+                onProgress("Writing atlas files...")
+            }
             .mapCatching { sprites ->
                 atlasWriter.writePackerContent(sprites) { current, total ->
                     onProgress("Writing atlas files... ($current/$total)")
@@ -102,7 +116,10 @@ class AtlasConverter(
                 val isExtraSprite = file.fileType == LodFileType.SPRITE
                     && file.name.startsWith("av", true)
                 val isMapSprite = file.fileType == LodFileType.MAP
-                if (isTerrain || isExtraSprite || isMapSprite) {
+                // HotA.lod has unknown file type IDs (null); include all DEFs from it
+                val isUnknownTypeDef = file.fileType == null
+                    && file.name.endsWith(".def", true)
+                if (isTerrain || isExtraSprite || isMapSprite || isUnknownTypeDef) {
                     ReadTask(file, null)
                 } else {
                     null
@@ -110,9 +127,14 @@ class AtlasConverter(
             }
         }
 
+        val skippedCount = lodFiles.size - readTasks.size
+        log.info("Processing ${readTasks.size} entries ($skippedCount skipped by filter)")
+
         // Process all entries in offset order for sequential LOD reading
-        return readTasks
-            .sortedBy { it.entry.offset }
+        val sorted = readTasks.sortedBy { it.entry.offset }
+        var processed = 0
+        var failed = 0
+        return sorted
             .flatMap { task ->
                 try {
                     when {
@@ -123,13 +145,15 @@ class AtlasConverter(
                             terrainGroupFilenames[task.terrainDefName]!!
                         )
                         else -> readPcxFromLod(task.entry)
-                    }
+                    }.also { processed++ }
                 } catch (e: Exception) {
+                    failed++
                     log.log(Level.WARNING, "Failed to read ${task.entry.name} (type=${task.entry.fileType}, size=${task.entry.size})", e)
                     emptyList()
                 }
             }
             .distinctBy { it.defName + it.frame.frameName }
+            .also { log.info("Read complete: $processed ok, $failed failed, ${it.size} unique frames") }
     }
 
     private fun buildTerrainGroupFilenames(lodFiles: List<LodEntry>): Map<String, List<String>> {

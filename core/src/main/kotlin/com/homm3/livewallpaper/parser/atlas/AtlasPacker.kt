@@ -105,6 +105,7 @@ class AtlasPacker(private val packer: PixmapPacker) {
                 LodFileType.TERRAIN -> terrainFrame(pf, acc)
                 LodFileType.SPRITE -> objectFrame(pf, acc)
                 LodFileType.MAP -> objectFrame(pf, acc)
+                null -> objectFrame(pf, acc)
                 else -> acc
             }
         }

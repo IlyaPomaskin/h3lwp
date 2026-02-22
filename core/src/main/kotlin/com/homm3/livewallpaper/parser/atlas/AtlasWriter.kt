@@ -102,6 +102,7 @@ class AtlasWriter(
                     LodFileType.TERRAIN -> writeTerrainInfo(rectangleName, rectangle, pf)
                     LodFileType.SPRITE -> writeSpriteInfo(rectangleName, rectangle, pf)
                     LodFileType.MAP -> writeSpriteInfo(rectangleName, rectangle, pf)
+                    null -> writeSpriteInfo(rectangleName, rectangle, pf)
                     else -> {}
                 }
             }
