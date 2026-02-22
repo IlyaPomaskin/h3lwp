@@ -62,6 +62,7 @@ class H3mAssetLoader(private val resolver: FileHandleResolver) :
         val fileHandle = resolver.resolve("${AssetPaths.USER_MAPS_FOLDER}/$fileName")
 
         try {
+            log.info { "Parsing map: $fileName" }
             return H3mReader(fileHandle.read()).read()
         } catch (ex: Exception) {
             throw IllegalStateException("Can't read map $fileName", ex)

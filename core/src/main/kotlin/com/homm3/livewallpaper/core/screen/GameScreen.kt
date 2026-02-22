@@ -43,6 +43,7 @@ class GameScreen(
     private val brightnessOverlay = BrightnessOverlay(camera)
     private var mapUpdateInterval = 0f
     private var lastMapUpdateTime = 0L
+    private var currentMapIndex = 0
     private var prefsJob: Job? = null
 
     fun addMap(map: GameMap) {
@@ -146,16 +147,31 @@ class GameScreen(
             return
         }
 
-        val mapLayer = tiledMap
-            .layers
-            .onEach { it.isVisible = false }
-            .toList()
-            .filterIsInstance(GameMap::class.java)
-            .randomOrNull()
+        showMapAtIndex(currentMapIndex)
+    }
 
-        if (mapLayer != null) {
-            camera.randomizePosition(mapLayer.mapSize)
-            mapLayer.isVisible = true
-        }
+    fun showNextMap() {
+        val maps = tiledMap.layers.toList().filterIsInstance(GameMap::class.java)
+        if (maps.isEmpty()) return
+        currentMapIndex = (currentMapIndex + 1) % maps.size
+        showMapAtIndex(currentMapIndex)
+    }
+
+    fun showPreviousMap() {
+        val maps = tiledMap.layers.toList().filterIsInstance(GameMap::class.java)
+        if (maps.isEmpty()) return
+        currentMapIndex = (currentMapIndex - 1 + maps.size) % maps.size
+        showMapAtIndex(currentMapIndex)
+    }
+
+    private fun showMapAtIndex(index: Int) {
+        val maps = tiledMap.layers.toList().filterIsInstance(GameMap::class.java)
+        if (maps.isEmpty()) return
+        currentMapIndex = min(index, maps.size - 1)
+
+        tiledMap.layers.forEach { it.isVisible = false }
+        val mapLayer = maps[currentMapIndex]
+        camera.randomizePosition(mapLayer.mapSize)
+        mapLayer.isVisible = true
     }
 }

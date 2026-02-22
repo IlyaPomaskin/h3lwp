@@ -61,9 +61,12 @@ open class Engine(
     }
 
     override fun render() {
-        if (Gdx.app.type == Application.ApplicationType.Desktop && Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            Gdx.app.exit()
-            return
+        if (Gdx.app.type == Application.ApplicationType.Desktop) {
+            when {
+                Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) -> { Gdx.app.exit(); return }
+                Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET) -> getScreen<GameScreen>().showNextMap()
+                Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET) -> getScreen<GameScreen>().showPreviousMap()
+            }
         }
         super.render()
     }

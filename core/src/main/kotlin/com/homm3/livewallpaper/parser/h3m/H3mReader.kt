@@ -51,7 +51,7 @@ class H3mReader(stream: InputStream) {
     }
 
     private fun logSection(name: String) {
-        log.info("$name @ offset ${reader.position}")
+//        log.info("$name @ offset ${reader.position}")
     }
 
     private fun readHeader(): H3mHeader {
@@ -763,7 +763,7 @@ class H3mReader(stream: InputStream) {
             }
             val def = defs[index]
             val objectType = H3mObjectType.fromInt(def.objectId)
-            log.info("Object $objectIndex: ($x,$y,$z) def=$index ${def.spriteName} type=$objectType subId=${def.objectClassSubId} @ offset $posBeforeObject")
+//            log.info("Object $objectIndex: ($x,$y,$z) def=$index ${def.spriteName} type=$objectType subId=${def.objectClassSubId} @ offset $posBeforeObject")
 
             reader.readBytes(5)
 
@@ -801,6 +801,10 @@ class H3mReader(stream: InputStream) {
                 H3mObjectType.RANDOM_TOWN,
                 H3mObjectType.TOWN -> { objectsReader.readTown(); "TOWN" }
                 H3mObjectType.MINE,
+                H3mObjectType.ABANDONED_MINE -> {
+                    if (def.objectClassSubId < 7) { reader.skip(4); "MINE" }
+                    else { objectsReader.readAbandonedMine(); "ABANDONED_MINE" }
+                }
                 H3mObjectType.SHRINE_OF_MAGIC_INCANTATION,
                 H3mObjectType.SHRINE_OF_MAGIC_GESTURE,
                 H3mObjectType.SHRINE_OF_MAGIC_THOUGHT,
@@ -811,7 +815,6 @@ class H3mReader(stream: InputStream) {
                     // else: HotA battle location, no data
                     "GRAIL"
                 }
-                H3mObjectType.ABANDONED_MINE -> { objectsReader.readAbandonedMine(); "ABANDONED_MINE" }
                 H3mObjectType.CREATURE_GENERATOR1,
                 H3mObjectType.CREATURE_GENERATOR2,
                 H3mObjectType.CREATURE_GENERATOR3,
@@ -847,7 +850,7 @@ class H3mReader(stream: InputStream) {
                 else -> "NONE"
             }
             val bytesConsumed = reader.position - posBeforeData
-            log.info("  -> parsed as $parsedType, consumed $bytesConsumed bytes")
+//            log.info("  -> parsed as $parsedType, consumed $bytesConsumed bytes")
 
             objects.add(H3mObject(x, y, z, def, objectType))
         }

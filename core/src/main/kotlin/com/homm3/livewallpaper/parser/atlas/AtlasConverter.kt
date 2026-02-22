@@ -114,17 +114,38 @@ class AtlasConverter(
         // Classify entries into those we want to read
         data class ReadTask(val entry: LodEntry, val terrainDefName: String?)
 
-        val hotaSpritePcxPrefixes = listOf("zsand", "pig", "miniftws", "swpmsh")
+        val hotaDefPrefixes = listOf(
+            "av", "ah", "crates", "tp", "frog_", "rooster_", "zreef", "grsmnt"
+        )
+        val hotaPcxPrefixes = listOf(
+            "zsand", "pig", "miniftws", "swpmsh", "zwat", "zice", "fvwnd"
+        )
+        val hotaExtraNames = setOf(
+            "h4wt2f", "swpmsh05", "swpmsh01", "miniftsw", "swpmsh06", "miniftsn",
+            "zsand00", "zsand01", "zsand03", "zsand06", "zwat05", "jaws",
+            "4lvlxshrn", "mntswp02", "mntswp04", "mntswpab", "mntswp01", "mntswp03",
+            "mntswp05", "zice06", "zice07", "zice01", "zsand05", "zsand02", "hatel",
+            "zwat06", "fortnixr", "swshcamp", "nimphfo", "wt_seerh", "fvwnd05",
+            "fvwnd06", "fvwnd00", "fvwnd01", "fvwnd03", "fvwnd02", "zwat00", "portu",
+            "sanct_wt", "wt_tvrn01", "watermag", "zwat01", "swddtree", "miniftsd",
+            "fortnix", "nestas", "swpmsh03", "zwat02", "swpmsh02", "swvflw03",
+            "swpmsh04", "swvflw02", "swvflw01", "swvflw05", "swvflw04", "avwccoat",
+            "zsand07", "zsand04", "fregat", "mntswp06", "zwat07", "minifthl",
+            "minifort", "pig", "miniftws", "fvwnd04", "hapcave", "miniftrg",
+            "fvwnd07", "h4wt1f", "h4wt3f", "towerza", "zwat04", "zwat03", "zice04",
+            "zice08", "haexit01", "mntswpcr", "haspwtpl", "miniftlv", "zice02",
+            "zice03", "mntswpgl", "miniftdr", "zice05", "hasphtpl"
+        )
 
         val readTasks = lodFiles.mapNotNull { file ->
+            val lowerBase = file.name.lowercase().substringBefore(".")
             if (file.name.endsWith(".pcx", true)) {
                 val terrainDefName = terrainPcxDefName(file.name)
-                val lowerName = file.name.lowercase()
-                val isHotaSpritePcx = file.fileType == null
-                    && hotaSpritePcxPrefixes.any { lowerName.startsWith(it) }
+                val isHotaPcx = file.fileType == null
+                    && (hotaPcxPrefixes.any { lowerBase.startsWith(it) } || lowerBase in hotaExtraNames)
                 when {
                     terrainDefName != null -> ReadTask(file, terrainDefName)
-                    isHotaSpritePcx -> ReadTask(file, null)
+                    isHotaPcx -> ReadTask(file, null)
                     else -> null
                 }
             } else {
@@ -132,12 +153,11 @@ class AtlasConverter(
                 val isExtraSprite = file.fileType == LodFileType.SPRITE
                     && file.name.startsWith("av", true)
                 val isMapSprite = file.fileType == LodFileType.MAP
-                // HotA.lod has unknown file type IDs (null); include landscape DEFs
-                val hotaPrefix = file.name.lowercase()
-                val isUnknownTypeDef = file.fileType == null
+                // HotA.lod has unknown file type IDs (null); include by prefix or name
+                val isHotaDef = file.fileType == null
                     && file.name.endsWith(".def", true)
-                    && (hotaPrefix.startsWith("av") || hotaPrefix.startsWith("ah") || hotaPrefix.startsWith("crates") || hotaPrefix.startsWith("tp") || hotaPrefix.startsWith("frog_") || hotaPrefix.startsWith("rooster_") || hotaPrefix.startsWith("zreef") || hotaPrefix.startsWith("grsmnt"))
-                if (isTerrain || isExtraSprite || isMapSprite || isUnknownTypeDef) {
+                    && (hotaDefPrefixes.any { lowerBase.startsWith(it) } || lowerBase in hotaExtraNames)
+                if (isTerrain || isExtraSprite || isMapSprite || isHotaDef) {
                     ReadTask(file, null)
                 } else {
                     null
