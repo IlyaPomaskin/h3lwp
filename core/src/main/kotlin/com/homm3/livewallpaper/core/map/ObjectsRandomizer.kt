@@ -30,18 +30,18 @@ class ObjectsRandomizer {
         Faction.STRONGHOLD to arrayOf("AVGgobl0", "AVGwolf0", "AVGorcg0", "AVGogre0", "AVGrocs0", "AVGcycl0", "AVGbhmt0"),
         Faction.FORTRESS to arrayOf("AVGgnll0", "AVGlzrd0", "AVGdfly0", "AVGbasl0", "AVGgorg0", "AVGwyvn0", "AVGhydr0"),
         Faction.CONFLUX to arrayOf("AVGpixie", "AVGair0", "AVGwatr0", "AVGfire0", "AVGerth0", "AVGelp", "AVGfbrd"),
-        Faction.COVE to arrayOf("AVGnymph", "AVGcrew0", "AVGpira0", "AVGstorm", "AVGsorc0", "AVGnixy0", "AVGhsea0"),
-        Faction.FACTORY to arrayOf("AVG2half", "AVGmech0", "AVGarmd0", "AVGauto0", "AVGwurm0", "AVGguns0", "AVGcotl0")
+        Faction.COVE to arrayOf("avgflh00", "avgflh01", "avgflh02", "avgflh03", "avgflh04", "avgflh05", "avgflh06"),
+        Faction.FACTORY to arrayOf("AVG2half", "AVGmecha", "AVGarma", "AVGauto", "AVGworm", "AVGguns", "AVGcoatl")
     )
 
     private val monsters = hashMapOf(
-        1 to arrayOf("AvWPike", "AVWpikx0", "AVWcent0", "AVWcenx0", "AVWgrem0", "AVWgrex0", "AVWimp0", "AVWimpx0", "AVWskel0", "AVWskex0", "AVWtrog0", "AvWInfr", "AVWgobl0", "AVWgobx0", "AVWgnll0", "AVWgnlx0", "AVWpixie", "AVWsprit", "AVWhalf", "AVWpeas", "AVWhbom", "AVWnymph", "AVWocean"),
-        2 to arrayOf("AvWLCrs", "AvWHCrs", "AVWdwrf0", "AVWdwrx0", "AVWgarg0", "AVWgarx0", "AVWgog0", "AVWgogx0", "AVWzomb0", "AVWzomx0", "AVWharp0", "AVWharx0", "AVWwolf0", "AVWwolx0", "AvWLizr", "AVWlizx0", "AVWelmw0", "AVWicee", "AVWboar", "AVWrog", "AVWmech", "AVWengn", "AVWcrew0", "AVWsamn0", "AVWlepr"),
-        3 to arrayOf("AvWGrif", "AVWgrix0", "AVWelfw0", "AVWelfx0", "AVWgolm0", "AVWgolx0", "AVWhoun0", "AVWhoux0", "AvWWigh", "AVWwigx0", "AVWbehl0", "AVWbehx0", "AVWorc0", "AVWorcx0", "AvWDFly", "AvWDFir", "AVWelme0", "AVWstone", "AVWmumy", "AVWnomd", "AVWalmd", "AVWalmb", "AVWpira0", "AVWcors0", "AVWsdog0"),
-        4 to arrayOf("AVWswrd0", "AVWswrx0", "AVWpega0", "AVWpegx0", "AVWmage0", "AVWmagx0", "AVWdemn0", "AVWdemx0", "AVWvamp0", "AVWvamx0", "AvWMeds", "AVWmedx0", "AVWogre0", "AVWogrx0", "AvWBasl", "AvWGBas", "AVWelma0", "AVWstorm", "AVWglmg0", "AVWsharp", "AVWauto", "AVWauth", "AVWstrb0", "AVWaysd0", "AVWsatr", "AVWstgl"),
-        5 to arrayOf("AvWMonk", "AVWmonx0", "AVWtree0", "AVWtrex0", "AVWgeni0", "AVWgenx0", "AVWpitf0", "AVWpitx0", "AVWlich0", "AVWlicx0", "AvWMino", "AVWminx0", "AVWroc0", "AVWrocx0", "AvWGorg", "AVWgorx0", "AVWelmf0", "AVWnrg", "AVWglmd0", "AVWworm", "AVWolgo", "AVWsorc0", "AVWsrcx0", "AVWfang"),
-        6 to arrayOf("AVWcvlr0", "AVWcvlx0", "AVWunic0", "AVWunix0", "AVWnaga0", "AVWnagx0", "AVWefre0", "AVWefrx0", "AVWbkni0", "AVWbknx0", "AVWmant0", "AVWmanx0", "AVWcycl0", "AVWcycx0", "AvWWyvr", "AVWwyvx0", "AVWpsye", "AVWmagel", "AVWench", "AVWguns", "AVWbhun", "AVWnixy0", "AVWnixx0"),
-        7 to arrayOf("AvWAngl", "AvWArch", "AVWdrag0", "AVWdrax0", "AVWtitn0", "AVWtitx0", "AVWdevl0", "AVWdevx0", "AVWbone0", "AVWbonx0", "AvWRDrg", "AVWddrx0", "AVWbhmt0", "AVWbhmx0", "AvWHydr", "AVWhydx0", "AVWfbird", "AVWphx", "AVWccoat", "AVWradc", "AVWdred", "AVWjugg", "AVWhsea0", "AVWhspd0"),
+        1 to arrayOf("AvWPike", "AVWpikx0", "AVWcent0", "AVWcenx0", "AVWgrem0", "AVWgrex0", "AVWimp0", "AVWimpx0", "AVWskel0", "AVWskex0", "AVWtrog0", "AvWInfr", "AVWgobl0", "AVWgobx0", "AVWgnll0", "AVWgnlx0", "AVWpixie", "AVWsprit", "AVWhalf", "AVWpeas", "AVWhbom", "AVWNIMPH", "AVWOCEAN"),
+        2 to arrayOf("AvWLCrs", "AvWHCrs", "AVWdwrf0", "AVWdwrx0", "AVWgarg0", "AVWgarx0", "AVWgog0", "AVWgogx0", "AVWzomb0", "AVWzomx0", "AVWharp0", "AVWharx0", "AVWwolf0", "AVWwolx0", "AvWLizr", "AVWlizx0", "AVWelmw0", "AVWicee", "AVWboar", "AVWrog", "AVWmech", "AVWengn", "AVWSWASH", "AVWPIRAT", "AVWlepr"),
+        3 to arrayOf("AvWGrif", "AVWgrix0", "AVWelfw0", "AVWelfx0", "AVWgolm0", "AVWgolx0", "AVWhoun0", "AVWhoux0", "AvWWigh", "AVWwigx0", "AVWbehl0", "AVWbehx0", "AVWorc0", "AVWorcx0", "AvWDFly", "AvWDFir", "AVWelme0", "AVWstone", "AVWmumy", "AVWnomd", "AVWalmd", "AVWalmb", "AVWCORSA", "AVWSEADG", "AVWPR3UP"),
+        4 to arrayOf("AVWswrd0", "AVWswrx0", "AVWpega0", "AVWpegx0", "AVWmage0", "AVWmagx0", "AVWdemn0", "AVWdemx0", "AVWvamp0", "AVWvamx0", "AvWMeds", "AVWmedx0", "AVWogre0", "AVWogrx0", "AvWBasl", "AvWGBas", "AVWelma0", "AVWstorm", "AVWglmg0", "AVWsharp", "AVWauto", "AVWauth", "AVWASSID", "AVWASSUP", "AvWSatyr", "avwslgl0"),
+        5 to arrayOf("AvWMonk", "AVWmonx0", "AVWtree0", "AVWtrex0", "AVWgeni0", "AVWgenx0", "AVWpitf0", "AVWpitx0", "AVWlich0", "AVWlicx0", "AvWMino", "AVWminx0", "AVWroc0", "AVWrocx0", "AvWGorg", "AVWgorx0", "AVWelmf0", "AVWnrg", "AVWglmd0", "AVWworm", "AVWolgo", "AVWPRIES", "AVWSORCS", "AVWfngrm", "AVWtrll"),
+        6 to arrayOf("AVWcvlr0", "AVWcvlx0", "AVWunic0", "AVWunix0", "AVWnaga0", "AVWnagx0", "AVWefre0", "AVWefrx0", "AVWbkni0", "AVWbknx0", "AVWmant0", "AVWmanx0", "AVWcycl0", "AVWcycx0", "AvWWyvr", "AVWwyvx0", "AVWpsye", "AVWmagel", "AVWench", "AVWguns", "AVWbhun", "AVWNIX", "AVWNIXUP"),
+        7 to arrayOf("AvWAngl", "AvWArch", "AVWdrag0", "AVWdrax0", "AVWtitn0", "AVWtitx0", "AVWdevl0", "AVWdevx0", "AVWbone0", "AVWbonx0", "AvWRDrg", "AVWddrx0", "AVWbhmt0", "AVWbhmx0", "AvWHydr", "AVWhydx0", "AVWfbird", "AVWphx", "AVWccoat", "AVWradc", "AvWdred", "AvWjugg", "AVWSERPE", "AVWHASPI"),
         10 to arrayOf("AVWfdrg", "AVWazure", "AVWcdrg", "AVWrust")
     )
 
@@ -55,8 +55,8 @@ class ObjectsRandomizer {
         Faction.STRONGHOLD to "avcstrx0",
         Faction.FORTRESS to "avcftrx0",
         Faction.CONFLUX to "avchforx",
-        Faction.COVE to "avchota0",
-        Faction.FACTORY to "avcfact0"
+        Faction.COVE to "AVCCOVX0",
+        Faction.FACTORY to "AVCfacX0"
     )
 
     private val villages = hashMapOf(
@@ -69,8 +69,8 @@ class ObjectsRandomizer {
         Faction.STRONGHOLD to "avcstro0",
         Faction.FORTRESS to "avcftrt0",
         Faction.CONFLUX to "avchfor0",
-        Faction.COVE to "avchota1",
-        Faction.FACTORY to "avcfact1"
+        Faction.COVE to "AVCCOVE0",
+        Faction.FACTORY to "AVCfacC0"
     )
 
     fun resolveSpriteName(obj: H3mObject): String {
