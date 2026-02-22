@@ -38,13 +38,17 @@ class PngEncoder {
             scanlines.write(data.copyOfRange(width * i, width * i + width))
         }
         val input = scanlines.toByteArray()
-        val buffer = ByteArray(input.size + 100)
+        val output = ByteArrayOutputStream()
+        val buffer = ByteArray(8192)
         val deflater = Deflater()
         deflater.setInput(input)
         deflater.finish()
-        val compressedSize = deflater.deflate(buffer)
+        while (!deflater.finished()) {
+            val count = deflater.deflate(buffer)
+            output.write(buffer, 0, count)
+        }
         deflater.end()
-        return buffer.copyOf(compressedSize)
+        return output.toByteArray()
     }
 
     private fun writeChunk(type: String, content: ByteArray) {

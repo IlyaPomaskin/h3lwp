@@ -123,10 +123,11 @@ class AtlasConverter(
                 val isExtraSprite = file.fileType == LodFileType.SPRITE
                     && file.name.startsWith("av", true)
                 val isMapSprite = file.fileType == LodFileType.MAP
-                // HotA.lod has unknown file type IDs (null); include map sprite DEFs
+                // HotA.lod has unknown file type IDs (null); include landscape DEFs
+                val hotaPrefix = file.name.lowercase()
                 val isUnknownTypeDef = file.fileType == null
                     && file.name.endsWith(".def", true)
-                    && (file.name.startsWith("avw", true) || file.name.startsWith("avl", true))
+                    && (hotaPrefix.startsWith("av") || hotaPrefix.startsWith("ah") || hotaPrefix.startsWith("crates") || hotaPrefix.startsWith("tp") || hotaPrefix.startsWith("frog_") || hotaPrefix.startsWith("rooster_") || hotaPrefix.startsWith("zreef") || hotaPrefix.startsWith("grsmnt"))
                 if (isTerrain || isExtraSprite || isMapSprite || isUnknownTypeDef) {
                     ReadTask(file, null)
                 } else {

@@ -40,6 +40,9 @@ class AtlasPacker(private val packer: PixmapPacker) {
         require(pf.frame.data.size >= expectedSize) {
             "Data too small: ${pf.frame.data.size} < ${expectedSize} (${pf.frame.width}x${pf.frame.height})"
         }
+        require(pf.frame.width > 0 && pf.frame.height > 0) {
+            "Zero dimensions: ${pf.frame.width}x${pf.frame.height}"
+        }
         val encoder = PngEncoder()
         val pngData = encoder.create(
             pf.frame.width,
@@ -48,6 +51,9 @@ class AtlasPacker(private val packer: PixmapPacker) {
             transparent,
             pf.frame.data
         )
+        if (pf.frame.frameName.endsWith(".wgd", true)) {
+            log.info("PNG for ${pf.defName}/${pf.frame.frameName}: ${pf.frame.width}x${pf.frame.height} full=${pf.frame.fullWidth}x${pf.frame.fullHeight} data=${pf.frame.data.size} png=${pngData.size}")
+        }
         return Pixmap(pngData, 0, pngData.size)
     }
 
