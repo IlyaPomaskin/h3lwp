@@ -2,11 +2,12 @@ package com.homm3.livewallpaper.parser.atlas
 
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.g2d.PixmapPacker
+import com.homm3.livewallpaper.parser.def.DefFrame
 import com.homm3.livewallpaper.parser.def.DefReader
-import com.homm3.livewallpaper.parser.def.DefSprite
 import com.homm3.livewallpaper.parser.lod.LodEntry
 import com.homm3.livewallpaper.parser.lod.LodFileType
 import com.homm3.livewallpaper.parser.lod.LodReader
+import com.homm3.livewallpaper.parser.pcx.PcxReader
 import java.io.File
 import java.io.InputStream
 
@@ -72,28 +73,60 @@ class AtlasConverter(
             .files
             .filter { lodFile ->
                 val isDef = lodFile.name.endsWith(".def", true)
+                val isPcx = lodFile.name.endsWith(".pcx", true)
                 val isIgnored = ignoredFiles.any { it.equals(lodFile.name, true) }
-                isDef && !isIgnored
+                (isDef || isPcx) && !isIgnored
             }
     }
 
     private fun readDefs(lodFiles: List<LodEntry>): List<PackableFrame> {
         val defs = mutableListOf<LodEntry>()
+        val pcxFiles = mutableListOf<LodEntry>()
 
-        lodFiles.filterTo(defs) { file ->
-            file.fileType == LodFileType.TERRAIN
-        }
-        lodFiles.filterTo(defs) { file ->
-            val isExtraSprite = file.fileType == LodFileType.SPRITE
-                && file.name.startsWith("av", true)
-            val isMapSprite = file.fileType == LodFileType.MAP
-            isExtraSprite || isMapSprite
+        lodFiles.forEach { file ->
+            if (file.name.endsWith(".pcx", true)) {
+                pcxFiles.add(file)
+            } else {
+                val isTerrain = file.fileType == LodFileType.TERRAIN
+                val isExtraSprite = file.fileType == LodFileType.SPRITE
+                    && file.name.startsWith("av", true)
+                val isMapSprite = file.fileType == LodFileType.MAP
+                if (isTerrain || isExtraSprite || isMapSprite) {
+                    defs.add(file)
+                }
+            }
         }
 
-        return defs
+        val defFrames = defs
             .sortedBy { it.offset }
             .flatMap { entry -> readDefFromLod(entry) }
+
+        val pcxFrames = pcxFiles
+            .sortedBy { it.offset }
+            .flatMap { entry -> readPcxFromLod(entry) }
+
+        return (defFrames + pcxFrames)
             .distinctBy { it.defName + it.frame.frameName }
+    }
+
+    private fun readPcxFromLod(entry: LodEntry): List<PackableFrame> {
+        val stream = lodReader.readFileContent(entry)
+        val pcxReader = PcxReader(stream)
+        val pcx = pcxReader.read()
+
+        val palette = if (pcx.palette != null) {
+            val p = pcx.palette.clone()
+            System.arraycopy(fixedPalette, 0, p, 0, fixedPalette.size)
+            p
+        } else {
+            null
+        }
+
+        val frame = DefFrame(
+            entry.name, pcx.width, pcx.height,
+            pcx.width, pcx.height, 0, 0, pcx.data
+        )
+        return listOf(PackableFrame(frame, entry.name, entry.fileType, palette, listOf(entry.name)))
     }
 
     private fun readDefFromLod(entry: LodEntry): List<PackableFrame> {

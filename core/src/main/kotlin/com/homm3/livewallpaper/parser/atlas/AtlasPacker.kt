@@ -10,7 +10,7 @@ data class PackableFrame(
     val frame: DefFrame,
     val defName: String,
     val fileType: LodFileType?,
-    val palette: ByteArray,
+    val palette: ByteArray?,
     val groupFilenames: List<String>
 )
 
@@ -31,6 +31,9 @@ class AtlasPacker(private val packer: PixmapPacker) {
     )
 
     private fun makePixmap(pf: PackableFrame): Pixmap {
+        if (pf.palette == null) {
+            return makeRgbPixmap(pf)
+        }
         val encoder = PngEncoder()
         val pngData = encoder.create(
             pf.frame.width,
@@ -40,6 +43,14 @@ class AtlasPacker(private val packer: PixmapPacker) {
             pf.frame.data
         )
         return Pixmap(pngData, 0, pngData.size)
+    }
+
+    private fun makeRgbPixmap(pf: PackableFrame): Pixmap {
+        val pixmap = Pixmap(pf.frame.width, pf.frame.height, Pixmap.Format.RGB888)
+        val buffer = pixmap.pixels
+        buffer.put(pf.frame.data)
+        buffer.flip()
+        return pixmap
     }
 
     private fun makeTerrainPixmap(pf: PackableFrame): Pixmap {
@@ -61,7 +72,8 @@ class AtlasPacker(private val packer: PixmapPacker) {
     }
 
     private fun terrainFrame(pf: PackableFrame, acc: PackedFrames): PackedFrames {
-        val initialPalette = pf.palette.clone()
+        val palette = pf.palette ?: return objectFrame(pf, acc)
+        val initialPalette = palette.clone()
         val defName = pf.defName.lowercase(Locale.ROOT)
         val rotations = paletteRotations[defName] ?: emptyList()
         var rotationStep = 0
@@ -71,9 +83,9 @@ class AtlasPacker(private val packer: PixmapPacker) {
             packer.pack(frameName, pixmap)
             pixmap.dispose()
             acc[frameName] = pf
-            rotations.forEach { rotatePalette(pf.palette, it.first, it.second) }
+            rotations.forEach { rotatePalette(palette, it.first, it.second) }
             rotationStep++
-        } while (!initialPalette.contentEquals(pf.palette))
+        } while (!initialPalette.contentEquals(palette))
 
         return acc
     }
