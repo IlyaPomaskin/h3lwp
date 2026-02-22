@@ -74,26 +74,28 @@ class ObjectsRandomizer {
     )
 
     fun resolveSpriteName(obj: H3mObject): String {
-        return when (obj.objectType) {
-            H3mObjectType.RANDOM_MONSTER -> randomMonster(null)
-            H3mObjectType.RANDOM_MONSTER_L1 -> randomMonster(1)
-            H3mObjectType.RANDOM_MONSTER_L2 -> randomMonster(2)
-            H3mObjectType.RANDOM_MONSTER_L3 -> randomMonster(3)
-            H3mObjectType.RANDOM_MONSTER_L4 -> randomMonster(4)
-            H3mObjectType.RANDOM_MONSTER_L5 -> randomMonster(5)
-            H3mObjectType.RANDOM_MONSTER_L6 -> randomMonster(6)
-            H3mObjectType.RANDOM_MONSTER_L7 -> randomMonster(7)
+        // Use deterministic seed so the same object always resolves to the same sprite
+        val rng = Random(obj.x * 31 + obj.y * 997 + obj.z * 7919 + obj.objectType.value)
+        val name = when (obj.objectType) {
+            H3mObjectType.RANDOM_MONSTER -> randomMonster(null, rng)
+            H3mObjectType.RANDOM_MONSTER_L1 -> randomMonster(1, rng)
+            H3mObjectType.RANDOM_MONSTER_L2 -> randomMonster(2, rng)
+            H3mObjectType.RANDOM_MONSTER_L3 -> randomMonster(3, rng)
+            H3mObjectType.RANDOM_MONSTER_L4 -> randomMonster(4, rng)
+            H3mObjectType.RANDOM_MONSTER_L5 -> randomMonster(5, rng)
+            H3mObjectType.RANDOM_MONSTER_L6 -> randomMonster(6, rng)
+            H3mObjectType.RANDOM_MONSTER_L7 -> randomMonster(7, rng)
             H3mObjectType.ARTIFACT -> specificArtifact(obj.def.objectClassSubId)
             H3mObjectType.RANDOM_ART,
             H3mObjectType.RANDOM_TREASURE_ART,
             H3mObjectType.RANDOM_MINOR_ART,
-            H3mObjectType.RANDOM_MAJOR_ART -> randomArtifact()
-            H3mObjectType.RANDOM_RELIC_ART -> randomArtifact(isRelic = true)
-            H3mObjectType.RANDOM_RESOURCE -> randomResource()
-            H3mObjectType.RANDOM_TOWN -> randomTown(obj.def.objectClassSubId)
+            H3mObjectType.RANDOM_MAJOR_ART -> randomArtifact(rng = rng)
+            H3mObjectType.RANDOM_RELIC_ART -> randomArtifact(isRelic = true, rng = rng)
+            H3mObjectType.RANDOM_RESOURCE -> randomResource(rng)
+            H3mObjectType.RANDOM_TOWN -> randomTown(obj.def.objectClassSubId, rng)
             H3mObjectType.RANDOM_DWELLING,
             H3mObjectType.RANDOM_DWELLING_LVL,
-            H3mObjectType.RANDOM_DWELLING_FACTION -> randomDwelling(null, null)
+            H3mObjectType.RANDOM_DWELLING_FACTION -> randomDwelling(null, null, rng)
             H3mObjectType.EVENT,
             H3mObjectType.GRAIL,
             H3mObjectType.RANDOM_HERO,
@@ -101,17 +103,18 @@ class ObjectsRandomizer {
             H3mObjectType.HERO -> ""
             else -> obj.def.spriteName
         }
+        return name.lowercase()
     }
 
-    private fun randomMonster(level: Int?): String {
+    private fun randomMonster(level: Int?, rng: Random): String {
         if (level == null) {
-            return randomMonster(monsters.keys.random())
+            return randomMonster(monsters.keys.toList().random(rng), rng)
         }
-        return monsters[level]!!.random()
+        return monsters[level]!!.random(rng)
     }
 
-    private fun randomArtifact(isRelic: Boolean = false): String {
-        val artId = if (isRelic) Random.nextInt(129, 141) else Random.nextInt(10, 127)
+    private fun randomArtifact(isRelic: Boolean = false, rng: Random): String {
+        val artId = if (isRelic) rng.nextInt(129, 141) else rng.nextInt(10, 127)
         return specificArtifact(artId)
     }
 
@@ -119,23 +122,23 @@ class ObjectsRandomizer {
         return String.format("ava%04d", id)
     }
 
-    private fun randomResource(): String {
-        return resources.random()
+    private fun randomResource(rng: Random): String {
+        return resources.random(rng)
     }
 
-    private fun randomTown(subId: Int): String {
-        val hasFort = Random.nextBoolean()
+    private fun randomTown(subId: Int, rng: Random): String {
+        val hasFort = rng.nextBoolean()
         val factionsToSprites = if (hasFort) towns else villages
-        return factionsToSprites[Faction.fromOrdinal(subId)] ?: factionsToSprites.values.random()
+        return factionsToSprites[Faction.fromOrdinal(subId)] ?: factionsToSprites.values.toList().random(rng)
     }
 
-    private fun randomDwelling(faction: Faction?, level: Int?): String {
+    private fun randomDwelling(faction: Faction?, level: Int?, rng: Random): String {
         if (faction != null && level != null) {
-            return dwellings[faction]?.get(level) ?: randomDwelling(null, null)
+            return dwellings[faction]?.get(level) ?: randomDwelling(null, null, rng)
         }
         if (level != null) {
-            return dwellings.values.random()[level]
+            return dwellings.values.toList().random(rng)[level]
         }
-        return dwellings.values.random().random()
+        return dwellings.values.toList().random(rng).random(rng)
     }
 }

@@ -81,16 +81,17 @@ class GameAssets : Disposable {
         val packer = PixmapPacker(2048, 2048, Pixmap.Format.RGBA4444, 0, false)
         val loader = LodSpriteLoader()
         val allRegionInfos = mutableListOf<RegionInfo>()
-        val loadedNames = mutableSetOf<String>()
+        val loadedDefNames = mutableSetOf<String>()
 
         val hotaFile = Gdx.files.local(AssetPaths.HOTA_LOD_FILE)
         if (hotaFile.exists()) {
             val hotaRegions = loader.loadSprites(hotaFile.read(), neededSprites, packer)
             allRegionInfos.addAll(hotaRegions)
-            hotaRegions.forEach { loadedNames.add(it.packerName.substringBefore("/")) }
+            hotaRegions.forEach { loadedDefNames.add(it.packerName.substringBefore("/")) }
         }
 
-        val remaining = neededSprites.filterNot { it.lowercase(java.util.Locale.ROOT) in loadedNames }.toSet()
+        // Search H3sprite.lod for sprites not found in HotA
+        val remaining = neededSprites.filterNot { it in loadedDefNames }.toSet()
         val lodFile = Gdx.files.local(AssetPaths.LOD_FILE)
         if (lodFile.exists()) {
             allRegionInfos.addAll(loader.loadSprites(lodFile.read(), remaining, packer))

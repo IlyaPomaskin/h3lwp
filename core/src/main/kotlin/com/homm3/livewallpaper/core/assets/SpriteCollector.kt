@@ -3,6 +3,7 @@ package com.homm3.livewallpaper.core.assets
 import com.homm3.livewallpaper.core.map.ObjectsRandomizer
 import com.homm3.livewallpaper.core.map.layers.TerrainLayer
 import com.homm3.livewallpaper.parser.h3m.H3mMap
+import java.util.Locale
 
 class SpriteCollector {
     private val randomizer = ObjectsRandomizer()
@@ -29,7 +30,7 @@ class SpriteCollector {
                     } else {
                         "$spriteName.def"
                     }
-                    names.add(defName)
+                    names.add(defName.lowercase(Locale.ROOT))
                 }
             }
         }
