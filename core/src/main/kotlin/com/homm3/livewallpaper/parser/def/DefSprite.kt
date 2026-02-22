@@ -11,8 +11,7 @@ data class DefSprite(
 data class DefGroup(
     val groupType: Int,
     val filenames: List<String>,
-    val frames: List<DefFrame>,
-    val isLegacy: Boolean
+    val frames: List<DefFrame>
 )
 
 data class DefFrame(

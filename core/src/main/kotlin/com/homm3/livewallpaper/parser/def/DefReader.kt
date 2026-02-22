@@ -11,7 +11,6 @@ private const val MAX_FRAMES_PER_GROUP = 10000
 
 class DefReader(stream: InputStream) {
     private val reader = BinaryReader(stream)
-    private val streamLength = stream.available()
 
     init {
         require(stream.markSupported()) { "Mark not supported on input stream" }
@@ -39,8 +38,7 @@ class DefReader(stream: InputStream) {
     private data class GroupHeader(
         val groupType: Int,
         val filenames: List<String>,
-        val framesOffsets: IntArray,
-        val isLegacy: Boolean
+        val framesOffsets: IntArray
     )
 
     private fun readGroupHeader(): GroupHeader {
@@ -54,72 +52,43 @@ class DefReader(stream: InputStream) {
         reader.readBytes(8) // unknown
         val filenames = (0 until framesCount).map { reader.readString(13) }
         val framesOffsets = IntArray(framesCount) { reader.readInt() }
-        val isLegacy = detectLegacyFormat(framesOffsets)
-        return GroupHeader(groupType, filenames, framesOffsets, isLegacy)
+        return GroupHeader(groupType, filenames, framesOffsets)
     }
 
     private fun readGroupFrames(header: GroupHeader): DefGroup {
         val frames = header.framesOffsets.mapIndexed { i, offset ->
             reader.seek(offset.toLong())
-            readFrame(header.isLegacy, header.filenames[i])
+            readFrame(header.filenames[i])
         }
-        return DefGroup(header.groupType, header.filenames, frames, header.isLegacy)
+        return DefGroup(header.groupType, header.filenames, frames)
     }
 
-    private fun detectLegacyFormat(framesOffsets: IntArray): Boolean {
-        val initialPosition = reader.position
-
-        for (offset in framesOffsets) {
-            reader.seek(offset.toLong())
-            val size = reader.readInt() + 32
-            val frameEnd = size + offset
-
-            if (streamLength != 0 && frameEnd > streamLength) {
-                reader.seek(initialPosition)
-                return true
-            }
-        }
-
-        reader.seek(initialPosition)
-        return false
-    }
-
-    private fun readFrame(isLegacy: Boolean, frameName: String): DefFrame {
+    private fun readFrame(frameName: String): DefFrame {
         val size = reader.readInt()
         val compression = reader.readInt()
         val fullWidth = reader.readInt()
         val fullHeight = reader.readInt()
+        var width = reader.readInt()
+        var height = reader.readInt()
+        var x = reader.readInt()
+        var y = reader.readInt()
 
-        var width: Int
-        var height: Int
-        var x: Int
-        var y: Int
+        var dataOffset = reader.position
 
-        if (isLegacy) {
+        // VCMI: detect old format where width/height are swapped with margins
+        if (compression == 1 && width > fullWidth && height > fullHeight) {
             width = fullWidth
             height = fullHeight
             x = 0
             y = 0
-        } else {
-            width = reader.readInt()
-            height = reader.readInt()
-            x = reader.readInt()
-            y = reader.readInt()
-
-            // VCMI: detect old format where width/height are swapped with margins
-            if (compression == 1 && width > fullWidth && height > fullHeight) {
-                width = fullWidth
-                height = fullHeight
-                x = 0
-                y = 0
-            }
+            dataOffset = reader.position - 16
         }
 
         require(width in 0..MAX_DIMENSION && height in 0..MAX_DIMENSION) {
             "Invalid frame dimensions: ${width}x${height}"
         }
 
-        val dataOffset = reader.position
+        reader.seek(dataOffset)
 
         val data = when (compression) {
             0 -> decompressType0(width * height)
@@ -160,37 +129,43 @@ class DefReader(stream: InputStream) {
         return output.toByteArray()
     }
 
-    private fun decodePackedRLE(offsets: IntArray, blockWidth: Int, dataOffset: Long): ByteArray {
-        val output = ByteArrayOutputStream()
-        for (offset in offsets) {
-            reader.seek(dataOffset + offset)
-            var left = blockWidth
-            while (left > 0) {
-                val code = reader.readByte()
-                val index = code shr 5
-                val length = (code and 0x1F) + 1
-                if (index == 0x7) {
-                    output.write(reader.readBytes(length))
-                } else {
-                    val fill = ByteArray(length)
-                    Arrays.fill(fill, index.toByte())
-                    output.write(fill)
-                }
-                left -= length
+    private fun decodePackedRLELine(output: ByteArrayOutputStream, lineWidth: Int) {
+        var left = lineWidth
+        while (left > 0) {
+            val code = reader.readByte()
+            val index = code shr 5
+            val length = (code and 0x1F) + 1
+            if (index == 0x7) {
+                output.write(reader.readBytes(length))
+            } else {
+                val fill = ByteArray(length)
+                Arrays.fill(fill, index.toByte())
+                output.write(fill)
             }
+            left -= length
+        }
+    }
+
+    private fun decompressType2(width: Int, height: Int, dataOffset: Long): ByteArray {
+        val firstOffset = reader.readShort()
+        reader.seek(dataOffset + firstOffset)
+
+        val output = ByteArrayOutputStream()
+        for (i in 0 until height) {
+            decodePackedRLELine(output, width)
         }
         return output.toByteArray()
     }
 
-    private fun decompressType2(width: Int, height: Int, dataOffset: Long): ByteArray {
-        val offsets = IntArray(height) { reader.readShort() }
-        reader.skip(2)
-        return decodePackedRLE(offsets, width, dataOffset)
-    }
-
     private fun decompressType3(width: Int, height: Int, dataOffset: Long): ByteArray {
-        val blocksCount = height * ((width + 31) / 32)
-        val offsets = IntArray(blocksCount) { reader.readShort() }
-        return decodePackedRLE(offsets, 32, dataOffset)
+        val blocksPerLine = width / 32
+        val output = ByteArrayOutputStream()
+        for (i in 0 until height) {
+            reader.seek(dataOffset + i.toLong() * 2 * blocksPerLine)
+            val lineOffset = reader.readShort()
+            reader.seek(dataOffset + lineOffset)
+            decodePackedRLELine(output, width)
+        }
+        return output.toByteArray()
     }
 }
