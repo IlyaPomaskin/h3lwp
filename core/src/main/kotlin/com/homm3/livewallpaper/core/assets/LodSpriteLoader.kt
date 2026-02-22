@@ -195,11 +195,11 @@ class LodSpriteLoader {
             return regionInfos
         }
 
-        log.info("DEF: $defNameLower type=${entry.fileType} groups=${def.groups.size} fullW=${def.fullWidth} fullH=${def.fullHeight}")
+        log.fine("DEF: $defNameLower type=${entry.fileType} groups=${def.groups.size} fullW=${def.fullWidth} fullH=${def.fullHeight}")
         for ((gi, group) in def.groups.withIndex()) {
-            log.info("  group[$gi] filenames=${group.filenames.size}: ${group.filenames.take(8)}")
+            log.fine("  group[$gi] filenames=${group.filenames.size}: ${group.filenames.take(8)}")
             for (frame in group.frames) {
-                log.info("    frame=${frame.frameName} w=${frame.width} h=${frame.height} fullW=${frame.fullWidth} fullH=${frame.fullHeight} x=${frame.x} y=${frame.y} dataSize=${frame.data.size}")
+                log.fine("    frame=${frame.frameName} w=${frame.width} h=${frame.height} fullW=${frame.fullWidth} fullH=${frame.fullHeight} x=${frame.x} y=${frame.y} dataSize=${frame.data.size}")
                 val frameKey = defNameLower + frame.frameName
                 if (frameKey in seenFrames) continue
                 seenFrames.add(frameKey)
@@ -210,7 +210,7 @@ class LodSpriteLoader {
             }
         }
         for (ri in regionInfos) {
-            log.info("  -> region: name=${ri.regionName} idx=${ri.regionIndex} w=${ri.width} h=${ri.height} fullW=${ri.fullWidth} fullH=${ri.fullHeight} x=${ri.x} y=${ri.y}")
+            log.fine("  -> region: name=${ri.regionName} idx=${ri.regionIndex} w=${ri.width} h=${ri.height} fullW=${ri.fullWidth} fullH=${ri.fullHeight} x=${ri.x} y=${ri.y}")
         }
         return regionInfos
     }

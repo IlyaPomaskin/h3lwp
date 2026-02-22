@@ -33,18 +33,18 @@ class H3mReader(stream: InputStream) {
         if (version == H3mVersion.HOTA) {
             hotaSubVersion = reader.readInt()
         }
-        log.info("Parsing map: version=$version, hotaSubVersion=$hotaSubVersion")
+        log.fine("Parsing map: version=$version, hotaSubVersion=$hotaSubVersion")
         val header = readHeader()
-        log.info("Header: size=${header.size}, underground=${header.hasUnderground}")
+        log.fine("Header: size=${header.size}, underground=${header.hasUnderground}")
         logSection("readTerrain")
         val tiles = readTerrain(header)
         val terrainSample = tiles.take(20).map { "t${it.terrain}:${it.terrainIndex}" }
         val terrainDistinct = tiles.map { it.terrain }.distinct().sorted()
-        log.info("Terrain sample: $terrainSample")
-        log.info("Terrain types found: $terrainDistinct (${tiles.size} tiles)")
+        log.fine("Terrain sample: $terrainSample")
+        log.fine("Terrain types found: $terrainDistinct (${tiles.size} tiles)")
         logSection("readDefs")
         val defs = readDefs()
-        log.info("Defs count: ${defs.size}, first 5: ${defs.take(5).map { it.spriteName }}")
+        log.fine("Defs count: ${defs.size}, first 5: ${defs.take(5).map { it.spriteName }}")
         logSection("readObjects")
         val objects = readObjects(defs)
         return H3mMap(version, hotaSubVersion, header, tiles, defs, objects)
