@@ -148,6 +148,13 @@ nb-configuration.xml
 .DS_Store
 Thumbs.db
 
+## Game assets:
+sprites/*
+user-maps/*
+assets/sprites/*
+assets/user-maps/*
+*.lod
+
 ## Miscellaneous:
 *~
 *.*#
