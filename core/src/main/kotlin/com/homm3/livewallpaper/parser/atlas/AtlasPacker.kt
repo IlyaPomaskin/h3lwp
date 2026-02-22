@@ -104,9 +104,16 @@ class AtlasPacker(private val packer: PixmapPacker) {
 
     private fun objectFrame(pf: PackableFrame, acc: PackedFrames): PackedFrames {
         val frameName = pf.defName + "/" + pf.frame.frameName
-        val pixmap = makePixmap(pf)
-        packer.pack(frameName, pixmap)
-        pixmap.dispose()
+        if (pf.frame.width == 0 || pf.frame.height == 0) {
+            if (pf.frame.fullWidth == 0 || pf.frame.fullHeight == 0) return acc
+            val pixmap = Pixmap(pf.frame.fullWidth, pf.frame.fullHeight, Pixmap.Format.RGBA4444)
+            packer.pack(frameName, pixmap)
+            pixmap.dispose()
+        } else {
+            val pixmap = makePixmap(pf)
+            packer.pack(frameName, pixmap)
+            pixmap.dispose()
+        }
         acc[frameName] = pf
         return acc
     }
