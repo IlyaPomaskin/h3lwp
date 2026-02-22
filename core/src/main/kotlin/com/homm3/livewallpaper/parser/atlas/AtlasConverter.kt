@@ -61,10 +61,14 @@ class AtlasConverter(
                 val types = list.mapNotNull { it.fileType }.distinct().sorted()
                 val nullTypeCount = list.count { it.fileType == null }
                 log.info("LOD entries: ${list.size} total ($defCount DEF, $pcxCount PCX), types=$types, nullType=$nullTypeCount")
+                log.info("LOD file names: ${list.map { it.name }}")
                 onProgress("Reading sprite definitions (${list.size} files)...")
             }
-            .mapCatching(::readDefs)
-            .onFailure { throw InvalidFileException("Can't read content. Try another file.") }
+            .mapCatching { readDefs(it, onProgress) }
+            .onFailure { e ->
+                log.log(Level.SEVERE, "readDefs failed", e)
+                throw InvalidFileException("Can't read content. Try another file.")
+            }
             .also { defs ->
                 val frames = defs.getOrDefault(emptyList())
                 log.info("Read ${frames.size} frames from LOD")
@@ -84,7 +88,10 @@ class AtlasConverter(
                     onProgress("Writing atlas files... ($current/$total)")
                 }
             }
-            .onFailure { throw OutputFileWriteException("Can't save files. Check free space.") }
+            .onFailure { e ->
+                log.log(Level.SEVERE, "writePackerContent failed", e)
+                throw OutputFileWriteException("Can't save files. Check free space.")
+            }
         onProgress("Done!")
     }
 
@@ -100,7 +107,7 @@ class AtlasConverter(
             }
     }
 
-    private fun readDefs(lodFiles: List<LodEntry>): List<PackableFrame> {
+    private fun readDefs(lodFiles: List<LodEntry>, onProgress: (String) -> Unit = {}): List<PackableFrame> {
         // Build group filenames for terrain PCX tiles, sorted by tile index
         val terrainGroupFilenames = buildTerrainGroupFilenames(lodFiles)
 
@@ -116,9 +123,10 @@ class AtlasConverter(
                 val isExtraSprite = file.fileType == LodFileType.SPRITE
                     && file.name.startsWith("av", true)
                 val isMapSprite = file.fileType == LodFileType.MAP
-                // HotA.lod has unknown file type IDs (null); include all DEFs from it
+                // HotA.lod has unknown file type IDs (null); include map sprite DEFs
                 val isUnknownTypeDef = file.fileType == null
                     && file.name.endsWith(".def", true)
+                    && (file.name.startsWith("avw", true) || file.name.startsWith("avl", true))
                 if (isTerrain || isExtraSprite || isMapSprite || isUnknownTypeDef) {
                     ReadTask(file, null)
                 } else {
@@ -132,10 +140,12 @@ class AtlasConverter(
 
         // Process all entries in offset order for sequential LOD reading
         val sorted = readTasks.sortedBy { it.entry.offset }
+        val total = sorted.size
         var processed = 0
         var failed = 0
         return sorted
             .flatMap { task ->
+                log.info("Reading ${task.entry.name} (type=${task.entry.fileType}, size=${task.entry.size}, offset=${task.entry.offset})")
                 try {
                     when {
                         task.entry.name.endsWith(".def", true) -> readDefFromLod(task.entry)
@@ -145,10 +155,14 @@ class AtlasConverter(
                             terrainGroupFilenames[task.terrainDefName]!!
                         )
                         else -> readPcxFromLod(task.entry)
-                    }.also { processed++ }
-                } catch (e: Exception) {
+                    }.also {
+                        processed++
+                        onProgress("Reading sprite definitions ($processed/$total)...")
+                    }
+                } catch (e: Throwable) {
                     failed++
                     log.log(Level.WARNING, "Failed to read ${task.entry.name} (type=${task.entry.fileType}, size=${task.entry.size})", e)
+                    onProgress("Reading sprite definitions ($processed/$total)...")
                     emptyList()
                 }
             }

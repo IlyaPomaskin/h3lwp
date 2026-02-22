@@ -5,6 +5,10 @@ import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.Arrays
 
+private const val MAX_DIMENSION = 4096
+private const val MAX_GROUPS = 256
+private const val MAX_FRAMES_PER_GROUP = 10000
+
 class DefReader(stream: InputStream) {
     private val reader = BinaryReader(stream)
     private val streamLength = stream.available()
@@ -19,6 +23,11 @@ class DefReader(stream: InputStream) {
         val fullWidth = reader.readInt()
         val fullHeight = reader.readInt()
         val groupsCount = reader.readInt()
+
+        require(groupsCount in 0..MAX_GROUPS) {
+            "Invalid groupsCount: $groupsCount"
+        }
+
         val rawPalette = reader.readBytes(256 * 3)
 
         val groupHeaders = (0 until groupsCount).map { readGroupHeader() }
@@ -37,6 +46,11 @@ class DefReader(stream: InputStream) {
     private fun readGroupHeader(): GroupHeader {
         val groupType = reader.readInt()
         val framesCount = reader.readInt()
+
+        require(framesCount in 0..MAX_FRAMES_PER_GROUP) {
+            "Invalid framesCount: $framesCount"
+        }
+
         reader.readBytes(8) // unknown
         val filenames = (0 until framesCount).map { reader.readString(13) }
         val framesOffsets = IntArray(framesCount) { reader.readInt() }
@@ -76,10 +90,10 @@ class DefReader(stream: InputStream) {
         val fullWidth = reader.readInt()
         val fullHeight = reader.readInt()
 
-        val width: Int
-        val height: Int
-        val x: Int
-        val y: Int
+        var width: Int
+        var height: Int
+        var x: Int
+        var y: Int
 
         if (isLegacy) {
             width = fullWidth
@@ -91,16 +105,28 @@ class DefReader(stream: InputStream) {
             height = reader.readInt()
             x = reader.readInt()
             y = reader.readInt()
+
+            // VCMI: detect old format where width/height are swapped with margins
+            if (compression == 1 && width > fullWidth && height > fullHeight) {
+                width = fullWidth
+                height = fullHeight
+                x = 0
+                y = 0
+            }
+        }
+
+        require(width in 0..MAX_DIMENSION && height in 0..MAX_DIMENSION) {
+            "Invalid frame dimensions: ${width}x${height}"
         }
 
         val dataOffset = reader.position
 
         val data = when (compression) {
-            0 -> decompressType0(size)
+            0 -> decompressType0(width * height)
             1 -> decompressType1(width, height, dataOffset)
             2 -> decompressType2(width, height, dataOffset)
             3 -> decompressType3(width, height, dataOffset)
-            else -> decompressType0(size)
+            else -> decompressType0(width * height)
         }
 
         return DefFrame(frameName, width, height, fullWidth, fullHeight, x, y, data)
@@ -117,7 +143,7 @@ class DefReader(stream: InputStream) {
         for (offset in offsets) {
             reader.seek(dataOffset + offset)
             var left = width
-            do {
+            while (left > 0) {
                 val index = reader.readByte()
                 val length = reader.readByte() + 1
                 if (index == 0xFF) {
@@ -128,7 +154,7 @@ class DefReader(stream: InputStream) {
                     output.write(fill)
                 }
                 left -= length
-            } while (left != 0)
+            }
         }
 
         return output.toByteArray()
@@ -139,7 +165,7 @@ class DefReader(stream: InputStream) {
         for (offset in offsets) {
             reader.seek(dataOffset + offset)
             var left = blockWidth
-            do {
+            while (left > 0) {
                 val code = reader.readByte()
                 val index = code shr 5
                 val length = (code and 0x1F) + 1
@@ -151,7 +177,7 @@ class DefReader(stream: InputStream) {
                     output.write(fill)
                 }
                 left -= length
-            } while (left != 0)
+            }
         }
         return output.toByteArray()
     }
@@ -163,7 +189,7 @@ class DefReader(stream: InputStream) {
     }
 
     private fun decompressType3(width: Int, height: Int, dataOffset: Long): ByteArray {
-        val blocksCount = height * width / 32
+        val blocksCount = height * ((width + 31) / 32)
         val offsets = IntArray(blocksCount) { reader.readShort() }
         return decodePackedRLE(offsets, 32, dataOffset)
     }

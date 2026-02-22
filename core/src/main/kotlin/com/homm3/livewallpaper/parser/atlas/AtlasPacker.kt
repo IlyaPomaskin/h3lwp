@@ -5,6 +5,8 @@ import com.badlogic.gdx.graphics.g2d.PixmapPacker
 import com.homm3.livewallpaper.parser.def.DefFrame
 import com.homm3.livewallpaper.parser.lod.LodFileType
 import java.util.Locale
+import java.util.logging.Level
+import java.util.logging.Logger
 
 data class PackableFrame(
     val frame: DefFrame,
@@ -33,6 +35,10 @@ class AtlasPacker(private val packer: PixmapPacker) {
     private fun makePixmap(pf: PackableFrame): Pixmap {
         if (pf.palette == null) {
             return makeRgbPixmap(pf)
+        }
+        val expectedSize = pf.frame.width * pf.frame.height
+        require(pf.frame.data.size == expectedSize) {
+            "Data size mismatch: ${pf.frame.data.size} != ${expectedSize} (${pf.frame.width}x${pf.frame.height})"
         }
         val encoder = PngEncoder()
         val pngData = encoder.create(
@@ -101,13 +107,22 @@ class AtlasPacker(private val packer: PixmapPacker) {
 
     fun packFrames(frames: List<PackableFrame>): PackedFrames {
         return frames.foldRight(mutableMapOf()) { pf, acc ->
-            when (pf.fileType) {
-                LodFileType.TERRAIN -> terrainFrame(pf, acc)
-                LodFileType.SPRITE -> objectFrame(pf, acc)
-                LodFileType.MAP -> objectFrame(pf, acc)
-                null -> objectFrame(pf, acc)
-                else -> acc
+            try {
+                when (pf.fileType) {
+                    LodFileType.TERRAIN -> terrainFrame(pf, acc)
+                    LodFileType.SPRITE -> objectFrame(pf, acc)
+                    LodFileType.MAP -> objectFrame(pf, acc)
+                    null -> objectFrame(pf, acc)
+                    else -> acc
+                }
+            } catch (e: Throwable) {
+                log.log(Level.WARNING, "Failed to pack ${pf.defName}/${pf.frame.frameName}", e)
+                acc
             }
         }
+    }
+
+    companion object {
+        private val log = Logger.getLogger(AtlasPacker::class.java.name)
     }
 }
