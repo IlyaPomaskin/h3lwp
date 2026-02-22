@@ -32,6 +32,7 @@ class GameAssets : Disposable {
     lateinit var i18n: I18NBundle
 
     private lateinit var atlas: TextureAtlas
+    private var hotaAtlas: TextureAtlas? = null
 
     private val lazyEmptyTexture = lazy {
         val pixmap = Pixmap(1, 1, Pixmap.Format.RGBA8888)
@@ -56,11 +57,23 @@ class GameAssets : Disposable {
         return Gdx.files.local(AssetPaths.ATLAS_PATH).exists()
     }
 
+    fun isHotaAssetsAvailable(): Boolean {
+        return Gdx.files.local(AssetPaths.HOTA_ATLAS_PATH).exists()
+    }
+
     suspend fun loadGameAssets(): List<H3mMap> {
         atlas = storage.load<TextureAtlas>(
             AssetPaths.ATLAS_PATH,
             TextureAtlasLoader.TextureAtlasParameter(true)
         )
+
+        if (isHotaAssetsAvailable()) {
+            hotaAtlas = storage.load<TextureAtlas>(
+                AssetPaths.HOTA_ATLAS_PATH,
+                TextureAtlasLoader.TextureAtlasParameter(true)
+            )
+        }
+
         val mapFiles = Gdx.files.local(AssetPaths.USER_MAPS_FOLDER)
             .list(".h3m")
             .filter { it.length() > 0L }
@@ -77,28 +90,32 @@ class GameAssets : Disposable {
     }
 
     internal fun findAtlasRegions(name: String): Array<TextureAtlas.AtlasRegion> {
-        return atlas.findRegions(name)
+        val regions = atlas.findRegions(name)
+        if (regions.isEmpty) {
+            val hotaRegions = hotaAtlas?.findRegions(name)
+            if (hotaRegions != null && !hotaRegions.isEmpty) return hotaRegions
+        }
+        return regions
     }
 
     override fun dispose() {
         if (::skin.isInitialized) skin.dispose()
         if (lazyEmptyTexture.isInitialized()) emptyTexture.dispose()
+        hotaAtlas = null
         runBlocking { storage.dispose() }
     }
 
     private fun getFrames(defName: String): Array<TextureAtlas.AtlasRegion> {
         if (defName.isEmpty()) return gdxArrayOf(emptyRegion)
 
-        return atlas
-            .findRegions(defName)
-            .let { regions ->
-                if (regions.isEmpty) {
-                    log.error { "Can't find def $defName" }
-                    gdxArrayOf(emptyRegion)
-                } else {
-                    regions
-                }
-            }
+        val regions = atlas.findRegions(defName)
+        if (!regions.isEmpty) return regions
+
+        val hotaRegions = hotaAtlas?.findRegions(defName)
+        if (hotaRegions != null && !hotaRegions.isEmpty) return hotaRegions
+
+        log.error { "Can't find def $defName" }
+        return gdxArrayOf(emptyRegion)
     }
 
     companion object {

@@ -20,6 +20,11 @@ class AndroidEngine(
             val intent = Intent(context, SettingsActivity::class.java)
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(intent)
+        },
+        onHotaButtonClick = { _, _ ->
+            val intent = Intent(context, AssetSetupActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
         }
     ),
     AndroidWallpaperListener {

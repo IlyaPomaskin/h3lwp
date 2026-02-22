@@ -17,9 +17,9 @@ class OutputFileWriteException(msg: String) : Exception(msg)
 class AtlasConverter(
     lodFileInputStream: InputStream,
     private val outputDirectory: File,
-    private val atlasName: String
+    private val atlasName: String,
+    private val minimalDefCount: Int = 1000
 ) {
-    private val minimalDefCount = 1000
     private val packer = PixmapPacker(2048, 2048, Pixmap.Format.RGBA4444, 0, false)
     private val lodReader = LodReader(lodFileInputStream)
     private val atlasPacker = AtlasPacker(packer)

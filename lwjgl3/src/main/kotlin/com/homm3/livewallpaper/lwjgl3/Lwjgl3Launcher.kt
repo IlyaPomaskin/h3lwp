@@ -24,7 +24,8 @@ fun main() {
     Lwjgl3Application(
         Engine(
             prefs = MutableStateFlow(WallpaperPreferences()),
-            onSettingsButtonClick = ::selectLodFile
+            onSettingsButtonClick = ::selectLodFile,
+            onHotaButtonClick = ::selectHotaLodFile
         ),
         Lwjgl3ApplicationConfiguration().apply {
             setTitle("Heroes 3 LiveWallpaper")
@@ -77,6 +78,34 @@ private fun selectLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
         outputDir.mkdirs()
         try {
             AtlasConverter(selected.inputStream(), outputDir, AssetPaths.ATLAS_NAME)
+                .convert(onProgress)
+            onDone()
+        } catch (e: Exception) {
+            onProgress(e.message ?: "Conversion failed")
+        }
+    }
+}
+
+private fun selectHotaLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
+    val path = MemoryStack.stackPush().use { stack ->
+        val filter: PointerBuffer = stack.mallocPointer(1)
+        filter.put(stack.UTF8("*.lod"))
+        filter.flip()
+        TinyFileDialogs.tinyfd_openFileDialog(
+            "Select HotA.lod",
+            null,
+            filter,
+            "HoMM3 LOD files (*.lod)",
+            false
+        )
+    } ?: return
+
+    thread(isDaemon = true) {
+        val selected = File(path)
+        val outputDir = Gdx.files.local(AssetPaths.ATLAS_FOLDER).file()
+        outputDir.mkdirs()
+        try {
+            AtlasConverter(selected.inputStream(), outputDir, AssetPaths.HOTA_ATLAS_NAME, minimalDefCount = 0)
                 .convert(onProgress)
             onDone()
         } catch (e: Exception) {

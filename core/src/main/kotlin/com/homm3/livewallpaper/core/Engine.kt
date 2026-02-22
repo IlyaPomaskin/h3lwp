@@ -15,7 +15,8 @@ import ktx.async.KtxAsync
 
 open class Engine(
     private val prefs: Flow<WallpaperPreferences>,
-    private val onSettingsButtonClick: (onProgress: (String) -> Unit, onDone: () -> Unit) -> Unit = { _, _ -> }
+    private val onSettingsButtonClick: (onProgress: (String) -> Unit, onDone: () -> Unit) -> Unit = { _, _ -> },
+    private val onHotaButtonClick: (onProgress: (String) -> Unit, onDone: () -> Unit) -> Unit = { _, _ -> }
 ) : KtxGame<Screen>(null, false) {
     private var assets: GameAssets? = null
     private lateinit var camera: MapCamera
@@ -33,7 +34,7 @@ open class Engine(
         gameAssets.loadUiAssets()
 
         addScreen(LoadingScreen(gameAssets))
-        addScreen(AssetSetupScreen(gameAssets, onSettingsButtonClick, onConversionDone = ::loadAndStart))
+        addScreen(AssetSetupScreen(gameAssets, onSettingsButtonClick, onHotaButtonClick, onConversionDone = ::loadAndStart))
         addScreen(GameScreen(camera, prefs))
 
         loadAndStart()

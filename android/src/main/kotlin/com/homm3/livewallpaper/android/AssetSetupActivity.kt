@@ -78,8 +78,48 @@ class AssetSetupActivity : ComponentActivity() {
         }
     }
 
+    private val hotaFilePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri == null) return@registerForActivityResult
+        isHotaConverting = true
+        hotaStatusMessage = ""
+
+        thread {
+            try {
+                val inputStream = contentResolver.openInputStream(uri)
+                    ?: run {
+                        runOnUiThread {
+                            hotaStatusMessage = "Failed to open file"
+                            isHotaConverting = false
+                        }
+                        return@thread
+                    }
+
+                val outputDir = filesDir.resolve(AssetPaths.ATLAS_FOLDER)
+                outputDir.mkdirs()
+
+                val converter = AtlasConverter(inputStream, outputDir, AssetPaths.HOTA_ATLAS_NAME, minimalDefCount = 0)
+                converter.convert { progress ->
+                    runOnUiThread { hotaStatusMessage = progress }
+                }
+
+                runOnUiThread {
+                    isHotaConverting = false
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    hotaStatusMessage = "Error: ${e.message}"
+                    isHotaConverting = false
+                }
+            }
+        }
+    }
+
     private var isConverting by mutableStateOf(false)
     private var statusMessage by mutableStateOf("")
+    private var isHotaConverting by mutableStateOf(false)
+    private var hotaStatusMessage by mutableStateOf("")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -98,7 +138,10 @@ class AssetSetupActivity : ComponentActivity() {
                 AssetSetupScreen(
                     isConverting = isConverting,
                     statusMessage = statusMessage,
-                    onSelectFile = { filePickerLauncher.launch("application/octet-stream") }
+                    onSelectFile = { filePickerLauncher.launch("application/octet-stream") },
+                    isHotaConverting = isHotaConverting,
+                    hotaStatusMessage = hotaStatusMessage,
+                    onSelectHotaFile = { hotaFilePickerLauncher.launch("application/octet-stream") }
                 )
             }
         }
@@ -109,7 +152,10 @@ class AssetSetupActivity : ComponentActivity() {
 private fun AssetSetupScreen(
     isConverting: Boolean,
     statusMessage: String,
-    onSelectFile: () -> Unit
+    onSelectFile: () -> Unit,
+    isHotaConverting: Boolean,
+    hotaStatusMessage: String,
+    onSelectHotaFile: () -> Unit
 ) {
     Scaffold { contentPadding ->
         Column(
@@ -148,6 +194,41 @@ private fun AssetSetupScreen(
             if (statusMessage.isNotEmpty()) {
                 Text(
                     text = statusMessage,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
+
+            Text(
+                text = stringResource(R.string.asset_setup_hota_title),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            Text(
+                text = stringResource(R.string.asset_setup_hota_description),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+
+            Button(
+                onClick = onSelectHotaFile,
+                enabled = !isHotaConverting
+            ) {
+                Text(text = stringResource(R.string.asset_setup_hota_select_button))
+            }
+
+            if (isHotaConverting) {
+                CircularProgressIndicator(
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+            }
+
+            if (hotaStatusMessage.isNotEmpty()) {
+                Text(
+                    text = hotaStatusMessage,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 16.dp)
                 )

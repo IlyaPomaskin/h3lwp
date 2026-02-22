@@ -19,6 +19,7 @@ import kotlin.math.min
 class AssetSetupScreen(
     private val assets: GameAssets,
     private val onSettingsButtonClick: (onProgress: (String) -> Unit, onDone: () -> Unit) -> Unit,
+    private val onHotaButtonClick: (onProgress: (String) -> Unit, onDone: () -> Unit) -> Unit = { _, _ -> },
     private val onConversionDone: () -> Unit = {}
 ) : KtxScreen {
 
@@ -27,7 +28,10 @@ class AssetSetupScreen(
     }
     private lateinit var statusLabel: Label
     private lateinit var button: TextButton
+    private lateinit var hotaButton: TextButton
+    private lateinit var hotaStatusLabel: Label
     private var converting = false
+    private var hotaConverting = false
     private val stage = stage(viewport = viewport).apply {
         actors {
             verticalGroup {
@@ -52,6 +56,26 @@ class AssetSetupScreen(
                     }
                 }
                 this@AssetSetupScreen.statusLabel = label("", skin = assets.skin) {
+                    setWrap(true)
+                    setAlignment(Align.center)
+                }
+                this@AssetSetupScreen.hotaButton = textButton(assets.i18n.get("openHotaSettings"), skin = assets.skin) {
+                    onClick {
+                        if (hotaConverting) return@onClick
+                        hotaConverting = true
+                        isDisabled = true
+                        onHotaButtonClick(
+                            { status -> Gdx.app.postRunnable { hotaStatusLabel.setText(status) } },
+                            {
+                                Gdx.app.postRunnable {
+                                    hotaConverting = false
+                                    isDisabled = false
+                                }
+                            }
+                        )
+                    }
+                }
+                this@AssetSetupScreen.hotaStatusLabel = label("", skin = assets.skin) {
                     setWrap(true)
                     setAlignment(Align.center)
                 }
