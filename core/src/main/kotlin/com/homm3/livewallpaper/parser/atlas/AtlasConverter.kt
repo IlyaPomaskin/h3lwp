@@ -127,7 +127,7 @@ class AtlasConverter(
                 val hotaPrefix = file.name.lowercase()
                 val isUnknownTypeDef = file.fileType == null
                     && file.name.endsWith(".def", true)
-                    && (hotaPrefix.startsWith("av") || hotaPrefix.startsWith("ah") || hotaPrefix.startsWith("crates") || hotaPrefix.startsWith("tp") || hotaPrefix.startsWith("frog_") || hotaPrefix.startsWith("rooster_") || hotaPrefix.startsWith("zreef") || hotaPrefix.startsWith("grsmnt"))
+                    && (hotaPrefix.startsWith("av") || hotaPrefix.startsWith("ah") || hotaPrefix.startsWith("crates") || hotaPrefix.startsWith("tp") || hotaPrefix.startsWith("frog_") || hotaPrefix.startsWith("rooster_") || hotaPrefix.startsWith("zreef") || hotaPrefix.startsWith("grsmnt") || hotaPrefix.startsWith("zsand") || hotaPrefix.startsWith("pig") || hotaPrefix.startsWith("miniftws") || hotaPrefix.startsWith("swpmsh"))
                 if (isTerrain || isExtraSprite || isMapSprite || isUnknownTypeDef) {
                     ReadTask(file, null)
                 } else {

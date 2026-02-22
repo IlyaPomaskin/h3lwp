@@ -139,9 +139,9 @@ enum class H3mObjectType(val value: Int) {
     MAGIC_CLOUDS(229),
     MAGIC_PLAINS2(230),
     ROCKLANDS(231),
-    HOTA_CUSTOM_OBJECT_1(232),
-    HOTA_CUSTOM_OBJECT_2(233),
-    HOTA_CUSTOM_OBJECT_3(234);
+    HOTA_CUSTOM_OBJECT_3(144),
+    HOTA_CUSTOM_OBJECT_1(145),
+    HOTA_CUSTOM_OBJECT_2(146);
 
     companion object {
         fun fromInt(value: Int?): H3mObjectType {
@@ -238,7 +238,8 @@ class H3mObjectDataReader(
             1, 3, 4 -> stream.skip(4)
             5 -> {
                 val artNum = stream.readByte()
-                stream.skip(artNum * 2)
+                val artSize = if (version == H3mVersion.HOTA && hotaSubVersion >= 5) 4 else 2
+                stream.skip(artNum * artSize)
             }
             6 -> {
                 val typeNum = stream.readByte()
@@ -246,6 +247,21 @@ class H3mObjectDataReader(
             }
             7 -> stream.skip(7 * 4)
             8, 9 -> stream.skip(1)
+            10 -> {
+                // HOTA_MULTI quest type
+                val missionSubId = stream.readInt()
+                when (missionSubId) {
+                    0 -> {
+                        // HOTA_HERO_CLASS: bitmask with size prefix
+                        val classesCount = stream.readInt()
+                        val classesBytes = (classesCount + 7) / 8
+                        stream.skip(classesBytes)
+                    }
+                    1 -> stream.skip(4) // HOTA_REACH_DATE
+                    2 -> stream.skip(4) // HOTA_GAME_DIFFICULTY
+                    3 -> stream.skip(5) // HOTA_SCRIPTED: scriptID(4) + unknown(1)
+                }
+            }
         }
         stream.skip(4)
         stream.readString()
@@ -479,9 +495,8 @@ class H3mObjectDataReader(
     fun readArtifact(objType: H3mObjectType?) {
         readMessageAndGuards()
         if (objType === H3mObjectType.SPELL_SCROLL) {
-            stream.readInt()
-        }
-        if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+            stream.readInt() // scroll spell ID
+        } else if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
             stream.skip(5) // pickupMode(4) + pickupFlags(1)
         }
     }

@@ -752,24 +752,27 @@ class H3mReader(stream: InputStream) {
         val objectsCount = reader.readInt() - 1
         val objectsReader = H3mObjectDataReader(version, reader, hotaSubVersion)
         for (objectIndex in 0..objectsCount) {
+            val posBeforeObject = reader.position
             val x = reader.readByte()
             val y = reader.readByte()
             val z = reader.readByte()
             val index = reader.readInt()
             if (index < 0 || index >= defs.size) {
-                log.warning("Invalid def index $index at object $objectIndex/${objectsCount + 1}, stopping object parsing")
+                log.warning("Invalid def index $index at object $objectIndex/${objectsCount + 1} @ offset $posBeforeObject, stopping object parsing")
                 break
             }
             val def = defs[index]
             val objectType = H3mObjectType.fromInt(def.objectId)
+            log.info("Object $objectIndex: ($x,$y,$z) def=$index ${def.spriteName} type=$objectType subId=${def.objectClassSubId} @ offset $posBeforeObject")
 
             reader.readBytes(5)
 
-            when (objectType) {
-                H3mObjectType.EVENT -> objectsReader.readEvent()
+            val posBeforeData = reader.position
+            val parsedType = when (objectType) {
+                H3mObjectType.EVENT -> { objectsReader.readEvent(); "EVENT" }
                 H3mObjectType.HERO,
                 H3mObjectType.RANDOM_HERO,
-                H3mObjectType.PRISON -> objectsReader.readHero()
+                H3mObjectType.PRISON -> { objectsReader.readHero(); "HERO" }
                 H3mObjectType.MONSTER,
                 H3mObjectType.RANDOM_MONSTER,
                 H3mObjectType.RANDOM_MONSTER_L1,
@@ -778,50 +781,53 @@ class H3mReader(stream: InputStream) {
                 H3mObjectType.RANDOM_MONSTER_L4,
                 H3mObjectType.RANDOM_MONSTER_L5,
                 H3mObjectType.RANDOM_MONSTER_L6,
-                H3mObjectType.RANDOM_MONSTER_L7 -> objectsReader.readMonster()
+                H3mObjectType.RANDOM_MONSTER_L7 -> { objectsReader.readMonster(); "MONSTER" }
                 H3mObjectType.OCEAN_BOTTLE,
-                H3mObjectType.SIGN -> objectsReader.readSign()
-                H3mObjectType.SEER_HUT -> objectsReader.readSeerHut()
-                H3mObjectType.WITCH_HUT -> objectsReader.readWitchHut()
-                H3mObjectType.SCHOLAR -> objectsReader.readScholar()
+                H3mObjectType.SIGN -> { objectsReader.readSign(); "SIGN" }
+                H3mObjectType.SEER_HUT -> { objectsReader.readSeerHut(); "SEER_HUT" }
+                H3mObjectType.WITCH_HUT -> { objectsReader.readWitchHut(); "WITCH_HUT" }
+                H3mObjectType.SCHOLAR -> { objectsReader.readScholar(); "SCHOLAR" }
                 H3mObjectType.GARRISON,
-                H3mObjectType.GARRISON2 -> objectsReader.readGarrison()
+                H3mObjectType.GARRISON2 -> { objectsReader.readGarrison(); "GARRISON" }
                 H3mObjectType.ARTIFACT,
                 H3mObjectType.RANDOM_ART,
                 H3mObjectType.RANDOM_TREASURE_ART,
                 H3mObjectType.RANDOM_MINOR_ART,
                 H3mObjectType.RANDOM_MAJOR_ART,
                 H3mObjectType.RANDOM_RELIC_ART,
-                H3mObjectType.SPELL_SCROLL -> objectsReader.readArtifact(objectType)
+                H3mObjectType.SPELL_SCROLL -> { objectsReader.readArtifact(objectType); "ARTIFACT" }
                 H3mObjectType.RANDOM_RESOURCE,
-                H3mObjectType.RESOURCE -> objectsReader.readResource()
+                H3mObjectType.RESOURCE -> { objectsReader.readResource(); "RESOURCE" }
                 H3mObjectType.RANDOM_TOWN,
-                H3mObjectType.TOWN -> objectsReader.readTown()
+                H3mObjectType.TOWN -> { objectsReader.readTown(); "TOWN" }
                 H3mObjectType.MINE,
                 H3mObjectType.SHRINE_OF_MAGIC_INCANTATION,
                 H3mObjectType.SHRINE_OF_MAGIC_GESTURE,
                 H3mObjectType.SHRINE_OF_MAGIC_THOUGHT,
                 H3mObjectType.SHIPYARD,
-                H3mObjectType.LIGHTHOUSE,
-                H3mObjectType.GRAIL -> reader.skip(4)
-                H3mObjectType.ABANDONED_MINE -> objectsReader.readAbandonedMine()
+                H3mObjectType.LIGHTHOUSE -> { reader.skip(4); "SKIP4" }
+                H3mObjectType.GRAIL -> {
+                    if (def.objectClassSubId < 1000) reader.skip(4) // regular grail
+                    // else: HotA battle location, no data
+                    "GRAIL"
+                }
+                H3mObjectType.ABANDONED_MINE -> { objectsReader.readAbandonedMine(); "ABANDONED_MINE" }
                 H3mObjectType.CREATURE_GENERATOR1,
                 H3mObjectType.CREATURE_GENERATOR2,
                 H3mObjectType.CREATURE_GENERATOR3,
-                H3mObjectType.CREATURE_GENERATOR4 -> reader.skip(4)
-                H3mObjectType.PANDORAS_BOX -> objectsReader.readPandorasBox()
+                H3mObjectType.CREATURE_GENERATOR4 -> { reader.skip(4); "CREATURE_GEN" }
+                H3mObjectType.PANDORAS_BOX -> { objectsReader.readPandorasBox(); "PANDORAS_BOX" }
                 H3mObjectType.CREATURE_BANK,
                 H3mObjectType.DERELICT_SHIP,
                 H3mObjectType.DRAGON_UTOPIA,
                 H3mObjectType.CRYPT,
-                H3mObjectType.SHIPWRECK -> objectsReader.readBank()
+                H3mObjectType.SHIPWRECK -> { objectsReader.readBank(); "BANK" }
                 H3mObjectType.RANDOM_DWELLING,
                 H3mObjectType.RANDOM_DWELLING_LVL,
-                H3mObjectType.RANDOM_DWELLING_FACTION -> objectsReader.readRandomDwelling(objectType)
-                H3mObjectType.QUEST_GUARD -> objectsReader.readQuestGuard()
-                H3mObjectType.HERO_PLACEHOLDER -> objectsReader.readHeroPlaceholder()
-                H3mObjectType.BORDER_GATE -> objectsReader.readBorderGate(def.objectClassSubId)
-                // Objects that gain HotA5+ short reward data (8 bytes)
+                H3mObjectType.RANDOM_DWELLING_FACTION -> { objectsReader.readRandomDwelling(objectType); "RANDOM_DWELLING" }
+                H3mObjectType.QUEST_GUARD -> { objectsReader.readQuestGuard(); "QUEST_GUARD" }
+                H3mObjectType.HERO_PLACEHOLDER -> { objectsReader.readHeroPlaceholder(); "HERO_PLACEHOLDER" }
+                H3mObjectType.BORDER_GATE -> { objectsReader.readBorderGate(def.objectClassSubId); "BORDER_GATE" }
                 H3mObjectType.TREASURE_CHEST,
                 H3mObjectType.CORPSE,
                 H3mObjectType.WARRIORS_TOMB,
@@ -829,18 +835,19 @@ class H3mReader(stream: InputStream) {
                 H3mObjectType.SEA_CHEST,
                 H3mObjectType.FLOTSAM,
                 H3mObjectType.TREE_OF_KNOWLEDGE,
-                H3mObjectType.PYRAMID -> objectsReader.readHotaRewardShort()
-                // Objects that gain HotA5+ long reward data (18 bytes)
+                H3mObjectType.PYRAMID -> { objectsReader.readHotaRewardShort(); "HOTA_REWARD_SHORT" }
                 H3mObjectType.LEAN_TO,
                 H3mObjectType.WAGON,
-                H3mObjectType.CAMPFIRE -> objectsReader.readHotaRewardLong()
-                H3mObjectType.BLACK_MARKET -> objectsReader.readBlackMarket()
-                H3mObjectType.UNIVERSITY -> objectsReader.readUniversity()
+                H3mObjectType.CAMPFIRE -> { objectsReader.readHotaRewardLong(); "HOTA_REWARD_LONG" }
+                H3mObjectType.BLACK_MARKET -> { objectsReader.readBlackMarket(); "BLACK_MARKET" }
+                H3mObjectType.UNIVERSITY -> { objectsReader.readUniversity(); "UNIVERSITY" }
                 H3mObjectType.HOTA_CUSTOM_OBJECT_1,
                 H3mObjectType.HOTA_CUSTOM_OBJECT_2,
-                H3mObjectType.HOTA_CUSTOM_OBJECT_3 -> objectsReader.readHotaCustomObject(objectType, def.objectClassSubId)
-                else -> Unit
+                H3mObjectType.HOTA_CUSTOM_OBJECT_3 -> { objectsReader.readHotaCustomObject(objectType, def.objectClassSubId); "HOTA_CUSTOM" }
+                else -> "NONE"
             }
+            val bytesConsumed = reader.position - posBeforeData
+            log.info("  -> parsed as $parsedType, consumed $bytesConsumed bytes")
 
             objects.add(H3mObject(x, y, z, def, objectType))
         }
