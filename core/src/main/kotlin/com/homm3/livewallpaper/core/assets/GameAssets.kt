@@ -53,18 +53,22 @@ class GameAssets : Disposable {
         return Gdx.files.local(AssetPaths.LOD_FILE).exists()
     }
 
-    suspend fun loadGameAssets(): List<H3mMap> {
-        // 1. Load maps
-        val mapFiles = Gdx.files.local(AssetPaths.USER_MAPS_FOLDER)
+    fun getAllMapFiles(): List<String> {
+        return Gdx.files.local(AssetPaths.USER_MAPS_FOLDER)
             .list(".h3m")
             .filter { it.length() > 0L }
             .sortedBy { it.length() }
+            .map { it.file().name }
+    }
 
+    data class LoadResult(val maps: List<H3mMap>, val loadedFileNames: List<String>)
+
+    suspend fun loadGameAssets(): LoadResult {
+        // 1. Load maps selected by queue
+        val allMapFiles = getAllMapFiles()
         val sizeCache = mutableMapOf<String, Int>()
         val mapQueue = MapQueue()
-        val filesToLoad = mapQueue.getMapsForToday(
-            mapFiles.map { it.file().name }
-        ) { fileName ->
+        val filesToLoad = mapQueue.getMapsForToday(allMapFiles) { fileName ->
             sizeCache.getOrPut(fileName) {
                 val fileHandle = Gdx.files.local("${AssetPaths.USER_MAPS_FOLDER}/$fileName")
                 H3mHeaderReader.readMapSize(fileHandle.read())
@@ -73,11 +77,30 @@ class GameAssets : Disposable {
 
         val maps = filesToLoad.map { storage.load<H3mMap>(it) }
 
-        // 2. Collect needed sprite names from maps
-        val neededSprites = SpriteCollector().collectNeededSprites(maps)
-        log.info { "Need ${neededSprites.size} unique sprites" }
+        // 2. Load sprites for all maps
+        loadSpritesForMaps(maps)
 
-        // 3. Load sprites from LOD files (HotA first — its sprites take priority)
+        log.info { "Sprite registry built" }
+        return LoadResult(maps, filesToLoad)
+    }
+
+    suspend fun loadMapFile(fileName: String): H3mMap {
+        return storage.load(fileName)
+    }
+
+    fun loadSpritesForMaps(maps: List<H3mMap>) {
+        val reg = registry
+        val allNeeded = SpriteCollector().collectNeededSprites(maps)
+        // Filter out sprites already loaded
+        val neededSprites = if (reg != null) {
+            allNeeded.filterNot { reg.isDefLoaded(it) }.toSet()
+        } else {
+            allNeeded
+        }
+
+        if (neededSprites.isEmpty()) return
+        log.info { "Loading ${neededSprites.size} new sprites" }
+
         val packer = PixmapPacker(2048, 2048, Pixmap.Format.RGBA4444, 0, false)
         val loader = LodSpriteLoader()
         val allRegionInfos = mutableListOf<RegionInfo>()
@@ -90,19 +113,18 @@ class GameAssets : Disposable {
             hotaRegions.forEach { loadedDefNames.add(it.packerName.substringBefore("/")) }
         }
 
-        // Search H3sprite.lod for sprites not found in HotA
         val remaining = neededSprites.filterNot { it in loadedDefNames }.toSet()
         val lodFile = Gdx.files.local(AssetPaths.LOD_FILE)
         if (lodFile.exists()) {
             allRegionInfos.addAll(loader.loadSprites(lodFile.read(), remaining, packer))
         }
 
-        // 4. Build sprite registry
-        registry = SpriteRegistry.fromPacker(packer, allRegionInfos)
+        if (reg != null) {
+            reg.addFromPacker(packer, allRegionInfos)
+        } else {
+            registry = SpriteRegistry.fromPacker(packer, allRegionInfos)
+        }
         packer.dispose()
-
-        log.info { "Sprite registry built" }
-        return maps
     }
 
     fun getTerrainFrames(defName: String, index: Int): Array<TextureAtlas.AtlasRegion> {

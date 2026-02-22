@@ -164,6 +164,12 @@ class GameScreen(
         showMapAtIndex(currentMapIndex)
     }
 
+    fun showLastMap() {
+        val maps = tiledMap.layers.toList().filterIsInstance(GameMap::class.java)
+        if (maps.isEmpty()) return
+        showMapAtIndex(maps.size - 1)
+    }
+
     private fun showMapAtIndex(index: Int) {
         val maps = tiledMap.layers.toList().filterIsInstance(GameMap::class.java)
         if (maps.isEmpty()) return

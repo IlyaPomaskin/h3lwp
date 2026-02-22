@@ -12,6 +12,7 @@ import java.util.Locale
 class SpriteRegistry : Disposable {
     private val regions = mutableMapOf<String, Array<AtlasRegion>>()
     private val textures = mutableListOf<Texture>()
+    private val loadedDefNames = mutableSetOf<String>()
 
     fun getTerrainFrames(defName: String, index: Int): Array<AtlasRegion> {
         val key = "$defName/$index"
@@ -25,6 +26,78 @@ class SpriteRegistry : Disposable {
 
     fun findRegions(name: String): Array<AtlasRegion> {
         return regions[name] ?: gdxArrayOf()
+    }
+
+    fun isDefLoaded(defName: String): Boolean = defName in loadedDefNames
+
+    fun addFromPacker(packer: PixmapPacker, regionInfos: List<RegionInfo>) {
+        if (regionInfos.isEmpty()) return
+
+        data class PackedRect(val pageIndex: Int, val rect: PixmapPacker.PixmapPackerRectangle)
+
+        val pageTextures = mutableListOf<Texture>()
+        for (page in packer.pages) {
+            val texture = Texture(page.pixmap)
+            texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+            pageTextures.add(texture)
+            textures.add(texture)
+        }
+
+        val packerRects = mutableMapOf<String, PackedRect>()
+        packer.pages.forEachIndexed { pageIndex, page ->
+            page.rects.forEach { entry ->
+                packerRects[entry.key] = PackedRect(pageIndex, entry.value)
+            }
+        }
+
+        val newRegionNames = mutableSetOf<String>()
+        for (info in regionInfos) {
+            // Skip regions that already exist (from previous loads)
+            if (info.regionName in regions) continue
+
+            val packed = packerRects[info.packerName] ?: continue
+            val texture = pageTextures[packed.pageIndex]
+
+            val region = AtlasRegion(
+                texture,
+                packed.rect.x.toInt(), packed.rect.y.toInt(),
+                info.width, info.height
+            )
+            region.name = info.regionName
+            region.index = info.regionIndex
+            region.offsetX = info.x.toFloat()
+            region.offsetY = info.y.toFloat()
+            region.originalWidth = info.fullWidth
+            region.originalHeight = info.fullHeight
+            region.packedWidth = info.width
+            region.packedHeight = info.height
+            region.flip(false, true)
+
+            regions.getOrPut(info.regionName) { Array() }.add(region)
+            newRegionNames.add(info.regionName)
+            loadedDefNames.add(info.packerName.substringBefore("/"))
+        }
+
+        // Sort newly added region arrays
+        for (name in newRegionNames) {
+            val arr = regions[name] ?: continue
+            if (arr.size > 1) {
+                arr.sort { a, b -> a.index.compareTo(b.index) }
+            }
+        }
+
+        // Handle edg border frames if newly added
+        if ("edg" in newRegionNames) {
+            val edgRegions = regions["edg"]
+            if (edgRegions != null) {
+                for (i in 0 until edgRegions.size) {
+                    val region = edgRegions.get(i)
+                    regions["edg/${region.index}"] = gdxArrayOf(region)
+                }
+            }
+        }
+
+        log.info { "Added ${newRegionNames.size} new sprite regions from ${regionInfos.map { it.packerName.substringBefore("/") }.toSet().size} DEFs" }
     }
 
     override fun dispose() {
@@ -93,6 +166,7 @@ class SpriteRegistry : Disposable {
                 log.debug { "  region: ${info.regionName}[${info.regionIndex}] offsetX=${region.offsetX} offsetY=${region.offsetY} origW=${region.originalWidth} origH=${region.originalHeight} packedW=${region.packedWidth} packedH=${region.packedHeight} regW=${region.regionWidth} regH=${region.regionHeight}" }
 
                 registry.regions.getOrPut(info.regionName) { Array() }.add(region)
+                registry.loadedDefNames.add(info.packerName.substringBefore("/"))
             }
 
             // Sort each region array by index so animations play in order

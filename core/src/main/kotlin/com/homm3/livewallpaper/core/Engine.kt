@@ -6,6 +6,7 @@ import com.badlogic.gdx.Input
 import com.badlogic.gdx.Screen
 import com.homm3.livewallpaper.core.assets.GameAssets
 import com.homm3.livewallpaper.core.map.GameMap
+import com.homm3.livewallpaper.parser.h3m.H3mMap
 import com.homm3.livewallpaper.core.render.MapCamera
 import com.homm3.livewallpaper.core.screen.AssetSetupScreen
 import com.homm3.livewallpaper.core.screen.GameScreen
@@ -22,6 +23,10 @@ open class Engine(
 ) : KtxGame<Screen>(null, false) {
     private var assets: GameAssets? = null
     private lateinit var camera: MapCamera
+    private var allMapFiles = emptyList<String>()
+    private val loadedMapFiles = mutableSetOf<String>()
+    private var allMapsIndex = 0
+    private var isLoadingMap = false
 
     fun moveCameraByOffset(offset: Float) {
         camera.moveByScrollOffset(offset)
@@ -64,8 +69,8 @@ open class Engine(
         if (Gdx.app.type == Application.ApplicationType.Desktop) {
             when {
                 Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) -> { Gdx.app.exit(); return }
-                Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET) -> getScreen<GameScreen>().showNextMap()
-                Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET) -> getScreen<GameScreen>().showPreviousMap()
+                Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET) -> loadNextMap(1)
+                Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET) -> loadNextMap(-1)
             }
         }
         super.render()
@@ -84,9 +89,49 @@ open class Engine(
         }
         setScreen<LoadingScreen>()
         KtxAsync.launch {
-            val maps = a.loadGameAssets()
-            maps.forEach { getScreen<GameScreen>().addMap(GameMap(a, it)) }
+            allMapFiles = a.getAllMapFiles()
+            val result = a.loadGameAssets()
+            loadedMapFiles.addAll(result.loadedFileNames)
+            result.maps.forEach { getScreen<GameScreen>().addMap(GameMap(a, it)) }
             setScreen<GameScreen>()
+        }
+    }
+
+    private fun loadNextMap(direction: Int) {
+        if (isLoadingMap || allMapFiles.isEmpty()) return
+        val a = assets ?: return
+
+        // Find next unloaded map in the given direction
+        var fileName: String? = null
+        for (i in 1..allMapFiles.size) {
+            val idx = (allMapsIndex + direction * i + allMapFiles.size * i) % allMapFiles.size
+            if (allMapFiles[idx] !in loadedMapFiles) {
+                fileName = allMapFiles[idx]
+                allMapsIndex = idx
+                break
+            }
+        }
+
+        if (fileName == null) {
+            // All maps already loaded, just cycle through them
+            if (direction > 0) getScreen<GameScreen>().showNextMap()
+            else getScreen<GameScreen>().showPreviousMap()
+            return
+        }
+
+        isLoadingMap = true
+        KtxAsync.launch {
+            try {
+                val map = a.loadMapFile(fileName)
+                a.loadSpritesForMaps(listOf(map))
+                loadedMapFiles.add(fileName)
+                getScreen<GameScreen>().addMap(GameMap(a, map))
+                getScreen<GameScreen>().showLastMap()
+            } catch (e: Throwable) {
+                ktx.log.logger<Engine>().error(e) { "Failed to load map $fileName" }
+            } finally {
+                isLoadingMap = false
+            }
         }
     }
 }
