@@ -12,6 +12,7 @@ import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.Disposable
 import com.badlogic.gdx.utils.I18NBundle
 import com.homm3.livewallpaper.core.AssetPaths
+import com.homm3.livewallpaper.parser.h3m.H3mHeaderReader
 import com.homm3.livewallpaper.parser.h3m.H3mMap
 import ktx.assets.async.AssetStorage
 import ktx.collections.gdxArrayOf
@@ -78,7 +79,23 @@ class GameAssets : Disposable {
             .list(".h3m")
             .filter { it.length() > 0L }
             .sortedBy { it.length() }
-        return mapFiles.map { storage.load<H3mMap>(it.file().name) }
+
+        val sizeCache = mutableMapOf<String, Int>()
+        val mapQueue = MapQueue()
+        val filesToLoad = mapQueue.getMapsForToday(
+            mapFiles.map { it.file().name }
+        ) { fileName ->
+            sizeCache.getOrPut(fileName) {
+                try {
+                    val fileHandle = Gdx.files.local("${AssetPaths.USER_MAPS_FOLDER}/$fileName")
+                    H3mHeaderReader.readMapSize(fileHandle.read())
+                } catch (e: Exception) {
+                    36
+                }
+            }
+        }
+
+        return filesToLoad.map { storage.load<H3mMap>(it) }
     }
 
     fun getTerrainFrames(defName: String, index: Int): Array<TextureAtlas.AtlasRegion> {
