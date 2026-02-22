@@ -8,7 +8,6 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
 import com.homm3.livewallpaper.core.AssetPaths
 import com.homm3.livewallpaper.core.Engine
 import com.homm3.livewallpaper.core.WallpaperPreferences
-import com.homm3.livewallpaper.parser.atlas.AtlasConverter
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.File
 import kotlin.concurrent.thread
@@ -21,8 +20,8 @@ fun main() {
     Lwjgl3Application(
         Engine(
             prefs = MutableStateFlow(WallpaperPreferences()),
-            onSettingsButtonClick = ::convertLodFile,
-            onHotaButtonClick = ::convertHotaLodFile
+            onSettingsButtonClick = ::copyLodFile,
+            onHotaButtonClick = ::copyHotaLodFile
         ),
         Lwjgl3ApplicationConfiguration().apply {
             setTitle("Heroes 3 LiveWallpaper")
@@ -34,7 +33,7 @@ fun main() {
         })
 }
 
-private fun convertLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
+private fun copyLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
     val lodFile = File("H3sprite.lod")
     if (!lodFile.exists()) {
         onProgress("H3sprite.lod not found in project root")
@@ -42,19 +41,18 @@ private fun convertLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
     }
 
     thread(isDaemon = true) {
-        val outputDir = Gdx.files.local(AssetPaths.ATLAS_FOLDER).file()
-        outputDir.mkdirs()
         try {
-            AtlasConverter(lodFile.inputStream(), outputDir, AssetPaths.ATLAS_NAME)
-                .convert(onProgress)
+            onProgress("Copying H3sprite.lod...")
+            lodFile.copyTo(Gdx.files.local(AssetPaths.LOD_FILE).file(), overwrite = true)
+            onProgress("Done!")
             onDone()
         } catch (e: Exception) {
-            onProgress(e.message ?: "Conversion failed")
+            onProgress(e.message ?: "Copy failed")
         }
     }
 }
 
-private fun convertHotaLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
+private fun copyHotaLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
     val lodFile = File("HotA.lod")
     if (!lodFile.exists()) {
         onProgress("HotA.lod not found in project root")
@@ -62,14 +60,13 @@ private fun convertHotaLodFile(onProgress: (String) -> Unit, onDone: () -> Unit)
     }
 
     thread(isDaemon = true) {
-        val outputDir = Gdx.files.local(AssetPaths.ATLAS_FOLDER).file()
-        outputDir.mkdirs()
         try {
-            AtlasConverter(lodFile.inputStream(), outputDir, AssetPaths.HOTA_ATLAS_NAME, minimalDefCount = 0)
-                .convert(onProgress)
+            onProgress("Copying HotA.lod...")
+            lodFile.copyTo(Gdx.files.local(AssetPaths.HOTA_LOD_FILE).file(), overwrite = true)
+            onProgress("Done!")
             onDone()
         } catch (e: Exception) {
-            onProgress(e.message ?: "Conversion failed")
+            onProgress(e.message ?: "Copy failed")
         }
     }
 }

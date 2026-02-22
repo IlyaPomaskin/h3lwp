@@ -78,7 +78,7 @@ open class Engine(
 
     private fun loadAndStart() {
         val a = assets ?: return
-        if (!a.isGameAssetsAvailable()) {
+        if (!a.isLodAvailable()) {
             setScreen<AssetSetupScreen>()
             return
         }
