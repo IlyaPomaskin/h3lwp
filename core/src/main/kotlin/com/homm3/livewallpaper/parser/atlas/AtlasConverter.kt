@@ -42,6 +42,11 @@ class AtlasConverter(
         "avarnd1.def", "avarnd2.def", "avarnd3.def", "avarnd4.def", "avarnd5.def", "avtrndm0.def"
     )
 
+    private val terrainPcxPrefixes = mapOf(
+        "wstlt" to "wastlnd.def",
+        "hglnt" to "highlnd.def"
+    )
+
     @Throws(InvalidFileException::class, OutputFileWriteException::class)
     fun convert(onProgress: (String) -> Unit = {}) {
         onProgress("Reading LOD archive...")
@@ -80,33 +85,56 @@ class AtlasConverter(
     }
 
     private fun readDefs(lodFiles: List<LodEntry>): List<PackableFrame> {
-        val defs = mutableListOf<LodEntry>()
-        val pcxFiles = mutableListOf<LodEntry>()
+        // Build group filenames for terrain PCX tiles, sorted by tile index
+        val terrainGroupFilenames = buildTerrainGroupFilenames(lodFiles)
 
-        lodFiles.forEach { file ->
+        // Classify entries into those we want to read
+        data class ReadTask(val entry: LodEntry, val terrainDefName: String?)
+
+        val readTasks = lodFiles.mapNotNull { file ->
             if (file.name.endsWith(".pcx", true)) {
-                pcxFiles.add(file)
+                ReadTask(file, terrainPcxDefName(file.name))
             } else {
                 val isTerrain = file.fileType == LodFileType.TERRAIN
                 val isExtraSprite = file.fileType == LodFileType.SPRITE
                     && file.name.startsWith("av", true)
                 val isMapSprite = file.fileType == LodFileType.MAP
                 if (isTerrain || isExtraSprite || isMapSprite) {
-                    defs.add(file)
+                    ReadTask(file, null)
+                } else {
+                    null
                 }
             }
         }
 
-        val defFrames = defs
-            .sortedBy { it.offset }
-            .flatMap { entry -> readDefFromLod(entry) }
-
-        val pcxFrames = pcxFiles
-            .sortedBy { it.offset }
-            .flatMap { entry -> readPcxFromLod(entry) }
-
-        return (defFrames + pcxFrames)
+        // Process all entries in offset order for sequential LOD reading
+        return readTasks
+            .sortedBy { it.entry.offset }
+            .flatMap { task ->
+                when {
+                    task.entry.name.endsWith(".def", true) -> readDefFromLod(task.entry)
+                    task.terrainDefName != null -> readTerrainPcxFromLod(
+                        task.entry,
+                        task.terrainDefName,
+                        terrainGroupFilenames[task.terrainDefName]!!
+                    )
+                    else -> readPcxFromLod(task.entry)
+                }
+            }
             .distinctBy { it.defName + it.frame.frameName }
+    }
+
+    private fun buildTerrainGroupFilenames(lodFiles: List<LodEntry>): Map<String, List<String>> {
+        val groups = mutableMapOf<String, MutableList<Pair<Int, String>>>()
+        lodFiles.forEach { file ->
+            if (!file.name.endsWith(".pcx", true)) return@forEach
+            val defName = terrainPcxDefName(file.name) ?: return@forEach
+            groups.getOrPut(defName) { mutableListOf() }
+                .add(extractTileIndex(file.name) to file.name)
+        }
+        return groups.mapValues { (_, tiles) ->
+            tiles.sortedBy { it.first }.map { it.second }
+        }
     }
 
     private fun readPcxFromLod(entry: LodEntry): List<PackableFrame> {
@@ -127,6 +155,43 @@ class AtlasConverter(
             pcx.width, pcx.height, 0, 0, pcx.data
         )
         return listOf(PackableFrame(frame, entry.name, entry.fileType, palette, listOf(entry.name)))
+    }
+
+    private fun readTerrainPcxFromLod(
+        entry: LodEntry,
+        defName: String,
+        groupFilenames: List<String>
+    ): List<PackableFrame> {
+        val stream = lodReader.readFileContent(entry)
+        val pcxReader = PcxReader(stream)
+        val pcx = pcxReader.read()
+
+        val palette = if (pcx.palette != null) {
+            val p = pcx.palette.clone()
+            System.arraycopy(fixedPalette, 0, p, 0, fixedPalette.size)
+            p
+        } else {
+            null
+        }
+
+        val frame = DefFrame(
+            entry.name, pcx.width, pcx.height,
+            pcx.width, pcx.height, 0, 0, pcx.data
+        )
+        return listOf(PackableFrame(frame, defName, LodFileType.TERRAIN, palette, groupFilenames))
+    }
+
+    private fun terrainPcxDefName(name: String): String? {
+        val lowerName = name.lowercase()
+        return terrainPcxPrefixes.entries.firstOrNull { (prefix, _) ->
+            lowerName.startsWith(prefix)
+        }?.value
+    }
+
+    private fun extractTileIndex(name: String): Int {
+        val baseName = name.substringBefore(".")
+        val digits = baseName.takeLastWhile { it.isDigit() }
+        return digits.toIntOrNull() ?: 0
     }
 
     private fun readDefFromLod(entry: LodEntry): List<PackableFrame> {
