@@ -114,10 +114,19 @@ class AtlasConverter(
         // Classify entries into those we want to read
         data class ReadTask(val entry: LodEntry, val terrainDefName: String?)
 
+        val hotaSpritePcxPrefixes = listOf("zsand", "pig", "miniftws", "swpmsh")
+
         val readTasks = lodFiles.mapNotNull { file ->
             if (file.name.endsWith(".pcx", true)) {
                 val terrainDefName = terrainPcxDefName(file.name)
-                if (terrainDefName != null) ReadTask(file, terrainDefName) else null
+                val lowerName = file.name.lowercase()
+                val isHotaSpritePcx = file.fileType == null
+                    && hotaSpritePcxPrefixes.any { lowerName.startsWith(it) }
+                when {
+                    terrainDefName != null -> ReadTask(file, terrainDefName)
+                    isHotaSpritePcx -> ReadTask(file, null)
+                    else -> null
+                }
             } else {
                 val isTerrain = file.fileType == LodFileType.TERRAIN
                 val isExtraSprite = file.fileType == LodFileType.SPRITE
@@ -127,7 +136,7 @@ class AtlasConverter(
                 val hotaPrefix = file.name.lowercase()
                 val isUnknownTypeDef = file.fileType == null
                     && file.name.endsWith(".def", true)
-                    && (hotaPrefix.startsWith("av") || hotaPrefix.startsWith("ah") || hotaPrefix.startsWith("crates") || hotaPrefix.startsWith("tp") || hotaPrefix.startsWith("frog_") || hotaPrefix.startsWith("rooster_") || hotaPrefix.startsWith("zreef") || hotaPrefix.startsWith("grsmnt") || hotaPrefix.startsWith("zsand") || hotaPrefix.startsWith("pig") || hotaPrefix.startsWith("miniftws") || hotaPrefix.startsWith("swpmsh"))
+                    && (hotaPrefix.startsWith("av") || hotaPrefix.startsWith("ah") || hotaPrefix.startsWith("crates") || hotaPrefix.startsWith("tp") || hotaPrefix.startsWith("frog_") || hotaPrefix.startsWith("rooster_") || hotaPrefix.startsWith("zreef") || hotaPrefix.startsWith("grsmnt"))
                 if (isTerrain || isExtraSprite || isMapSprite || isUnknownTypeDef) {
                     ReadTask(file, null)
                 } else {

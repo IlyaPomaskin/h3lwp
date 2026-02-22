@@ -27,7 +27,8 @@ fun main() {
         Lwjgl3ApplicationConfiguration().apply {
             setTitle("Heroes 3 LiveWallpaper")
             useVsync(true)
-            setForegroundFPS(Lwjgl3ApplicationConfiguration.getDisplayMode().refreshRate + 1)
+            val displayMode = Lwjgl3ApplicationConfiguration.getDisplayMode()
+            setForegroundFPS(displayMode?.refreshRate?.plus(1) ?: 60)
             setWindowedMode(640, 480)
             setWindowIcon(*(arrayOf(128, 64, 32, 16).map { "libgdx$it.png" }.toTypedArray()))
         })
