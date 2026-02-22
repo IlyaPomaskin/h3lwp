@@ -37,8 +37,8 @@ class AtlasPacker(private val packer: PixmapPacker) {
             return makeRgbPixmap(pf)
         }
         val expectedSize = pf.frame.width * pf.frame.height
-        require(pf.frame.data.size == expectedSize) {
-            "Data size mismatch: ${pf.frame.data.size} != ${expectedSize} (${pf.frame.width}x${pf.frame.height})"
+        require(pf.frame.data.size >= expectedSize) {
+            "Data too small: ${pf.frame.data.size} < ${expectedSize} (${pf.frame.width}x${pf.frame.height})"
         }
         val encoder = PngEncoder()
         val pngData = encoder.create(
