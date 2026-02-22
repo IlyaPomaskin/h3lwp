@@ -1,6 +1,8 @@
 package com.homm3.livewallpaper.core
 
+import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.Input
 import com.badlogic.gdx.Screen
 import com.homm3.livewallpaper.core.assets.GameAssets
 import com.homm3.livewallpaper.core.map.GameMap
@@ -56,6 +58,14 @@ open class Engine(
         if (visible && a.isGameAssetsLoaded()) {
             Gdx.app.postRunnable { getScreen<GameScreen>().randomizeVisibleMapPart() }
         }
+    }
+
+    override fun render() {
+        if (Gdx.app.type == Application.ApplicationType.Desktop && Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            Gdx.app.exit()
+            return
+        }
+        super.render()
     }
 
     override fun dispose() {
