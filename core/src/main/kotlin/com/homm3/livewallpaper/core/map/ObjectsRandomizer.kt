@@ -92,7 +92,7 @@ class ObjectsRandomizer {
             H3mObjectType.RANDOM_MAJOR_ART -> randomArtifact(rng = rng)
             H3mObjectType.RANDOM_RELIC_ART -> randomArtifact(isRelic = true, rng = rng)
             H3mObjectType.RANDOM_RESOURCE -> randomResource(rng)
-            H3mObjectType.RANDOM_TOWN -> randomTown(obj.def.objectClassSubId, rng)
+            H3mObjectType.RANDOM_TOWN -> randomTown(rng)
             H3mObjectType.RANDOM_DWELLING,
             H3mObjectType.RANDOM_DWELLING_LVL,
             H3mObjectType.RANDOM_DWELLING_FACTION -> randomDwelling(null, null, rng)
@@ -126,10 +126,10 @@ class ObjectsRandomizer {
         return resources.random(rng)
     }
 
-    private fun randomTown(subId: Int, rng: Random): String {
+    private fun randomTown(rng: Random): String {
         val hasFort = rng.nextBoolean()
         val factionsToSprites = if (hasFort) towns else villages
-        return factionsToSprites[Faction.fromOrdinal(subId)] ?: factionsToSprites.values.toList().random(rng)
+        return factionsToSprites.values.toList().random(rng)
     }
 
     private fun randomDwelling(faction: Faction?, level: Int?, rng: Random): String {
