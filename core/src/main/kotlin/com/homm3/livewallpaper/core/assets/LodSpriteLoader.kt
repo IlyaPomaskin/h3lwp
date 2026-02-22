@@ -56,6 +56,15 @@ class LodSpriteLoader {
         "lavrvr.def" to listOf(240 to 248)
     )
 
+    private val terrainDefNames = setOf(
+        "dirttl.def", "sandtl.def", "grastl.def", "snowtl.def", "swmptl.def",
+        "rougtl.def", "subbtl.def", "lavatl.def", "watrtl.def", "rocktl.def",
+        "highlnd.def", "wastlnd.def",
+        "clrrvr.def", "icyrvr.def", "mudrvr.def", "lavrvr.def",
+        "dirtrd.def", "gravrd.def", "cobbrd.def",
+        "edg.def"
+    )
+
     private val terrainPcxPrefixes = mapOf(
         "wstlt" to "wastlnd.def",
         "hglnt" to "highlnd.def"
@@ -164,41 +173,44 @@ class LodSpriteLoader {
         val palette = def.rawPalette.clone()
         System.arraycopy(fixedPalette, 0, palette, 0, fixedPalette.size)
 
-        val isTerrain = entry.fileType == LodFileType.TERRAIN
-        val regionInfos = mutableListOf<RegionInfo>()
         val defNameLower = entry.name.lowercase(Locale.ROOT)
+        val isTerrain = defNameLower in terrainDefNames
+        val regionInfos = mutableListOf<RegionInfo>()
         val seenFrames = mutableSetOf<String>()
 
-        if (!isTerrain) {
-            log.info("DEF: $defNameLower type=${entry.fileType} groups=${def.groups.size} fullW=${def.fullWidth} fullH=${def.fullHeight}")
-        }
-        for ((gi, group) in def.groups.withIndex()) {
-            if (!isTerrain) {
-                log.info("  group[$gi] filenames=${group.filenames.size}: ${group.filenames.take(8)}")
-            }
-            for (frame in group.frames) {
-                if (!isTerrain) {
-                    log.info("    frame=${frame.frameName} w=${frame.width} h=${frame.height} fullW=${frame.fullWidth} fullH=${frame.fullHeight} x=${frame.x} y=${frame.y} dataSize=${frame.data.size}")
+        if (isTerrain) {
+            // HotA logic: flatten all groups into one global filename list.
+            // Tile variant index = position in the combined list.
+            // Handles both single-group H3 DEFs and multi-group HotA DEFs.
+            val allFilenames = def.groups.flatMap { it.filenames }
+            for (group in def.groups) {
+                for (frame in group.frames) {
+                    if (frame.frameName in seenFrames) continue
+                    seenFrames.add(frame.frameName)
+                    regionInfos.addAll(
+                        packTerrainFrame(frame, defNameLower, palette.clone(), allFilenames, packer)
+                    )
                 }
+            }
+            return regionInfos
+        }
+
+        log.info("DEF: $defNameLower type=${entry.fileType} groups=${def.groups.size} fullW=${def.fullWidth} fullH=${def.fullHeight}")
+        for ((gi, group) in def.groups.withIndex()) {
+            log.info("  group[$gi] filenames=${group.filenames.size}: ${group.filenames.take(8)}")
+            for (frame in group.frames) {
+                log.info("    frame=${frame.frameName} w=${frame.width} h=${frame.height} fullW=${frame.fullWidth} fullH=${frame.fullHeight} x=${frame.x} y=${frame.y} dataSize=${frame.data.size}")
                 val frameKey = defNameLower + frame.frameName
                 if (frameKey in seenFrames) continue
                 seenFrames.add(frameKey)
 
-                if (isTerrain) {
-                    regionInfos.addAll(
-                        packTerrainFrame(frame, defNameLower, palette.clone(), group.filenames, packer)
-                    )
-                } else {
-                    regionInfos.addAll(
-                        packObjectFrame(frame, defNameLower, palette, group.filenames, packer)
-                    )
-                }
+                regionInfos.addAll(
+                    packObjectFrame(frame, defNameLower, palette, group.filenames, packer)
+                )
             }
         }
-        if (!isTerrain) {
-            for (ri in regionInfos) {
-                log.info("  -> region: name=${ri.regionName} idx=${ri.regionIndex} w=${ri.width} h=${ri.height} fullW=${ri.fullWidth} fullH=${ri.fullHeight} x=${ri.x} y=${ri.y}")
-            }
+        for (ri in regionInfos) {
+            log.info("  -> region: name=${ri.regionName} idx=${ri.regionIndex} w=${ri.width} h=${ri.height} fullW=${ri.fullWidth} fullH=${ri.fullHeight} x=${ri.x} y=${ri.y}")
         }
         return regionInfos
     }
