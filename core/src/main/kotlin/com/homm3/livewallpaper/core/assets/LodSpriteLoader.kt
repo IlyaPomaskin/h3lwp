@@ -57,9 +57,10 @@ class LodSpriteLoader {
         0x40.toByte()  // 7: shadow border below selection (alpha 64)
     )
 
-    // Indices 0, 1, 4, 5, 6, 7 are always replaced; 2, 3 only if color matches
-    private val alwaysReplace = setOf(0, 1, 4, 5, 6, 7)
-    private val fuzzyReplace = setOf(2, 3)
+    // Indices 0, 1, 4 are always replaced (VCMI setShadowTransparency)
+    // Indices 2, 3, 5, 6, 7 only replaced if original color matches expected source
+    private val alwaysReplace = setOf(0, 1, 4)
+    private val fuzzyReplace = setOf(2, 3, 5, 6, 7)
     private val colorThreshold = 8
 
     private fun colorSimilar(palette: ByteArray, index: Int, expected: IntArray): Boolean {
