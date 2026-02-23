@@ -52,15 +52,19 @@ class LodSpriteLoader {
         0x40.toByte(), // 2: shadow border (alpha 64)
         0x80.toByte(), // 3: shadow body (alpha 128)
         0x80.toByte(), // 4: shadow body (alpha 128)
-        0x00.toByte(), // 5: transparent (no player flags in wallpaper)
+        0xFF.toByte(), // 5: flag/selection — neutral gray (no player ownership in wallpaper)
         0x80.toByte(), // 6: shadow below selection (alpha 128)
         0x40.toByte()  // 7: shadow border below selection (alpha 64)
     )
 
-    // Indices 0, 1, 4 are always replaced (VCMI setShadowTransparency)
-    // Indices 2, 3, 5, 6, 7 only replaced if original color matches expected source
-    private val alwaysReplace = setOf(0, 1, 4)
-    private val fuzzyReplace = setOf(2, 3, 5, 6, 7)
+    // Neutral flag color (VCMI neutral: 0x84, 0x84, 0x84)
+    private val neutralFlagColor = intArrayOf(0x84, 0x84, 0x84)
+
+    // Indices 0, 1, 4, 5 are always replaced
+    // 5 = flag/selection: always replaced with neutral gray (castle DEFs have player colors, not yellow)
+    // Indices 2, 3, 6, 7 only replaced if original color matches expected source
+    private val alwaysReplace = setOf(0, 1, 4, 5)
+    private val fuzzyReplace = setOf(2, 3, 6, 7)
     private val colorThreshold = 8
 
     private fun colorSimilar(palette: ByteArray, index: Int, expected: IntArray): Boolean {
@@ -88,9 +92,16 @@ class LodSpriteLoader {
                     (i in fuzzyReplace && colorSimilar(originalPalette, i, sourceColors[i]))
             if (shouldReplace) {
                 val offset = i * 3
-                palette[offset] = 0
-                palette[offset + 1] = 0
-                palette[offset + 2] = 0
+                if (i == 5) {
+                    // Flag/selection: use neutral gray instead of transparent
+                    palette[offset] = neutralFlagColor[0].toByte()
+                    palette[offset + 1] = neutralFlagColor[1].toByte()
+                    palette[offset + 2] = neutralFlagColor[2].toByte()
+                } else {
+                    palette[offset] = 0
+                    palette[offset + 1] = 0
+                    palette[offset + 2] = 0
+                }
                 alpha[i] = targetAlpha[i]
             }
         }
