@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="preferences_header">Ustawienia</string>
+    <string name="scale_title">Skala</string>
+    <string name="update_time_title">Częstotliwość zmiany mapy</string>
+    <string name="update_timeout_every_switch">Przy każdym przejściu na ekran główny</string>
+    <string name="update_timeout_10minutes">10 minut</string>
+    <string name="update_timeout_30minutes">30 minut</string>
+    <string name="update_timeout_2hour">2 godziny</string>
+    <string name="update_timeout_24hours">24 godziny</string>
+    <string name="use_scroll_title">Przewijanie mapy</string>
+    <string name="use_scroll_summary">Przewijaj mapę podczas przełączania ekranów\nUwaga: Niektóre urządzenia nie obsługują tej funkcji</string>
+    <string name="brightness_title">Jasność</string>
+    <string name="wallpaper_change_button">Ustaw tapetę</string>
+
+    <string name="asset_setup_title">Wymagane pliki gry</string>
+    <string name="asset_setup_description">Aplikacja potrzebuje oryginalnych plików z Heroes of Might and Magic III: Cień Śmierci (lub Złota Edycja). Ze względu na prawa autorskie pliki te nie mogą być dołączone do aplikacji.\n\nSkopiuj plik H3sprite.lod z folderu Data instalacji gry na telefon, a następnie wybierz go poniżej.\n\nWersja HD, Odrodzenie Erathii i Ostrze Armagedonu nie są obsługiwane.</string>
+    <string name="asset_setup_select_button">Wybierz H3sprite.lod</string>
+
+    <string name="asset_setup_hota_title">Pliki HotA (opcjonalnie)</string>
+    <string name="asset_setup_hota_description">Jeśli masz zainstalowany Horn of the Abyss, możesz dodać również jego grafiki. Wybierz plik HotA.lod z folderu Data instalacji HotA.\n\nUwaga: obsługiwane są tylko wersje HotA przed 1.8.0 (Bulwark).</string>
+    <string name="asset_setup_hota_select_button">Wybierz HotA.lod</string>
+
+    <string name="asset_setup_title_short">Pliki gry</string>
+    <string name="maps_title">Mapy</string>
+    <string name="maps_empty">Nie dodano jeszcze żadnych map</string>
+    <string name="maps_add_button">Dodaj mapę</string>
+    <string name="maps_note">Obsługiwane są mapy z Cienia Śmierci oraz HotA (poniżej 1.8.0).</string>
+    <string name="maps_delete_confirm">Usunąć %s?</string>
+
+    <string name="credits_header">Podziękowania</string>
+    <string name="credits_button">Otwórz</string>
+    <string name="credits_title">Podziękowania</string>
+    <string name="icon_author_title">Ikona aplikacji: Wit Olszewski</string>
+
+    <string name="phone_limitation_note">Zanim przejdziesz dalej</string>
+    <string name="phone_limitation_miui">Niektóre urządzenia nie obsługują animowanych tapet na ekranie blokady.</string>
+    <string name="phone_limitation_no">Na niektórych urządzeniach animowane tapety mogą nie być obsługiwane w ogóle.</string>
+    <string name="phone_limitation_okay">OK</string>
+</resources>
