@@ -206,6 +206,13 @@ private fun MapsScreen(
                 )
             }
 
+            Text(
+                text = stringResource(R.string.maps_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+
             if (mapFiles.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),

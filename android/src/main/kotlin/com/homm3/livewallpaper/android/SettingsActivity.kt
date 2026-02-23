@@ -11,6 +11,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -26,6 +27,7 @@ import com.homm3.livewallpaper.android.ui.settings.*
 import com.homm3.livewallpaper.core.MapUpdateInterval
 import com.homm3.livewallpaper.core.Scale
 import com.homm3.livewallpaper.core.WallpaperPreferences
+import kotlinx.coroutines.delay
 
 class SettingsActivity : ComponentActivity() {
 
@@ -80,10 +82,21 @@ private fun SettingsScreen(
     onOpenAssetSetup: () -> Unit,
 ) {
     val prefs by viewModel.preferences.collectAsStateWithLifecycle()
+    var showLimitationDialog by remember { mutableStateOf(false) }
+
+    if (showLimitationDialog) {
+        LimitationDialog(
+            onConfirm = {
+                showLimitationDialog = false
+                onSetWallpaper()
+            },
+            onDismiss = { showLimitationDialog = false }
+        )
+    }
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(onClick = onSetWallpaper) {
+            FloatingActionButton(onClick = { showLimitationDialog = true }) {
                 Text(
                     modifier = Modifier.padding(horizontal = 24.dp),
                     text = stringResource(R.string.wallpaper_change_button)
@@ -167,6 +180,48 @@ private fun UseScrollToggle(useScroll: Boolean, onToggle: () -> Unit) {
             interactionSource = interactionSource
         )
     }
+}
+
+@Composable
+private fun LimitationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    var countdown by remember { mutableIntStateOf(5) }
+
+    LaunchedEffect(Unit) {
+        while (countdown > 0) {
+            delay(1000)
+            countdown--
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.phone_limitation_note)) },
+        text = {
+            Text(
+                stringResource(R.string.phone_limitation_miui) +
+                        "\n\n" +
+                        stringResource(R.string.phone_limitation_no)
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                enabled = countdown == 0
+            ) {
+                Text(
+                    if (countdown > 0)
+                        stringResource(R.string.phone_limitation_okay) + " ($countdown)"
+                    else
+                        stringResource(R.string.phone_limitation_okay)
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+    )
 }
 
 @Composable
