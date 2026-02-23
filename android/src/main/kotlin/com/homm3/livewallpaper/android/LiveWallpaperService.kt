@@ -15,11 +15,6 @@ class LiveWallpaperService : AndroidLiveWallpaperService() {
             private var lastHeight = 0
             private var surfaceSizeChanged = false
 
-            override fun onCreate(surfaceHolder: SurfaceHolder?) {
-                super.onCreate(surfaceHolder)
-                setTouchEventsEnabled(true)
-            }
-
             override fun onSurfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
                 if (lastWidth != 0 && (lastWidth != width || lastHeight != height)) {
                     surfaceSizeChanged = true

@@ -55,11 +55,15 @@ class GameScreen(
     }
 
     init {
-        Gdx.input.inputProcessor = inputProcessor
+        if (Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.Desktop) {
+            Gdx.input.inputProcessor = inputProcessor
+        }
     }
 
     override fun show() {
-        Gdx.input.inputProcessor = inputProcessor
+        if (Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.Desktop) {
+            Gdx.input.inputProcessor = inputProcessor
+        }
         var isFirst = true
         prefsJob = KtxAsync.launch {
             prefs.collect {
