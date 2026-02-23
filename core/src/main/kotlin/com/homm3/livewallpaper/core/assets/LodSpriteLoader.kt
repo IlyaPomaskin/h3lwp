@@ -60,10 +60,30 @@ class LodSpriteLoader {
     // Neutral flag color (VCMI neutral: 0x84, 0x84, 0x84)
     private val neutralFlagColor = intArrayOf(0x84, 0x84, 0x84)
 
-    // Indices 0, 1, 4, 5 are always replaced
-    // 5 = flag/selection: always replaced with neutral gray (castle DEFs have player colors, not yellow)
+    // Known flag colors used for detection: yellow marker + 8 player colors + neutral gray
+    // Castle/mine DEFs have one of these at index 5 instead of the standard yellow
+    // All matched entries are replaced with neutralFlagColor (gray)
+    // Original VCMI player colors:
+    //   red (255, 0, 0), blue (49, 82, 255), tan (156, 115, 82),
+    //   green (66, 148, 41), orange (255, 132, 0), purple (140, 41, 165),
+    //   teal (9, 156, 165), pink (198, 123, 140)
+    private val flagColors = arrayOf(
+        intArrayOf(255, 255, 0),     // yellow (standard marker)
+        intArrayOf(255, 0, 0),       // red (player 0)
+        intArrayOf(49, 82, 255),     // blue (player 1)
+        intArrayOf(156, 115, 82),    // tan (player 2)
+        intArrayOf(66, 148, 41),     // green (player 3)
+        intArrayOf(255, 132, 0),     // orange (player 4)
+        intArrayOf(140, 41, 165),    // purple (player 5)
+        intArrayOf(9, 156, 165),     // teal (player 6)
+        intArrayOf(198, 123, 140),   // pink (player 7)
+        intArrayOf(0x84, 0x84, 0x84) // neutral gray
+    )
+
+    // Indices 0, 1, 4 are always replaced (shadow/transparency)
+    // Index 5: replaced only if it matches a known flag/player color
     // Indices 2, 3, 6, 7 only replaced if original color matches expected source
-    private val alwaysReplace = setOf(0, 1, 4, 5)
+    private val alwaysReplace = setOf(0, 1, 4)
     private val fuzzyReplace = setOf(2, 3, 6, 7)
     private val colorThreshold = 8
 
@@ -77,23 +97,32 @@ class LodSpriteLoader {
                 Math.abs(b - expected[2]) < colorThreshold
     }
 
+    private fun isFlagColor(palette: ByteArray, index: Int): Boolean {
+        return flagColors.any { colorSimilar(palette, index, it) }
+    }
+
     /**
-     * Apply special palette handling: overwrite palette RGB to black for shadow indices,
+     * Apply special palette handling: overwrite palette RGB for shadow/flag indices,
      * and build the corresponding tRNS alpha array.
-     * Indices 0,1,4,5,6,7 are always replaced. Indices 2,3 only if color matches
-     * the expected source color (fuzzy match with threshold 8).
+     * Indices 0,1,4: always replaced (shadow/transparency).
+     * Index 5: replaced with neutral gray only if color matches a known flag/player color.
+     * Indices 2,3,6,7: replaced only if color matches expected source (fuzzy).
      */
     private fun applySpecialPalette(originalPalette: ByteArray): Pair<ByteArray, ByteArray> {
         val palette = originalPalette.clone()
         val alpha = ByteArray(8) { 0xFF.toByte() } // default opaque
 
         for (i in 0 until 8) {
-            val shouldReplace = i in alwaysReplace ||
-                    (i in fuzzyReplace && colorSimilar(originalPalette, i, sourceColors[i]))
+            val shouldReplace = when {
+                i in alwaysReplace -> true
+                i == 5 -> isFlagColor(originalPalette, i)
+                i in fuzzyReplace -> colorSimilar(originalPalette, i, sourceColors[i])
+                else -> false
+            }
             if (shouldReplace) {
                 val offset = i * 3
                 if (i == 5) {
-                    // Flag/selection: use neutral gray instead of transparent
+                    // Flag/selection: use neutral gray
                     palette[offset] = neutralFlagColor[0].toByte()
                     palette[offset + 1] = neutralFlagColor[1].toByte()
                     palette[offset + 2] = neutralFlagColor[2].toByte()
@@ -105,6 +134,16 @@ class LodSpriteLoader {
                 alpha[i] = targetAlpha[i]
             }
         }
+        // Replace any sourceColor found anywhere in the full palette with neutral gray
+        for (i in 0 until palette.size / 3) {
+            if (sourceColors.any { colorSimilar(palette, i, it) }) {
+                val offset = i * 3
+                palette[offset] = neutralFlagColor[0].toByte()
+                palette[offset + 1] = neutralFlagColor[1].toByte()
+                palette[offset + 2] = neutralFlagColor[2].toByte()
+            }
+        }
+
         return palette to alpha
     }
 
