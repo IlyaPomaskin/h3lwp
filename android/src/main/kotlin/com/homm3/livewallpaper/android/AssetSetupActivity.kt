@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import android.os.Build
 import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.core.AssetPaths
-import com.homm3.livewallpaper.parser.atlas.AtlasConverter
+import com.homm3.livewallpaper.core.assets.LodValidator
 import kotlin.concurrent.thread
 
 class AssetSetupActivity : ComponentActivity() {
@@ -40,17 +40,27 @@ class AssetSetupActivity : ComponentActivity() {
                         return@thread
                     }
 
-                val outputDir = filesDir.resolve(AssetPaths.ATLAS_FOLDER)
-                outputDir.mkdirs()
+                runOnUiThread { statusMessage = "Copying file..." }
+                val outputFile = filesDir.resolve(AssetPaths.LOD_FILE)
+                inputStream.use { input ->
+                    outputFile.outputStream().use { output -> input.copyTo(output) }
+                }
 
-                val converter = AtlasConverter(inputStream, outputDir, AssetPaths.ATLAS_NAME)
-                converter.convert { progress ->
-                    runOnUiThread { statusMessage = progress }
+                runOnUiThread { statusMessage = "Validating H3sprite.lod..." }
+                val error = LodValidator.validate(outputFile.inputStream(), isHota = false)
+                if (error != null) {
+                    outputFile.delete()
+                    runOnUiThread {
+                        statusMessage = error
+                        isConverting = false
+                    }
+                    return@thread
                 }
 
                 copyBundledMaps()
 
                 runOnUiThread {
+                    statusMessage = "Done!"
                     isConverting = false
                     startActivity(Intent(this, SettingsActivity::class.java))
                     finish()
@@ -96,15 +106,25 @@ class AssetSetupActivity : ComponentActivity() {
                         return@thread
                     }
 
-                val outputDir = filesDir.resolve(AssetPaths.ATLAS_FOLDER)
-                outputDir.mkdirs()
+                runOnUiThread { hotaStatusMessage = "Copying HotA.lod..." }
+                val outputFile = filesDir.resolve(AssetPaths.HOTA_LOD_FILE)
+                inputStream.use { input ->
+                    outputFile.outputStream().use { output -> input.copyTo(output) }
+                }
 
-                val converter = AtlasConverter(inputStream, outputDir, AssetPaths.HOTA_ATLAS_NAME, minimalDefCount = 0)
-                converter.convert { progress ->
-                    runOnUiThread { hotaStatusMessage = progress }
+                runOnUiThread { hotaStatusMessage = "Validating HotA.lod..." }
+                val error = LodValidator.validate(outputFile.inputStream(), isHota = true)
+                if (error != null) {
+                    outputFile.delete()
+                    runOnUiThread {
+                        hotaStatusMessage = error
+                        isHotaConverting = false
+                    }
+                    return@thread
                 }
 
                 runOnUiThread {
+                    hotaStatusMessage = "Done!"
                     isHotaConverting = false
                 }
             } catch (e: Exception) {

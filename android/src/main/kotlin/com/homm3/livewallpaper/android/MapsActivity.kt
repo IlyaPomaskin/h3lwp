@@ -130,7 +130,7 @@ class MapsActivity : ComponentActivity() {
                     mapFiles = mapFiles,
                     isUploading = isUploading,
                     statusMessage = statusMessage,
-                    onAddMap = { filePickerLauncher.launch("application/octet-stream") },
+                    onAddMap = { filePickerLauncher.launch("*/*") },
                     onDeleteMap = ::deleteMap,
                 )
             }

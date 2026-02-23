@@ -9,8 +9,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val atlasFile = filesDir.resolve(AssetPaths.ATLAS_PATH)
-        val target = if (atlasFile.exists()) {
+        val lodFile = filesDir.resolve(AssetPaths.LOD_FILE)
+        val target = if (lodFile.exists()) {
             SettingsActivity::class.java
         } else {
             AssetSetupActivity::class.java

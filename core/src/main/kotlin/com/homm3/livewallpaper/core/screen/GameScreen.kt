@@ -55,15 +55,11 @@ class GameScreen(
     }
 
     init {
-        if (Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.Desktop) {
-            Gdx.input.inputProcessor = inputProcessor
-        }
+        Gdx.input.inputProcessor = inputProcessor
     }
 
     override fun show() {
-        if (Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.Desktop) {
-            Gdx.input.inputProcessor = inputProcessor
-        }
+        Gdx.input.inputProcessor = inputProcessor
         var isFirst = true
         prefsJob = KtxAsync.launch {
             prefs.collect {
@@ -147,6 +143,10 @@ class GameScreen(
             return
         }
 
+        val maps = tiledMap.layers.toList().filterIsInstance(GameMap::class.java)
+        if (maps.size > 1) {
+            currentMapIndex = (currentMapIndex + 1) % maps.size
+        }
         showMapAtIndex(currentMapIndex)
     }
 

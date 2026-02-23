@@ -8,6 +8,7 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
 import com.homm3.livewallpaper.core.AssetPaths
 import com.homm3.livewallpaper.core.Engine
 import com.homm3.livewallpaper.core.WallpaperPreferences
+import com.homm3.livewallpaper.core.assets.LodValidator
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.File
 import kotlin.concurrent.thread
@@ -42,6 +43,12 @@ private fun copyLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
 
     thread(isDaemon = true) {
         try {
+            onProgress("Validating H3sprite.lod...")
+            val error = LodValidator.validate(lodFile.inputStream(), isHota = false)
+            if (error != null) {
+                onProgress(error)
+                return@thread
+            }
             onProgress("Copying H3sprite.lod...")
             lodFile.copyTo(Gdx.files.local(AssetPaths.LOD_FILE).file(), overwrite = true)
             onProgress("Done!")
@@ -61,6 +68,12 @@ private fun copyHotaLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
 
     thread(isDaemon = true) {
         try {
+            onProgress("Validating HotA.lod...")
+            val error = LodValidator.validate(lodFile.inputStream(), isHota = true)
+            if (error != null) {
+                onProgress(error)
+                return@thread
+            }
             onProgress("Copying HotA.lod...")
             lodFile.copyTo(Gdx.files.local(AssetPaths.HOTA_LOD_FILE).file(), overwrite = true)
             onProgress("Done!")
