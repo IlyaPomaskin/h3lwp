@@ -8,7 +8,7 @@
     <string name="wallpaper_change_button">Установить обои</string>
     <string name="preferences_header">Настройки</string>
     <string name="scale_title">Масштаб карты</string>
-    <string name="update_time_title">Интервал обновления</string>
+    <string name="update_time_title">Интервал смены карты</string>
     <string name="maps_title">Карты</string>
     <string name="credits_header">Благодарности</string>
     <string name="credits_button">Открыть</string>

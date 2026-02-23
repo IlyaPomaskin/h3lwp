@@ -4,7 +4,7 @@
 
     <string name="preferences_header">Preferences</string>
     <string name="scale_title">Scale</string>
-    <string name="update_time_title">Update interval</string>
+    <string name="update_time_title">Map change interval</string>
     <string name="update_timeout_every_switch">Every home screen switch</string>
     <string name="update_timeout_10minutes">10 minutes</string>
     <string name="update_timeout_30minutes">30 minutes</string>
