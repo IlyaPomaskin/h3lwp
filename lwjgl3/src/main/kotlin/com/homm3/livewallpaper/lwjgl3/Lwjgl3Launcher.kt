@@ -19,7 +19,7 @@ fun main() {
         return
     Lwjgl3Application(
         Engine(
-            prefs = MutableStateFlow(WallpaperPreferences()),
+            prefs = MutableStateFlow(WallpaperPreferences(brightness = 1.0f)),
             onSettingsButtonClick = ::copyLodFile,
             onHotaButtonClick = ::copyHotaLodFile
         ),
@@ -28,7 +28,7 @@ fun main() {
             useVsync(true)
             val displayMode = Lwjgl3ApplicationConfiguration.getDisplayMode()
             setForegroundFPS(displayMode?.refreshRate?.plus(1) ?: 60)
-            setWindowedMode(640, 480)
+            setWindowedMode(480, 480)
             setWindowIcon(*(arrayOf(128, 64, 32, 16).map { "libgdx$it.png" }.toTypedArray()))
         })
 }

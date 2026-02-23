@@ -32,20 +32,28 @@ data class RegionInfo(
 )
 
 class LodSpriteLoader {
+    // RGB values for special palette indices 0-7 (all black for shadow/transparency)
     private val fixedPalette = byteArrayOf(
-        0, 0, 0,
-        0, 0, 0,
-        0, 0, 0,
-        0, 0, 0,
-        0, 0, 0,
-        0x80.toByte(), 0x80.toByte(), 0x80.toByte(),
-        0, 0, 0,
-        0, 0, 0
+        0, 0, 0, // 0: fully transparent
+        0, 0, 0, // 1: shadow border
+        0, 0, 0, // 2: shadow border
+        0, 0, 0, // 3: shadow body
+        0, 0, 0, // 4: shadow body
+        0, 0, 0, // 5: selection/flag color (transparent in wallpaper)
+        0, 0, 0, // 6: shadow below selection
+        0, 0, 0  // 7: shadow border below selection
     )
 
+    // Alpha values for special palette indices 0-7 (PNG tRNS chunk)
     private val transparent = byteArrayOf(
-        0x00.toByte(), 0x40.toByte(), 0x00.toByte(), 0x00.toByte(),
-        0x80.toByte(), 0xff.toByte(), 0x80.toByte(), 0x40.toByte()
+        0x00.toByte(), // 0: fully transparent
+        0x40.toByte(), // 1: shadow border (alpha 64)
+        0x40.toByte(), // 2: shadow border (alpha 64)
+        0x80.toByte(), // 3: shadow body (alpha 128)
+        0x80.toByte(), // 4: shadow body (alpha 128)
+        0x00.toByte(), // 5: transparent (no player flags in wallpaper)
+        0x80.toByte(), // 6: shadow below selection (alpha 128)
+        0x40.toByte()  // 7: shadow border below selection (alpha 64)
     )
 
     private val paletteRotations = hashMapOf(
