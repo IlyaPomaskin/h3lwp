@@ -50,10 +50,12 @@ class SpriteRegistry : Disposable {
             }
         }
 
+        // Snapshot existing keys so we skip sprites from previous loads
+        // but still add all frames of new sprites in this batch
+        val existingRegionNames = regions.keys.toSet()
         val newRegionNames = mutableSetOf<String>()
         for (info in regionInfos) {
-            // Skip regions that already exist (from previous loads)
-            if (info.regionName in regions) continue
+            if (info.regionName in existingRegionNames) continue
 
             val packed = packerRects[info.packerName] ?: continue
             val texture = pageTextures[packed.pageIndex]

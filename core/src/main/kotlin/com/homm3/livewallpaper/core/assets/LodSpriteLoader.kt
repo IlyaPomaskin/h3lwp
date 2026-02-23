@@ -32,20 +32,21 @@ data class RegionInfo(
 )
 
 class LodSpriteLoader {
-    // RGB values for special palette indices 0-7 (all black for shadow/transparency)
-    private val fixedPalette = byteArrayOf(
-        0, 0, 0, // 0: fully transparent
-        0, 0, 0, // 1: shadow border
-        0, 0, 0, // 2: shadow border
-        0, 0, 0, // 3: shadow body
-        0, 0, 0, // 4: shadow body
-        0, 0, 0, // 5: selection/flag color (transparent in wallpaper)
-        0, 0, 0, // 6: shadow below selection
-        0, 0, 0  // 7: shadow border below selection
+    // Expected source colors for special palette indices 0-7 (from VCMI)
+    // H3 uses 16-bit color (565 RGB) so actual values may differ by up to 7
+    private val sourceColors = arrayOf(
+        intArrayOf(0, 255, 255),     // 0: cyan (transparency)
+        intArrayOf(255, 150, 255),   // 1: light magenta (shadow border)
+        intArrayOf(255, 100, 255),   // 2: mid magenta (shadow border) - fuzzy matched
+        intArrayOf(255, 50, 255),    // 3: dark magenta (shadow body) - fuzzy matched
+        intArrayOf(255, 0, 255),     // 4: pure magenta (shadow body)
+        intArrayOf(255, 255, 0),     // 5: yellow (selection/flag)
+        intArrayOf(180, 0, 255),     // 6: purple (shadow below selection)
+        intArrayOf(0, 255, 0)        // 7: green (shadow border below selection)
     )
 
-    // Alpha values for special palette indices 0-7 (PNG tRNS chunk)
-    private val transparent = byteArrayOf(
+    // Target alpha for each special index
+    private val targetAlpha = byteArrayOf(
         0x00.toByte(), // 0: fully transparent
         0x40.toByte(), // 1: shadow border (alpha 64)
         0x40.toByte(), // 2: shadow border (alpha 64)
@@ -55,6 +56,45 @@ class LodSpriteLoader {
         0x80.toByte(), // 6: shadow below selection (alpha 128)
         0x40.toByte()  // 7: shadow border below selection (alpha 64)
     )
+
+    // Indices 0, 1, 4, 5, 6, 7 are always replaced; 2, 3 only if color matches
+    private val alwaysReplace = setOf(0, 1, 4, 5, 6, 7)
+    private val fuzzyReplace = setOf(2, 3)
+    private val colorThreshold = 8
+
+    private fun colorSimilar(palette: ByteArray, index: Int, expected: IntArray): Boolean {
+        val offset = index * 3
+        val r = palette[offset].toInt() and 0xFF
+        val g = palette[offset + 1].toInt() and 0xFF
+        val b = palette[offset + 2].toInt() and 0xFF
+        return Math.abs(r - expected[0]) < colorThreshold &&
+                Math.abs(g - expected[1]) < colorThreshold &&
+                Math.abs(b - expected[2]) < colorThreshold
+    }
+
+    /**
+     * Apply special palette handling: overwrite palette RGB to black for shadow indices,
+     * and build the corresponding tRNS alpha array.
+     * Indices 0,1,4,5,6,7 are always replaced. Indices 2,3 only if color matches
+     * the expected source color (fuzzy match with threshold 8).
+     */
+    private fun applySpecialPalette(originalPalette: ByteArray): Pair<ByteArray, ByteArray> {
+        val palette = originalPalette.clone()
+        val alpha = ByteArray(8) { 0xFF.toByte() } // default opaque
+
+        for (i in 0 until 8) {
+            val shouldReplace = i in alwaysReplace ||
+                    (i in fuzzyReplace && colorSimilar(originalPalette, i, sourceColors[i]))
+            if (shouldReplace) {
+                val offset = i * 3
+                palette[offset] = 0
+                palette[offset + 1] = 0
+                palette[offset + 2] = 0
+                alpha[i] = targetAlpha[i]
+            }
+        }
+        return palette to alpha
+    }
 
     private val paletteRotations = hashMapOf(
         "watrtl.def" to listOf(229 to 241, 242 to 254),
@@ -178,8 +218,7 @@ class LodSpriteLoader {
     ): List<RegionInfo> {
         val stream = lodReader.readFileContent(entry)
         val def = DefReader(stream).read()
-        val palette = def.rawPalette.clone()
-        System.arraycopy(fixedPalette, 0, palette, 0, fixedPalette.size)
+        val (palette, alpha) = applySpecialPalette(def.rawPalette)
 
         val defNameLower = entry.name.lowercase(Locale.ROOT)
         val isTerrain = defNameLower in terrainDefNames
@@ -196,7 +235,7 @@ class LodSpriteLoader {
                     if (frame.frameName in seenFrames) continue
                     seenFrames.add(frame.frameName)
                     regionInfos.addAll(
-                        packTerrainFrame(frame, defNameLower, palette.clone(), allFilenames, packer)
+                        packTerrainFrame(frame, defNameLower, palette.clone(), alpha, allFilenames, packer)
                     )
                 }
             }
@@ -213,7 +252,7 @@ class LodSpriteLoader {
                 seenFrames.add(frameKey)
 
                 regionInfos.addAll(
-                    packObjectFrame(frame, defNameLower, palette, group.filenames, packer)
+                    packObjectFrame(frame, defNameLower, palette, alpha, group.filenames, packer)
                 )
             }
         }
@@ -233,20 +272,15 @@ class LodSpriteLoader {
         val stream = lodReader.readFileContent(entry)
         val pcx = PcxReader(stream).read()
 
-        val palette = if (pcx.palette != null) {
-            val p = pcx.palette.clone()
-            System.arraycopy(fixedPalette, 0, p, 0, fixedPalette.size)
-            p
-        } else {
-            return emptyList()
-        }
+        if (pcx.palette == null) return emptyList()
+        val (palette, alpha) = applySpecialPalette(pcx.palette)
 
         val frame = DefFrame(
             entry.name, pcx.width, pcx.height,
             pcx.width, pcx.height, 0, 0, pcx.data
         )
 
-        return packTerrainFrame(frame, terrainDefName, palette, groupFilenames, packer)
+        return packTerrainFrame(frame, terrainDefName, palette, alpha, groupFilenames, packer)
     }
 
     private fun loadPcx(
@@ -257,20 +291,14 @@ class LodSpriteLoader {
         val stream = lodReader.readFileContent(entry)
         val pcx = PcxReader(stream).read()
 
-        val palette = if (pcx.palette != null) {
-            val p = pcx.palette.clone()
-            System.arraycopy(fixedPalette, 0, p, 0, fixedPalette.size)
-            p
-        } else {
-            null
-        }
+        val paletteAndAlpha = if (pcx.palette != null) applySpecialPalette(pcx.palette) else null
 
         val frame = DefFrame(
             entry.name, pcx.width, pcx.height,
             pcx.width, pcx.height, 0, 0, pcx.data
         )
 
-        return packObjectFrame(frame, entry.name, palette, listOf(entry.name), packer)
+        return packObjectFrame(frame, entry.name, paletteAndAlpha?.first, paletteAndAlpha?.second, listOf(entry.name), packer)
     }
 
     /**
@@ -284,6 +312,7 @@ class LodSpriteLoader {
         frame: DefFrame,
         defName: String,
         palette: ByteArray,
+        alpha: ByteArray,
         groupFilenames: List<String>,
         packer: PixmapPacker
     ): List<RegionInfo> {
@@ -294,7 +323,7 @@ class LodSpriteLoader {
         var rotationStep = 0
 
         do {
-            val pixmap = makeTerrainPixmap(frame, palette)
+            val pixmap = makeTerrainPixmap(frame, palette, alpha)
             val packerName = "$defName/${frame.frameName}/$rotationStep"
             packer.pack(packerName, pixmap)
             pixmap.dispose()
@@ -335,6 +364,7 @@ class LodSpriteLoader {
         frame: DefFrame,
         defName: String,
         palette: ByteArray?,
+        alpha: ByteArray?,
         groupFilenames: List<String>,
         packer: PixmapPacker
     ): List<RegionInfo> {
@@ -342,7 +372,7 @@ class LodSpriteLoader {
         if (frame.width == 0 || frame.height == 0) return emptyList()
 
         val packerName = "$defName/${frame.frameName}"
-        val pixmap = makePixmap(frame, palette)
+        val pixmap = makePixmap(frame, palette, alpha)
         packer.pack(packerName, pixmap)
         pixmap.dispose()
 
@@ -370,13 +400,13 @@ class LodSpriteLoader {
         return regionInfos
     }
 
-    private fun makePixmap(frame: DefFrame, palette: ByteArray?): Pixmap {
-        if (palette == null) {
+    private fun makePixmap(frame: DefFrame, palette: ByteArray?, alpha: ByteArray?): Pixmap {
+        if (palette == null || alpha == null) {
             return makeRgbPixmap(frame)
         }
         val encoder = PngEncoderInternal()
         val pngData = encoder.create(
-            frame.width, frame.height, palette, transparent, frame.data
+            frame.width, frame.height, palette, alpha, frame.data
         )
         return Pixmap(pngData, 0, pngData.size)
     }
@@ -389,8 +419,8 @@ class LodSpriteLoader {
         return pixmap
     }
 
-    private fun makeTerrainPixmap(frame: DefFrame, palette: ByteArray): Pixmap {
-        val image = makePixmap(frame, palette)
+    private fun makeTerrainPixmap(frame: DefFrame, palette: ByteArray, alpha: ByteArray): Pixmap {
+        val image = makePixmap(frame, palette, alpha)
         val fullImage = Pixmap(frame.fullWidth, frame.fullHeight, Pixmap.Format.RGBA4444)
         fullImage.drawPixmap(image, frame.x, frame.y)
         image.dispose()
