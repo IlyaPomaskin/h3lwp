@@ -52,7 +52,7 @@ open class Engine(
 
         val a = assets ?: return
         if (a.isGameAssetsLoaded()) {
-            setScreen<GameScreen>()
+            refreshMaps()
         } else {
             loadAndStart()
         }
@@ -61,7 +61,7 @@ open class Engine(
     fun onVisibilityChanged(visible: Boolean) {
         val a = assets ?: return
         if (visible && a.isGameAssetsLoaded()) {
-            Gdx.app.postRunnable { getScreen<GameScreen>().randomizeVisibleMapPart() }
+            Gdx.app.postRunnable { refreshMaps() }
         }
     }
 
@@ -92,8 +92,53 @@ open class Engine(
             allMapFiles = a.getAllMapFiles()
             val result = a.loadGameAssets()
             loadedMapFiles.addAll(result.loadedFileNames)
-            result.maps.forEach { getScreen<GameScreen>().addMap(GameMap(a, it)) }
+            result.maps.zip(result.loadedFileNames).forEach { (map, name) ->
+                getScreen<GameScreen>().addMap(GameMap(a, map, name))
+            }
             setScreen<GameScreen>()
+        }
+    }
+
+    private fun refreshMaps() {
+        val a = assets ?: return
+        val currentFiles = a.getAllMapFiles()
+        val currentFileSet = currentFiles.toSet()
+
+        // Remove deleted maps
+        val removedFiles = loadedMapFiles.filter { it !in currentFileSet }.toSet()
+        if (removedFiles.isNotEmpty()) {
+            getScreen<GameScreen>().removeMaps(removedFiles)
+            loadedMapFiles.removeAll(removedFiles)
+        }
+
+        val previousFiles = allMapFiles.toSet()
+        allMapFiles = currentFiles
+
+        if (currentFileSet == previousFiles && removedFiles.isEmpty()) {
+            // No changes
+            setScreen<GameScreen>()
+            getScreen<GameScreen>().randomizeVisibleMapPart()
+            return
+        }
+
+        if (currentFiles.isEmpty()) {
+            setScreen<GameScreen>()
+            getScreen<GameScreen>().randomizeVisibleMapPart(force = true)
+            return
+        }
+
+        // Files changed — rebuild queue and load new maps
+        setScreen<LoadingScreen>()
+        KtxAsync.launch {
+            val result = a.loadGameAssets()
+            result.maps.zip(result.loadedFileNames)
+                .filter { (_, name) -> name !in loadedMapFiles }
+                .forEach { (map, name) ->
+                    loadedMapFiles.add(name)
+                    getScreen<GameScreen>().addMap(GameMap(a, map, name))
+                }
+            setScreen<GameScreen>()
+            getScreen<GameScreen>().randomizeVisibleMapPart(force = true)
         }
     }
 
@@ -125,7 +170,7 @@ open class Engine(
                 val map = a.loadMapFile(fileName)
                 a.loadSpritesForMaps(listOf(map))
                 loadedMapFiles.add(fileName)
-                getScreen<GameScreen>().addMap(GameMap(a, map))
+                getScreen<GameScreen>().addMap(GameMap(a, map, fileName))
                 getScreen<GameScreen>().showLastMap()
             } catch (e: Throwable) {
                 ktx.log.logger<Engine>().error(e) { "Failed to load map $fileName" }

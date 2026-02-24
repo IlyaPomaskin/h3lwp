@@ -8,7 +8,7 @@ import com.homm3.livewallpaper.core.map.layers.ObjectsLayer
 import com.homm3.livewallpaper.core.map.layers.TerrainLayer
 import com.homm3.livewallpaper.parser.h3m.H3mMap
 
-class GameMap(assets: GameAssets, h3m: H3mMap) : MapGroupLayer() {
+class GameMap(assets: GameAssets, h3m: H3mMap, val fileName: String = "") : MapGroupLayer() {
     val mapSize = h3m.header.size
 
     init {

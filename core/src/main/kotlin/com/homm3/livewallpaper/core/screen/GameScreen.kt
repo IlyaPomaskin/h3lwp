@@ -54,6 +54,17 @@ class GameScreen(
         }
     }
 
+    fun removeMaps(fileNames: Set<String>) {
+        val toRemove = tiledMap.layers.toList()
+            .filterIsInstance<GameMap>()
+            .filter { it.fileName in fileNames }
+        toRemove.forEach { tiledMap.layers.remove(it) }
+
+        val remaining = tiledMap.layers.toList().filterIsInstance<GameMap>()
+        currentMapIndex = if (remaining.isEmpty()) 0
+        else currentMapIndex.coerceAtMost(remaining.size - 1)
+    }
+
     init {
         if (Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.Desktop) {
             Gdx.input.inputProcessor = inputProcessor
@@ -64,13 +75,11 @@ class GameScreen(
         if (Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.Desktop) {
             Gdx.input.inputProcessor = inputProcessor
         }
-        var isFirst = true
         prefsJob = KtxAsync.launch {
             prefs.collect {
                 brightnessOverlay.brightness = it.brightness
-                setUnitsPerPixelByScale(it.scale, isFirst)
+                setUnitsPerPixelByScale(it.scale)
                 setMapUpdateInterval(it.mapUpdateInterval)
-                isFirst = false
             }
         }
     }
@@ -97,7 +106,7 @@ class GameScreen(
         brightnessOverlay.dispose()
     }
 
-    private fun setUnitsPerPixelByScale(scale: Scale, isFirst: Boolean) {
+    private fun setUnitsPerPixelByScale(scale: Scale) {
         val nextUnitsPerPixel = when (scale) {
             Scale.X1 -> 1f
             Scale.X2 -> 0.5f
@@ -109,10 +118,7 @@ class GameScreen(
         if (viewport.unitsPerPixel != nextUnitsPerPixel) {
             viewport.unitsPerPixel = nextUnitsPerPixel
             viewport.update(Gdx.graphics.width, Gdx.graphics.height)
-
-            if (!isFirst) {
-                randomizeVisibleMapPart(force = true)
-            }
+            randomizeVisibleMapPart(force = true)
         }
     }
 
