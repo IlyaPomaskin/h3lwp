@@ -459,19 +459,24 @@ class LodSpriteLoader {
 
     private fun makePixmap(frame: DefFrame, palette: ByteArray?, alpha: ByteArray?): Pixmap {
         if (palette == null || alpha == null) {
-            return makeRgbPixmap(frame)
+            val pixmap = Pixmap(frame.width, frame.height, Pixmap.Format.RGB888)
+            val buffer = pixmap.pixels
+            buffer.put(frame.data)
+            buffer.flip()
+            return pixmap
         }
-        val encoder = PngEncoderInternal()
-        val pngData = encoder.create(
-            frame.width, frame.height, palette, alpha, frame.data
-        )
-        return Pixmap(pngData, 0, pngData.size)
-    }
-
-    private fun makeRgbPixmap(frame: DefFrame): Pixmap {
-        val pixmap = Pixmap(frame.width, frame.height, Pixmap.Format.RGB888)
+        // Direct palette→RGBA conversion, no PNG round-trip
+        val pixmap = Pixmap(frame.width, frame.height, Pixmap.Format.RGBA8888)
         val buffer = pixmap.pixels
-        buffer.put(frame.data)
+        val pixels = frame.data
+        for (i in pixels.indices) {
+            val idx = pixels[i].toInt() and 0xFF
+            val palOffset = idx * 3
+            buffer.put(palette[palOffset])       // R
+            buffer.put(palette[palOffset + 1])   // G
+            buffer.put(palette[palOffset + 2])   // B
+            buffer.put(if (idx < 8) alpha[idx] else 0xFF.toByte()) // A
+        }
         buffer.flip()
         return pixmap
     }
@@ -937,63 +942,3 @@ class LodSpriteLoader {
     }
 }
 
-internal class PngEncoderInternal {
-    private val output = java.io.ByteArrayOutputStream()
-
-    fun create(width: Int, height: Int, palette: ByteArray, transparent: ByteArray, data: ByteArray): ByteArray {
-        output.reset()
-        output.write(byteArrayOf(-119, 80, 78, 71, 13, 10, 26, 10))
-        writeChunk("IHDR", createIHDR(width, height))
-        writeChunk("PLTE", palette)
-        writeChunk("tRNS", transparent)
-        writeChunk("IDAT", createIDAT(data, width, height))
-        writeChunk("IEND", ByteArray(0))
-        return output.toByteArray()
-    }
-
-    private fun createIHDR(width: Int, height: Int): ByteArray {
-        val ihdr = java.io.ByteArrayOutputStream()
-        ihdr.write(java.nio.ByteBuffer.allocate(4).putInt(width).array())
-        ihdr.write(java.nio.ByteBuffer.allocate(4).putInt(height).array())
-        ihdr.write(8)
-        ihdr.write(3)
-        ihdr.write(0)
-        ihdr.write(0)
-        ihdr.write(0)
-        return ihdr.toByteArray()
-    }
-
-    private fun createIDAT(data: ByteArray, width: Int, height: Int): ByteArray {
-        val scanlines = java.io.ByteArrayOutputStream()
-        for (i in 0 until height) {
-            scanlines.write(0)
-            scanlines.write(data.copyOfRange(width * i, width * i + width))
-        }
-        val input = scanlines.toByteArray()
-        val out = java.io.ByteArrayOutputStream()
-        val buffer = ByteArray(8192)
-        val deflater = java.util.zip.Deflater()
-        deflater.setInput(input)
-        deflater.finish()
-        while (!deflater.finished()) {
-            val count = deflater.deflate(buffer)
-            out.write(buffer, 0, count)
-        }
-        deflater.end()
-        return out.toByteArray()
-    }
-
-    private fun writeChunk(type: String, content: ByteArray) {
-        output.write(java.nio.ByteBuffer.allocate(4).putInt(content.size).array())
-        output.write(type.toByteArray())
-        output.write(content)
-        output.write(java.nio.ByteBuffer.allocate(4).putInt(getCRC(type, content).toInt()).array())
-    }
-
-    private fun getCRC(type: String, content: ByteArray): Long {
-        val crc32 = java.util.zip.CRC32()
-        crc32.update(type.toByteArray(), 0, type.toByteArray().size)
-        crc32.update(content, 0, content.size)
-        return crc32.value
-    }
-}
