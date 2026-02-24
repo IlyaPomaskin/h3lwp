@@ -46,6 +46,51 @@ class LodReader(stream: InputStream) {
         }
     }
 
+    /**
+     * Decompress only the first [limit] bytes of an entry.
+     * Used for header identification without full decompression.
+     */
+    fun readFileContentPartial(entry: LodEntry, limit: Int): ByteArray {
+        reader.seek(entry.offset.toLong())
+
+        if (entry.compressedSize == 0) {
+            val toRead = minOf(entry.size, limit)
+            return reader.readBytes(toRead)
+        }
+
+        val raw = reader.readBytes(entry.compressedSize)
+
+        return when (entry.compressionMethod) {
+            2 -> {
+                val lzmaStream = ByteArrayInputStream(raw, 1, raw.size - 1)
+                val lzma = LZMAInputStream(lzmaStream, -1, 0x5D.toByte(), 262144)
+                val output = ByteArray(limit)
+                var pos = 0
+                try {
+                    while (pos < limit) {
+                        val n = lzma.read(output, pos, limit - pos)
+                        if (n <= 0) break
+                        pos += n
+                    }
+                } catch (_: Exception) {}
+                try { lzma.close() } catch (_: Exception) {}
+                if (pos < limit) output.copyOf(pos) else output
+            }
+            3 -> {
+                val output = ByteArray(limit)
+                val inflater = Inflater()
+                inflater.setInput(raw)
+                val n = inflater.inflate(output)
+                inflater.end()
+                if (n < limit) output.copyOf(n) else output
+            }
+            else -> {
+                val toRead = minOf(raw.size, limit)
+                raw.copyOf(toRead)
+            }
+        }
+    }
+
     fun readFileContent(entry: LodEntry): ByteArrayInputStream {
         // Absolute seek — matches Python's f.seek(offset)
         reader.seek(entry.offset.toLong())

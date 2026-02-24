@@ -518,33 +518,64 @@ class LodSpriteLoader {
         // Collect 32x32 PCX terrain tiles with their original LOD indices
         val pcxTiles = mutableListOf<Pair<Int, ByteArray>>() // (originalIndex, decompressed bytes)
 
+        // Pass 1: Partial decompress to identify entries and collect terrain PCX tiles
+        val HEADER_SIZE = 900 // Enough for DEF header (784) + first group header (16) + frame name (13)
+        data class MatchedEntry(val entry: LodEntry, val defName: String, val isD32: Boolean)
+        val matchedEntries = mutableListOf<MatchedEntry>()
+
         for (entry in sortedEntries) {
             try {
-                val stream = lodReader.readFileContent(entry)
-                val bytes = stream.readBytes()
-                if (bytes.size < 4) continue
-
-                // Check for 32x32 8-bit PCX: fSize(4) + width(4) + height(4) + pixels + palette(768)
-                if (bytes.size >= 12) {
-                    val buf32 = java.nio.ByteBuffer.wrap(bytes, 0, 12).order(java.nio.ByteOrder.LITTLE_ENDIAN)
-                    val fSize = buf32.int
-                    val w = buf32.int
-                    val h = buf32.int
-                    if (w == 32 && h == 32 && fSize + 12 + 768 == bytes.size) {
+                // Check if this is a 32x32 terrain PCX by size alone (no decompression needed for uncompressed)
+                val expectedPcxSize = 12 + 1024 + 768 // header + 32*32 pixels + palette
+                if (entry.compressedSize == 0 && entry.size == expectedPcxSize) {
+                    val stream = lodReader.readFileContent(entry)
+                    val bytes = stream.readBytes()
+                    val buf12 = java.nio.ByteBuffer.wrap(bytes, 0, 12).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                    val fSize = buf12.int; val w = buf12.int; val h = buf12.int
+                    if (w == 32 && h == 32 && fSize == 1024) {
                         pcxTiles.add((entryOriginalIndex[entry] ?: -1) to bytes)
                         continue
                     }
                 }
 
-                val isD32 = bytes[0] == D32_MAGIC_BYTES[0] &&
-                        bytes[1] == D32_MAGIC_BYTES[1] &&
-                        bytes[2] == D32_MAGIC_BYTES[2] &&
-                        bytes[3] == D32_MAGIC_BYTES[3]
+                // Partial decompress: only read enough bytes for header identification
+                val header = lodReader.readFileContentPartial(entry, HEADER_SIZE)
+                if (header.size < 4) continue
 
-                val defName = extractDefNameFromBytes(bytes, isD32, neededLower) ?: continue
+                // Check for 32x32 PCX (compressed)
+                if (header.size >= 12) {
+                    val buf12 = java.nio.ByteBuffer.wrap(header, 0, 12).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                    val fSize = buf12.int; val w = buf12.int; val h = buf12.int
+                    if (w == 32 && h == 32 && fSize == 1024) {
+                        val stream = lodReader.readFileContent(entry)
+                        val bytes = stream.readBytes()
+                        if (fSize + 12 + 768 == bytes.size) {
+                            pcxTiles.add((entryOriginalIndex[entry] ?: -1) to bytes)
+                            continue
+                        }
+                    }
+                }
+
+                val isD32 = header[0] == D32_MAGIC_BYTES[0] &&
+                        header[1] == D32_MAGIC_BYTES[1] &&
+                        header[2] == D32_MAGIC_BYTES[2] &&
+                        header[3] == D32_MAGIC_BYTES[3]
+
+                val defName = extractDefNameFromBytes(header, isD32, neededLower) ?: continue
                 if (defName !in neededLower) continue
 
+                matchedEntries.add(MatchedEntry(entry, defName, isD32))
+            } catch (e: Throwable) {
+                log.log(Level.WARNING, "Failed to identify HotA 1.8 entry ${entry.name}", e)
+            }
+        }
+
+        // Pass 2: Fully decompress only matched entries
+        for ((entry, defName, isD32) in matchedEntries) {
+            try {
                 matchedNames.add(defName)
+                val stream = lodReader.readFileContent(entry)
+                val bytes = stream.readBytes()
 
                 if (isD32) {
                     val d32 = D32Reader(ByteArrayInputStream(bytes)).read()
@@ -648,8 +679,11 @@ class LodSpriteLoader {
         return allRegionInfos
     }
 
+    // Common H3/HotA adventure sprite prefixes
+    private val h3Prefixes = listOf("avl", "avg", "avw", "avm", "avx", "ava", "avc", "avs")
+
     /**
-     * Extract DEF/D32 name by parsing the file header and reading the first frame name.
+     * Extract DEF/D32 name by parsing the file header and reading frame names from all groups.
      *
      * HotA 1.8 frame names use several obfuscation patterns:
      * - Standard: "AVCRAND0A000" → "avcrand0"
@@ -657,57 +691,65 @@ class LodSpriteLoader {
      * - Prefixed: "0w_pilr0.yn4" → "pilr0" → try "avlpilr0"
      * - AWL typo: "AWLswd4A001.P" → swap AWL→AVL → "avlswd4"
      * - Abbreviated: "ZREF1A000." → try letter doubling → "zreef1"
+     * - Multi-group: DEF has group 0="AVMgosn0" and group 1="AVMgosn1"
      */
     private fun extractDefNameFromBytes(
         bytes: ByteArray,
         isD32: Boolean,
         neededNames: Set<String>
     ): String? {
-        val frameName = if (isD32) {
-            extractD32FrameName(bytes)
+        val frameNames = if (isD32) {
+            extractD32FrameNames(bytes)
         } else {
-            extractDefFrameName(bytes)
-        } ?: return null
+            extractDefFrameNames(bytes)
+        }
+        if (frameNames.isEmpty()) return null
 
-        // Clean frame name:
-        // 1. Strip "0w_" prefix (HotA Cove/world prefix)
+        // Try each group's frame name against needed names
+        for (frameName in frameNames) {
+            val cleaned = cleanFrameName(frameName)
+            if (cleaned.isEmpty()) continue
+            val match = findMatchingDefName(cleaned.lowercase(Locale.ROOT), neededNames)
+            if (match != null) return match
+        }
+
+        // Fallback: use first frame name
+        val cleaned = cleanFrameName(frameNames[0])
+        return if (cleaned.isNotEmpty()) "${cleaned.lowercase(Locale.ROOT)}.def" else null
+    }
+
+    private fun cleanFrameName(frameName: String): String {
         var cleaned = frameName
         if (cleaned.startsWith("0w_", ignoreCase = true)) cleaned = cleaned.substring(3)
-        // 2. Strip random dot extension (".7oh", ".yn4", ".P", ".")
         val dotIdx = cleaned.indexOf('.')
         if (dotIdx > 0) cleaned = cleaned.substring(0, dotIdx)
-        // 3. Strip trailing A\d{3} suffix ("A000", "A001")
         cleaned = cleaned.replace(Regex("[Aa]\\d{3}$"), "")
-        if (cleaned.isEmpty()) return null
-
-        val match = findMatchingDefName(cleaned.lowercase(Locale.ROOT), neededNames)
-        if (match != null) return match
-        return "${cleaned.lowercase(Locale.ROOT)}.def"
+        return cleaned
     }
 
     /**
      * Try to match a cleaned frame base name against needed DEF names.
-     * Uses progressive digit stripping, AVL prefix prepending, AWL→AVL swap,
-     * and letter-doubling fuzzy match.
+     * Uses progressive digit stripping, all-prefix prepending/swapping,
+     * trailing letter truncation, and letter-doubling fuzzy match.
      */
     private fun findMatchingDefName(base: String, neededNames: Set<String>): String? {
+        // Phase 1: Direct + digit stripping with prefix prepending
         var candidate = base
         while (candidate.isNotEmpty()) {
-            // Direct match
             if ("$candidate.def" in neededNames) return "$candidate.def"
 
-            // Try prepending "avl" (HotA sometimes strips this prefix)
-            if (!candidate.startsWith("avl") && !candidate.startsWith("awl")) {
-                if ("avl$candidate.def" in neededNames) return "avl$candidate.def"
+            // Try prepending known prefixes (for unprefixed names like "pilr0")
+            for (prefix in h3Prefixes) {
+                if ("$prefix$candidate.def" in neededNames) return "$prefix$candidate.def"
             }
 
-            // Try swapping AWL→AVL (typo in some HotA frames)
+            // AWL→AVL swap
             if (candidate.startsWith("awl")) {
                 val swapped = "avl${candidate.substring(3)}"
                 if ("$swapped.def" in neededNames) return "$swapped.def"
             }
 
-            // PCX terrain prefix mapping (e.g., "wstlt" -> "wastlnd.def")
+            // PCX terrain prefix mapping
             val pcxMapped = terrainPcxPrefixes[candidate]
             if (pcxMapped != null && pcxMapped in neededNames) return pcxMapped
 
@@ -718,7 +760,7 @@ class LodSpriteLoader {
             }
         }
 
-        // Fuzzy: try doubling each letter (handles "zref" → "zreef")
+        // Phase 2: Letter doubling (handles "zref" → "zreef")
         val baseNoDigits = base.trimEnd { it.isDigit() }
         val digits = base.substring(baseNoDigits.length)
         for (i in baseNoDigits.indices) {
@@ -730,62 +772,69 @@ class LodSpriteLoader {
         return null
     }
 
-    private fun extractD32FrameName(bytes: ByteArray): String? {
-        // D32 header: 32 bytes, then group header: 4+4+4+4 = 16 bytes, then filenames
-        if (bytes.size < 48 + 13) return null
+    /**
+     * Extract first frame name from EACH group of a D32 file.
+     * Returns one name per non-empty group (for multi-group matching).
+     */
+    private fun extractD32FrameNames(bytes: ByteArray): List<String> {
+        if (bytes.size < 48 + 13) return emptyList()
         val buf = java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN)
-        buf.position(16) // skip magic(4) + unknown(4) + width(4) + height(4)
+        buf.position(16)
         val groupCount = buf.int
-        if (groupCount <= 0 || groupCount > 256) return null
-        buf.position(32) // start of groups
+        if (groupCount <= 0 || groupCount > 256) return emptyList()
+        buf.position(32)
 
+        val names = mutableListOf<String>()
         for (g in 0 until groupCount) {
-            if (buf.remaining() < 16) return null
+            if (buf.remaining() < 16) break
             buf.int // groupType
             val framesCount = buf.int
             buf.int // unknown
             buf.int // unknown
             if (framesCount in 1..10000 && buf.remaining() >= 13) {
-                return readFixedString(bytes, buf.position(), 13)
+                readFixedString(bytes, buf.position(), 13)?.let { names.add(it) }
             }
-            if (framesCount < 0) return null
-            val skip = framesCount.toLong() * 17 // 13 bytes name + 4 bytes offset
-            if (skip < 0 || skip > buf.remaining()) return null
+            if (framesCount < 0) break
+            val skip = framesCount.toLong() * 17
+            if (skip < 0 || skip > buf.remaining()) break
             buf.position(buf.position() + skip.toInt())
         }
-        return null
+        return names
     }
 
-    private fun extractDefFrameName(bytes: ByteArray): String? {
-        // DEF header: type(4) + fullWidth(4) + fullHeight(4) + groupCount(4) + palette(768) = 784
-        if (bytes.size < 784 + 16) return null
+    /**
+     * Extract first frame name from EACH group of a DEF file.
+     * Returns one name per non-empty group (for multi-group matching).
+     */
+    private fun extractDefFrameNames(bytes: ByteArray): List<String> {
+        if (bytes.size < 784 + 16) return emptyList()
         val buf = java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN)
 
-        // Validate DEF header dimensions
         buf.position(4)
         val fullW = buf.int
         val fullH = buf.int
-        if (fullW <= 0 || fullW > 4096 || fullH <= 0 || fullH > 4096) return null
+        if (fullW <= 0 || fullW > 4096 || fullH <= 0 || fullH > 4096) return emptyList()
 
         val groupCount = buf.int
-        if (groupCount <= 0 || groupCount > 256) return null
-        buf.position(784) // skip to first group (after header + palette)
+        if (groupCount <= 0 || groupCount > 256) return emptyList()
+        buf.position(784)
 
+        val names = mutableListOf<String>()
         for (g in 0 until groupCount) {
-            if (buf.remaining() < 16) return null
+            if (buf.remaining() < 16) break
             buf.int // groupType
             val framesCount = buf.int
-            buf.position(buf.position() + 8) // skip unknown
+            buf.position(buf.position() + 8)
 
             if (framesCount in 1..10000 && buf.remaining() >= 13) {
-                return readFixedString(bytes, buf.position(), 13)
+                readFixedString(bytes, buf.position(), 13)?.let { names.add(it) }
             }
-            if (framesCount < 0) return null
-            val skip = framesCount.toLong() * 17 // 13 bytes name + 4 bytes offset
-            if (skip < 0 || skip > buf.remaining()) return null
+            if (framesCount < 0) break
+            val skip = framesCount.toLong() * 17
+            if (skip < 0 || skip > buf.remaining()) break
             buf.position(buf.position() + skip.toInt())
         }
-        return null
+        return names
     }
 
     private fun readFixedString(bytes: ByteArray, offset: Int, length: Int): String? {
