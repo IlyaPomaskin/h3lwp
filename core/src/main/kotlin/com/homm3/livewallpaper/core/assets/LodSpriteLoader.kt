@@ -506,9 +506,17 @@ class LodSpriteLoader {
         val neededLower = neededNames.map { it.lowercase(Locale.ROOT) }.toSet()
         val sortedEntries = archive.files.sortedBy { it.offset }
 
+        // Build original-index map for terrain PCX grouping
+        val entryOriginalIndex = HashMap<LodEntry, Int>(archive.files.size)
+        archive.files.forEachIndexed { idx, entry -> entryOriginalIndex[entry] = idx }
+
         onProgress("Loading HotA 1.8 sprites...")
         val allRegionInfos = mutableListOf<RegionInfo>()
         var processed = 0
+        val matchedNames = mutableSetOf<String>()
+
+        // Collect 32x32 PCX terrain tiles with their original LOD indices
+        val pcxTiles = mutableListOf<Pair<Int, ByteArray>>() // (originalIndex, decompressed bytes)
 
         for (entry in sortedEntries) {
             try {
@@ -516,14 +524,27 @@ class LodSpriteLoader {
                 val bytes = stream.readBytes()
                 if (bytes.size < 4) continue
 
+                // Check for 32x32 8-bit PCX: fSize(4) + width(4) + height(4) + pixels + palette(768)
+                if (bytes.size >= 12) {
+                    val buf32 = java.nio.ByteBuffer.wrap(bytes, 0, 12).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                    val fSize = buf32.int
+                    val w = buf32.int
+                    val h = buf32.int
+                    if (w == 32 && h == 32 && fSize + 12 + 768 == bytes.size) {
+                        pcxTiles.add((entryOriginalIndex[entry] ?: -1) to bytes)
+                        continue
+                    }
+                }
+
                 val isD32 = bytes[0] == D32_MAGIC_BYTES[0] &&
                         bytes[1] == D32_MAGIC_BYTES[1] &&
                         bytes[2] == D32_MAGIC_BYTES[2] &&
                         bytes[3] == D32_MAGIC_BYTES[3]
 
-                // Extract DEF name from first frame name
-                val defName = extractDefNameFromBytes(bytes, isD32) ?: continue
+                val defName = extractDefNameFromBytes(bytes, isD32, neededLower) ?: continue
                 if (defName !in neededLower) continue
+
+                matchedNames.add(defName)
 
                 if (isD32) {
                     val d32 = D32Reader(ByteArrayInputStream(bytes)).read()
@@ -541,34 +562,237 @@ class LodSpriteLoader {
             }
         }
 
+        // Load terrain tiles from grouped 32x32 PCX entries
+        val terrainRegions = loadHota18TerrainPcxRuns(pcxTiles, neededLower, packer)
+        allRegionInfos.addAll(terrainRegions)
+
+        log.info("HotA 1.8: loaded $processed DEF/D32 sprites, matched: ${matchedNames.size} names, " +
+                "${pcxTiles.size} terrain PCX tiles")
         onProgress("Loaded $processed HotA 1.8 sprites")
         return allRegionInfos
     }
 
-    private fun extractDefNameFromBytes(bytes: ByteArray, isD32: Boolean): String? {
-        // Extract first frame name from the binary data
-        val frameNameOffset = if (isD32) {
-            // D32: 32 (header) + 4+4+4+4 (group header) = 48
-            48
-        } else {
-            // Classic DEF: 16 (header) + 768 (palette) + 4+4+8 (group header start) = 800
-            // But group header: 4(type) + 4(count) + 8(unknown) = 16, then filenames start
-            // So: 16 + 768 + 16 = 800
-            800
+    /**
+     * Group 32x32 PCX terrain tiles by consecutive original LOD entry index
+     * and assign runs to highland/wasteland terrain types.
+     * HotA 1.8 stores terrain tiles as consecutive groups of individual PCX files
+     * (alphabetical: highland before wasteland).
+     */
+    private fun loadHota18TerrainPcxRuns(
+        pcxTiles: List<Pair<Int, ByteArray>>,
+        neededNames: Set<String>,
+        packer: PixmapPacker
+    ): List<RegionInfo> {
+        if (pcxTiles.isEmpty()) return emptyList()
+
+        // Group tiles into runs of consecutive original LOD indices
+        val sorted = pcxTiles.sortedBy { it.first }
+        val runs = mutableListOf<MutableList<ByteArray>>()
+        var currentRun = mutableListOf(sorted[0].second)
+        var prevIndex = sorted[0].first
+
+        for (i in 1 until sorted.size) {
+            val (idx, bytes) = sorted[i]
+            if (idx <= prevIndex + 2) { // allow small gap for non-PCX entries between tiles
+                currentRun.add(bytes)
+            } else {
+                if (currentRun.size >= 20) runs.add(currentRun)
+                currentRun = mutableListOf(bytes)
+            }
+            prevIndex = idx
         }
-        if (bytes.size <= frameNameOffset + 8) return null
+        if (currentRun.size >= 20) runs.add(currentRun)
 
-        // Read 13-byte null-terminated string
-        val nameEnd = minOf(frameNameOffset + 13, bytes.size)
-        val rawName = bytes.copyOfRange(frameNameOffset, nameEnd)
-        val frameName = String(rawName).replace("\u0000.*".toRegex(), "")
-        if (frameName.isEmpty()) return null
+        log.info("HotA 1.8 terrain PCX: ${pcxTiles.size} tiles in ${runs.size} runs (sizes: ${runs.map { it.size }})")
 
-        // Strip trailing A\d{3} suffix (e.g., "AVCRAND0A000" -> "AVCRAND0")
-        val baseName = frameName.replace(Regex("[Aa]\\d{3}$"), "")
-        if (baseName.isEmpty()) return null
+        // Assign runs to terrain types alphabetically: highland before wasteland
+        val terrainNames = listOf("highlnd.def", "wastlnd.def").filter { it in neededNames }
+        val allRegionInfos = mutableListOf<RegionInfo>()
 
-        return "${baseName.lowercase(Locale.ROOT)}.def"
+        for ((i, terrainName) in terrainNames.withIndex()) {
+            if (i >= runs.size) break
+            log.info("HotA 1.8: loading ${runs[i].size} PCX tiles as $terrainName")
+            allRegionInfos.addAll(loadTerrainPcxTiles(runs[i], terrainName, packer))
+        }
+
+        return allRegionInfos
+    }
+
+    /**
+     * Load a run of 32x32 PCX terrain tiles. Each tile has its own palette.
+     */
+    private fun loadTerrainPcxTiles(
+        tiles: List<ByteArray>,
+        terrainDefName: String,
+        packer: PixmapPacker
+    ): List<RegionInfo> {
+        val allRegionInfos = mutableListOf<RegionInfo>()
+        val defNameNoExt = terrainDefName.removeSuffix(".def")
+        val groupFilenames = tiles.indices.map { "TILE$it" }
+
+        for ((index, tileBytes) in tiles.withIndex()) {
+            try {
+                // Each tile has: fSize(4) + width(4) + height(4) + pixels(1024) + palette(768)
+                val pixelData = tileBytes.copyOfRange(12, 12 + 1024)
+                val palette = tileBytes.copyOfRange(12 + 1024, 12 + 1024 + 768)
+                val (processedPalette, alpha) = applySpecialPalette(palette)
+
+                val frame = DefFrame("TILE$index", 32, 32, 32, 32, 0, 0, pixelData)
+                allRegionInfos.addAll(
+                    packTerrainFrame(frame, terrainDefName, processedPalette, alpha, groupFilenames, packer)
+                )
+            } catch (e: Throwable) {
+                log.log(Level.WARNING, "Failed to load terrain PCX tile $index for $terrainDefName", e)
+            }
+        }
+        return allRegionInfos
+    }
+
+    /**
+     * Extract DEF/D32 name by parsing the file header and reading the first frame name.
+     *
+     * HotA 1.8 frame names use several obfuscation patterns:
+     * - Standard: "AVCRAND0A000" → "avcrand0"
+     * - Dot extension: "AVLGLC01.7oh" → "avlglc01"
+     * - Prefixed: "0w_pilr0.yn4" → "pilr0" → try "avlpilr0"
+     * - AWL typo: "AWLswd4A001.P" → swap AWL→AVL → "avlswd4"
+     * - Abbreviated: "ZREF1A000." → try letter doubling → "zreef1"
+     */
+    private fun extractDefNameFromBytes(
+        bytes: ByteArray,
+        isD32: Boolean,
+        neededNames: Set<String>
+    ): String? {
+        val frameName = if (isD32) {
+            extractD32FrameName(bytes)
+        } else {
+            extractDefFrameName(bytes)
+        } ?: return null
+
+        // Clean frame name:
+        // 1. Strip "0w_" prefix (HotA Cove/world prefix)
+        var cleaned = frameName
+        if (cleaned.startsWith("0w_", ignoreCase = true)) cleaned = cleaned.substring(3)
+        // 2. Strip random dot extension (".7oh", ".yn4", ".P", ".")
+        val dotIdx = cleaned.indexOf('.')
+        if (dotIdx > 0) cleaned = cleaned.substring(0, dotIdx)
+        // 3. Strip trailing A\d{3} suffix ("A000", "A001")
+        cleaned = cleaned.replace(Regex("[Aa]\\d{3}$"), "")
+        if (cleaned.isEmpty()) return null
+
+        val match = findMatchingDefName(cleaned.lowercase(Locale.ROOT), neededNames)
+        if (match != null) return match
+        return "${cleaned.lowercase(Locale.ROOT)}.def"
+    }
+
+    /**
+     * Try to match a cleaned frame base name against needed DEF names.
+     * Uses progressive digit stripping, AVL prefix prepending, AWL→AVL swap,
+     * and letter-doubling fuzzy match.
+     */
+    private fun findMatchingDefName(base: String, neededNames: Set<String>): String? {
+        var candidate = base
+        while (candidate.isNotEmpty()) {
+            // Direct match
+            if ("$candidate.def" in neededNames) return "$candidate.def"
+
+            // Try prepending "avl" (HotA sometimes strips this prefix)
+            if (!candidate.startsWith("avl") && !candidate.startsWith("awl")) {
+                if ("avl$candidate.def" in neededNames) return "avl$candidate.def"
+            }
+
+            // Try swapping AWL→AVL (typo in some HotA frames)
+            if (candidate.startsWith("awl")) {
+                val swapped = "avl${candidate.substring(3)}"
+                if ("$swapped.def" in neededNames) return "$swapped.def"
+            }
+
+            // PCX terrain prefix mapping (e.g., "wstlt" -> "wastlnd.def")
+            val pcxMapped = terrainPcxPrefixes[candidate]
+            if (pcxMapped != null && pcxMapped in neededNames) return pcxMapped
+
+            if (candidate.last().isDigit()) {
+                candidate = candidate.dropLast(1)
+            } else {
+                break
+            }
+        }
+
+        // Fuzzy: try doubling each letter (handles "zref" → "zreef")
+        val baseNoDigits = base.trimEnd { it.isDigit() }
+        val digits = base.substring(baseNoDigits.length)
+        for (i in baseNoDigits.indices) {
+            val doubled = baseNoDigits.substring(0, i + 1) + baseNoDigits[i] +
+                    baseNoDigits.substring(i + 1) + digits
+            if ("$doubled.def" in neededNames) return "$doubled.def"
+        }
+
+        return null
+    }
+
+    private fun extractD32FrameName(bytes: ByteArray): String? {
+        // D32 header: 32 bytes, then group header: 4+4+4+4 = 16 bytes, then filenames
+        if (bytes.size < 48 + 13) return null
+        val buf = java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        buf.position(16) // skip magic(4) + unknown(4) + width(4) + height(4)
+        val groupCount = buf.int
+        if (groupCount <= 0 || groupCount > 256) return null
+        buf.position(32) // start of groups
+
+        for (g in 0 until groupCount) {
+            if (buf.remaining() < 16) return null
+            buf.int // groupType
+            val framesCount = buf.int
+            buf.int // unknown
+            buf.int // unknown
+            if (framesCount in 1..10000 && buf.remaining() >= 13) {
+                return readFixedString(bytes, buf.position(), 13)
+            }
+            if (framesCount < 0) return null
+            val skip = framesCount.toLong() * 17 // 13 bytes name + 4 bytes offset
+            if (skip < 0 || skip > buf.remaining()) return null
+            buf.position(buf.position() + skip.toInt())
+        }
+        return null
+    }
+
+    private fun extractDefFrameName(bytes: ByteArray): String? {
+        // DEF header: type(4) + fullWidth(4) + fullHeight(4) + groupCount(4) + palette(768) = 784
+        if (bytes.size < 784 + 16) return null
+        val buf = java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+
+        // Validate DEF header dimensions
+        buf.position(4)
+        val fullW = buf.int
+        val fullH = buf.int
+        if (fullW <= 0 || fullW > 4096 || fullH <= 0 || fullH > 4096) return null
+
+        val groupCount = buf.int
+        if (groupCount <= 0 || groupCount > 256) return null
+        buf.position(784) // skip to first group (after header + palette)
+
+        for (g in 0 until groupCount) {
+            if (buf.remaining() < 16) return null
+            buf.int // groupType
+            val framesCount = buf.int
+            buf.position(buf.position() + 8) // skip unknown
+
+            if (framesCount in 1..10000 && buf.remaining() >= 13) {
+                return readFixedString(bytes, buf.position(), 13)
+            }
+            if (framesCount < 0) return null
+            val skip = framesCount.toLong() * 17 // 13 bytes name + 4 bytes offset
+            if (skip < 0 || skip > buf.remaining()) return null
+            buf.position(buf.position() + skip.toInt())
+        }
+        return null
+    }
+
+    private fun readFixedString(bytes: ByteArray, offset: Int, length: Int): String? {
+        if (offset + length > bytes.size) return null
+        val raw = bytes.copyOfRange(offset, offset + length)
+        val str = String(raw).replace("\u0000.*".toRegex(), "")
+        return if (str.isNotEmpty() && str.all { it.code in 0x20..0x7E }) str else null
     }
 
     private fun loadDefFromBytes(
