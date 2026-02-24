@@ -2,12 +2,14 @@ package com.homm3.livewallpaper.core.assets
 
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.g2d.PixmapPacker
+import com.homm3.livewallpaper.parser.def.D32Reader
 import com.homm3.livewallpaper.parser.def.DefFrame
 import com.homm3.livewallpaper.parser.def.DefReader
+import com.homm3.livewallpaper.parser.def.DefSprite
 import com.homm3.livewallpaper.parser.lod.LodEntry
-import com.homm3.livewallpaper.parser.lod.LodFileType
 import com.homm3.livewallpaper.parser.lod.LodReader
 import com.homm3.livewallpaper.parser.pcx.PcxReader
+import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.util.Locale
 import java.util.logging.Level
@@ -177,6 +179,10 @@ class LodSpriteLoader {
     ): List<RegionInfo> {
         val lodReader = LodReader(lodStream)
         val archive = lodReader.read()
+
+        if (archive.isHota18) {
+            return loadHota18Sprites(lodReader, archive, neededNames, packer, onProgress)
+        }
 
         val neededLower = neededNames.map { it.lowercase(Locale.ROOT) }.toSet()
 
@@ -486,6 +492,171 @@ class LodSpriteLoader {
         val right = array.copyOfRange(fromStep + stepSize, toStep)
         System.arraycopy(right, 0, array, fromStep, right.size)
         System.arraycopy(left, 0, array, fromStep + right.size, left.size)
+    }
+
+    private val D32_MAGIC_BYTES = byteArrayOf(0x44, 0x33, 0x32, 0x46) // "D32F" little-endian: 0x46323344
+
+    private fun loadHota18Sprites(
+        lodReader: LodReader,
+        archive: com.homm3.livewallpaper.parser.lod.LodArchive,
+        neededNames: Set<String>,
+        packer: PixmapPacker,
+        onProgress: (String) -> Unit
+    ): List<RegionInfo> {
+        val neededLower = neededNames.map { it.lowercase(Locale.ROOT) }.toSet()
+        val sortedEntries = archive.files.sortedBy { it.offset }
+
+        onProgress("Loading HotA 1.8 sprites...")
+        val allRegionInfos = mutableListOf<RegionInfo>()
+        var processed = 0
+
+        for (entry in sortedEntries) {
+            try {
+                val stream = lodReader.readFileContent(entry)
+                val bytes = stream.readBytes()
+                if (bytes.size < 4) continue
+
+                val isD32 = bytes[0] == D32_MAGIC_BYTES[0] &&
+                        bytes[1] == D32_MAGIC_BYTES[1] &&
+                        bytes[2] == D32_MAGIC_BYTES[2] &&
+                        bytes[3] == D32_MAGIC_BYTES[3]
+
+                // Extract DEF name from first frame name
+                val defName = extractDefNameFromBytes(bytes, isD32) ?: continue
+                if (defName !in neededLower) continue
+
+                if (isD32) {
+                    val d32 = D32Reader(ByteArrayInputStream(bytes)).read()
+                    allRegionInfos.addAll(packD32Sprite(d32, defName, packer))
+                } else {
+                    allRegionInfos.addAll(loadDefFromBytes(bytes, defName, packer))
+                }
+
+                processed++
+                if (processed % 50 == 0) {
+                    onProgress("Loading HotA 1.8 sprites ($processed)...")
+                }
+            } catch (e: Throwable) {
+                log.log(Level.WARNING, "Failed to load HotA 1.8 entry ${entry.name}", e)
+            }
+        }
+
+        onProgress("Loaded $processed HotA 1.8 sprites")
+        return allRegionInfos
+    }
+
+    private fun extractDefNameFromBytes(bytes: ByteArray, isD32: Boolean): String? {
+        // Extract first frame name from the binary data
+        val frameNameOffset = if (isD32) {
+            // D32: 32 (header) + 4+4+4+4 (group header) = 48
+            48
+        } else {
+            // Classic DEF: 16 (header) + 768 (palette) + 4+4+8 (group header start) = 800
+            // But group header: 4(type) + 4(count) + 8(unknown) = 16, then filenames start
+            // So: 16 + 768 + 16 = 800
+            800
+        }
+        if (bytes.size <= frameNameOffset + 8) return null
+
+        // Read 13-byte null-terminated string
+        val nameEnd = minOf(frameNameOffset + 13, bytes.size)
+        val rawName = bytes.copyOfRange(frameNameOffset, nameEnd)
+        val frameName = String(rawName).replace("\u0000.*".toRegex(), "")
+        if (frameName.isEmpty()) return null
+
+        // Strip trailing A\d{3} suffix (e.g., "AVCRAND0A000" -> "AVCRAND0")
+        val baseName = frameName.replace(Regex("[Aa]\\d{3}$"), "")
+        if (baseName.isEmpty()) return null
+
+        return "${baseName.lowercase(Locale.ROOT)}.def"
+    }
+
+    private fun loadDefFromBytes(
+        bytes: ByteArray,
+        defName: String,
+        packer: PixmapPacker
+    ): List<RegionInfo> {
+        val stream = ByteArrayInputStream(bytes)
+        stream.mark(bytes.size)
+        val def = DefReader(stream).read()
+        val (palette, alpha) = applySpecialPalette(def.rawPalette)
+
+        val isTerrain = defName in terrainDefNames
+        val regionInfos = mutableListOf<RegionInfo>()
+        val seenFrames = mutableSetOf<String>()
+
+        if (isTerrain) {
+            val allFilenames = def.groups.flatMap { it.filenames }
+            for (group in def.groups) {
+                for (frame in group.frames) {
+                    if (frame.frameName in seenFrames) continue
+                    seenFrames.add(frame.frameName)
+                    regionInfos.addAll(
+                        packTerrainFrame(frame, defName, palette.clone(), alpha, allFilenames, packer)
+                    )
+                }
+            }
+            return regionInfos
+        }
+
+        for (group in def.groups) {
+            for (frame in group.frames) {
+                val frameKey = defName + frame.frameName
+                if (frameKey in seenFrames) continue
+                seenFrames.add(frameKey)
+                regionInfos.addAll(
+                    packObjectFrame(frame, defName, palette, alpha, group.filenames, packer)
+                )
+            }
+        }
+        return regionInfos
+    }
+
+    private fun packD32Sprite(
+        sprite: DefSprite,
+        defName: String,
+        packer: PixmapPacker
+    ): List<RegionInfo> {
+        val regionInfos = mutableListOf<RegionInfo>()
+        val seenFrames = mutableSetOf<String>()
+
+        for (group in sprite.groups) {
+            for (frame in group.frames) {
+                val frameKey = defName + frame.frameName
+                if (frameKey in seenFrames) continue
+                seenFrames.add(frameKey)
+
+                if (frame.width == 0 || frame.height == 0) continue
+
+                val packerName = "$defName/${frame.frameName}"
+                val pixmap = Pixmap(frame.width, frame.height, Pixmap.Format.RGBA8888)
+                val buffer = pixmap.pixels
+                buffer.put(frame.data)
+                buffer.flip()
+                packer.pack(packerName, pixmap)
+                pixmap.dispose()
+
+                val defNameNoExt = defName.removeSuffix(".def")
+                group.filenames.forEachIndexed { index, fileName ->
+                    if (fileName != frame.frameName) return@forEachIndexed
+                    regionInfos.add(
+                        RegionInfo(
+                            packerName = packerName,
+                            regionName = defNameNoExt,
+                            regionIndex = index,
+                            width = frame.width,
+                            height = frame.height,
+                            fullWidth = frame.fullWidth,
+                            fullHeight = frame.fullHeight,
+                            x = frame.x,
+                            y = frame.y,
+                            isTerrain = false
+                        )
+                    )
+                }
+            }
+        }
+        return regionInfos
     }
 
     companion object {

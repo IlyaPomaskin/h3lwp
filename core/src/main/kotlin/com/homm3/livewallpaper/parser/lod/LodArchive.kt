@@ -1,13 +1,14 @@
 package com.homm3.livewallpaper.parser.lod
 
-data class LodArchive(val files: List<LodEntry>)
+data class LodArchive(val files: List<LodEntry>, val isHota18: Boolean = false)
 
 data class LodEntry(
     val name: String,
     val offset: Int,
     val size: Int,
     val fileType: LodFileType?,
-    val compressedSize: Int
+    val compressedSize: Int,
+    val compressionMethod: Int = 0
 )
 
 enum class LodFileType(val id: Int) {

@@ -14,12 +14,14 @@ object LodValidator {
         "avccast0.def"
     )
 
-    // DEFs that must exist in HotA.lod
+    // DEFs that must exist in HotA.lod (pre-1.8)
     private val hotaMarkers = setOf(
         "avccovx0.def",
         "avcfacx0.def",
         "avgflh00.def"
     )
+
+    private val hexPattern = Regex("^[0-9a-fA-F]{32}$")
 
     /**
      * Validates a LOD file by reading its header/index and checking for marker DEFs.
@@ -32,6 +34,25 @@ object LodValidator {
             return e.message ?: "Invalid LOD file"
         } catch (e: Exception) {
             return "Failed to read file: ${e.message}"
+        }
+
+        if (archive.isHota18) {
+            if (!isHota) {
+                return "This looks like HotA 1.8, not H3sprite.lod"
+            }
+            // Structural validation for HotA 1.8
+            if (archive.files.size < 1000) {
+                return "HotA 1.8 archive has too few entries: ${archive.files.size}"
+            }
+            val invalidNames = archive.files.count { !hexPattern.matches(it.name) }
+            if (invalidNames > 0) {
+                return "HotA 1.8 archive has $invalidNames entries with non-hex names"
+            }
+            val invalidOffsets = archive.files.count { it.offset < 80 }
+            if (invalidOffsets > 0) {
+                return "HotA 1.8 archive has $invalidOffsets entries with invalid offsets"
+            }
+            return null
         }
 
         val entryNames = archive.files.map { it.name.lowercase(Locale.ROOT) }.toSet()

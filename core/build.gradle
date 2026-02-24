@@ -15,4 +15,5 @@ dependencies {
   api "io.github.libktx:ktx-scene2d:$ktxVersion"
   api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
   api "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion"
+  api "org.tukaani:xz:1.10"
 }

@@ -34,7 +34,12 @@ class BinaryReader(private val stream: InputStream) {
 
     fun readBytes(length: Int): ByteArray {
         val buffer = ByteArray(length)
-        read(buffer, 0, length)
+        var offset = 0
+        while (offset < length) {
+            val n = read(buffer, offset, length - offset)
+            if (n <= 0) break
+            offset += n
+        }
         return buffer
     }
 
@@ -43,11 +48,14 @@ class BinaryReader(private val stream: InputStream) {
     }
 
     fun skip(amount: Long): Long {
-        val n = stream.skip(amount)
-        if (n > 0) {
-            position += amount
+        var remaining = amount
+        while (remaining > 0) {
+            val n = stream.skip(remaining)
+            if (n <= 0) break
+            remaining -= n
         }
-        return n
+        position += amount - remaining
+        return amount - remaining
     }
 
     fun seek(offset: Long) {
@@ -59,7 +67,7 @@ class BinaryReader(private val stream: InputStream) {
     private fun read(b: ByteArray, offset: Int, length: Int): Int {
         val n = stream.read(b, offset, length)
         if (n > 0) {
-            position += length.toLong()
+            position += n.toLong()
         }
         return n
     }
