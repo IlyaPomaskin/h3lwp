@@ -188,6 +188,7 @@ class SpriteRegistry : Disposable {
                 }
             }
 
+            log.info { "Registry: ${registry.regions.size} sprite regions from ${registry.loadedDefNames.size} DEFs" }
             return registry
         }
     }

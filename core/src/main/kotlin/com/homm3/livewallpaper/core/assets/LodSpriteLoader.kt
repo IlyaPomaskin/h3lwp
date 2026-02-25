@@ -687,6 +687,37 @@ class LodSpriteLoader {
     // Common H3/HotA adventure sprite prefixes
     private val h3Prefixes = listOf("avl", "avg", "avw", "avm", "avx", "ava", "avc", "avs")
 
+    // Manual mapping: frame name base (lowercase) → needed def name
+    // For HotA 1.8 sprites where frame names don't match the expected def names
+    private val defAliases = listOf(
+        // "4lvlshrn" to "4lvlxshrn.def",
+        // "ava0128" to "ava0128w.def",
+        // "avcgar10" to "avcgarw1.def",
+        // "avcvgr" to "avcvgrw.def",
+        // "avgjotn0" to "avgjotu.def",
+        // "avgkbl01" to "avgkobo.def",
+        // "avgmmth0" to "avgmamm.def",
+        // "avgshmn0" to "avgsham.def",
+        // "avgtzab4a" to "avgtzab4.def",
+        // "avlldrt1" to "avllogdrt1.def",
+        // "avlwloi" to "avlwloi1.def",
+        // "avmcrsn0" to "avmcrsn1.def",
+        // "avmcrwl001" to "avmcrwl1.def",
+        // "avmgosn0" to "avmgosn1.def",
+        // "avwctl00" to "avwccoat.def",
+        // "avwctl00" to "avwcoat.def",
+        // "avxamsn0" to "avxamsn1.def",
+        // "avxboat5" to "avxboat6.def",
+        // "avxl1sh0" to "avxl1sh0w.def",
+        // "avxl2sh0" to "avxl2sh0w.def",
+        // "avxl3sh0" to "avxl3sh0w.def",
+        // "avxmn2p0" to "avxmn2pink0.def",
+        // "avxseek" to "avxseek0.def",
+        // "avxtvrn0" to "wt_tvrn01.def",
+        // "roosr_01" to "rooster_01.def",
+        // "roosr_02" to "rooster_02.def",
+    ).groupBy({ it.first }, { it.second })
+
     /**
      * Extract DEF/D32 name by parsing the file header and reading frame names from all groups.
      *
@@ -738,6 +769,9 @@ class LodSpriteLoader {
      * trailing letter truncation, and letter-doubling fuzzy match.
      */
     private fun findMatchingDefName(base: String, neededNames: Set<String>): String? {
+        // Check alias mapping first
+        defAliases[base]?.firstOrNull { it in neededNames }?.let { return it }
+
         // Phase 1: Direct + digit stripping with prefix prepending
         var candidate = base
         while (candidate.isNotEmpty()) {
