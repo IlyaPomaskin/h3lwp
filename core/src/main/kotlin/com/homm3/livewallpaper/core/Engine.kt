@@ -20,7 +20,8 @@ open class Engine(
     private val prefs: Flow<WallpaperPreferences>,
     private val onSettingsButtonClick: (onProgress: (String) -> Unit, onDone: () -> Unit) -> Unit = { _, _ -> },
     private val onHotaButtonClick: (onProgress: (String) -> Unit, onDone: () -> Unit) -> Unit = { _, _ -> },
-    private val explicitMaps: List<String> = emptyList()
+    private val explicitMaps: List<String> = emptyList(),
+    private val headless: Boolean = false
 ) : KtxGame<Screen>(null, false) {
     private var assets: GameAssets? = null
     private lateinit var camera: MapCamera
@@ -97,6 +98,7 @@ open class Engine(
                 getScreen<GameScreen>().addMap(GameMap(a, map, name))
             }
             setScreen<GameScreen>()
+            if (headless) Gdx.app.exit()
         }
     }
 

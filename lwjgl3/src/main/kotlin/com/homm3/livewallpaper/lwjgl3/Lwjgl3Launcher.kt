@@ -25,7 +25,8 @@ fun main(args: Array<String>) {
             prefs = MutableStateFlow(WallpaperPreferences(brightness = 1.0f)),
             onSettingsButtonClick = ::copyLodFile,
             onHotaButtonClick = ::copyHotaLodFile,
-            explicitMaps = parsedArgs.mapNames
+            explicitMaps = parsedArgs.mapNames,
+            headless = parsedArgs.headless
         ),
         Lwjgl3ApplicationConfiguration().apply {
             setTitle("Heroes 3 LiveWallpaper")
@@ -34,6 +35,7 @@ fun main(args: Array<String>) {
             setForegroundFPS(displayMode?.refreshRate?.plus(1) ?: 60)
             setWindowedMode(480, 480)
             setWindowIcon(*(arrayOf(128, 64, 32, 16).map { "libgdx$it.png" }.toTypedArray()))
+            if (parsedArgs.headless) setInitialVisible(false)
         })
 }
 
@@ -90,7 +92,8 @@ private fun copyHotaLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
 private data class ParsedArgs(
     val h3spritePath: String? = null,
     val hotaPath: String? = null,
-    val mapPaths: List<String> = emptyList()
+    val mapPaths: List<String> = emptyList(),
+    val headless: Boolean = false
 ) {
     val mapNames: List<String> get() = mapPaths.map { File(it).name }
 }
@@ -99,16 +102,18 @@ private fun parseArgs(args: Array<String>): ParsedArgs {
     var h3sprite: String? = null
     var hota: String? = null
     val maps = mutableListOf<String>()
+    var headless = false
     var i = 0
     while (i < args.size) {
         when (args[i]) {
             "--h3sprite" -> { i++; require(i < args.size) { "Missing path after --h3sprite" }; h3sprite = args[i] }
             "--hota" -> { i++; require(i < args.size) { "Missing path after --hota" }; hota = args[i] }
             "--map" -> { i++; require(i < args.size) { "Missing path after --map" }; maps.add(args[i]) }
+            "--headless" -> headless = true
         }
         i++
     }
-    return ParsedArgs(h3sprite, hota, maps)
+    return ParsedArgs(h3sprite, hota, maps, headless)
 }
 
 private fun installFiles(args: ParsedArgs) {
