@@ -11,7 +11,7 @@ import kotlin.math.min
 class CameraInputProcessor(private val viewport: ScreenViewport) : KtxInputAdapter {
     var onSpace: () -> Unit = {}
     var onEnter: () -> Unit = {}
-    var onTap: () -> Unit = {}
+    var onTap: (screenX: Int, screenY: Int) -> Unit = { _, _ -> }
     private val pressedKeys = mutableSetOf<Int>()
     private var dragged = false
 
@@ -87,7 +87,7 @@ class CameraInputProcessor(private val viewport: ScreenViewport) : KtxInputAdapt
 
     override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
         if (!dragged) {
-            onTap()
+            onTap(screenX, screenY)
         }
         return super.touchUp(screenX, screenY, pointer, button)
     }

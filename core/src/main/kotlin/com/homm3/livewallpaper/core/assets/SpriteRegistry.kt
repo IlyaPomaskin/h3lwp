@@ -21,7 +21,15 @@ class SpriteRegistry : Disposable {
 
     fun getObjectFrames(defName: String): Array<AtlasRegion> {
         val key = defName.lowercase(Locale.ROOT).removeSuffix(".def")
-        return regions[key] ?: gdxArrayOf()
+        val frames = regions[key] ?: gdxArrayOf()
+        if (frames.size > 1) {
+            val indices = (0 until frames.size).map { frames.get(it).index }
+            val duplicateIndices = indices.groupBy { it }.filter { it.value.size > 1 }.keys
+            if (duplicateIndices.isNotEmpty()) {
+                log.info { "DEF $defName ($key): ${frames.size} frames with duplicate indices $duplicateIndices (all indices: $indices)" }
+            }
+        }
+        return frames
     }
 
     fun findRegions(name: String): Array<AtlasRegion> {
@@ -75,7 +83,12 @@ class SpriteRegistry : Disposable {
             region.packedHeight = info.height
             region.flip(false, true)
 
-            regions.getOrPut(info.regionName) { Array() }.add(region)
+            val arr = regions.getOrPut(info.regionName) { Array() }
+            val existingWithSameIndex = (0 until arr.size).any { arr.get(it).index == info.regionIndex }
+            if (existingWithSameIndex) {
+                log.info { "addFromPacker duplicate: ${info.regionName}[${info.regionIndex}] from packer=${info.packerName} (already have ${arr.size} frames)" }
+            }
+            arr.add(region)
             newRegionNames.add(info.regionName)
             loadedDefNames.add(info.packerName.substringBefore("/"))
         }
@@ -119,11 +132,19 @@ class SpriteRegistry : Disposable {
 
             // Create textures from packer pages
             val pageTextures = mutableListOf<Texture>()
-            for (page in packer.pages) {
+            for ((pageIndex, page) in packer.pages.withIndex()) {
                 val texture = Texture(page.pixmap)
                 texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
                 pageTextures.add(texture)
                 registry.textures.add(texture)
+                // Atlas page dump disabled
+                // try {
+                //     val file = com.badlogic.gdx.Gdx.files.local("atlas_page_$pageIndex.png")
+                //     com.badlogic.gdx.graphics.PixmapIO.writePNG(file, page.pixmap)
+                //     log.info { "Saved atlas page $pageIndex: ${page.pixmap.width}x${page.pixmap.height} -> ${file.path()}" }
+                // } catch (e: Throwable) {
+                //     log.error(e) { "Failed to save atlas page $pageIndex" }
+                // }
             }
 
             // Build a lookup: packerName → (pageIndex, rect)
@@ -167,7 +188,12 @@ class SpriteRegistry : Disposable {
 
                 log.debug { "  region: ${info.regionName}[${info.regionIndex}] offsetX=${region.offsetX} offsetY=${region.offsetY} origW=${region.originalWidth} origH=${region.originalHeight} packedW=${region.packedWidth} packedH=${region.packedHeight} regW=${region.regionWidth} regH=${region.regionHeight}" }
 
-                registry.regions.getOrPut(info.regionName) { Array() }.add(region)
+                val arr = registry.regions.getOrPut(info.regionName) { Array() }
+                val existingWithSameIndex = (0 until arr.size).any { arr.get(it).index == info.regionIndex }
+                if (existingWithSameIndex) {
+                    log.info { "Duplicate region: ${info.regionName}[${info.regionIndex}] from packer=${info.packerName} (already have ${arr.size} frames)" }
+                }
+                arr.add(region)
                 registry.loadedDefNames.add(info.packerName.substringBefore("/"))
             }
 

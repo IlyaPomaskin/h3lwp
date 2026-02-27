@@ -299,11 +299,8 @@ class LodSpriteLoader {
             return regionInfos
         }
 
-        log.fine("DEF: $defNameLower type=${entry.fileType} groups=${def.groups.size} fullW=${def.fullWidth} fullH=${def.fullHeight}")
         for ((gi, group) in def.groups.withIndex()) {
-            log.fine("  group[$gi] filenames=${group.filenames.size}: ${group.filenames.take(8)}")
             for (frame in group.frames) {
-                log.fine("    frame=${frame.frameName} w=${frame.width} h=${frame.height} fullW=${frame.fullWidth} fullH=${frame.fullHeight} x=${frame.x} y=${frame.y} dataSize=${frame.data.size}")
                 val frameKey = defNameLower + frame.frameName
                 if (frameKey in seenFrames) continue
                 seenFrames.add(frameKey)
@@ -312,9 +309,6 @@ class LodSpriteLoader {
                     packObjectFrame(frame, defNameLower, palette, alpha, group.filenames, packer)
                 )
             }
-        }
-        for (ri in regionInfos) {
-            log.fine("  -> region: name=${ri.regionName} idx=${ri.regionIndex} w=${ri.width} h=${ri.height} fullW=${ri.fullWidth} fullH=${ri.fullHeight} x=${ri.x} y=${ri.y}")
         }
         return regionInfos
     }
@@ -458,6 +452,11 @@ class LodSpriteLoader {
             )
         }
 
+        if (regionInfos.size > 1) {
+            log.info("packObjectFrame: def=$defName frame=${frame.frameName} produced ${regionInfos.size} regions: " +
+                "indices=${regionInfos.map { it.regionIndex }} groupFilenames=$groupFilenames")
+        }
+
         return regionInfos
     }
 
@@ -528,8 +527,8 @@ class LodSpriteLoader {
         val pcxTiles = mutableListOf<Pair<Int, ByteArray>>() // (originalIndex, decompressed bytes)
 
         // Pass 1: Partial decompress to identify entries and collect terrain PCX tiles
-        val HEADER_SIZE = 900 // Enough for DEF header (784) + first group header (16) + frame name (13)
-        data class MatchedEntry(val entry: LodEntry, val defName: String, val isD32: Boolean)
+        val HEADER_SIZE = 2048 // DEF header (784) + group headers + frame names (13 bytes each)
+        data class MatchedEntry(val entry: LodEntry, val defNames: List<String>, val isD32: Boolean)
         val matchedEntries = mutableListOf<MatchedEntry>()
 
         for (entry in sortedEntries) {
@@ -570,27 +569,28 @@ class LodSpriteLoader {
                         header[2] == D32_MAGIC_BYTES[2] &&
                         header[3] == D32_MAGIC_BYTES[3]
 
-                val defName = extractDefNameFromBytes(header, isD32, neededLower) ?: continue
-                if (defName !in neededLower) continue
+                val defNames = extractDefNamesFromBytes(header, isD32, neededLower)
+                val neededDefNames = defNames.filter { it in neededLower }
+                if (neededDefNames.isEmpty()) continue
 
-                matchedEntries.add(MatchedEntry(entry, defName, isD32))
+                matchedEntries.add(MatchedEntry(entry, neededDefNames, isD32))
             } catch (e: Throwable) {
                 log.log(Level.WARNING, "Failed to identify HotA 1.8 entry ${entry.name}", e)
             }
         }
 
         // Pass 2: Fully decompress only matched entries
-        for ((entry, defName, isD32) in matchedEntries) {
+        for ((entry, defNames, isD32) in matchedEntries) {
             try {
-                matchedNames.add(defName)
+                matchedNames.addAll(defNames)
                 val stream = lodReader.readFileContent(entry)
                 val bytes = stream.readBytes()
 
                 if (isD32) {
                     val d32 = D32Reader(ByteArrayInputStream(bytes)).read()
-                    allRegionInfos.addAll(packD32Sprite(d32, defName, packer))
+                    allRegionInfos.addAll(packD32Sprite(d32, defNames.first(), packer))
                 } else {
-                    allRegionInfos.addAll(loadDefFromBytes(bytes, defName, packer))
+                    allRegionInfos.addAll(loadDefFromBytes(bytes, defNames, neededLower, packer))
                 }
 
                 processed++
@@ -703,9 +703,23 @@ class LodSpriteLoader {
         "avgshmn0" to "avgsham.def",
         "avmgosn0" to "avmgosn1.def",
         "avxamsn0" to "avxamsn1.def",
+        "avxl1sh0" to "avxl1sh0w.def",
+        "avxl2sh0" to "avxl2sh0w.def",
         "avxl3sh0" to "avxl3sh0w.def",
+        "4sh0w" to "avxl4sh0.def",
         "avxmink0" to "avxmn2pink0.def",
         "avxseek" to "avxseek0.def",
+        "avgyeti0" to "avgyeti.def",
+        "avlklp500" to "avlklp50.def",
+        "avlklp600" to "avlklp60.def",
+        "avlklp700" to "avlklp70.def",
+        "avlklp800" to "avlklp80.def",
+        "mntswpgl01" to "mntswpgl.def",
+        "zref1" to "zreef1.def",
+        "zref2" to "zreef2.def",
+        "zref3" to "zreef3.def",
+        "zref4" to "zreef4.def",
+        "zref5" to "zreef5.def",
     ).groupBy({ it.first }, { it.second })
 
     /**
@@ -719,38 +733,44 @@ class LodSpriteLoader {
      * - Abbreviated: "ZREF1A000." → try letter doubling → "zreef1"
      * - Multi-group: DEF has group 0="AVMgosn0" and group 1="AVMgosn1"
      */
-    private fun extractDefNameFromBytes(
+    private fun extractDefNamesFromBytes(
         bytes: ByteArray,
         isD32: Boolean,
         neededNames: Set<String>
-    ): String? {
+    ): List<String> {
         val frameNames = if (isD32) {
             extractD32FrameNames(bytes)
         } else {
             extractDefFrameNames(bytes)
         }
-        if (frameNames.isEmpty()) return null
+        if (frameNames.isEmpty()) return emptyList()
 
-        // Try each group's frame name against needed names
+        // Try each group's frame name against needed names, collect ALL matches
+        val matched = mutableSetOf<String>()
         for (frameName in frameNames) {
             val cleaned = cleanFrameName(frameName)
-            if (cleaned.isEmpty()) continue
-            val match = findMatchingDefName(cleaned.lowercase(Locale.ROOT), neededNames)
-            if (match != null) return match
+            if (cleaned.name.isEmpty()) continue
+            val match = findMatchingDefName(cleaned.name.lowercase(Locale.ROOT), neededNames, cleaned.wasPrefixed)
+            if (match != null) matched.add(match)
         }
+
+        if (matched.isNotEmpty()) return matched.toList()
 
         // Fallback: use first frame name
         val cleaned = cleanFrameName(frameNames[0])
-        return if (cleaned.isNotEmpty()) "${cleaned.lowercase(Locale.ROOT)}.def" else null
+        return if (cleaned.name.isNotEmpty()) listOf("${cleaned.name.lowercase(Locale.ROOT)}.def") else emptyList()
     }
 
-    private fun cleanFrameName(frameName: String): String {
+    data class CleanedFrame(val name: String, val wasPrefixed: Boolean)
+
+    private fun cleanFrameName(frameName: String): CleanedFrame {
         var cleaned = frameName
-        if (cleaned.startsWith("0w_", ignoreCase = true)) cleaned = cleaned.substring(3)
+        val wasPrefixed = cleaned.startsWith("0w_", ignoreCase = true)
+        if (wasPrefixed) cleaned = cleaned.substring(3)
         val dotIdx = cleaned.indexOf('.')
         if (dotIdx > 0) cleaned = cleaned.substring(0, dotIdx)
         cleaned = cleaned.replace(Regex("[Aa]\\d{3}$"), "")
-        return cleaned
+        return CleanedFrame(cleaned, wasPrefixed)
     }
 
     /**
@@ -758,45 +778,40 @@ class LodSpriteLoader {
      * Uses progressive digit stripping, all-prefix prepending/swapping,
      * trailing letter truncation, and letter-doubling fuzzy match.
      */
-    private fun findMatchingDefName(base: String, neededNames: Set<String>): String? {
+    private fun findMatchingDefName(base: String, neededNames: Set<String>, tryPrefixes: Boolean = false): String? {
         // Check alias mapping first
         defAliases[base]?.firstOrNull { it in neededNames }?.let { return it }
 
-        // Phase 1: Direct + digit stripping with prefix prepending
-        var candidate = base
-        while (candidate.isNotEmpty()) {
-            if ("$candidate.def" in neededNames) return "$candidate.def"
+        // Phase 1: Direct match with prefix prepending
+        val candidate = base
+        if ("$candidate.def" in neededNames) return "$candidate.def"
 
-            // Try prepending known prefixes (for unprefixed names like "pilr0")
+        // Only try prepending prefixes for frames that had "0w_" prefix stripped
+        if (tryPrefixes) {
             for (prefix in h3Prefixes) {
                 if ("$prefix$candidate.def" in neededNames) return "$prefix$candidate.def"
             }
-
-            // AWL→AVL swap
-            if (candidate.startsWith("awl")) {
-                val swapped = "avl${candidate.substring(3)}"
-                if ("$swapped.def" in neededNames) return "$swapped.def"
-            }
-
-            // PCX terrain prefix mapping
-            val pcxMapped = terrainPcxPrefixes[candidate]
-            if (pcxMapped != null && pcxMapped in neededNames) return pcxMapped
-
-            if (candidate.last().isDigit()) {
-                candidate = candidate.dropLast(1)
-            } else {
-                break
-            }
         }
 
+        // AWL→AVL swap
+        if (candidate.startsWith("awl")) {
+            val swapped = "avl${candidate.substring(3)}"
+            if ("$swapped.def" in neededNames) return "$swapped.def"
+        }
+
+        // PCX terrain prefix mapping
+        val pcxMapped = terrainPcxPrefixes[candidate]
+        if (pcxMapped != null && pcxMapped in neededNames) return pcxMapped
+
+        // TODO: letter doubling disabled — too many false positives
         // Phase 2: Letter doubling (handles "zref" → "zreef")
-        val baseNoDigits = base.trimEnd { it.isDigit() }
-        val digits = base.substring(baseNoDigits.length)
-        for (i in baseNoDigits.indices) {
-            val doubled = baseNoDigits.substring(0, i + 1) + baseNoDigits[i] +
-                    baseNoDigits.substring(i + 1) + digits
-            if ("$doubled.def" in neededNames) return "$doubled.def"
-        }
+        // val baseNoDigits = base.trimEnd { it.isDigit() }
+        // val digits = base.substring(baseNoDigits.length)
+        // for (i in baseNoDigits.indices) {
+        //     val doubled = baseNoDigits.substring(0, i + 1) + baseNoDigits[i] +
+        //             baseNoDigits.substring(i + 1) + digits
+        //     if ("$doubled.def" in neededNames) return "$doubled.def"
+        // }
 
         return null
     }
@@ -832,8 +847,9 @@ class LodSpriteLoader {
     }
 
     /**
-     * Extract first frame name from EACH group of a DEF file.
-     * Returns one name per non-empty group (for multi-group matching).
+     * Extract unique frame names from all groups of a DEF file.
+     * Reads all frame names within each group (not just the first) to handle
+     * multi-def entries where different frame names map to different defs.
      */
     private fun extractDefFrameNames(bytes: ByteArray): List<String> {
         if (bytes.size < 784 + 16) return emptyList()
@@ -848,6 +864,7 @@ class LodSpriteLoader {
         if (groupCount <= 0 || groupCount > 256) return emptyList()
         buf.position(784)
 
+        val seen = mutableSetOf<String>()
         val names = mutableListOf<String>()
         for (g in 0 until groupCount) {
             if (buf.remaining() < 16) break
@@ -855,10 +872,20 @@ class LodSpriteLoader {
             val framesCount = buf.int
             buf.position(buf.position() + 8)
 
-            if (framesCount in 1..10000 && buf.remaining() >= 13) {
-                readFixedString(bytes, buf.position(), 13)?.let { names.add(it) }
-            }
             if (framesCount < 0) break
+            // Read all frame names in this group (each is 13 bytes)
+            val namesSize = framesCount * 13
+            if (framesCount in 1..10000 && buf.remaining() >= namesSize) {
+                val namesStart = buf.position()
+                for (f in 0 until framesCount) {
+                    val name = readFixedString(bytes, namesStart + f * 13, 13)
+                    if (name != null && name !in seen) {
+                        seen.add(name)
+                        names.add(name)
+                    }
+                }
+            }
+            // Skip past frame names (13 bytes each) + frame offsets (4 bytes each)
             val skip = framesCount.toLong() * 17
             if (skip < 0 || skip > buf.remaining()) break
             buf.position(buf.position() + skip.toInt())
@@ -875,7 +902,8 @@ class LodSpriteLoader {
 
     private fun loadDefFromBytes(
         bytes: ByteArray,
-        defName: String,
+        defNames: List<String>,
+        neededNames: Set<String>,
         packer: PixmapPacker
     ): List<RegionInfo> {
         val stream = ByteArrayInputStream(bytes)
@@ -883,7 +911,8 @@ class LodSpriteLoader {
         val def = DefReader(stream).read()
         val (palette, alpha) = applySpecialPalette(def.rawPalette)
 
-        val isTerrain = defName in terrainDefNames
+        val primaryDefName = defNames.first()
+        val isTerrain = primaryDefName in terrainDefNames
         val regionInfos = mutableListOf<RegionInfo>()
         val seenFrames = mutableSetOf<String>()
 
@@ -894,20 +923,37 @@ class LodSpriteLoader {
                     if (frame.frameName in seenFrames) continue
                     seenFrames.add(frame.frameName)
                     regionInfos.addAll(
-                        packTerrainFrame(frame, defName, palette.clone(), alpha, allFilenames, packer)
+                        packTerrainFrame(frame, primaryDefName, palette.clone(), alpha, allFilenames, packer)
                     )
                 }
             }
             return regionInfos
         }
 
-        for (group in def.groups) {
+        // When multiple def names match this LOD entry, resolve each frame
+        // to its correct def name based on its frame name
+        val hasMultipleNames = defNames.size > 1
+
+        for ((gi, group) in def.groups.withIndex()) {
             for (frame in group.frames) {
-                val frameKey = defName + frame.frameName
+                // Resolve which def name this frame belongs to
+                val resolvedDefName = if (hasMultipleNames) {
+                    val cleaned = cleanFrameName(frame.frameName)
+                    if (cleaned.name.isNotEmpty()) {
+                        findMatchingDefName(cleaned.name.lowercase(Locale.ROOT), neededNames, cleaned.wasPrefixed)
+                            ?: primaryDefName
+                    } else {
+                        primaryDefName
+                    }
+                } else {
+                    primaryDefName
+                }
+
+                val frameKey = resolvedDefName + frame.frameName
                 if (frameKey in seenFrames) continue
                 seenFrames.add(frameKey)
                 regionInfos.addAll(
-                    packObjectFrame(frame, defName, palette, alpha, group.filenames, packer)
+                    packObjectFrame(frame, resolvedDefName, palette, alpha, group.filenames, packer)
                 )
             }
         }

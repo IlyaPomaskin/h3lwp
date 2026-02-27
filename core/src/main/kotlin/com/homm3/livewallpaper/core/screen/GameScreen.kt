@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.tiled.TiledMap
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
+import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.homm3.livewallpaper.core.GameConfig
 import com.homm3.livewallpaper.core.MapUpdateInterval
@@ -38,7 +39,7 @@ class GameScreen(
     }
     private val inputProcessor = CameraInputProcessor(viewport).apply {
         onEnter = { randomizeVisibleMapPart(force = true) }
-        onTap = { randomizeVisibleMapPart(force = true) }
+        onTap = { screenX, screenY -> handleTap(screenX, screenY) }
     }
     private val brightnessOverlay = BrightnessOverlay(camera)
     private var mapUpdateInterval = 0f
@@ -189,6 +190,24 @@ class GameScreen(
         }
         if (counterpart >= 0) {
             showMapAtIndex(counterpart)
+        }
+    }
+
+    private fun handleTap(screenX: Int, screenY: Int) {
+        val world = camera.unproject(Vector3(screenX.toFloat(), screenY.toFloat(), 0f))
+        val maps = tiledMap.layers.toList().filterIsInstance(GameMap::class.java)
+        if (maps.isEmpty()) return
+        val currentMap = maps[currentMapIndex]
+        val objectsLayer = currentMap.layers.toList().filterIsInstance(ObjectsLayer::class.java).firstOrNull()
+        println("--- Click at world=(${world.x}, ${world.y}) ---")
+        val allSprites = objectsLayer?.findAllSpritesAt(world.x, world.y) ?: emptyList()
+        if (allSprites.isEmpty()) {
+            println("  No sprites at this position")
+        }
+        for ((i, sprite) in allSprites.withIndex()) {
+            val names = sprite.frameNames()
+            println("  [$i] DEF: ${sprite.defName} | pos=(${sprite.mapX},${sprite.mapY},${sprite.mapZ}) type=${sprite.objectType} | frames=${names.size}")
+            println("      ${sprite.debugInfo()}")
         }
     }
 

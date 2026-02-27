@@ -36,6 +36,14 @@ class ObjectsLayer(assets: GameAssets, h3m: H3mMap, isUnderground: Boolean) : Ma
         visibleSprites.forEach { it.render(renderer, Gdx.graphics.deltaTime) }
     }
 
+    fun findSpriteAt(worldX: Float, worldY: Float): MapSprite? {
+        return visibleSprites.lastOrNull { it.contains(worldX, worldY) }
+    }
+
+    fun findAllSpritesAt(worldX: Float, worldY: Float): List<MapSprite> {
+        return visibleSprites.filter { it.contains(worldX, worldY) }
+    }
+
     private fun updateVisibleObjects(viewBounds: Rectangle) {
         val startY = (viewBounds.y / TILE_SIZE).toInt() - FRUSTUM_PADDING_TILES
         val endY = ((viewBounds.y + viewBounds.height) / TILE_SIZE).toInt() + FRUSTUM_PADDING_TILES
