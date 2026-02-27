@@ -63,15 +63,19 @@ class GameAssets : Disposable {
 
     data class LoadResult(val maps: List<H3mMap>, val loadedFileNames: List<String>)
 
-    suspend fun loadGameAssets(): LoadResult {
-        // 1. Load maps selected by queue
-        val allMapFiles = getAllMapFiles()
-        val sizeCache = mutableMapOf<String, Int>()
-        val mapQueue = MapQueue()
-        val filesToLoad = mapQueue.getMapsForToday(allMapFiles) { fileName ->
-            sizeCache.getOrPut(fileName) {
-                val fileHandle = Gdx.files.local("${AssetPaths.USER_MAPS_FOLDER}/$fileName")
-                H3mHeaderReader.readMapSize(fileHandle.read())
+    suspend fun loadGameAssets(explicitMaps: List<String> = emptyList()): LoadResult {
+        val filesToLoad = if (explicitMaps.isNotEmpty()) {
+            explicitMaps
+        } else {
+            // Load maps selected by queue
+            val allMapFiles = getAllMapFiles()
+            val sizeCache = mutableMapOf<String, Int>()
+            val mapQueue = MapQueue()
+            mapQueue.getMapsForToday(allMapFiles) { fileName ->
+                sizeCache.getOrPut(fileName) {
+                    val fileHandle = Gdx.files.local("${AssetPaths.USER_MAPS_FOLDER}/$fileName")
+                    H3mHeaderReader.readMapSize(fileHandle.read())
+                }
             }
         }
 

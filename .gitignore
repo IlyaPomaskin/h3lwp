@@ -155,6 +155,9 @@ assets/sprites/*
 assets/user-maps/*
 *.lod
 
+## Release builds:
+/android/release/
+
 ## Miscellaneous:
 *~
 *.*#
