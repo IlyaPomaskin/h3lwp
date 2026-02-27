@@ -19,7 +19,8 @@ import ktx.async.KtxAsync
 open class Engine(
     private val prefs: Flow<WallpaperPreferences>,
     private val onSettingsButtonClick: (onProgress: (String) -> Unit, onDone: () -> Unit) -> Unit = { _, _ -> },
-    private val onHotaButtonClick: (onProgress: (String) -> Unit, onDone: () -> Unit) -> Unit = { _, _ -> }
+    private val onHotaButtonClick: (onProgress: (String) -> Unit, onDone: () -> Unit) -> Unit = { _, _ -> },
+    private val explicitMaps: List<String> = emptyList()
 ) : KtxGame<Screen>(null, false) {
     private var assets: GameAssets? = null
     private lateinit var camera: MapCamera
@@ -90,7 +91,7 @@ open class Engine(
         setScreen<LoadingScreen>()
         KtxAsync.launch {
             allMapFiles = a.getAllMapFiles()
-            val result = a.loadGameAssets()
+            val result = a.loadGameAssets(explicitMaps)
             loadedMapFiles.addAll(result.loadedFileNames)
             result.maps.zip(result.loadedFileNames).forEach { (map, name) ->
                 getScreen<GameScreen>().addMap(GameMap(a, map, name))

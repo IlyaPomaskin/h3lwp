@@ -14,15 +14,18 @@ import java.io.File
 import kotlin.concurrent.thread
 
 /** Launches the desktop (LWJGL3) application. */
-fun main() {
+fun main(args: Array<String>) {
     // This handles macOS support and helps on Windows.
     if (StartupHelper.startNewJvmIfRequired())
         return
+    val parsedArgs = parseArgs(args)
+    installFiles(parsedArgs)
     Lwjgl3Application(
         Engine(
             prefs = MutableStateFlow(WallpaperPreferences(brightness = 1.0f)),
             onSettingsButtonClick = ::copyLodFile,
-            onHotaButtonClick = ::copyHotaLodFile
+            onHotaButtonClick = ::copyHotaLodFile,
+            explicitMaps = parsedArgs.mapNames
         ),
         Lwjgl3ApplicationConfiguration().apply {
             setTitle("Heroes 3 LiveWallpaper")
@@ -60,7 +63,7 @@ private fun copyLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
 }
 
 private fun copyHotaLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
-    val lodFile = File("HotA.lod")
+    val lodFile = File("HotA17.lod")
     if (!lodFile.exists()) {
         onProgress("HotA.lod not found in project root")
         return
@@ -81,5 +84,45 @@ private fun copyHotaLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
         } catch (e: Exception) {
             onProgress(e.message ?: "Copy failed")
         }
+    }
+}
+
+private data class ParsedArgs(
+    val h3spritePath: String? = null,
+    val hotaPath: String? = null,
+    val mapPaths: List<String> = emptyList()
+) {
+    val mapNames: List<String> get() = mapPaths.map { File(it).name }
+}
+
+private fun parseArgs(args: Array<String>): ParsedArgs {
+    var h3sprite: String? = null
+    var hota: String? = null
+    val maps = mutableListOf<String>()
+    var i = 0
+    while (i < args.size) {
+        when (args[i]) {
+            "--h3sprite" -> { i++; require(i < args.size) { "Missing path after --h3sprite" }; h3sprite = args[i] }
+            "--hota" -> { i++; require(i < args.size) { "Missing path after --hota" }; hota = args[i] }
+            "--map" -> { i++; require(i < args.size) { "Missing path after --map" }; maps.add(args[i]) }
+        }
+        i++
+    }
+    return ParsedArgs(h3sprite, hota, maps)
+}
+
+private fun installFiles(args: ParsedArgs) {
+    args.h3spritePath?.let { installFile(it, AssetPaths.LOD_FILE) }
+    args.hotaPath?.let { installFile(it, AssetPaths.HOTA_LOD_FILE) }
+    args.mapPaths.forEach { installFile(it, "${AssetPaths.USER_MAPS_FOLDER}/${File(it).name}") }
+}
+
+private fun installFile(srcPath: String, destPath: String) {
+    val src = File(srcPath)
+    require(src.exists()) { "File not found: $srcPath" }
+    val dest = File(destPath)
+    dest.parentFile?.mkdirs()
+    if (src.canonicalPath != dest.canonicalPath) {
+        src.copyTo(dest, overwrite = true)
     }
 }
