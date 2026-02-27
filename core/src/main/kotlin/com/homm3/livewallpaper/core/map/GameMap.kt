@@ -8,12 +8,12 @@ import com.homm3.livewallpaper.core.map.layers.ObjectsLayer
 import com.homm3.livewallpaper.core.map.layers.TerrainLayer
 import com.homm3.livewallpaper.parser.h3m.H3mMap
 
-class GameMap(assets: GameAssets, h3m: H3mMap, val fileName: String = "") : MapGroupLayer() {
+class GameMap(assets: GameAssets, h3m: H3mMap, val fileName: String = "", val isUnderground: Boolean = false) : MapGroupLayer() {
     val mapSize = h3m.header.size
 
     init {
-        val terrainLayer = TerrainLayer(assets, h3m, false)
-        val objectsLayer = ObjectsLayer(assets, h3m, false)
+        val terrainLayer = TerrainLayer(assets, h3m, isUnderground)
+        val objectsLayer = ObjectsLayer(assets, h3m, isUnderground)
         val borderLayer = BorderLayer(
             assets, h3m.header.size,
             GameConfig.BORDER_TILE_COUNT, GameConfig.BORDER_TILE_COUNT

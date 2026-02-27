@@ -180,6 +180,18 @@ class GameScreen(
         showMapAtIndex(maps.size - 1)
     }
 
+    fun toggleUnderground() {
+        val maps = tiledMap.layers.toList().filterIsInstance(GameMap::class.java)
+        if (maps.isEmpty()) return
+        val current = maps[currentMapIndex]
+        val counterpart = maps.indexOfFirst {
+            it.fileName == current.fileName && it.isUnderground != current.isUnderground
+        }
+        if (counterpart >= 0) {
+            showMapAtIndex(counterpart)
+        }
+    }
+
     private fun showMapAtIndex(index: Int) {
         val maps = tiledMap.layers.toList().filterIsInstance(GameMap::class.java)
         if (maps.isEmpty()) return

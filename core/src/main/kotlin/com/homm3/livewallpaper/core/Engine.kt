@@ -75,6 +75,7 @@ open class Engine(
                 Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) -> { Gdx.app.exit(); return }
                 Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET) -> loadNextMap(1)
                 Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET) -> loadNextMap(-1)
+                Gdx.input.isKeyJustPressed(Input.Keys.U) -> getScreen<GameScreen>().toggleUnderground()
             }
         }
         super.render()
@@ -98,6 +99,9 @@ open class Engine(
             loadedMapFiles.addAll(result.loadedFileNames)
             result.maps.zip(result.loadedFileNames).forEach { (map, name) ->
                 getScreen<GameScreen>().addMap(GameMap(a, map, name))
+                if (map.header.hasUnderground) {
+                    getScreen<GameScreen>().addMap(GameMap(a, map, name, isUnderground = true))
+                }
             }
             setScreen<GameScreen>()
             if (headless) Gdx.app.exit()
@@ -141,6 +145,9 @@ open class Engine(
                 .forEach { (map, name) ->
                     loadedMapFiles.add(name)
                     getScreen<GameScreen>().addMap(GameMap(a, map, name))
+                    if (map.header.hasUnderground) {
+                        getScreen<GameScreen>().addMap(GameMap(a, map, name, isUnderground = true))
+                    }
                 }
             setScreen<GameScreen>()
             getScreen<GameScreen>().randomizeVisibleMapPart(force = true)
@@ -176,6 +183,9 @@ open class Engine(
                 a.loadSpritesForMaps(listOf(map))
                 loadedMapFiles.add(fileName)
                 getScreen<GameScreen>().addMap(GameMap(a, map, fileName))
+                if (map.header.hasUnderground) {
+                    getScreen<GameScreen>().addMap(GameMap(a, map, fileName, isUnderground = true))
+                }
                 getScreen<GameScreen>().showLastMap()
             } catch (e: Throwable) {
                 ktx.log.logger<Engine>().error(e) { "Failed to load map $fileName" }
