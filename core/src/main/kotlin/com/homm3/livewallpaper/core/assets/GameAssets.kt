@@ -105,7 +105,7 @@ class GameAssets : Disposable {
         if (neededSprites.isEmpty()) return
         log.info { "Loading ${neededSprites.size} new sprites" }
 
-        val packer = PixmapPacker(2048, 2048, Pixmap.Format.RGBA4444, 0, false)
+        val packer = PixmapPacker(2048, 2048, Pixmap.Format.RGBA4444, 2, true)
         val loader = LodSpriteLoader()
         val allRegionInfos = mutableListOf<RegionInfo>()
         val loadedDefNames = mutableSetOf<String>()
