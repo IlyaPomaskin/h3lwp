@@ -419,13 +419,17 @@ class LodSpriteLoader {
         groupFilenames: List<String>,
         packer: PixmapPacker
     ): List<RegionInfo> {
-        // Skip zero-dimension frames (old pipeline threw in makePixmap and silently skipped them)
-        if (frame.width == 0 || frame.height == 0) return emptyList()
-
         val packerName = "$defName/${frame.frameName}"
-        val pixmap = makePixmap(frame, palette, alpha)
-        packer.pack(packerName, pixmap)
-        pixmap.dispose()
+        val isEmptyFrame = frame.width == 0 || frame.height == 0
+        if (isEmptyFrame) {
+            val placeholder = Pixmap(1, 1, Pixmap.Format.RGBA8888)
+            packer.pack(packerName, placeholder)
+            placeholder.dispose()
+        } else {
+            val pixmap = makePixmap(frame, palette, alpha)
+            packer.pack(packerName, pixmap)
+            pixmap.dispose()
+        }
 
         val defNameNoExt = defName.lowercase(Locale.ROOT).removeSuffix(".def")
         val regionInfos = mutableListOf<RegionInfo>()
