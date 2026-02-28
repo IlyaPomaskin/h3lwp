@@ -137,14 +137,6 @@ class SpriteRegistry : Disposable {
                 texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
                 pageTextures.add(texture)
                 registry.textures.add(texture)
-                // Atlas page dump disabled
-                // try {
-                //     val file = com.badlogic.gdx.Gdx.files.local("atlas_page_$pageIndex.png")
-                //     com.badlogic.gdx.graphics.PixmapIO.writePNG(file, page.pixmap)
-                //     log.info { "Saved atlas page $pageIndex: ${page.pixmap.width}x${page.pixmap.height} -> ${file.path()}" }
-                // } catch (e: Throwable) {
-                //     log.error(e) { "Failed to save atlas page $pageIndex" }
-                // }
             }
 
             // Build a lookup: packerName → (pageIndex, rect)
