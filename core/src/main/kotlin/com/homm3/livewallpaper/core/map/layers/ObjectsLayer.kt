@@ -12,7 +12,7 @@ import com.homm3.livewallpaper.core.map.ObjectsRandomizer
 import com.homm3.livewallpaper.parser.h3m.H3mMap
 
 class ObjectsLayer(assets: GameAssets, h3m: H3mMap, isUnderground: Boolean) : MapLayer() {
-    private val randomizer = ObjectsRandomizer()
+    private val randomizer = ObjectsRandomizer(hasHotaAssets = assets.isHotaAvailable())
     private val sprites = h3m
         .objects
         .sorted()

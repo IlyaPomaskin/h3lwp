@@ -5,8 +5,8 @@ import com.homm3.livewallpaper.core.map.layers.TerrainLayer
 import com.homm3.livewallpaper.parser.h3m.H3mMap
 import java.util.Locale
 
-class SpriteCollector {
-    private val randomizer = ObjectsRandomizer()
+class SpriteCollector(hasHotaAssets: Boolean = false) {
+    private val randomizer = ObjectsRandomizer(hasHotaAssets)
 
     fun collectNeededSprites(maps: List<H3mMap>): Set<String> {
         val names = mutableSetOf<String>()

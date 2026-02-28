@@ -53,6 +53,10 @@ class GameAssets : Disposable {
         return Gdx.files.local(AssetPaths.LOD_FILE).exists()
     }
 
+    fun isHotaAvailable(): Boolean {
+        return Gdx.files.local(AssetPaths.HOTA_LOD_FILE).exists()
+    }
+
     fun getAllMapFiles(): List<String> {
         return Gdx.files.local(AssetPaths.USER_MAPS_FOLDER)
             .list(".h3m")
@@ -94,7 +98,7 @@ class GameAssets : Disposable {
 
     fun loadSpritesForMaps(maps: List<H3mMap>) {
         val reg = registry
-        val allNeeded = SpriteCollector().collectNeededSprites(maps)
+        val allNeeded = SpriteCollector(isHotaAvailable()).collectNeededSprites(maps)
         // Filter out sprites already loaded
         val neededSprites = if (reg != null) {
             allNeeded.filterNot { reg.isDefLoaded(it) }.toSet()

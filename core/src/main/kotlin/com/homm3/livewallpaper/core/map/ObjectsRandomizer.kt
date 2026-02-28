@@ -4,7 +4,7 @@ import com.homm3.livewallpaper.parser.h3m.H3mObject
 import com.homm3.livewallpaper.parser.h3m.H3mObjectType
 import kotlin.random.Random
 
-class ObjectsRandomizer {
+class ObjectsRandomizer(hasHotaAssets: Boolean = false) {
     enum class Faction {
         CASTLE, RAMPART, TOWER, INFERNO, NECROPOLIS,
         DUNGEON, STRONGHOLD, FORTRESS, CONFLUX, COVE, FACTORY;
@@ -15,6 +15,8 @@ class ObjectsRandomizer {
             }
         }
     }
+
+    private val hotaFactions = setOf(Faction.COVE, Faction.FACTORY)
 
     private val resources = arrayOf(
         "avtwood0", "avtore0", "avtsulf0", "avtmerc0", "avtcrys0", "avtgems0", "avtgold0"
@@ -32,7 +34,7 @@ class ObjectsRandomizer {
         Faction.CONFLUX to arrayOf("AVGpixie", "AVGair0", "AVGwatr0", "AVGfire0", "AVGerth0", "AVGelp", "AVGfbrd"),
         Faction.COVE to arrayOf("avgflh00", "avgflh01", "avgflh02", "avgflh03", "avgflh04", "avgflh05", "avgflh06"),
         Faction.FACTORY to arrayOf("AVG2half", "AVGmecha", "AVGarma", "AVGauto", "AVGworm", "AVGguns", "AVGcoatl")
-    )
+    ).apply { if (!hasHotaAssets) keys.removeAll(hotaFactions) }
 
     private val monsters = hashMapOf(
         1 to arrayOf("AvWPike", "AVWpikx0", "AVWcent0", "AVWcenx0", "AVWgrem0", "AVWgrex0", "AVWimp0", "AVWimpx0", "AVWskel0", "AVWskex0", "AVWtrog0", "AvWInfr", "AVWgobl0", "AVWgobx0", "AVWgnll0", "AVWgnlx0", "AVWpixie", "AVWsprit", "AVWhalf", "AVWpeas", "AVWhbom", "AVWNIMPH", "AVWOCEAN"),
@@ -57,7 +59,7 @@ class ObjectsRandomizer {
         Faction.CONFLUX to "avchforx",
         Faction.COVE to "AVCCOVX0",
         Faction.FACTORY to "AVCfacX0"
-    )
+    ).apply { if (!hasHotaAssets) keys.removeAll(hotaFactions) }
 
     private val villages = hashMapOf(
         Faction.CASTLE to "avccast0",
@@ -71,7 +73,7 @@ class ObjectsRandomizer {
         Faction.CONFLUX to "avchfor0",
         Faction.COVE to "AVCCOVE0",
         Faction.FACTORY to "AVCfacC0"
-    )
+    ).apply { if (!hasHotaAssets) keys.removeAll(hotaFactions) }
 
     fun resolveSpriteName(obj: H3mObject): String {
         // Use deterministic seed so the same object always resolves to the same sprite
