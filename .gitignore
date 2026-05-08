@@ -154,6 +154,7 @@ user-maps/*
 assets/sprites/*
 assets/user-maps/*
 *.lod
+*.exe
 
 ## Release builds:
 /android/release/
