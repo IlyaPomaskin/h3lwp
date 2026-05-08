@@ -135,6 +135,11 @@ class GameAssets : Disposable {
         packer.dispose()
     }
 
+    fun hasTerrainFrames(defName: String, index: Int): Boolean {
+        val reg = registry ?: return false
+        return reg.getTerrainFrames(defName, index).size > 0
+    }
+
     fun getTerrainFrames(defName: String, index: Int): Array<TextureAtlas.AtlasRegion> {
         val reg = registry ?: return gdxArrayOf(emptyRegion)
         val frames = reg.getTerrainFrames(defName, index)

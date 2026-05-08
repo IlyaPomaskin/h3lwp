@@ -155,10 +155,21 @@ class GameScreen(
         }
 
         val maps = tiledMap.layers.toList().filterIsInstance(GameMap::class.java)
+        if (maps.isEmpty()) return
+
         if (maps.size > 1) {
             currentMapIndex = (currentMapIndex + 1) % maps.size
         }
-        showMapAtIndex(currentMapIndex)
+
+        for (attempt in 0 until MAX_REROLLS) {
+            showMapAtIndex(currentMapIndex)
+            val map = maps[currentMapIndex]
+            val coverage = map.terrainCoverage(
+                camera.position.x, camera.position.y,
+                camera.viewportWidth, camera.viewportHeight
+            )
+            if (coverage >= MIN_TERRAIN_COVERAGE) return
+        }
     }
 
     fun showNextMap() {
@@ -209,6 +220,11 @@ class GameScreen(
             println("  [$i] DEF: ${sprite.defName} | pos=(${sprite.mapX},${sprite.mapY},${sprite.mapZ}) type=${sprite.objectType} | frames=${names.size}")
             println("      ${sprite.debugInfo()}")
         }
+    }
+
+    companion object {
+        private const val MIN_TERRAIN_COVERAGE = 0.8f
+        private const val MAX_REROLLS = 5
     }
 
     private fun showMapAtIndex(index: Int) {
