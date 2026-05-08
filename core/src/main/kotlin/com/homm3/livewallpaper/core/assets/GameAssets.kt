@@ -49,6 +49,11 @@ class GameAssets : Disposable {
         return registry != null
     }
 
+    fun resetRegistry() {
+        registry?.dispose()
+        registry = null
+    }
+
     fun isLodAvailable(): Boolean {
         return Gdx.files.local(AssetPaths.LOD_FILE).exists()
     }
@@ -58,7 +63,9 @@ class GameAssets : Disposable {
     }
 
     fun getAllMapFiles(): List<String> {
-        return Gdx.files.local(AssetPaths.USER_MAPS_FOLDER)
+        val folder = Gdx.files.local(AssetPaths.USER_MAPS_FOLDER)
+        log.info { "Maps folder: ${folder.file().absolutePath}" }
+        return folder
             .list(".h3m")
             .filter { it.length() > 0L }
             .sortedBy { it.length() }
@@ -73,6 +80,7 @@ class GameAssets : Disposable {
         } else {
             // Load maps selected by queue
             val allMapFiles = getAllMapFiles()
+            log.info { "Available maps in folder (${allMapFiles.size}): $allMapFiles" }
             val sizeCache = mutableMapOf<String, Int>()
             val mapQueue = MapQueue()
             mapQueue.getMapsForToday(allMapFiles) { fileName ->
@@ -133,11 +141,6 @@ class GameAssets : Disposable {
             registry = SpriteRegistry.fromPacker(packer, allRegionInfos)
         }
         packer.dispose()
-    }
-
-    fun hasTerrainFrames(defName: String, index: Int): Boolean {
-        val reg = registry ?: return false
-        return reg.getTerrainFrames(defName, index).size > 0
     }
 
     fun getTerrainFrames(defName: String, index: Int): Array<TextureAtlas.AtlasRegion> {

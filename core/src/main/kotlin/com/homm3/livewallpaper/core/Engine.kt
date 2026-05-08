@@ -30,6 +30,7 @@ open class Engine(
     private val loadedMapFiles = mutableSetOf<String>()
     private var allMapsIndex = 0
     private var isLoadingMap = false
+    private var lastHotaAvailable: Boolean? = null
 
     fun moveCameraByOffset(offset: Float) {
         camera.moveByScrollOffset(offset)
@@ -55,7 +56,8 @@ open class Engine(
 
         val a = assets ?: return
         if (a.isGameAssetsLoaded()) {
-            refreshMaps()
+            if (a.isHotaAvailable() != lastHotaAvailable) reinitAssets()
+            else refreshMaps()
         } else {
             loadAndStart()
         }
@@ -64,8 +66,19 @@ open class Engine(
     fun onVisibilityChanged(visible: Boolean) {
         val a = assets ?: return
         if (visible && a.isGameAssetsLoaded()) {
-            Gdx.app.postRunnable { refreshMaps() }
+            Gdx.app.postRunnable {
+                if (a.isHotaAvailable() != lastHotaAvailable) reinitAssets()
+                else refreshMaps()
+            }
         }
+    }
+
+    private fun reinitAssets() {
+        val a = assets ?: return
+        getScreen<GameScreen>().removeMaps(loadedMapFiles.toSet())
+        loadedMapFiles.clear()
+        a.resetRegistry()
+        loadAndStart()
     }
 
     override fun render() {
@@ -103,6 +116,7 @@ open class Engine(
                     getScreen<GameScreen>().addMap(GameMap(a, map, name, isUnderground = true))
                 }
             }
+            lastHotaAvailable = a.isHotaAvailable()
             setScreen<GameScreen>()
             if (headless) Gdx.app.exit()
         }
@@ -149,6 +163,7 @@ open class Engine(
                         getScreen<GameScreen>().addMap(GameMap(a, map, name, isUnderground = true))
                     }
                 }
+            lastHotaAvailable = a.isHotaAvailable()
             setScreen<GameScreen>()
             getScreen<GameScreen>().randomizeVisibleMapPart(force = true)
         }

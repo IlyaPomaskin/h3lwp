@@ -35,6 +35,16 @@ class MapSprite(mapObject: H3mObject, private val frames: Array<TextureAtlas.Atl
                 worldY >= fy && worldY <= fy + frame.originalHeight
     }
 
+    fun worldBounds(): com.badlogic.gdx.math.Rectangle? {
+        if (frames.isEmpty) return null
+        val frame = frames.first()
+        val fx = getFrameX(frame)
+        val fy = getFrameY(frame)
+        return com.badlogic.gdx.math.Rectangle(
+            fx, fy, frame.packedWidth.toFloat(), frame.packedHeight.toFloat()
+        )
+    }
+
     fun frameNames(): List<String> {
         return (0 until frames.size).map { "${frames.get(it).name}/${frames.get(it).index}" }
     }

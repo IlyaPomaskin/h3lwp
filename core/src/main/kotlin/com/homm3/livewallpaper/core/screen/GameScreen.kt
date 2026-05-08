@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.tiled.TiledMap
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
-import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.homm3.livewallpaper.core.GameConfig
 import com.homm3.livewallpaper.core.MapUpdateInterval
@@ -20,6 +19,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import ktx.app.KtxScreen
 import ktx.async.KtxAsync
+import ktx.log.logger
 import kotlin.math.max
 import kotlin.math.min
 
@@ -39,7 +39,7 @@ class GameScreen(
     }
     private val inputProcessor = CameraInputProcessor(viewport).apply {
         onEnter = { randomizeVisibleMapPart(force = true) }
-        onTap = { screenX, screenY -> handleTap(screenX, screenY) }
+        onTap = { _, _ -> randomizeVisibleMapPart(force = true) }
     }
     private val brightnessOverlay = BrightnessOverlay(camera)
     private var mapUpdateInterval = 0f
@@ -67,15 +67,11 @@ class GameScreen(
     }
 
     init {
-        if (Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.Desktop) {
-            Gdx.input.inputProcessor = inputProcessor
-        }
+        Gdx.input.inputProcessor = inputProcessor
     }
 
     override fun show() {
-        if (Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.Desktop) {
-            Gdx.input.inputProcessor = inputProcessor
-        }
+        Gdx.input.inputProcessor = inputProcessor
         prefsJob = KtxAsync.launch {
             prefs.collect {
                 brightnessOverlay.brightness = it.brightness
@@ -161,15 +157,17 @@ class GameScreen(
             currentMapIndex = (currentMapIndex + 1) % maps.size
         }
 
+        val map = maps[currentMapIndex]
         for (attempt in 0 until MAX_REROLLS) {
             showMapAtIndex(currentMapIndex)
-            val map = maps[currentMapIndex]
-            val coverage = map.terrainCoverage(
+            val coverage = map.objectCoverage(
                 camera.position.x, camera.position.y,
                 camera.viewportWidth, camera.viewportHeight
             )
-            if (coverage >= MIN_TERRAIN_COVERAGE) return
+            log.info { "Map '${map.fileName}' attempt ${attempt + 1}/$MAX_REROLLS coverage=${"%.2f".format(coverage)}" }
+            if (coverage >= MIN_OBJECT_COVERAGE) return
         }
+        log.info { "Map '${map.fileName}' gave up after $MAX_REROLLS rerolls" }
     }
 
     fun showNextMap() {
@@ -204,27 +202,10 @@ class GameScreen(
         }
     }
 
-    private fun handleTap(screenX: Int, screenY: Int) {
-        val world = camera.unproject(Vector3(screenX.toFloat(), screenY.toFloat(), 0f))
-        val maps = tiledMap.layers.toList().filterIsInstance(GameMap::class.java)
-        if (maps.isEmpty()) return
-        val currentMap = maps[currentMapIndex]
-        val objectsLayer = currentMap.layers.toList().filterIsInstance(ObjectsLayer::class.java).firstOrNull()
-        println("--- Click at world=(${world.x}, ${world.y}) ---")
-        val allSprites = objectsLayer?.findAllSpritesAt(world.x, world.y) ?: emptyList()
-        if (allSprites.isEmpty()) {
-            println("  No sprites at this position")
-        }
-        for ((i, sprite) in allSprites.withIndex()) {
-            val names = sprite.frameNames()
-            println("  [$i] DEF: ${sprite.defName} | pos=(${sprite.mapX},${sprite.mapY},${sprite.mapZ}) type=${sprite.objectType} | frames=${names.size}")
-            println("      ${sprite.debugInfo()}")
-        }
-    }
-
     companion object {
-        private const val MIN_TERRAIN_COVERAGE = 0.8f
-        private const val MAX_REROLLS = 5
+        private val log = logger<GameScreen>()
+        private const val MIN_OBJECT_COVERAGE = 0.3f
+        private const val MAX_REROLLS = 10
     }
 
     private fun showMapAtIndex(index: Int) {

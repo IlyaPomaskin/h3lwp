@@ -28,13 +28,15 @@ class MapQueue {
             val shuffled = availableFiles.shuffled()
             val batch = selectBatch(shuffled, 0, mapSizeResolver)
             saveState(QueueState(today, 0, fingerprint, shuffled))
-            log.info { "Map queue rebuilt. Loading ${batch.size} maps: $batch" }
+            log.info { "Map queue rebuilt. Queue order (${shuffled.size}): $shuffled" }
+            log.info { "Loading ${batch.size} maps at position 0: $batch" }
             return batch
         }
 
         if (state.date == today) {
             val batch = selectBatch(state.queue, state.position, mapSizeResolver)
-            log.info { "Same day. Loading ${batch.size} maps: $batch" }
+            log.info { "Same day. Queue (${state.queue.size}) at position ${state.position}: ${state.queue}" }
+            log.info { "Loading ${batch.size} maps: $batch" }
             return batch
         }
 
@@ -42,7 +44,8 @@ class MapQueue {
         val newPosition = (state.position + previousBatch.size) % state.queue.size
         val batch = selectBatch(state.queue, newPosition, mapSizeResolver)
         saveState(QueueState(today, newPosition, fingerprint, state.queue))
-        log.info { "New day. Loading ${batch.size} maps: $batch" }
+        log.info { "New day. Queue (${state.queue.size}) at position $newPosition: ${state.queue}" }
+        log.info { "Loading ${batch.size} maps: $batch" }
         return batch
     }
 

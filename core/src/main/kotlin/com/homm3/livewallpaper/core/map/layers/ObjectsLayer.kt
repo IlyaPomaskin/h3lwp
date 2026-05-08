@@ -44,6 +44,34 @@ class ObjectsLayer(assets: GameAssets, h3m: H3mMap, isUnderground: Boolean) : Ma
         return visibleSprites.filter { it.contains(worldX, worldY) }
     }
 
+    fun objectCoverage(viewBounds: Rectangle): Float {
+        updateVisibleObjects(viewBounds)
+
+        val tileSize = TILE_SIZE.toInt()
+        val cols = (viewBounds.width / tileSize).toInt() + 1
+        val rows = (viewBounds.height / tileSize).toInt() + 1
+        if (cols <= 0 || rows <= 0) return 0f
+        val grid = Array(cols) { BooleanArray(rows) }
+
+        for (sprite in visibleSprites) {
+            val rect = sprite.worldBounds() ?: continue
+            val rx0 = maxOf(rect.x, viewBounds.x)
+            val ry0 = maxOf(rect.y, viewBounds.y)
+            val rx1 = minOf(rect.x + rect.width, viewBounds.x + viewBounds.width)
+            val ry1 = minOf(rect.y + rect.height, viewBounds.y + viewBounds.height)
+            if (rx0 >= rx1 || ry0 >= ry1) continue
+            val gx0 = ((rx0 - viewBounds.x) / tileSize).toInt().coerceIn(0, cols - 1)
+            val gy0 = ((ry0 - viewBounds.y) / tileSize).toInt().coerceIn(0, rows - 1)
+            val gx1 = ((rx1 - viewBounds.x) / tileSize).toInt().coerceIn(0, cols - 1)
+            val gy1 = ((ry1 - viewBounds.y) / tileSize).toInt().coerceIn(0, rows - 1)
+            for (gx in gx0..gx1) for (gy in gy0..gy1) grid[gx][gy] = true
+        }
+
+        var filled = 0
+        for (col in grid) for (b in col) if (b) filled++
+        return filled.toFloat() / (cols * rows)
+    }
+
     private fun updateVisibleObjects(viewBounds: Rectangle) {
         val startY = (viewBounds.y / TILE_SIZE).toInt() - FRUSTUM_PADDING_TILES
         val endY = ((viewBounds.y + viewBounds.height) / TILE_SIZE).toInt() + FRUSTUM_PADDING_TILES
