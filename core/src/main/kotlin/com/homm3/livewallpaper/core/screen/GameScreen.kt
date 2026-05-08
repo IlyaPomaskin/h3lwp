@@ -39,7 +39,6 @@ class GameScreen(
     }
     private val inputProcessor = CameraInputProcessor(viewport).apply {
         onEnter = { randomizeVisibleMapPart(force = true) }
-        onTap = { _, _ -> randomizeVisibleMapPart(force = true) }
     }
     private val brightnessOverlay = BrightnessOverlay(camera)
     private var mapUpdateInterval = 0f

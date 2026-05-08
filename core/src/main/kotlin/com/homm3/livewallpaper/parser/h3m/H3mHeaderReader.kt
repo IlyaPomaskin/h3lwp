@@ -7,6 +7,15 @@ import java.util.zip.GZIPInputStream
 object H3mHeaderReader {
     private const val DEFAULT_SIZE = 36
 
+    fun readVersion(stream: InputStream): H3mVersion? {
+        return try {
+            val reader = BinaryReader(GZIPInputStream(stream))
+            H3mVersion.fromInt(reader.readInt())
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     fun readMapSize(stream: InputStream): Int {
         return try {
             val reader = BinaryReader(GZIPInputStream(stream))

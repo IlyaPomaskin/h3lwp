@@ -14,6 +14,7 @@ import com.badlogic.gdx.utils.I18NBundle
 import com.homm3.livewallpaper.core.AssetPaths
 import com.homm3.livewallpaper.parser.h3m.H3mHeaderReader
 import com.homm3.livewallpaper.parser.h3m.H3mMap
+import com.homm3.livewallpaper.parser.h3m.H3mVersion
 import ktx.assets.async.AssetStorage
 import ktx.collections.gdxArrayOf
 import ktx.log.logger
@@ -65,18 +66,33 @@ class GameAssets : Disposable {
     fun getAllMapFiles(): List<String> {
         val folder = Gdx.files.local(AssetPaths.USER_MAPS_FOLDER)
         log.info { "Maps folder: ${folder.file().absolutePath}" }
+        val hotaAvailable = isHotaAvailable()
         return folder
             .list(".h3m")
             .filter { it.length() > 0L }
             .sortedBy { it.length() }
+            .filter { fh ->
+                if (hotaAvailable) return@filter true
+                val version = H3mHeaderReader.readVersion(fh.read())
+                val keep = version != H3mVersion.HOTA
+                if (!keep) log.info { "Skipping HotA map (no HotA assets): ${fh.file().name}" }
+                keep
+            }
             .map { it.file().name }
     }
 
     data class LoadResult(val maps: List<H3mMap>, val loadedFileNames: List<String>)
 
     suspend fun loadGameAssets(explicitMaps: List<String> = emptyList()): LoadResult {
+        val hotaAvailable = isHotaAvailable()
         val filesToLoad = if (explicitMaps.isNotEmpty()) {
-            explicitMaps
+            explicitMaps.filter { fileName ->
+                if (hotaAvailable) return@filter true
+                val fileHandle = Gdx.files.local("${AssetPaths.USER_MAPS_FOLDER}/$fileName")
+                val keep = H3mHeaderReader.readVersion(fileHandle.read()) != H3mVersion.HOTA
+                if (!keep) log.info { "Skipping HotA map (no HotA assets): $fileName" }
+                keep
+            }
         } else {
             // Load maps selected by queue
             val allMapFiles = getAllMapFiles()
