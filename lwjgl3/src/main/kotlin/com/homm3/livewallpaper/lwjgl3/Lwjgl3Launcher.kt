@@ -65,9 +65,9 @@ private fun copyLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
 }
 
 private fun copyHotaLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
-    val lodFile = File("hota18.lod")
+    val lodFile = File("hota.lod")
     if (!lodFile.exists()) {
-        onProgress("HotA.lod not found in project root")
+        onProgress("hota.lod not found in project root")
         return
     }
 
