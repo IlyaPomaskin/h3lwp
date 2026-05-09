@@ -207,7 +207,7 @@ class GameScreen(
 
     companion object {
         private val log = logger<GameScreen>()
-        private const val MIN_OBJECT_COVERAGE = 0.3f
+        private const val MIN_OBJECT_COVERAGE = 0.5f
         private const val MAX_REROLLS = 10
     }
 
