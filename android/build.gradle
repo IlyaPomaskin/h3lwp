@@ -11,7 +11,7 @@ android {
   defaultConfig {
     applicationId 'com.homm3.livewallpaper'
     minSdk 24
-    targetSdk 34
+    targetSdk 35
     versionCode 308
     versionName "3.0.8"
   }
@@ -39,7 +39,8 @@ android {
 
   buildTypes {
     release {
-      minifyEnabled false
+      minifyEnabled true
+      shrinkResources true
       proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
     }
   }
