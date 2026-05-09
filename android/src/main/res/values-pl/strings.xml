@@ -18,14 +18,14 @@
     <string name="asset_setup_select_button">Wybierz H3sprite.lod</string>
 
     <string name="asset_setup_hota_title">Pliki HotA (opcjonalnie)</string>
-    <string name="asset_setup_hota_description">Jeśli masz zainstalowany Horn of the Abyss, możesz dodać również jego grafiki. Wybierz plik HotA.lod z folderu Data instalacji HotA.\n\nUwaga: obsługiwane są tylko wersje HotA przed 1.8.0 (Bulwark).</string>
+    <string name="asset_setup_hota_description">Jeśli masz zainstalowany Horn of the Abyss, możesz dodać również jego grafiki. Wybierz plik HotA.lod z folderu Data instalacji HotA.\n\nObsługiwane są wersje HotA do 1.8.0 (Bulwark) włącznie.</string>
     <string name="asset_setup_hota_select_button">Wybierz HotA.lod</string>
 
     <string name="asset_setup_title_short">Pliki gry</string>
     <string name="maps_title">Mapy</string>
     <string name="maps_empty">Nie dodano jeszcze żadnych map</string>
     <string name="maps_add_button">Dodaj mapę</string>
-    <string name="maps_note">Obsługiwane są mapy z Cienia Śmierci oraz HotA (poniżej 1.8.0).</string>
+    <string name="maps_note">Obsługiwane są mapy z Cienia Śmierci oraz HotA (do 1.8.0 włącznie).</string>
     <string name="maps_delete_confirm">Usunąć %s?</string>
 
     <string name="credits_header">Podziękowania</string>
