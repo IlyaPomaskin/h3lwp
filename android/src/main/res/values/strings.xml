@@ -20,8 +20,8 @@
     <string name="asset_setup_select_button">Select H3sprite.lod</string>
 
     <string name="asset_setup_hota_title">HotA assets (optional)</string>
-    <string name="asset_setup_hota_description">If you have Horn of the Abyss installed, you can add its sprites too. Select the HotA.lod file from the Data folder of your HotA installation.\n\nHotA up to and including 1.8.0 (Bulwark) is supported.</string>
-    <string name="asset_setup_hota_select_button">Select HotA.lod</string>
+    <string name="asset_setup_hota_description">If you have Horn of the Abyss, you can add its sprites. Download the official HotA installer (HotA_*_setup.exe) from hota.acidcave.net and select it below — the app will extract the required data automatically.\n\nHotA 1.7.x and 1.8.0 (Bulwark) are supported.</string>
+    <string name="asset_setup_hota_select_button">Select HotA installer</string>
 
     <string name="asset_setup_title_short">Game assets</string>
     <string name="maps_title">Maps</string>
