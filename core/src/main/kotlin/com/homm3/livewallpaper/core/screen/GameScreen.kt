@@ -160,17 +160,32 @@ class GameScreen(
             currentMapIndex = (currentMapIndex + 1) % maps.size
         }
 
-        val map = maps[currentMapIndex]
+        if (tryRerollAtIndex(currentMapIndex, maps)) return
+
+        val current = maps[currentMapIndex]
+        val counterpartIndex = maps.indexOfFirst {
+            it.fileName == current.fileName && it.isUnderground != current.isUnderground
+        }
+        if (counterpartIndex >= 0) {
+            log.info { "Map '${current.fileName}' switching plane (underground=${!current.isUnderground}) after failed rerolls" }
+            if (tryRerollAtIndex(counterpartIndex, maps)) return
+        }
+
+        log.info { "Map '${current.fileName}' gave up after rerolls on both planes" }
+    }
+
+    private fun tryRerollAtIndex(index: Int, maps: List<GameMap>): Boolean {
+        val map = maps[index]
         for (attempt in 0 until MAX_REROLLS) {
-            showMapAtIndex(currentMapIndex)
+            showMapAtIndex(index)
             val coverage = map.objectCoverage(
                 camera.position.x, camera.position.y,
                 camera.viewportWidth, camera.viewportHeight
             )
-            log.info { "Map '${map.fileName}' attempt ${attempt + 1}/$MAX_REROLLS coverage=${"%.2f".format(coverage)}" }
-            if (coverage >= MIN_OBJECT_COVERAGE) return
+            log.info { "Map '${map.fileName}' (underground=${map.isUnderground}) attempt ${attempt + 1}/$MAX_REROLLS coverage=${"%.2f".format(coverage)}" }
+            if (coverage >= MIN_OBJECT_COVERAGE) return true
         }
-        log.info { "Map '${map.fileName}' gave up after $MAX_REROLLS rerolls" }
+        return false
     }
 
     fun showNextMap() {
@@ -207,7 +222,7 @@ class GameScreen(
 
     companion object {
         private val log = logger<GameScreen>()
-        private const val MIN_OBJECT_COVERAGE = 0.5f
+        private const val MIN_OBJECT_COVERAGE = 0.8f
         private const val MAX_REROLLS = 10
     }
 
