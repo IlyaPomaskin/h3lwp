@@ -16,4 +16,5 @@ dependencies {
   api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
   api "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion"
   api "org.tukaani:xz:1.10"
+  testImplementation "junit:junit:4.13.2"
 }
