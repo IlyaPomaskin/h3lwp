@@ -18,8 +18,8 @@
     <string name="asset_setup_select_button">Wybierz H3sprite.lod</string>
 
     <string name="asset_setup_hota_title">Pliki HotA (opcjonalnie)</string>
-    <string name="asset_setup_hota_description">Jeśli masz zainstalowany Horn of the Abyss, możesz dodać również jego grafiki. Wybierz plik HotA.lod z folderu Data instalacji HotA.\n\nObsługiwane są wersje HotA do 1.8.0 (Bulwark) włącznie.</string>
-    <string name="asset_setup_hota_select_button">Wybierz HotA.lod</string>
+    <string name="asset_setup_hota_description">Jeśli masz Horn of the Abyss, możesz dodać jego sprajty. Pobierz oficjalny instalator HotA (HotA_*_setup.exe) ze strony hota.acidcave.net i wybierz go poniżej — aplikacja sama wypakuje potrzebne dane.\n\nObsługiwane są HotA 1.7.x i 1.8.0 (Bastion).</string>
+    <string name="asset_setup_hota_select_button">Wybierz instalator HotA</string>
 
     <string name="asset_setup_title_short">Pliki gry</string>
     <string name="maps_title">Mapy</string>

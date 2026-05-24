@@ -67,8 +67,8 @@
     <string name="asset_setup_description">Приложению нужны оригинальные файлы из Heroes of Might and Magic III: Дыхание Смерти (или Полное издание). Из-за авторских прав эти файлы не могут быть включены в приложение.\n\nСкопируйте файл H3sprite.lod из папки Data вашей установки игры на телефон, затем выберите его ниже.\n\nHD-версия из Steam, Возрождение Эрафии и Клинок Армагеддона не поддерживаются.</string>
     <string name="asset_setup_select_button">Выбрать H3sprite.lod</string>
     <string name="asset_setup_hota_title">Файлы HotA (необязательно)</string>
-    <string name="asset_setup_hota_description">Если у вас установлен Horn of the Abyss, можно добавить его спрайты. Выберите файл HotA.lod из папки Data вашей установки HotA.\n\nПоддерживаются версии HotA до 1.8.0 (Кронверк) включительно.</string>
-    <string name="asset_setup_hota_select_button">Выбрать HotA.lod</string>
+    <string name="asset_setup_hota_description">Если у вас есть Horn of the Abyss, вы можете добавить его спрайты. Скачайте официальный установщик HotA (HotA_*_setup.exe) с hota.acidcave.net и выберите его ниже — приложение само извлечёт нужные данные.\n\nПоддерживается HotA 1.7.x и 1.8.0 (Бастион).</string>
+    <string name="asset_setup_hota_select_button">Выбрать установщик HotA</string>
     <string name="asset_setup_title_short">Файлы игры</string>
     <string name="maps_empty">Карт пока нет</string>
     <string name="maps_add_button">Добавить карту</string>
