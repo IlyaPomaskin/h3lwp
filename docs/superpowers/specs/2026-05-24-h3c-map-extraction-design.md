@@ -216,22 +216,25 @@ Result(campaignsFound, mapsWritten, skipped)
 
 ## Testing
 
+**Fixture policy:** Tests must not depend on `data/h3c/`. The only on-disk fixtures are the ones the project already gates with `@Assume` via `TestFixtures`: `data/HotA_1.8.0_setup.exe`, `data/HotA_lng.lod`, and the golden `data/hota18.lod`. Anything else is either built in-process (synthetic gzip concatenation) or sourced at test runtime from one of those three files.
+
 `core/src/test/kotlin/.../h3c/`:
 
-- **`GzipStreamSplitterTest`** — synthetic input of 3 concatenated gzip streams; assert offsets, lengths, and decompressed content match.
-- **`CampaignHeaderReaderTest`** — feed stream 0 of `ab.h3c` (known: 8 scenarios, expected scenario names from the campaign). Assert returned name list matches.
-- **`H3cExtractorTest`** — for each `data/h3c/*.h3c`:
-  - Extract; assert the count of extracted maps matches a hard-coded table.
-  - Each `ExtractedMap.bytes` decompresses to a stream whose first u32 is in `{0x0e, 0x15, 0x1c, 0x20}`.
+- **`GzipStreamSplitterTest`** — pure synthetic: build 3 concatenated gzip streams from in-memory bytes and assert offsets, lengths, and decompressed content match. No file fixtures.
+- **`CampaignHeaderReaderTest`** — pull one h3c blob at test time by `LodReader.readFileContent("ab.h3c")` from `data/HotA_lng.lod` (gated with `@Assume`); feed it through the header reader; assert the returned scenario-name list has the expected count and specific entries (hard-coded against the known AB campaign).
+- **`H3cExtractorTest`** — for each `.h3c` entry inside `data/HotA_lng.lod` (gated with `@Assume`):
+  - Read the entry from the LOD into memory; pass to `H3cExtractor.extract`.
+  - Assert per-campaign scenario count matches a hard-coded table keyed by entry name.
+  - Each `ExtractedMap.bytes` ungzips to a stream whose first u32 is in `{0x0e, 0x15, 0x1c, 0x20}`.
   - Each `bytes` parses end-to-end via `H3mReader(bytes.inputStream()).read()` without throwing.
 
 `core/src/test/kotlin/.../assets/`:
 
-- **`CampaignMapInstallerTest`** — point at `data/HotA_lng.lod` (gated with `@Assume` if the file is missing for CI builds without the corpus), run `installFromLod` to a temp dir, assert:
+- **`CampaignMapInstallerTest`** — point at `data/HotA_lng.lod` (gated), run `installFromLod` to a JUnit `@TempDir`, assert:
   - `Result.campaignsFound == 11`
   - `Result.mapsWritten == <expected sum across the 11 campaigns>` (hard-coded table)
   - Every output file parses through `H3mReader`
-  - Re-running the installer is a no-op (idempotent: no overwrite, same `mapsWritten` count is now 0)
+  - Re-running the installer is a no-op (idempotent: no overwrite, `mapsWritten == 0` on the second call)
 
 `core/src/test/kotlin/.../inno/`:
 
@@ -240,7 +243,20 @@ Result(campaignsFound, mapsWritten, skipped)
   - `data\HotA_lng.lod` → non-empty; `LodReader` lists 11 `.h3c` entries with the expected names.
   - Glob `app\Maps\*.h3m` (case-insensitive) → exactly 128 output files; each starts with a valid `H3mVersion` magic after gunzip; spot-check 2–3 by parsing with `H3mReader`.
 
-The sample corpus (`data/h3c/*.h3c` and `data/HotA_lng.lod` and `data/HotA_1.8.0_setup.exe`) is the golden test set. No new binary fixtures needed.
+No new binary fixtures land in the repo. Tests degrade to `@Ignore`-style `assumeTrue` skips when the `data/` corpus is absent (matches the existing inno-test pattern).
+
+---
+
+## Android constraints
+
+This pipeline runs on Android (the live wallpaper's home), so the design honors mobile constraints:
+
+- **No Android-specific types in `core`.** Public APIs in the `parser.h3c`, `parser.inno`, and `core.assets` packages take only `java.io.File`, `InputStream`/`ByteArray`, and Kotlin/JDK types. Android-side code (`AssetSetupActivity`) supplies paths rooted under `filesDir` and `cacheDir`; the parsers don't know about app context.
+- **Memory ceiling.** Largest single in-memory buffer is one LOD entry being decompressed (`LodReader.readFileContent` returns `ByteArrayInputStream`) — the biggest h3c in `HotA_lng.lod` is ~770 KB compressed / ~2 MB decompressed, well under a single Android allocation budget. The installer's `app/Maps/*.h3m` glob streams each file straight to disk via the existing `ChunkDecompressor.extract(...)`, never fully buffered. `H3cExtractor` holds one campaign at a time (one decompressed h3c byte array + the list of stream slices into it).
+- **Disk paths from the host.** All output `File`s in the public API are caller-supplied. The `CampaignMapInstaller` writes to whatever directory `AssetSetupActivity` passes (typically `filesDir.resolve(AssetPaths.USER_MAPS_FOLDER)`); it never resolves paths itself.
+- **Filename sanitization is filesystem-conservative.** Strip the same character set on every platform (`:`, `/`, `\`, `?`, `*`, `<`, `>`, `|`, `"`, control chars) so the result is valid on Android internal storage (ext4-backed), tmpfs, and JVM-host filesystems alike.
+- **Background thread compatibility.** The pipeline already runs on a worker thread inside `AssetSetupActivity.thread { ... }`. Progress callbacks must be safe to invoke from that thread; UI marshaling is the caller's responsibility (existing `runOnUiThread { ... }` pattern).
+- **No Android resources or assets pulled by `core`.** The bundled-maps copy in `copyBundledMaps()` stays where it is (Android `assets`); the campaign-derived maps land in the same target directory.
 
 ---
 
