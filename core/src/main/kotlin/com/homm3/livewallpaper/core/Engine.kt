@@ -65,11 +65,45 @@ open class Engine(
 
     fun onVisibilityChanged(visible: Boolean) {
         val a = assets ?: return
-        if (visible && a.isGameAssetsLoaded()) {
+        if (!a.isGameAssetsLoaded()) return
+        if (visible) {
             Gdx.app.postRunnable {
                 if (a.isHotaAvailable() != lastHotaAvailable) reinitAssets()
                 else refreshMaps()
             }
+        } else {
+            // Wallpaper just got hidden — do the batch rotation work while the
+            // user isn't looking, so when they come back they see a new map.
+            Gdx.app.postRunnable { rotateBatchIfDue() }
+        }
+    }
+
+    private fun rotateBatchIfDue() {
+        val a = assets ?: return
+        if (!a.isGameAssetsLoaded()) return
+        KtxAsync.launch {
+            val result = a.rotateBatchIfDue() ?: return@launch
+            val newBatchSet = result.loadedFileNames.toSet()
+
+            // Add new maps first.
+            result.maps.zip(result.loadedFileNames)
+                .filter { (_, name) -> name !in loadedMapFiles }
+                .forEach { (map, name) ->
+                    loadedMapFiles.add(name)
+                    getScreen<GameScreen>().addMap(GameMap(a, map, name))
+                    if (map.header.hasUnderground) {
+                        getScreen<GameScreen>().addMap(GameMap(a, map, name, isUnderground = true))
+                    }
+                }
+
+            // Then drop maps that fell out of the batch.
+            val toRemove = loadedMapFiles.filter { it !in newBatchSet }.toSet()
+            if (toRemove.isNotEmpty()) {
+                getScreen<GameScreen>().removeMaps(toRemove)
+                loadedMapFiles.removeAll(toRemove)
+            }
+
+            getScreen<GameScreen>().randomizeVisibleMapPart(force = true)
         }
     }
 

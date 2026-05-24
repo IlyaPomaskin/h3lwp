@@ -97,7 +97,7 @@ class GameAssets : Disposable {
             // Load maps selected by queue
             val allMapFiles = getAllMapFiles()
             log.info { "Available maps in folder (${allMapFiles.size}): $allMapFiles" }
-            MapQueue().getMapsForToday(allMapFiles)
+            MapQueue().currentBatch(allMapFiles)
         }
 
         val maps = filesToLoad.map { storage.load<H3mMap>(it) }
@@ -107,6 +107,21 @@ class GameAssets : Disposable {
 
         log.info { "Sprite registry built" }
         return LoadResult(maps, filesToLoad)
+    }
+
+    /**
+     * Rotates the map queue if at least 3h has passed since the last rotation.
+     * Returns the [LoadResult] for the new batch (with sprites preloaded) or
+     * `null` if not yet due. Caller is responsible for adding the new maps to
+     * the screen and unloading the ones that fell out of the batch.
+     */
+    suspend fun rotateBatchIfDue(): LoadResult? {
+        val allMapFiles = getAllMapFiles()
+        val newBatch = MapQueue().advanceIfDue(allMapFiles) ?: return null
+        log.info { "rotateBatchIfDue: new batch = $newBatch" }
+        val maps = newBatch.map { storage.load<H3mMap>(it) }
+        loadSpritesForMaps(maps)
+        return LoadResult(maps, newBatch)
     }
 
     suspend fun loadMapFile(fileName: String): H3mMap {
