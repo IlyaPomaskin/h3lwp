@@ -11,6 +11,7 @@ import com.homm3.livewallpaper.core.render.MapCamera
 import com.homm3.livewallpaper.core.screen.AssetSetupScreen
 import com.homm3.livewallpaper.core.screen.GameScreen
 import com.homm3.livewallpaper.core.screen.LoadingScreen
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import ktx.app.KtxGame
@@ -31,6 +32,8 @@ open class Engine(
     private var allMapsIndex = 0
     private var isLoadingMap = false
     private var lastHotaAvailable: Boolean? = null
+    private var rotationJob: Job? = null
+    private var lastRotationCheck = 0L
 
     fun moveCameraByOffset(offset: Float) {
         camera.moveByScrollOffset(offset)
@@ -81,7 +84,8 @@ open class Engine(
     private fun rotateBatchIfDue() {
         val a = assets ?: return
         if (!a.isGameAssetsLoaded()) return
-        KtxAsync.launch {
+        if (rotationJob?.isActive == true) return  // already rotating
+        rotationJob = KtxAsync.launch {
             val result = a.rotateBatchIfDue() ?: return@launch
             val newBatchSet = result.loadedFileNames.toSet()
 
@@ -117,6 +121,11 @@ open class Engine(
 
     override fun render() {
         clearScreen(0f,0f,0f,0f)
+        val now = System.currentTimeMillis()
+        if (now - lastRotationCheck >= ROTATION_CHECK_INTERVAL_MS) {
+            lastRotationCheck = now
+            rotateBatchIfDue()
+        }
         if (Gdx.app.type == Application.ApplicationType.Desktop) {
             when {
                 Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) -> { Gdx.app.exit(); return }
@@ -242,5 +251,11 @@ open class Engine(
                 isLoadingMap = false
             }
         }
+    }
+
+    companion object {
+        /** How often render() polls MapQueue for a due rotation. The rotation itself
+         *  only fires once MapQueue's own 1h cooldown has elapsed. */
+        private const val ROTATION_CHECK_INTERVAL_MS = 60_000L  // 1 minute
     }
 }

@@ -146,7 +146,7 @@ class MapQueue {
     companion object {
         private val log = logger<MapQueue>()
         private const val BATCH_SIZE = 3
-        private const val ROTATION_INTERVAL_MS = 3L * 60L * 60L * 1000L  // 3 hours
+        private const val ROTATION_INTERVAL_MS = 60L * 60L * 1000L  // 1 hour
         private const val PREFS_NAME = "map-queue"
         private const val PREFS_KEY = "state"
     }
