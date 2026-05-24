@@ -7,34 +7,80 @@ import java.io.RandomAccessFile
 object InnoSetupExtractor {
     private const val HOTA_LOD_DEST_SUFFIX = "data\\hota.lod"
 
-    fun extractHotaLod(installer: File, output: File, onProgress: ((Long, Long) -> Unit)? = null) {
+    /** Caller-supplied target. [matcher] runs against an entry's `destination`
+     *  (backslashes preserved as authored in Inno Setup). [outputFor] resolves
+     *  each matched destination to an output File. */
+    data class Target(
+        val matcher: (destination: String) -> Boolean,
+        val outputFor: (destination: String) -> File,
+    )
+
+    data class ExtractedFile(val destination: String, val output: File)
+
+    /** Extracts every file entry matched by any [Target] in a single installer pass.
+     *  Entries matched by multiple targets are written once per target. */
+    fun extract(
+        installer: File,
+        targets: List<Target>,
+        onProgress: ((written: Long, total: Long, currentDestination: String) -> Unit)? = null,
+    ): List<ExtractedFile> {
         val table = RandomAccessFile(installer, "r").use {
             SetupLdrOffsetTable.parse(PeResource.readRcData(it, 11111))
         }
 
-        // Read primary block (setup-0): header + all non-data entries.
-        // After readSetup0() returns, the raf's file pointer is positioned at the secondary block.
         val (setup0, dataEntriesBytes) = RandomAccessFile(installer, "r").use { raf ->
             val s0 = CompressedBlockReader.readSetup0(raf, table.offset0)
-            // raf is now positioned at the secondary block (data entries block)
             val de = CompressedBlockReader.readDataEntriesBlock(raf)
             Pair(s0, de)
         }
 
-        val stream = ByteArrayInputStream(setup0)
-        val header = SetupHeader.parse(stream)
-        SetupEntries.skipUpToFileEntries(stream, header)
-        val target = FileEntries.findByDestinationSuffix(
-            stream, header.fileCount, HOTA_LOD_DEST_SUFFIX, caseInsensitive = true
-        ) ?: error("Installer does not contain a file ending in $HOTA_LOD_DEST_SUFFIX")
+        val s0Stream = ByteArrayInputStream(setup0)
+        val header = SetupHeader.parse(s0Stream)
+        SetupEntries.skipUpToFileEntries(s0Stream, header)
 
-        // Data entries are in the secondary block, not in setup0
+        // A single entry may match multiple targets — for each entry we keep one
+        // (entry, target) pair per match so the same source bytes get fanned out
+        // to each target's output file.
+        data class Pending(val entry: FileEntry, val target: Target)
+        val matched = FileEntries.collectMatching(s0Stream, header.fileCount) { destination ->
+            targets.any { it.matcher(destination) }
+        }
+        val pending: List<Pending> = matched.flatMap { entry ->
+            targets.filter { it.matcher(entry.destination) }.map { Pending(entry, it) }
+        }
+
         val dataStream = ByteArrayInputStream(dataEntriesBytes)
         val locations = FileLocationEntries.readAll(dataStream, header.dataEntryCount)
-        val loc = locations[target.locationIndex]
 
-        output.outputStream().buffered().use { out ->
-            ChunkDecompressor.extract(installer, table.offset1, loc, out, onProgress)
+        val results = ArrayList<ExtractedFile>(pending.size)
+        val totalBytes = pending.sumOf { locations[it.entry.locationIndex].fileSize }
+        var bytesSoFar = 0L
+
+        for (p in pending) {
+            val loc = locations[p.entry.locationIndex]
+            val output = p.target.outputFor(p.entry.destination)
+            output.parentFile?.mkdirs()
+            output.outputStream().buffered().use { out ->
+                ChunkDecompressor.extract(installer, table.offset1, loc, out) { written, _ ->
+                    onProgress?.invoke(bytesSoFar + written, totalBytes, p.entry.destination)
+                }
+            }
+            bytesSoFar += loc.fileSize
+            results += ExtractedFile(p.entry.destination, output)
         }
+        return results
+    }
+
+    /** Back-compat wrapper. Extracts just `data\HotA.lod` into [output]. */
+    fun extractHotaLod(installer: File, output: File, onProgress: ((Long, Long) -> Unit)? = null) {
+        val targets = listOf(
+            Target(
+                matcher = { it.endsWith(HOTA_LOD_DEST_SUFFIX, ignoreCase = true) },
+                outputFor = { _ -> output },
+            )
+        )
+        extract(installer, targets, onProgress = onProgress?.let { cb ->
+            { written, total, _ -> cb(written, total) }
+        })
     }
 }
