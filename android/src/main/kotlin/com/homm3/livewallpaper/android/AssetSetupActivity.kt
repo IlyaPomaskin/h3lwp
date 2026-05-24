@@ -17,7 +17,9 @@ import androidx.compose.ui.unit.dp
 import android.os.Build
 import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.core.AssetPaths
+import com.homm3.livewallpaper.core.assets.CampaignMapInstaller
 import com.homm3.livewallpaper.core.assets.LodValidator
+import com.homm3.livewallpaper.parser.inno.InnoSetupExtractor
 import kotlin.concurrent.thread
 
 class AssetSetupActivity : ComponentActivity() {
@@ -88,6 +90,16 @@ class AssetSetupActivity : ComponentActivity() {
         }
     }
 
+    private fun sanitizeBasename(name: String): String {
+        val illegal = setOf(':', '/', '\\', '?', '*', '<', '>', '|', '"')
+        val cleaned = buildString(name.length) {
+            for (c in name.trim()) {
+                if (c.code < 0x20 || c in illegal) append('_') else append(c)
+            }
+        }
+        return cleaned.ifBlank { "unnamed.h3m" }
+    }
+
     private val hotaFilePickerLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -97,7 +109,9 @@ class AssetSetupActivity : ComponentActivity() {
 
         thread {
             val installerCache = cacheDir.resolve("hota_installer.exe")
-            val outputFile = filesDir.resolve(AssetPaths.HOTA_LOD_FILE)
+            val lngCache = cacheDir.resolve("HotA_lng.lod")
+            val hotaLodOut = filesDir.resolve(AssetPaths.HOTA_LOD_FILE)
+            val userMapsDir = filesDir.resolve(AssetPaths.USER_MAPS_FOLDER).apply { mkdirs() }
             try {
                 val inputStream = contentResolver.openInputStream(uri)
                     ?: run {
@@ -113,19 +127,36 @@ class AssetSetupActivity : ComponentActivity() {
                     installerCache.outputStream().use { output -> input.copyTo(output) }
                 }
 
-                runOnUiThread { hotaStatusMessage = "Extracting HotA.lod..." }
-                com.homm3.livewallpaper.parser.inno.InnoSetupExtractor.extractHotaLod(
-                    installerCache,
-                    outputFile,
-                ) { written, total ->
-                    val pct = ((written * 100L) / total).toInt()
+                runOnUiThread { hotaStatusMessage = "Extracting installer..." }
+                val targets = listOf(
+                    InnoSetupExtractor.Target(
+                        matcher = { it.endsWith("data\\hota.lod", ignoreCase = true) },
+                        outputFor = { _ -> hotaLodOut },
+                    ),
+                    InnoSetupExtractor.Target(
+                        matcher = { it.endsWith("data\\hota_lng.lod", ignoreCase = true) },
+                        outputFor = { _ -> lngCache },
+                    ),
+                    InnoSetupExtractor.Target(
+                        matcher = {
+                            it.contains("\\app\\maps\\", ignoreCase = true) &&
+                                it.endsWith(".h3m", ignoreCase = true)
+                        },
+                        outputFor = { dest ->
+                            val basename = dest.substringAfterLast('\\').substringAfterLast('/')
+                            userMapsDir.resolve(sanitizeBasename(basename))
+                        },
+                    ),
+                )
+                InnoSetupExtractor.extract(installerCache, targets) { written, total, _ ->
+                    val pct = if (total > 0) ((written * 100L) / total).toInt() else 0
                     runOnUiThread { hotaStatusMessage = "Extracting: $pct%" }
                 }
 
                 runOnUiThread { hotaStatusMessage = "Validating HotA.lod..." }
-                val error = LodValidator.validate(outputFile.inputStream(), isHota = true)
+                val error = LodValidator.validate(hotaLodOut.inputStream(), isHota = true)
                 if (error != null) {
-                    outputFile.delete()
+                    hotaLodOut.delete()
                     runOnUiThread {
                         hotaStatusMessage = error
                         isHotaConverting = false
@@ -133,18 +164,29 @@ class AssetSetupActivity : ComponentActivity() {
                     return@thread
                 }
 
+                if (lngCache.isFile) {
+                    runOnUiThread { hotaStatusMessage = "Extracting campaigns..." }
+                    val r = CampaignMapInstaller.installFromLod(lngCache, userMapsDir) { i, total, msg ->
+                        runOnUiThread { hotaStatusMessage = "$msg ($i/$total)" }
+                    }
+                    runOnUiThread {
+                        hotaStatusMessage = "Extracted ${r.mapsWritten} maps from ${r.campaignsFound} campaigns"
+                    }
+                }
+
                 runOnUiThread {
                     hotaStatusMessage = "Done!"
                     isHotaConverting = false
                 }
             } catch (e: Exception) {
-                outputFile.delete()
+                hotaLodOut.delete()
                 runOnUiThread {
                     hotaStatusMessage = "Error: ${e.message}"
                     isHotaConverting = false
                 }
             } finally {
                 installerCache.delete()
+                lngCache.delete()
             }
         }
     }
