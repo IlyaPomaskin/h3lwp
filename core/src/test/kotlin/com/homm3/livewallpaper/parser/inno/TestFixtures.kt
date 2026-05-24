@@ -14,6 +14,11 @@ object TestFixtures {
     val installer180: File get() = projectRoot.resolve("data/HotA_1.8.0_setup.exe")
     val goldenLod173: File get() = projectRoot.resolve("data/hota.lod")
     val goldenLod180: File get() = projectRoot.resolve("data/hota18.lod")
+    val lng180: File get() = projectRoot.resolve("data/HotA_lng.lod")
+
+    fun requireLng180() {
+        assumeTrue("HotA 1.8.0 language LOD missing (data/HotA_lng.lod)", lng180.isFile)
+    }
 
     fun requireInstallers() {
         assumeTrue("HotA 1.7.3 installer not in data/", installer173.isFile)
