@@ -1,3 +1,5 @@
+package com.homm3.livewallpaper.parser.h3c
+
 import java.util.logging.Level
 import java.util.logging.Logger
 
