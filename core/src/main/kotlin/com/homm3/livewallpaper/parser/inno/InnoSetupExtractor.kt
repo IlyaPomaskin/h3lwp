@@ -61,31 +61,48 @@ object InnoSetupExtractor {
         val dataStream = ByteArrayInputStream(dataEntriesBytes)
         val locations = FileLocationEntries.readAll(dataStream, header.dataEntryCount)
 
-        val results = ArrayList<ExtractedFile>(pending.size)
         val totalBytes = pending.sumOf { locations[it.entry.locationIndex].fileSize }
-        var bytesSoFar = 0L
 
-        for ((i, p) in pending.withIndex()) {
-            val loc = locations[p.entry.locationIndex]
-            val output = p.target.outputFor(p.entry.destination)
-            log.info("[${i + 1}/${pending.size}] dest='${p.entry.destination}' locIdx=${p.entry.locationIndex} → $output")
-            output.parentFile?.mkdirs()
+        // Group by chunk so one LZMA2 stream produces all files within that chunk in a single
+        // forward pass. Inno Setup's solid compression puts many files in one chunk; opening a
+        // fresh LZMA2 stream per file would re-decompress the whole prefix each time.
+        val byChunk: Map<Long, List<Pending>> = pending.groupBy {
+            locations[it.entry.locationIndex].chunkOffset
+        }
+        log.info("grouped ${pending.size} pending into ${byChunk.size} chunk(s)")
+
+        val results = ArrayList<ExtractedFile>(pending.size)
+        var bytesSoFar = 0L
+        for ((chunkOffset, group) in byChunk) {
+            val chunkLoc = locations[group.first().entry.locationIndex]
+            val slices = group.map { p ->
+                val loc = locations[p.entry.locationIndex]
+                val output = p.target.outputFor(p.entry.destination)
+                ChunkDecompressor.Slice(
+                    fileOffset = loc.fileOffset,
+                    fileSize = loc.fileSize,
+                    output = output,
+                    tag = p.entry.destination,
+                )
+            }
+            log.info("chunk @ $chunkOffset: ${slices.size} slice(s), total ${slices.sumOf { it.fileSize }} bytes")
             try {
-                output.outputStream().buffered().use { out ->
-                    ChunkDecompressor.extract(installer, table.offset1, loc, out) { written, _ ->
-                        onProgress?.invoke(bytesSoFar + written, totalBytes, p.entry.destination)
-                    }
+                ChunkDecompressor.extractMultiple(
+                    installer = installer,
+                    offset1 = table.offset1,
+                    chunkLocation = chunkLoc,
+                    slices = slices,
+                ) { written, _, currentTag ->
+                    onProgress?.invoke(bytesSoFar + written, totalBytes, currentTag)
                 }
             } catch (e: Exception) {
-                log.log(
-                    Level.SEVERE,
-                    "extraction failed for dest='${p.entry.destination}' locIdx=${p.entry.locationIndex}",
-                    e,
-                )
+                log.log(Level.SEVERE, "chunk extraction failed: chunkOffset=$chunkOffset slices=${slices.size}", e)
                 throw e
             }
-            bytesSoFar += loc.fileSize
-            results += ExtractedFile(p.entry.destination, output)
+            bytesSoFar += slices.sumOf { it.fileSize }
+            for ((p, slice) in group.zip(slices)) {
+                results += ExtractedFile(p.entry.destination, slice.output)
+            }
         }
         log.info("extract: done, wrote ${results.size} files, $bytesSoFar bytes total")
         return results
