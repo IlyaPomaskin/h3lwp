@@ -160,7 +160,21 @@ class GameAssets : Disposable {
         log.info { "  registry build (GL): ${bundle.regionInfos.size} regions in ${System.currentTimeMillis() - tReg}ms" }
     }
 
+    private fun lodFingerprint(): String {
+        val lod = Gdx.files.local(AssetPaths.LOD_FILE).file()
+        val hota = Gdx.files.local(AssetPaths.HOTA_LOD_FILE).file()
+        fun fp(f: java.io.File) = if (f.exists()) "${f.length()}:${f.lastModified()}" else "absent"
+        return "lod=${fp(lod)};hota=${fp(hota)}"
+    }
+
     private fun buildEtc1Bundle(neededSprites: Set<String>): Etc1Bundle {
+        val cache = Etc1PageCache()
+        val key = cache.cacheKey(neededSprites, lodFingerprint())
+        cache.read(key)?.let {
+            log.info { "  ETC1 atlas: cache hit key=$key (${it.pages.size} pages)" }
+            return it
+        }
+
         val packer = PixmapPacker(2048, 2048, Pixmap.Format.RGBA4444, 4, true)
         val loader = LodSpriteLoader()
         val allRegionInfos = mutableListOf<RegionInfo>()
@@ -196,7 +210,9 @@ class GameAssets : Disposable {
         log.info { "  ETC1 encode (CPU): ${pages.size} pages in ${System.currentTimeMillis() - tEnc}ms" }
         packer.dispose()
 
-        return Etc1Bundle(pages, allRegionInfos, packerRects)
+        val bundle = Etc1Bundle(pages, allRegionInfos, packerRects)
+        cache.write(key, bundle)
+        return bundle
     }
 
     fun getTerrainFrames(defName: String, index: Int): Array<TextureAtlas.AtlasRegion> {
