@@ -147,10 +147,7 @@ class AssetSetupActivity : ComponentActivity() {
                         outputFor = { _ -> lngCache },
                     ),
                     InnoSetupExtractor.Target(
-                        matcher = {
-                            it.contains("\\app\\maps\\", ignoreCase = true) &&
-                                it.endsWith(".h3m", ignoreCase = true)
-                        },
+                        matcher = { it.endsWith(".h3m", ignoreCase = true) },
                         outputFor = { dest ->
                             val basename = dest.substringAfterLast('\\').substringAfterLast('/')
                             userMapsDir.resolve(sanitizeBasename(basename))
