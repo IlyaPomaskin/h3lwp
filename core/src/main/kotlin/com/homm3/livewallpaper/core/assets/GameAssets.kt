@@ -160,7 +160,9 @@ class GameAssets : Disposable {
 
         if (needed.isEmpty()) return
         log.info { "preloadAllMapSprites: ${needed.size} unique sprites across ${allMapFiles.size} maps" }
-        log.info { "preloadAllMapSprites: full DEF list: ${needed.sorted().joinToString(", ")}" }
+        val listFile = Gdx.files.local("def-list.txt")
+        listFile.writeString(needed.sorted().joinToString("\n"), false)
+        log.info { "preloadAllMapSprites: full DEF list (${needed.size} entries) written to ${listFile.file().absolutePath}" }
 
         val bundle = withContext(Dispatchers.IO) { buildEtc1Bundle(needed) }
 
