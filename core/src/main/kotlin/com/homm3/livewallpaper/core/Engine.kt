@@ -33,7 +33,6 @@ open class Engine(
     private var isLoadingMap = false
     private var lastHotaAvailable: Boolean? = null
     private var rotationJob: Job? = null
-    private var lastRotationCheck = 0L
 
     fun moveCameraByOffset(offset: Float) {
         camera.moveByScrollOffset(offset)
@@ -125,11 +124,6 @@ open class Engine(
 
     override fun render() {
         clearScreen(0f,0f,0f,0f)
-        val now = System.currentTimeMillis()
-        if (now - lastRotationCheck >= ROTATION_CHECK_INTERVAL_MS) {
-            lastRotationCheck = now
-            rotateBatchIfDue()
-        }
         if (Gdx.app.type == Application.ApplicationType.Desktop) {
             when {
                 Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) -> { Gdx.app.exit(); return }
@@ -257,9 +251,4 @@ open class Engine(
         }
     }
 
-    companion object {
-        /** How often render() polls MapQueue for a due rotation. The rotation itself
-         *  only fires once MapQueue's own 1h cooldown has elapsed. */
-        private const val ROTATION_CHECK_INTERVAL_MS = 60_000L  // 1 minute
-    }
 }
