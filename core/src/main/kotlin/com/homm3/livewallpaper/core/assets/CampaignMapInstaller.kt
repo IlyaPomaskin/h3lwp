@@ -70,10 +70,15 @@ object CampaignMapInstaller {
                 continue
             }
 
+            val campaignBase = if (entry.name.endsWith(".h3c", ignoreCase = true)) {
+                entry.name.dropLast(4)
+            } else entry.name
+
             var writtenThisCampaign = 0
             var skippedExisting = 0
-            for (map in extracted) {
-                val target = outputDir.resolve(map.name)
+            for ((mapIndex, map) in extracted.withIndex()) {
+                val targetName = "$campaignBase-map-$mapIndex.h3m"
+                val target = outputDir.resolve(targetName)
                 if (target.exists()) {
                     skippedExisting++
                     continue
@@ -83,8 +88,8 @@ object CampaignMapInstaller {
                 writtenThisCampaign++
             }
             log.info(
-                "  wrote $writtenThisCampaign maps (skipped $skippedExisting existing) " +
-                    "from '${entry.name}'"
+                "  wrote $writtenThisCampaign maps as '$campaignBase-map-*.h3m' " +
+                    "(skipped $skippedExisting existing) from '${entry.name}'"
             )
         }
 
