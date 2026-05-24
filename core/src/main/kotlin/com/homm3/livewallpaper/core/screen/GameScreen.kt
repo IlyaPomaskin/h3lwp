@@ -26,7 +26,8 @@ import kotlin.random.Random
 
 class GameScreen(
     private val camera: MapCamera,
-    private val prefs: Flow<WallpaperPreferences>
+    private val prefs: Flow<WallpaperPreferences>,
+    private val onSwitchThresholdReached: () -> Unit = {},
 ) : KtxScreen {
 
     private val viewport = ScreenViewport(camera)
@@ -46,6 +47,7 @@ class GameScreen(
     private var lastMapUpdateTime = 0L
     private var currentMapIndex = 0
     private var prefsJob: Job? = null
+    private var mapSwitchCount = 0
 
     fun addMap(map: GameMap) {
         tiledMap.layers.add(map)
@@ -157,6 +159,13 @@ class GameScreen(
         val maps = tiledMap.layers.toList().filterIsInstance(GameMap::class.java)
         if (maps.isEmpty()) return
 
+        mapSwitchCount++
+        log.info { "map switch #$mapSwitchCount/$MAX_SWITCHES_BEFORE_BATCH_ROTATE (force=$force)" }
+        if (mapSwitchCount >= MAX_SWITCHES_BEFORE_BATCH_ROTATE) {
+            mapSwitchCount = 0
+            onSwitchThresholdReached()
+        }
+
         val originalIndex = currentMapIndex
         for (attempt in 0 until MAX_REROLLS) {
             val idx = randomIndexExcluding(maps.size, originalIndex)
@@ -218,6 +227,7 @@ class GameScreen(
         private val log = logger<GameScreen>()
         private const val MIN_OBJECT_COVERAGE = 0.8f
         private const val MAX_REROLLS = 20
+        private const val MAX_SWITCHES_BEFORE_BATCH_ROTATE = 20
     }
 
     private fun showMapAtIndex(index: Int) {

@@ -115,10 +115,10 @@ class GameAssets : Disposable {
      * `null` if not yet due. Caller is responsible for adding the new maps to
      * the screen and unloading the ones that fell out of the batch.
      */
-    suspend fun rotateBatchIfDue(): LoadResult? {
+    suspend fun rotateBatchIfDue(force: Boolean = false): LoadResult? {
         val allMapFiles = getAllMapFiles()
-        val newBatch = MapQueue().advanceIfDue(allMapFiles) ?: return null
-        log.info { "rotateBatchIfDue: new batch = $newBatch" }
+        val newBatch = MapQueue().advanceIfDue(allMapFiles, force) ?: return null
+        log.info { "rotateBatchIfDue: new batch = $newBatch (force=$force)" }
         val maps = newBatch.map { storage.load<H3mMap>(it) }
         loadSpritesForMaps(maps)
         return LoadResult(maps, newBatch)

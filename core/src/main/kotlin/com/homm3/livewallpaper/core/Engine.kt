@@ -49,7 +49,11 @@ open class Engine(
 
         addScreen(LoadingScreen(gameAssets))
         addScreen(AssetSetupScreen(gameAssets, onSettingsButtonClick, onHotaButtonClick, onConversionDone = ::loadAndStart))
-        addScreen(GameScreen(camera, prefs))
+        addScreen(GameScreen(
+            camera = camera,
+            prefs = prefs,
+            onSwitchThresholdReached = { rotateBatchIfDue(force = true) },
+        ))
 
         loadAndStart()
     }
@@ -81,12 +85,12 @@ open class Engine(
         }
     }
 
-    private fun rotateBatchIfDue() {
+    private fun rotateBatchIfDue(force: Boolean = false) {
         val a = assets ?: return
         if (!a.isGameAssetsLoaded()) return
         if (rotationJob?.isActive == true) return  // already rotating
         rotationJob = KtxAsync.launch {
-            val result = a.rotateBatchIfDue() ?: return@launch
+            val result = a.rotateBatchIfDue(force) ?: return@launch
             val newBatchSet = result.loadedFileNames.toSet()
 
             // Add new maps first.

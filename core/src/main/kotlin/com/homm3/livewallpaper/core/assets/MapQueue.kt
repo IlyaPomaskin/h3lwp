@@ -41,9 +41,11 @@ class MapQueue {
      * batch size, persists the new state with `lastRotationTime = now`, and
      * returns the new batch. Otherwise returns `null`.
      *
+     * When [force] is true, skips the elapsed-time check and rotates immediately.
+     *
      * Like [currentBatch], rebuilds the queue if the fingerprint has changed.
      */
-    fun advanceIfDue(availableFiles: List<String>): List<String>? {
+    fun advanceIfDue(availableFiles: List<String>, force: Boolean = false): List<String>? {
         if (availableFiles.isEmpty()) return null
 
         val fingerprint = computeFingerprint(availableFiles)
@@ -60,7 +62,7 @@ class MapQueue {
         }
 
         val elapsed = now() - state.lastRotationTime
-        if (elapsed < ROTATION_INTERVAL_MS) {
+        if (!force && elapsed < ROTATION_INTERVAL_MS) {
             log.info { "advanceIfDue: not yet due (${elapsed / 60_000}min / ${ROTATION_INTERVAL_MS / 60_000}min)" }
             return null
         }
@@ -70,8 +72,8 @@ class MapQueue {
         val newBatch = selectBatch(state.queue, newPosition)
         saveState(QueueState(now(), newPosition, fingerprint, state.queue))
         log.info {
-            "advanceIfDue: rotated after ${elapsed / 60_000}min; new position=$newPosition, " +
-                "batch=$newBatch"
+            "advanceIfDue: rotated after ${elapsed / 60_000}min (force=$force); " +
+                "new position=$newPosition, batch=$newBatch"
         }
         return newBatch
     }
