@@ -2,18 +2,16 @@ package com.homm3.livewallpaper.core.assets
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.glutils.ETC1.ETC1Data
-import com.badlogic.gdx.utils.Json
+import com.badlogic.gdx.utils.JsonReader
+import com.badlogic.gdx.utils.JsonValue
+import com.badlogic.gdx.utils.JsonWriter
 import ktx.log.logger
+import java.io.StringWriter
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.security.MessageDigest
 
 class Etc1PageCache(private val dir: String = "cache/atlas") {
-    data class Manifest(
-        val pageCount: Int,
-        val regionInfos: List<RegionInfo>,
-        val packerRects: Map<String, PackedRect>,
-    )
 
     fun cacheKey(neededSprites: Set<String>, lodFingerprint: String): String {
         val md = MessageDigest.getInstance("SHA-1")
@@ -28,15 +26,28 @@ class Etc1PageCache(private val dir: String = "cache/atlas") {
         val manifestFile = root.child("manifest.json")
         if (!manifestFile.exists()) return null
 
-        val json = Json()
-        val manifest = json.fromJson(Manifest::class.java, manifestFile.readString())
-        val pages = (0 until manifest.pageCount).map { i ->
+        val root2 = JsonReader().parse(manifestFile.readString())
+        val pageCount = root2.getInt("pageCount")
+        val regionInfos = root2.get("regionInfos")?.let { node ->
+            (0 until node.size).map { i -> regionFromJson(node.get(i)) }
+        } ?: emptyList()
+        val packerRects = root2.get("packerRects")?.let { node ->
+            val out = mutableMapOf<String, PackedRect>()
+            var child = node.child
+            while (child != null) {
+                out[child.name] = rectFromJson(child)
+                child = child.next
+            }
+            out.toMap()
+        } ?: emptyMap()
+
+        val pages = (0 until pageCount).map { i ->
             val color = readPkm(root.child("page_$i.color.pkm").readBytes())
             val alpha = readPkm(root.child("page_$i.alpha.pkm").readBytes())
             Etc1PageData(color, alpha)
         }
         log.info { "Etc1PageCache hit: key=$key pages=${pages.size}" }
-        return Etc1Bundle(pages, manifest.regionInfos, manifest.packerRects)
+        return Etc1Bundle(pages, regionInfos, packerRects)
     }
 
     fun write(key: String, bundle: Etc1Bundle) {
@@ -46,10 +57,67 @@ class Etc1PageCache(private val dir: String = "cache/atlas") {
             root.child("page_$i.color.pkm").writeBytes(writePkm(page.color), false)
             root.child("page_$i.alpha.pkm").writeBytes(writePkm(page.alpha), false)
         }
-        val manifest = Manifest(bundle.pages.size, bundle.regionInfos, bundle.packerRects)
-        root.child("manifest.json").writeString(Json().toJson(manifest), false)
+        root.child("manifest.json").writeString(writeManifest(bundle), false)
         log.info { "Etc1PageCache wrote: key=$key pages=${bundle.pages.size}" }
     }
+
+    private fun writeManifest(bundle: Etc1Bundle): String {
+        val sw = StringWriter()
+        val w = JsonWriter(sw)
+        w.`object`()
+        w.set("pageCount", bundle.pages.size)
+        w.array("regionInfos")
+        for (r in bundle.regionInfos) {
+            w.`object`()
+            w.set("packerName", r.packerName)
+            w.set("regionName", r.regionName)
+            w.set("regionIndex", r.regionIndex)
+            w.set("width", r.width)
+            w.set("height", r.height)
+            w.set("fullWidth", r.fullWidth)
+            w.set("fullHeight", r.fullHeight)
+            w.set("x", r.x)
+            w.set("y", r.y)
+            w.set("isTerrain", r.isTerrain)
+            w.pop()
+        }
+        w.pop()
+        w.`object`("packerRects")
+        for ((name, rect) in bundle.packerRects) {
+            w.`object`(name)
+            w.set("pageIndex", rect.pageIndex)
+            w.set("x", rect.x)
+            w.set("y", rect.y)
+            w.set("w", rect.w)
+            w.set("h", rect.h)
+            w.pop()
+        }
+        w.pop()
+        w.pop()
+        w.close()
+        return sw.toString()
+    }
+
+    private fun regionFromJson(v: JsonValue) = RegionInfo(
+        packerName = v.getString("packerName"),
+        regionName = v.getString("regionName"),
+        regionIndex = v.getInt("regionIndex"),
+        width = v.getInt("width"),
+        height = v.getInt("height"),
+        fullWidth = v.getInt("fullWidth"),
+        fullHeight = v.getInt("fullHeight"),
+        x = v.getInt("x"),
+        y = v.getInt("y"),
+        isTerrain = v.getBoolean("isTerrain"),
+    )
+
+    private fun rectFromJson(v: JsonValue) = PackedRect(
+        pageIndex = v.getInt("pageIndex"),
+        x = v.getInt("x"),
+        y = v.getInt("y"),
+        w = v.getInt("w"),
+        h = v.getInt("h"),
+    )
 
     /** Custom header (magic "E1D ", width, height) wraps the raw ETC1 payload. */
     private fun writePkm(data: ETC1Data): ByteArray {
