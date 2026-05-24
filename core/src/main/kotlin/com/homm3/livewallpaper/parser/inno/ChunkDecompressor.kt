@@ -63,16 +63,12 @@ object ChunkDecompressor {
         // Read 1-byte LZMA2 filter properties and decode the dictionary size.
         val propsByte = raf.read().also { require(it >= 0) { "EOF reading LZMA2 props byte" } }
         require(propsByte <= 40) { "Invalid LZMA2 props byte: 0x${propsByte.toString(16)}" }
-        // Decode dict size from XZ-format LZMA2 filter properties byte.
-        // For a solid chunk the full dictionary window must be available; we use at
-        // least 256 MiB so any back-reference within the chunk's decompressed range
-        // can be satisfied. Clamped to the XZ Java library maximum (2^31 - 16 ≈ 2 GiB).
-        val dictSizeDecoded = if (propsByte == 40) Int.MAX_VALUE
-                              else (if (propsByte % 2 == 0) 2 else 3) shl (propsByte / 2 + 10)
-        val dictSize = maxOf(
-            dictSizeDecoded,
-            256 * 1024 * 1024,  // minimum 256 MiB for solid-chunk coverage
-        ).coerceAtMost(2147483632)
+        // Decode dict size from XZ-format LZMA2 filter properties byte. Back-references
+        // are bounded by the dict the encoder used, so this value is sufficient — no
+        // need to inflate it. Inno Setup at max compression typically encodes ~64 MiB,
+        // which fits in Android's per-app heap; a 256 MiB floor here OOMs the dalvik VM.
+        val dictSize = if (propsByte == 40) Int.MAX_VALUE
+                       else (if (propsByte % 2 == 0) 2 else 3) shl (propsByte / 2 + 10)
 
         val raw = RandomAccessFileInputStream(raf)
         val lzma2 = LZMA2InputStream(BufferedInputStream(raw, 64 * 1024), dictSize)
