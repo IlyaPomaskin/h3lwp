@@ -31,34 +31,51 @@ object FileEntries {
     private const val FLAGS_BYTES = 4       // 4-byte stored_flags for 5.5.7u
     private const val CONDITION_STRINGS = 6 // components, tasks, languages, check, before_install, after_install
 
-    /** Scans up to [count] file entries, returns the first whose `destination` ends in [suffix]. */
-    fun findByDestinationSuffix(
+    /** Scans all [count] entries, collecting every one matching [predicate].
+     *  Always consumes the full entry list so the cursor lands on data entries. */
+    fun collectMatching(
         stream: InputStream,
         count: Int,
-        suffix: String,
-        caseInsensitive: Boolean,
-    ): FileEntry? {
-        var found: FileEntry? = null
+        predicate: (destination: String) -> Boolean,
+    ): List<FileEntry> {
+        val out = ArrayList<FileEntry>()
         for (i in 0 until count) {
-            PascalString.skip(stream) // source
+            PascalString.skip(stream)                                      // source
             val destination = PascalString.read(stream)
-            PascalString.skip(stream) // install_font_name
-            PascalString.skip(stream) // strong_assembly_name
-            repeat(CONDITION_STRINGS) { PascalString.skip(stream) } // condition_data
-            stream.skipNBytes(WINVER_BYTES.toLong())  // min_version
-            stream.skipNBytes(WINVER_BYTES.toLong())  // only_below_version
+            PascalString.skip(stream)                                      // install_font_name
+            PascalString.skip(stream)                                      // strong_assembly_name
+            repeat(CONDITION_STRINGS) { PascalString.skip(stream) }        // condition_data
+            stream.skipNBytes(WINVER_BYTES.toLong())
+            stream.skipNBytes(WINVER_BYTES.toLong())
             val location = readU32(stream)
             stream.skipNBytes(4L) // attributes
             stream.skipNBytes(8L) // external_size u64
             stream.skipNBytes(PERMISSION_BYTES.toLong())
             stream.skipNBytes(FLAGS_BYTES.toLong())
             stream.skipNBytes(1L) // type enum
-            if (found == null && destination.endsWith(suffix, ignoreCase = caseInsensitive)) {
-                found = FileEntry(destination, location)
-                // Don't break — must continue consuming so cursor lands at data entries.
+            if (predicate(destination)) {
+                out += FileEntry(destination, location)
             }
         }
-        return found
+        return out
+    }
+
+    /** Scans up to [count] file entries, returns the first whose `destination` ends in [suffix].
+     *  Always consumes the full entry list so the cursor lands on data entries. */
+    fun findByDestinationSuffix(
+        stream: InputStream,
+        count: Int,
+        suffix: String,
+        caseInsensitive: Boolean,
+    ): FileEntry? {
+        var found = false
+        val matches = collectMatching(stream, count) { dest ->
+            if (!found && dest.endsWith(suffix, ignoreCase = caseInsensitive)) {
+                found = true
+                true
+            } else false
+        }
+        return matches.firstOrNull()
     }
 
     private fun readU32(stream: InputStream): Int {
