@@ -14,6 +14,7 @@ import com.badlogic.gdx.utils.I18NBundle
 import com.homm3.livewallpaper.core.AssetPaths
 import com.homm3.livewallpaper.parser.h3m.H3mHeaderReader
 import com.homm3.livewallpaper.parser.h3m.H3mMap
+import com.homm3.livewallpaper.parser.h3m.H3mReader
 import com.homm3.livewallpaper.parser.h3m.H3mVersion
 import ktx.assets.async.AssetStorage
 import ktx.collections.gdxArrayOf
@@ -103,6 +104,16 @@ class GameAssets : Disposable {
         }
 
         val totalStart = System.currentTimeMillis()
+
+        // One-shot: on first load, scan every map in the folder and pack the union of
+        // sprites into the atlas. Subsequent batch rotations hit SpriteRegistry.isDefLoaded
+        // and skip re-encoding.
+        if (registry == null) {
+            val preStart = System.currentTimeMillis()
+            preloadAllMapSprites()
+            log.info { "loadGameAssets: preloadAllMapSprites=${System.currentTimeMillis() - preStart}ms" }
+        }
+
         val maps = filesToLoad.map { fileName ->
             val t0 = System.currentTimeMillis()
             val map = storage.load<H3mMap>(fileName)
@@ -110,11 +121,47 @@ class GameAssets : Disposable {
             map
         }
 
-        // 2. Load sprites for all maps
+        // 2. Load sprites for all maps (no-op after preloadAllMapSprites unless a new
+        // map appeared between the preload scan and now).
         val spritesStart = System.currentTimeMillis()
         loadSpritesForMaps(maps)
         log.info { "loadGameAssets: sprites=${System.currentTimeMillis() - spritesStart}ms, total=${System.currentTimeMillis() - totalStart}ms" }
         return LoadResult(maps, filesToLoad)
+    }
+
+    /**
+     * Scan every map file in the user folder, parse each transiently (no AssetStorage
+     * caching), and pack the union of every sprite they need into the atlas. Called
+     * once at first cold start so batch rotation never has to re-encode the atlas.
+     */
+    private suspend fun preloadAllMapSprites() {
+        val allMapFiles = getAllMapFiles()
+        if (allMapFiles.isEmpty()) return
+
+        val needed = withContext(Dispatchers.IO) {
+            val maps = allMapFiles.mapNotNull { fileName ->
+                val t0 = System.currentTimeMillis()
+                try {
+                    val fh = Gdx.files.local("${AssetPaths.USER_MAPS_FOLDER}/$fileName")
+                    val map = H3mReader(fh.read()).read()
+                    log.info { "  preload-parsed '$fileName' in ${System.currentTimeMillis() - t0}ms" }
+                    map
+                } catch (e: Exception) {
+                    log.error { "Skipping unreadable map '$fileName' during sprite preload: ${e.message}" }
+                    null
+                }
+            }
+            SpriteCollector(isHotaAvailable()).collectNeededSprites(maps)
+        }
+
+        if (needed.isEmpty()) return
+        log.info { "preloadAllMapSprites: ${needed.size} unique sprites across ${allMapFiles.size} maps" }
+
+        val bundle = withContext(Dispatchers.IO) { buildEtc1Bundle(needed) }
+
+        val tReg = System.currentTimeMillis()
+        registry = SpriteRegistry.fromEtc1(bundle)
+        log.info { "  registry build (GL): ${bundle.regionInfos.size} regions in ${System.currentTimeMillis() - tReg}ms" }
     }
 
     /**
