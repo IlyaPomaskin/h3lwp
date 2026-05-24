@@ -15,11 +15,9 @@ class Etc1TiledMapRenderer(
 
     init {
         batch.shader = dualShader
-        Etc1DualShader.setUseDualSample(dualShader, true)
-    }
-
-    fun setDualSampleEnabled(on: Boolean) {
-        Etc1DualShader.setUseDualSample(dualShader, on)
+        dualShader.bind()
+        dualShader.setUniformi("u_texture", 0)
+        dualShader.setUniformi("u_alpha", 1)
     }
 
     override fun renderObjects(layer: MapLayer?) {
