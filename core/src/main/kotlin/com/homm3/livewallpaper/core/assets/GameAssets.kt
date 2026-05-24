@@ -138,20 +138,24 @@ class GameAssets : Disposable {
         val allMapFiles = getAllMapFiles()
         if (allMapFiles.isEmpty()) return
 
+        // Stream map files one at a time: parse → collect sprite names → drop the map.
+        // Holding 50+ H3mMap instances simultaneously is enough to OOM the
+        // packing/encode phase on default Android heap.
         val needed = withContext(Dispatchers.IO) {
-            val maps = allMapFiles.mapNotNull { fileName ->
+            val collector = SpriteCollector(isHotaAvailable())
+            val acc = mutableSetOf<String>()
+            for (fileName in allMapFiles) {
                 val t0 = System.currentTimeMillis()
                 try {
                     val fh = Gdx.files.local("${AssetPaths.USER_MAPS_FOLDER}/$fileName")
                     val map = H3mReader(fh.read()).read()
-                    log.info { "  preload-parsed '$fileName' in ${System.currentTimeMillis() - t0}ms" }
-                    map
+                    acc.addAll(collector.collectNeededSprites(listOf(map)))
+                    log.info { "  preload-scanned '$fileName' in ${System.currentTimeMillis() - t0}ms" }
                 } catch (e: Exception) {
                     log.error { "Skipping unreadable map '$fileName' during sprite preload: ${e.message}" }
-                    null
                 }
             }
-            SpriteCollector(isHotaAvailable()).collectNeededSprites(maps)
+            acc
         }
 
         if (needed.isEmpty()) return
