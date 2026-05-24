@@ -8,9 +8,9 @@
 2. **HotA installer picker** (`AssetSetupActivity.hotaFilePickerLauncher`) — after `InnoSetupExtractor` finishes its `HotA.lod` extraction, in the same installer pass also:
    - extract `HotA_lng.lod` (transient — scanned for `.h3c` then deleted),
    - extract **every `app/Maps/*.h3m`** entry from the installer payload directly into `user-maps/` (the HotA 1.8.0 installer contains 128 such files — single-scenario maps that ship with HotA).
-3. **HotA_lng.lod scan** — list `.h3c` entries, extract each, and run `H3cExtractor` on each. The 11 h3c files we have in `data/h3c/` are all sourced from `HotA_lng.lod` (confirmed via `tools/find_h3_maps.py data/HotA_lng.lod`).
+3. **HotA_lng.lod scan** — list `.h3c` entries, extract each, and run `H3cExtractor` on each. `HotA_lng.lod` carries 11 `.h3c` campaign files (confirmed by listing its contents with `tools/find_h3_maps.py`).
 
-**Scope:** All campaign versions present in `data/h3c/` — RoE, AB, SoD, Chronicles (`Chr`), HotA. WoG is in the version enum for completeness but is not represented in the sample corpus.
+**Scope:** All campaign versions observed across those 11 campaigns — RoE, AB, SoD, Chronicles (`Chr`), HotA. WoG is in the version enum for completeness but is not represented in the corpus.
 
 ---
 
@@ -23,7 +23,7 @@ An `.h3c` file is **N + 1 concatenated gzip streams**:
 | `0` | Campaign metadata: campaign header followed by N scenario descriptors |
 | `1..N` | One gzipped `.h3m` map per scenario, in scenario order |
 
-Verified empirically against all 11 sample files in `data/h3c/`. The first u32 of each map stream (after ungzip) is always a valid `H3mVersion` value (`0x0e`/`0x15`/`0x1c`/`0x20`).
+Verified empirically against all 11 sample campaigns. The first u32 of each map stream (after ungzip) is always a valid `H3mVersion` value (`0x0e`/`0x15`/`0x1c`/`0x20`).
 
 **Implication:** Streams `1..N` can be written to disk verbatim as standalone `.h3m` files — no recompression needed. The only reason to touch stream 0 is to recover scenario names for filenames.
 
@@ -92,7 +92,7 @@ object H3cExtractor {
 }
 ```
 
-`extract` takes an in-memory `ByteArray` because the input often comes from a LOD entry that's already been decompressed into memory. The `File` overload is for direct file input (e.g., the `data/h3c/*.h3c` test corpus).
+`extract` takes an in-memory `ByteArray` because the input typically comes from a LOD entry that's already been decompressed into memory. The `File` overload is for direct file input (e.g., a saved `.h3c` on disk).
 
 ### `core/src/main/kotlin/com/homm3/livewallpaper/core/assets/CampaignMapInstaller.kt`
 
@@ -216,13 +216,13 @@ Result(campaignsFound, mapsWritten, skipped)
 
 ## Testing
 
-**Fixture policy:** Tests must not depend on `data/h3c/`. The only on-disk fixtures are the ones the project already gates with `@Assume` via `TestFixtures`: `data/HotA_1.8.0_setup.exe`, `data/HotA_lng.lod`, and the golden `data/hota18.lod`. Anything else is either built in-process (synthetic gzip concatenation) or sourced at test runtime from one of those three files.
+**Fixture policy:** No new binary fixtures land in the repo. Tests use only the fixtures the project already accesses via `TestFixtures` (`installer180`, `goldenLod180`) plus a new `lng180` accessor that points at the HotA 1.8.0 language LOD. All such accessors gate with `@Assume`, so tests skip cleanly when the corpus is absent. Everything else is built in-process (synthetic gzip concatenation).
 
 `core/src/test/kotlin/.../h3c/`:
 
 - **`GzipStreamSplitterTest`** — pure synthetic: build 3 concatenated gzip streams from in-memory bytes and assert offsets, lengths, and decompressed content match. No file fixtures.
-- **`CampaignHeaderReaderTest`** — pull one h3c blob at test time by `LodReader.readFileContent("ab.h3c")` from `data/HotA_lng.lod` (gated with `@Assume`); feed it through the header reader; assert the returned scenario-name list has the expected count and specific entries (hard-coded against the known AB campaign).
-- **`H3cExtractorTest`** — for each `.h3c` entry inside `data/HotA_lng.lod` (gated with `@Assume`):
+- **`CampaignHeaderReaderTest`** — at test time, pull one `.h3c` blob via `LodReader.readFileContent("ab.h3c")` from `TestFixtures.lng180`; feed it through the header reader; assert the returned scenario-name list has the expected count and specific entries (hard-coded against the known AB campaign).
+- **`H3cExtractorTest`** — for each `.h3c` entry inside `TestFixtures.lng180`:
   - Read the entry from the LOD into memory; pass to `H3cExtractor.extract`.
   - Assert per-campaign scenario count matches a hard-coded table keyed by entry name.
   - Each `ExtractedMap.bytes` ungzips to a stream whose first u32 is in `{0x0e, 0x15, 0x1c, 0x20}`.
@@ -230,7 +230,7 @@ Result(campaignsFound, mapsWritten, skipped)
 
 `core/src/test/kotlin/.../assets/`:
 
-- **`CampaignMapInstallerTest`** — point at `data/HotA_lng.lod` (gated), run `installFromLod` to a JUnit `@TempDir`, assert:
+- **`CampaignMapInstallerTest`** — point at `TestFixtures.lng180`, run `installFromLod` to a JUnit `@TempDir`, assert:
   - `Result.campaignsFound == 11`
   - `Result.mapsWritten == <expected sum across the 11 campaigns>` (hard-coded table)
   - Every output file parses through `H3mReader`
@@ -239,11 +239,11 @@ Result(campaignsFound, mapsWritten, skipped)
 `core/src/test/kotlin/.../inno/`:
 
 - **`InnoSetupExtractorMultiTargetTest`** — extend the existing 1.8.0 golden test to request three targets in one pass:
-  - `data\HotA.lod` → byte-for-byte equality with golden `data/hota18.lod` (unchanged from current test).
+  - `data\HotA.lod` → byte-for-byte equality with `TestFixtures.goldenLod180` (unchanged from current test).
   - `data\HotA_lng.lod` → non-empty; `LodReader` lists 11 `.h3c` entries with the expected names.
   - Glob `app\Maps\*.h3m` (case-insensitive) → exactly 128 output files; each starts with a valid `H3mVersion` magic after gunzip; spot-check 2–3 by parsing with `H3mReader`.
 
-No new binary fixtures land in the repo. Tests degrade to `@Ignore`-style `assumeTrue` skips when the `data/` corpus is absent (matches the existing inno-test pattern).
+Tests degrade to `assumeTrue` skips when fixtures are absent (matches the existing inno-test pattern).
 
 ---
 
