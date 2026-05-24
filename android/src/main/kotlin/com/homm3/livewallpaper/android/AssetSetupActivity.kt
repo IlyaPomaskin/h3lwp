@@ -2,6 +2,7 @@ package com.homm3.livewallpaper.android
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -112,9 +113,16 @@ class AssetSetupActivity : ComponentActivity() {
             val lngCache = cacheDir.resolve("HotA_lng.lod")
             val hotaLodOut = filesDir.resolve(AssetPaths.HOTA_LOD_FILE)
             val userMapsDir = filesDir.resolve(AssetPaths.USER_MAPS_FOLDER).apply { mkdirs() }
+            Log.i(HOTA_TAG, "picker fired: uri=$uri")
+            Log.i(
+                HOTA_TAG,
+                "paths: installerCache=$installerCache lngCache=$lngCache " +
+                    "hotaLodOut=$hotaLodOut userMapsDir=$userMapsDir",
+            )
             try {
                 val inputStream = contentResolver.openInputStream(uri)
                     ?: run {
+                        Log.e(HOTA_TAG, "openInputStream returned null for $uri")
                         runOnUiThread {
                             hotaStatusMessage = "Failed to open file"
                             isHotaConverting = false
@@ -126,6 +134,7 @@ class AssetSetupActivity : ComponentActivity() {
                 inputStream.use { input ->
                     installerCache.outputStream().use { output -> input.copyTo(output) }
                 }
+                Log.i(HOTA_TAG, "installer copied: ${installerCache.length()} bytes")
 
                 runOnUiThread { hotaStatusMessage = "Extracting installer..." }
                 val targets = listOf(
@@ -153,9 +162,17 @@ class AssetSetupActivity : ComponentActivity() {
                     runOnUiThread { hotaStatusMessage = "Extracting: $pct%" }
                 }
 
+                Log.i(
+                    HOTA_TAG,
+                    "extract done. HotA.lod=${hotaLodOut.length()} lng exists=${lngCache.isFile} " +
+                        "lng=${if (lngCache.isFile) lngCache.length() else 0} " +
+                        "userMaps count=${userMapsDir.list()?.size ?: 0}",
+                )
+
                 runOnUiThread { hotaStatusMessage = "Validating HotA.lod..." }
                 val error = LodValidator.validate(hotaLodOut.inputStream(), isHota = true)
                 if (error != null) {
+                    Log.e(HOTA_TAG, "LodValidator rejected HotA.lod: $error")
                     hotaLodOut.delete()
                     runOnUiThread {
                         hotaStatusMessage = error
@@ -169,16 +186,22 @@ class AssetSetupActivity : ComponentActivity() {
                     val r = CampaignMapInstaller.installFromLod(lngCache, userMapsDir) { i, total, msg ->
                         runOnUiThread { hotaStatusMessage = "$msg ($i/$total)" }
                     }
+                    Log.i(
+                        HOTA_TAG,
+                        "campaigns: found=${r.campaignsFound} mapsWritten=${r.mapsWritten} skipped=${r.skipped}",
+                    )
                     runOnUiThread {
                         hotaStatusMessage = "Extracted ${r.mapsWritten} maps from ${r.campaignsFound} campaigns"
                     }
                 }
 
+                Log.i(HOTA_TAG, "done")
                 runOnUiThread {
                     hotaStatusMessage = "Done!"
                     isHotaConverting = false
                 }
             } catch (e: Exception) {
+                Log.e(HOTA_TAG, "HotA pipeline failed", e)
                 hotaLodOut.delete()
                 runOnUiThread {
                     hotaStatusMessage = "Error: ${e.message}"
@@ -189,6 +212,10 @@ class AssetSetupActivity : ComponentActivity() {
                 lngCache.delete()
             }
         }
+    }
+
+    companion object {
+        private const val HOTA_TAG = "HotaSetup"
     }
 
     private var isConverting by mutableStateOf(false)

@@ -6,8 +6,11 @@ import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.RandomAccessFile
+import java.util.logging.Level
+import java.util.logging.Logger
 
 object ChunkDecompressor {
+    private val log = Logger.getLogger(ChunkDecompressor::class.java.name)
     private val CHUNK_MAGIC = byteArrayOf('z'.code.toByte(), 'l'.code.toByte(), 'b'.code.toByte(), 0x1A)
 
     /**
@@ -27,6 +30,13 @@ object ChunkDecompressor {
     ) {
         require(!location.chunkEncrypted) { "Encrypted chunks not supported" }
         require(location.firstSlice == 0 && location.lastSlice == 0) { "Multi-slice not supported" }
+
+        log.info(
+            "extract: offset1=$offset1 chunkOffset=${location.chunkOffset} " +
+                "absChunk=${offset1 + location.chunkOffset} " +
+                "fileOffset=${location.fileOffset} fileSize=${location.fileSize} " +
+                "chunkSize=${location.chunkSize} compressed=${location.chunkCompressed}"
+        )
 
         RandomAccessFile(installer, "r").use { raf ->
             raf.seek(offset1 + location.chunkOffset)
@@ -63,17 +73,27 @@ object ChunkDecompressor {
         // Read 1-byte LZMA2 filter properties and decode the dictionary size.
         val propsByte = raf.read().also { require(it >= 0) { "EOF reading LZMA2 props byte" } }
         require(propsByte <= 40) { "Invalid LZMA2 props byte: 0x${propsByte.toString(16)}" }
-        // Decode dict size from XZ-format LZMA2 filter properties byte. Back-references
-        // are bounded by the dict the encoder used, so this value is sufficient — no
-        // need to inflate it. Inno Setup at max compression typically encodes ~64 MiB,
-        // which fits in Android's per-app heap; a 256 MiB floor here OOMs the dalvik VM.
+        // XZ-format LZMA2 dict-size encoding: dict = (2 or 3) << (propsByte/2 + 11).
+        // propsByte=40 is the special "max" marker (4 GiB → Int.MAX_VALUE in practice).
         val dictSize = if (propsByte == 40) Int.MAX_VALUE
-                       else (if (propsByte % 2 == 0) 2 else 3) shl (propsByte / 2 + 10)
+                       else (if (propsByte % 2 == 0) 2 else 3) shl (propsByte / 2 + 11)
+
+        log.info("LZMA2 propsByte=$propsByte dictSize=$dictSize (${dictSize / (1024 * 1024)} MiB)")
 
         val raw = RandomAccessFileInputStream(raf)
         val lzma2 = LZMA2InputStream(BufferedInputStream(raw, 64 * 1024), dictSize)
 
-        copyWithSkipAndLimit(lzma2, location.fileOffset, location.fileSize, out, onProgress)
+        try {
+            copyWithSkipAndLimit(lzma2, location.fileOffset, location.fileSize, out, onProgress)
+        } catch (e: Exception) {
+            log.log(
+                Level.SEVERE,
+                "LZMA2 decompression failed: propsByte=$propsByte dictSize=$dictSize " +
+                    "fileOffset=${location.fileOffset} fileSize=${location.fileSize}",
+                e,
+            )
+            throw e
+        }
     }
 
     /** Handles stored (uncompressed) chunks — zlb magic + raw bytes. */
