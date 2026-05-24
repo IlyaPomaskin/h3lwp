@@ -14,10 +14,7 @@ import java.util.Locale
 class MapQueue {
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
-    fun getMapsForToday(
-        availableFiles: List<String>,
-        mapSizeResolver: (String) -> Int
-    ): List<String> {
+    fun getMapsForToday(availableFiles: List<String>): List<String> {
         if (availableFiles.isEmpty()) return emptyList()
 
         val fingerprint = computeFingerprint(availableFiles)
@@ -26,7 +23,7 @@ class MapQueue {
 
         if (state == null || state.fingerprint != fingerprint) {
             val shuffled = availableFiles.shuffled()
-            val batch = selectBatch(shuffled, 0, mapSizeResolver)
+            val batch = selectBatch(shuffled, 0)
             saveState(QueueState(today, 0, fingerprint, shuffled))
             log.info { "Map queue rebuilt. Queue order (${shuffled.size}): $shuffled" }
             log.info { "Loading ${batch.size} maps at position 0: $batch" }
@@ -34,46 +31,26 @@ class MapQueue {
         }
 
         if (state.date == today) {
-            val batch = selectBatch(state.queue, state.position, mapSizeResolver)
+            val batch = selectBatch(state.queue, state.position)
             log.info { "Same day. Queue (${state.queue.size}) at position ${state.position}: ${state.queue}" }
             log.info { "Loading ${batch.size} maps: $batch" }
             return batch
         }
 
-        val previousBatch = selectBatch(state.queue, state.position, mapSizeResolver)
+        val previousBatch = selectBatch(state.queue, state.position)
         val newPosition = (state.position + previousBatch.size) % state.queue.size
-        val batch = selectBatch(state.queue, newPosition, mapSizeResolver)
+        val batch = selectBatch(state.queue, newPosition)
         saveState(QueueState(today, newPosition, fingerprint, state.queue))
         log.info { "New day. Queue (${state.queue.size}) at position $newPosition: ${state.queue}" }
         log.info { "Loading ${batch.size} maps: $batch" }
         return batch
     }
 
-    private fun selectBatch(
-        queue: List<String>,
-        position: Int,
-        mapSizeResolver: (String) -> Int
-    ): List<String> {
+    private fun selectBatch(queue: List<String>, position: Int): List<String> {
         if (queue.isEmpty()) return emptyList()
-
         val pos = position % queue.size
-        val firstFile = queue[pos]
-        val firstSize = mapSizeResolver(firstFile)
-
-        if (firstSize >= LARGE_MAP_THRESHOLD) {
-            return listOf(firstFile)
-        }
-
-        val batch = mutableListOf(firstFile)
-        for (i in 1 until MAX_SMALL_MAPS) {
-            val nextPos = (pos + i) % queue.size
-            if (nextPos == pos) break
-            val nextFile = queue[nextPos]
-            val nextSize = mapSizeResolver(nextFile)
-            if (nextSize >= LARGE_MAP_THRESHOLD) break
-            batch.add(nextFile)
-        }
-        return batch
+        val take = minOf(BATCH_SIZE, queue.size)
+        return List(take) { i -> queue[(pos + i) % queue.size] }
     }
 
     private fun computeFingerprint(files: List<String>): String {
@@ -135,8 +112,7 @@ class MapQueue {
 
     companion object {
         private val log = logger<MapQueue>()
-        private const val LARGE_MAP_THRESHOLD = 144
-        private const val MAX_SMALL_MAPS = 3
+        private const val BATCH_SIZE = 3
         private const val PREFS_NAME = "map-queue"
         private const val PREFS_KEY = "state"
     }

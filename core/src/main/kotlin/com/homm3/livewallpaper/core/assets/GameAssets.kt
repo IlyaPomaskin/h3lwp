@@ -97,14 +97,7 @@ class GameAssets : Disposable {
             // Load maps selected by queue
             val allMapFiles = getAllMapFiles()
             log.info { "Available maps in folder (${allMapFiles.size}): $allMapFiles" }
-            val sizeCache = mutableMapOf<String, Int>()
-            val mapQueue = MapQueue()
-            mapQueue.getMapsForToday(allMapFiles) { fileName ->
-                sizeCache.getOrPut(fileName) {
-                    val fileHandle = Gdx.files.local("${AssetPaths.USER_MAPS_FOLDER}/$fileName")
-                    H3mHeaderReader.readMapSize(fileHandle.read())
-                }
-            }
+            MapQueue().getMapsForToday(allMapFiles)
         }
 
         val maps = filesToLoad.map { storage.load<H3mMap>(it) }
