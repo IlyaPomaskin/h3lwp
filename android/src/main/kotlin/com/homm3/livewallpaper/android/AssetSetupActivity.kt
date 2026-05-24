@@ -89,7 +89,7 @@ class AssetSetupActivity : ComponentActivity() {
     }
 
     private val hotaFilePickerLauncher = registerForActivityResult(
-        ActivityResultContracts.GetContent()
+        ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri == null) return@registerForActivityResult
         isHotaConverting = true
@@ -174,7 +174,18 @@ class AssetSetupActivity : ComponentActivity() {
                     onSelectFile = { filePickerLauncher.launch("application/octet-stream") },
                     isHotaConverting = isHotaConverting,
                     hotaStatusMessage = hotaStatusMessage,
-                    onSelectHotaFile = { hotaFilePickerLauncher.launch("application/octet-stream") }
+                    onSelectHotaFile = {
+                        hotaFilePickerLauncher.launch(
+                            arrayOf(
+                                "application/x-msdownload",
+                                "application/x-msdos-program",
+                                "application/vnd.microsoft.portable-executable",
+                                "application/octet-stream",
+                                "application/x-ms-installer",
+                                "application/*"
+                            )
+                        )
+                    }
                 )
             }
         }
