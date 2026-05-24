@@ -5,10 +5,10 @@
 **Trigger points in the existing setup flow:**
 
 1. **H3sprite.lod picker** (`AssetSetupActivity.filePickerLauncher`) — after `LodValidator.validate(...)` passes, scan the LOD for `.h3c` entries and extract their maps. (Standard H3sprite.lod has none, but the picker accepts arbitrary classic LODs, so a campaign-bearing LOD like the original `H3ab.lod` would yield maps here.)
-2. **HotA installer picker** (`AssetSetupActivity.hotaFilePickerLauncher`) — after `InnoSetupExtractor` finishes, also extract `HotA_lng.lod` from the same installer (it sits next to `data\HotA.lod` in the installer payload), then scan it for `.h3c` entries.
-3. **HotA_lng.lod itself** — same scan as step 1/2: list `.h3c` entries, extract each, and run `H3cExtractor` on each.
-
-The 11 h3c files we have in `data/h3c/` are all sourced from `HotA_lng.lod` (confirmed via `tools/find_h3_maps.py data/HotA_lng.lod`).
+2. **HotA installer picker** (`AssetSetupActivity.hotaFilePickerLauncher`) — after `InnoSetupExtractor` finishes its `HotA.lod` extraction, in the same installer pass also:
+   - extract `HotA_lng.lod` (transient — scanned for `.h3c` then deleted),
+   - extract **every `app/Maps/*.h3m`** entry from the installer payload directly into `user-maps/` (the HotA 1.8.0 installer contains 128 such files — single-scenario maps that ship with HotA).
+3. **HotA_lng.lod scan** — list `.h3c` entries, extract each, and run `H3cExtractor` on each. The 11 h3c files we have in `data/h3c/` are all sourced from `HotA_lng.lod` (confirmed via `tools/find_h3_maps.py data/HotA_lng.lod`).
 
 **Scope:** All campaign versions present in `data/h3c/` — RoE, AB, SoD, Chronicles (`Chr`), HotA. WoG is in the version enum for completeness but is not represented in the sample corpus.
 
@@ -118,20 +118,38 @@ object CampaignMapInstaller {
 
 ### `InnoSetupExtractor` change
 
-Generalize the existing single-target extraction into a multi-target call. The current public API stays as a thin wrapper for back-compat; a new variant extracts multiple destinations in one pass over the installer:
+Generalize the existing single-suffix extraction so callers can both **pick specific files** (e.g. `data\hota.lod`, `data\HotA_lng.lod`) and **glob a directory** (e.g. every `app\Maps\*.h3m`) in one pass over the installer. Picking by predicate rather than exact suffix lets the 128-h3m extraction reuse the same scan as the two LODs.
 
 ```kotlin
 object InnoSetupExtractor {
-    data class Target(val destinationSuffix: String, val output: File)
+    /** Caller-supplied target. The matcher runs against the entry's `destination`
+     *  (forward/backslashes preserved as authored). `outputFor` resolves to the
+     *  destination file given the matched destination string (so a glob target
+     *  can map each match to a unique output path). */
+    data class Target(
+        val matcher: (destination: String) -> Boolean,
+        val outputFor: (destination: String) -> File,
+    )
 
-    fun extract(installer: File, targets: List<Target>, onProgress: ...): List<File>
+    data class ExtractedFile(val destination: String, val output: File)
 
-    // Existing call delegated to extract(...) with a single Target.
+    fun extract(
+        installer: File,
+        targets: List<Target>,
+        onProgress: ((written: Long, total: Long, currentDestination: String) -> Unit)? = null,
+    ): List<ExtractedFile>
+
+    // Existing call kept for back-compat; delegates to extract(...) with one Target.
     fun extractHotaLod(installer: File, output: File, onProgress: ...)
 }
 ```
 
-The HotA installer picker then requests two targets in one call: `data\hota.lod` and `data\HotA_lng.lod`.
+The HotA installer picker constructs three targets in one call:
+- `data\hota.lod` → `filesDir/HotA.lod`
+- `data\HotA_lng.lod` → `cacheDir/HotA_lng.lod` (transient)
+- Glob `app\Maps\*.h3m` (case-insensitive) → `userMapsDir/<basename>` (skip when target file exists; sanitize per filename rules below)
+
+Internally `FileEntries.findByDestinationSuffix` becomes `FileEntries.collectMatching` returning `List<FileEntry>` (preserving the "must finish scanning to leave the stream positioned at data entries" behavior). The new function takes a `(String) -> Boolean` matcher plus a cap (`Int.MAX_VALUE` by default) so a future caller can short-circuit when collecting a single named file.
 
 ---
 
@@ -147,14 +165,20 @@ H3sprite.lod picker:
 
 HotA installer picker:
   copy installer to cacheDir
-  InnoSetupExtractor.extract(installer, [HotA.lod target, HotA_lng.lod target])
+  InnoSetupExtractor.extract(installer, [
+      HotA.lod        → filesDir/HotA.lod,
+      HotA_lng.lod    → cacheDir/HotA_lng.lod  (transient),
+      app/Maps/*.h3m  → userMapsDir/<basename> (skip on collision)
+  ])
   LodValidator.validate(HotA.lod)  ──── if error: delete + bail ──┐
   CampaignMapInstaller.installFromLod(HotA_lng.lod, userMapsDir)   │
-  delete HotA_lng.lod (not needed at runtime, only for h3c)        ▼
+  delete HotA_lng.lod                                              ▼
                                                                 fail UI
 ```
 
 `HotA_lng.lod` is a transient artifact: we extract it from the installer only to mine its `.h3c` entries, then delete it. It doesn't need to live in `filesDir` long-term.
+
+`app/Maps/*.h3m` entries are written **straight to `user-maps/`** during the installer pass — they're already standalone playable maps and don't need to go through `H3cExtractor`. They share the same skip-on-collision + filename sanitization rules as campaign-derived maps.
 
 Progress callbacks bubble up via the existing `hotaStatusMessage` / `statusMessage` state.
 
@@ -211,7 +235,10 @@ Result(campaignsFound, mapsWritten, skipped)
 
 `core/src/test/kotlin/.../inno/`:
 
-- **`InnoSetupExtractorMultiTargetTest`** — extend the existing 1.8.0 golden test to also request `HotA_lng.lod` in the same call; assert both outputs match goldens (or that `HotA_lng.lod` is non-empty and contains the expected 11 h3c entry names via `LodReader`).
+- **`InnoSetupExtractorMultiTargetTest`** — extend the existing 1.8.0 golden test to request three targets in one pass:
+  - `data\HotA.lod` → byte-for-byte equality with golden `data/hota18.lod` (unchanged from current test).
+  - `data\HotA_lng.lod` → non-empty; `LodReader` lists 11 `.h3c` entries with the expected names.
+  - Glob `app\Maps\*.h3m` (case-insensitive) → exactly 128 output files; each starts with a valid `H3mVersion` magic after gunzip; spot-check 2–3 by parsing with `H3mReader`.
 
 The sample corpus (`data/h3c/*.h3c` and `data/HotA_lng.lod` and `data/HotA_1.8.0_setup.exe`) is the golden test set. No new binary fixtures needed.
 
