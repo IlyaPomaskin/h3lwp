@@ -16,42 +16,38 @@ data class FileLocationEntry(
 )
 
 object FileLocationEntries {
-    // 2-byte stored_flags for 5.6.0u data_entry::Flags. Verify against innoextract.
+    // 2-byte stored_flags for 5.5.7u data_entry::Flags.
+    // Flags are assigned sequentially via stored_flag_reader (one bit per .add() call, LSB first):
+    //   Byte 0: [VersionInfoValid(0), VersionInfoNotValid(1), TimeStampInUTC(2),
+    //            IsUninstallerExe(3), CallInstructionOptimized(4), Touch(5),
+    //            ChunkEncrypted(6), ChunkCompressed(7)]
+    //   Byte 1: [SolidBreak(0), Sign(1), SignOnce(2), ...]
+    // => ChunkEncrypted  = byte0 bit 6 = (1 shl 6) in flagsInt if we read LE u16
+    // => ChunkCompressed = byte0 bit 7 = (1 shl 7) in flagsInt if we read LE u16
     private const val FLAGS_BYTES = 2
-    // Flag bit positions within the stored_flags. Order matches data_entry::Flags enum in innoextract.
-    private const val FLAG_BZIPPED = 1 shl 2
-    private const val FLAG_TIMESTAMP_UTC = 1 shl 3
-    private const val FLAG_IS_UNINSTALLER = 1 shl 4
-    private const val FLAG_CALL_INSTRUCTION_OPTIMIZED = 1 shl 5
-    private const val FLAG_TOUCH = 1 shl 6
-    private const val FLAG_CHUNK_ENCRYPTED = 1 shl 7
-    private const val FLAG_CHUNK_COMPRESSED = 1 shl 8
-    // (Higher bits: SolidBreak, Sign, SignOnce — not needed here.)
+    private const val FLAG_CHUNK_ENCRYPTED  = 1 shl 6
+    private const val FLAG_CHUNK_COMPRESSED = 1 shl 7
 
     fun readAll(stream: InputStream, count: Int): List<FileLocationEntry> =
         (0 until count).map { readOne(stream) }
 
     private fun readOne(stream: InputStream): FileLocationEntry {
-        val firstSlice = readU32(stream)
-        val lastSlice = readU32(stream)
+        val firstSlice  = readU32(stream)
+        val lastSlice   = readU32(stream)
         val chunkOffset = readU32(stream).toLong() and 0xFFFFFFFFL
-        val fileOffset = readU64(stream)
-        val fileSize = readU64(stream)
-        val chunkSize = readU64(stream)
-        stream.skipNBytes(20) // SHA1 checksum
-        stream.skipNBytes(8)  // FILETIME timestamp
-        stream.skipNBytes(4)  // timestamp_nsec
+        val fileOffset  = readU64(stream)
+        val fileSize    = readU64(stream)
+        val chunkSize   = readU64(stream)
+        stream.skipNBytes(20) // SHA-1 checksum (5.3.9 <= v < 6.4.0)
+        stream.skipNBytes(8)  // Win32 FILETIME (int64) -- timestamp_nsec is computed, not stored
         stream.skipNBytes(4)  // file_version_ms
         stream.skipNBytes(4)  // file_version_ls
-        val flagsBytes = ByteArray(FLAGS_BYTES); var off = 0
-        while (off < FLAGS_BYTES) {
-            val n = stream.read(flagsBytes, off, FLAGS_BYTES - off)
-            require(n > 0) { "EOF reading data_entry flags" }
-            off += n
-        }
-        val flagsInt = flagsBytes.fold(0) { acc, b -> (acc shl 8) or (b.toInt() and 0xFF) }
+        // Flags: 2 bytes, read as little-endian u16 so byte[0] lands at bits 0-7
+        val b0 = stream.read(); require(b0 >= 0) { "EOF reading data_entry flags byte 0" }
+        val b1 = stream.read(); require(b1 >= 0) { "EOF reading data_entry flags byte 1" }
+        val flagsInt = b0 or (b1 shl 8)
         val chunkCompressed = (flagsInt and FLAG_CHUNK_COMPRESSED) != 0
-        val chunkEncrypted = (flagsInt and FLAG_CHUNK_ENCRYPTED) != 0
+        val chunkEncrypted  = (flagsInt and FLAG_CHUNK_ENCRYPTED)  != 0
 
         return FileLocationEntry(
             firstSlice, lastSlice, chunkOffset, fileOffset, fileSize, chunkSize,
