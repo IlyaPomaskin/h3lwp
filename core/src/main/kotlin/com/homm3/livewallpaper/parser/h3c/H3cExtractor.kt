@@ -27,7 +27,7 @@ object H3cExtractor {
         require(streams.size >= 2) { "Not an h3c file: need >=2 gzip streams, got ${streams.size}" }
 
         val mapStreams = streams.drop(1)
-        val names = parseNamesOrFallback(streams[0].decompressed, mapStreams.size)
+        val names =  (0 until mapStreams.size).map { "map_$it" }
         log.info("extract: scenario names = $names")
 
         val used = HashSet<String>()
@@ -37,15 +37,6 @@ object H3cExtractor {
             used += unique
             val gzBytes = input.copyOfRange(s.compressedStart, s.compressedEndExclusive)
             ExtractedMap(unique, gzBytes)
-        }
-    }
-
-    private fun parseNamesOrFallback(stream0: ByteArray, count: Int): List<String> {
-        return try {
-            CampaignHeaderReader.readScenarioNames(stream0)
-        } catch (e: Exception) {
-            log.log(Level.WARNING, "CampaignHeaderReader failed; falling back to numeric names", e)
-            (0 until count).map { "map_$it" }
         }
     }
 
