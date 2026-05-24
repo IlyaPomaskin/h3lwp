@@ -96,6 +96,8 @@ class AssetSetupActivity : ComponentActivity() {
         hotaStatusMessage = ""
 
         thread {
+            val installerCache = cacheDir.resolve("hota_installer.exe")
+            val outputFile = filesDir.resolve(AssetPaths.HOTA_LOD_FILE)
             try {
                 val inputStream = contentResolver.openInputStream(uri)
                     ?: run {
@@ -106,10 +108,18 @@ class AssetSetupActivity : ComponentActivity() {
                         return@thread
                     }
 
-                runOnUiThread { hotaStatusMessage = "Copying HotA.lod..." }
-                val outputFile = filesDir.resolve(AssetPaths.HOTA_LOD_FILE)
+                runOnUiThread { hotaStatusMessage = "Copying installer..." }
                 inputStream.use { input ->
-                    outputFile.outputStream().use { output -> input.copyTo(output) }
+                    installerCache.outputStream().use { output -> input.copyTo(output) }
+                }
+
+                runOnUiThread { hotaStatusMessage = "Extracting HotA.lod..." }
+                com.homm3.livewallpaper.parser.inno.InnoSetupExtractor.extractHotaLod(
+                    installerCache,
+                    outputFile,
+                ) { written, total ->
+                    val pct = ((written * 100L) / total).toInt()
+                    runOnUiThread { hotaStatusMessage = "Extracting: $pct%" }
                 }
 
                 runOnUiThread { hotaStatusMessage = "Validating HotA.lod..." }
@@ -128,10 +138,13 @@ class AssetSetupActivity : ComponentActivity() {
                     isHotaConverting = false
                 }
             } catch (e: Exception) {
+                outputFile.delete()
                 runOnUiThread {
                     hotaStatusMessage = "Error: ${e.message}"
                     isHotaConverting = false
                 }
+            } finally {
+                installerCache.delete()
             }
         }
     }
