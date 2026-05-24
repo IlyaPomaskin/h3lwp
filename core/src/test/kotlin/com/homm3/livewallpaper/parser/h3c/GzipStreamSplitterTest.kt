@@ -48,4 +48,15 @@ class GzipStreamSplitterTest {
         assertEquals(joined.size, streams[2].compressedEndExclusive)
         assertArrayEquals(c, streams[2].decompressed)
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejects_bytes_that_are_not_gzip() {
+        GzipStreamSplitter.split("not a gzip stream".toByteArray())
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejects_truncated_gzip_trailer() {
+        val gz = gzip("payload".toByteArray())
+        GzipStreamSplitter.split(gz.copyOf(gz.size - 4))  // drop part of the trailer
+    }
 }
