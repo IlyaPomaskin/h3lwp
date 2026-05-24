@@ -100,12 +100,18 @@ class GameAssets : Disposable {
             MapQueue().currentBatch(allMapFiles)
         }
 
-        val maps = filesToLoad.map { storage.load<H3mMap>(it) }
+        val totalStart = System.currentTimeMillis()
+        val maps = filesToLoad.map { fileName ->
+            val t0 = System.currentTimeMillis()
+            val map = storage.load<H3mMap>(fileName)
+            log.info { "  loaded map '$fileName' in ${System.currentTimeMillis() - t0}ms" }
+            map
+        }
 
         // 2. Load sprites for all maps
+        val spritesStart = System.currentTimeMillis()
         loadSpritesForMaps(maps)
-
-        log.info { "Sprite registry built" }
+        log.info { "loadGameAssets: sprites=${System.currentTimeMillis() - spritesStart}ms, total=${System.currentTimeMillis() - totalStart}ms" }
         return LoadResult(maps, filesToLoad)
     }
 
@@ -119,8 +125,16 @@ class GameAssets : Disposable {
         val allMapFiles = getAllMapFiles()
         val newBatch = MapQueue().advanceIfDue(allMapFiles, force) ?: return null
         log.info { "rotateBatchIfDue: new batch = $newBatch (force=$force)" }
-        val maps = newBatch.map { storage.load<H3mMap>(it) }
+        val totalStart = System.currentTimeMillis()
+        val maps = newBatch.map { fileName ->
+            val t0 = System.currentTimeMillis()
+            val map = storage.load<H3mMap>(fileName)
+            log.info { "  loaded map '$fileName' in ${System.currentTimeMillis() - t0}ms" }
+            map
+        }
+        val spritesStart = System.currentTimeMillis()
         loadSpritesForMaps(maps)
+        log.info { "rotateBatchIfDue: sprites=${System.currentTimeMillis() - spritesStart}ms, total=${System.currentTimeMillis() - totalStart}ms" }
         return LoadResult(maps, newBatch)
     }
 
@@ -148,23 +162,30 @@ class GameAssets : Disposable {
 
         val hotaFile = Gdx.files.local(AssetPaths.HOTA_LOD_FILE)
         if (hotaFile.exists()) {
+            val t0 = System.currentTimeMillis()
             val hotaRegions = loader.loadSprites(hotaFile.read(), neededSprites, packer)
             allRegionInfos.addAll(hotaRegions)
             hotaRegions.forEach { loadedDefNames.add(it.packerName.substringBefore("/")) }
+            log.info { "  HotA.lod sprites: ${hotaRegions.size} regions in ${System.currentTimeMillis() - t0}ms" }
         }
 
         val remaining = neededSprites.filterNot { it in loadedDefNames }.toSet()
         val lodFile = Gdx.files.local(AssetPaths.LOD_FILE)
         if (lodFile.exists()) {
-            allRegionInfos.addAll(loader.loadSprites(lodFile.read(), remaining, packer))
+            val t0 = System.currentTimeMillis()
+            val h3Regions = loader.loadSprites(lodFile.read(), remaining, packer)
+            allRegionInfos.addAll(h3Regions)
+            log.info { "  H3sprite.lod sprites: ${h3Regions.size} regions in ${System.currentTimeMillis() - t0}ms" }
         }
 
+        val tReg = System.currentTimeMillis()
         if (reg != null) {
             reg.addFromPacker(packer, allRegionInfos)
         } else {
             registry = SpriteRegistry.fromPacker(packer, allRegionInfos)
         }
         packer.dispose()
+        log.info { "  registry build: ${allRegionInfos.size} regions in ${System.currentTimeMillis() - tReg}ms" }
     }
 
     fun getTerrainFrames(defName: String, index: Int): Array<TextureAtlas.AtlasRegion> {
