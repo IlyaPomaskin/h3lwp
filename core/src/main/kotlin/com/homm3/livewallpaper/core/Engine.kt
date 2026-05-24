@@ -49,6 +49,7 @@ open class Engine(
         addScreen(LoadingScreen(gameAssets))
         addScreen(AssetSetupScreen(gameAssets, onSettingsButtonClick, onHotaButtonClick, onConversionDone = ::loadAndStart))
         addScreen(GameScreen(
+            assets = gameAssets,
             camera = camera,
             prefs = prefs,
             onSwitchThresholdReached = { rotateBatchIfDue(force = true) },

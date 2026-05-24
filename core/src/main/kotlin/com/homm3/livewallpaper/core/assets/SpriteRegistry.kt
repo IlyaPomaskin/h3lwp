@@ -13,6 +13,11 @@ class SpriteRegistry : Disposable {
     private val regions = mutableMapOf<String, Array<AtlasRegion>>()
     private val textures = mutableListOf<Texture>()
     private val loadedDefNames = mutableSetOf<String>()
+    private val colorToAlpha = mutableMapOf<Texture, Texture>()
+    private val alphaTextures = mutableListOf<Texture>()
+
+    /** Returns companion alpha texture for color, or null if none registered (legacy path). */
+    fun companionFor(color: Texture): Texture? = colorToAlpha[color]
 
     fun getTerrainFrames(defName: String, index: Int): Array<AtlasRegion> {
         val key = "$defName/$index"
@@ -117,7 +122,10 @@ class SpriteRegistry : Disposable {
 
     override fun dispose() {
         textures.forEach { it.dispose() }
+        alphaTextures.forEach { it.dispose() }
         textures.clear()
+        alphaTextures.clear()
+        colorToAlpha.clear()
         regions.clear()
     }
 

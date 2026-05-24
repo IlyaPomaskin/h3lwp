@@ -238,6 +238,8 @@ class GameAssets : Disposable {
         return reg.findRegions(name)
     }
 
+    fun companionFor(color: Texture): Texture? = registry?.companionFor(color)
+
     override fun dispose() {
         if (::skin.isInitialized) skin.dispose()
         if (lazyEmptyTexture.isInitialized()) emptyTexture.dispose()

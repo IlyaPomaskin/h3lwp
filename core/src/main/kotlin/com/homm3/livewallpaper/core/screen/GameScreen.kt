@@ -1,18 +1,18 @@
 package com.homm3.livewallpaper.core.screen
 
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.tiled.TiledMap
-import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.homm3.livewallpaper.core.GameConfig
 import com.homm3.livewallpaper.core.MapUpdateInterval
 import com.homm3.livewallpaper.core.Scale
 import com.homm3.livewallpaper.core.WallpaperPreferences
+import com.homm3.livewallpaper.core.assets.GameAssets
 import com.homm3.livewallpaper.core.input.CameraInputProcessor
 import com.homm3.livewallpaper.core.map.GameMap
-import com.homm3.livewallpaper.core.map.layers.ObjectsLayer
 import com.homm3.livewallpaper.core.render.BrightnessOverlay
+import com.homm3.livewallpaper.core.render.Etc1SpriteBatch
+import com.homm3.livewallpaper.core.render.Etc1TiledMapRenderer
 import com.homm3.livewallpaper.core.render.MapCamera
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
@@ -25,20 +25,18 @@ import kotlin.math.min
 import kotlin.random.Random
 
 class GameScreen(
+    private val assets: GameAssets,
     private val camera: MapCamera,
     private val prefs: Flow<WallpaperPreferences>,
     private val onSwitchThresholdReached: () -> Unit = {},
 ) : KtxScreen {
 
     private val viewport = ScreenViewport(camera)
-    private val tiledMap = TiledMap()
-    private val renderer = object : OrthogonalTiledMapRenderer(tiledMap) {
-        override fun renderObjects(layer: MapLayer?) {
-            if (layer is ObjectsLayer) {
-                layer.render(this)
-            }
-        }
+    private val spriteBatch = Etc1SpriteBatch(size = 1000) {
+        { tex -> assets.companionFor(tex) }
     }
+    private val tiledMap = TiledMap()
+    private val renderer = Etc1TiledMapRenderer(tiledMap, spriteBatch)
     private val inputProcessor = CameraInputProcessor(viewport).apply {
         onEnter = { randomizeVisibleMapPart(force = true) }
     }
@@ -106,6 +104,7 @@ class GameScreen(
     override fun dispose() {
         prefsJob?.cancel()
         renderer.dispose()
+        spriteBatch.dispose()
         brightnessOverlay.dispose()
     }
 

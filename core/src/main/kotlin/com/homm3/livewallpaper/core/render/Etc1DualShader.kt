@@ -26,10 +26,11 @@ object Etc1DualShader {
         varying vec2 v_texCoords;
         uniform sampler2D u_texture;
         uniform sampler2D u_alpha;
+        uniform float u_useDualSample;
         void main() {
-            vec3 rgb = texture2D(u_texture, v_texCoords).rgb;
-            float a   = texture2D(u_alpha,   v_texCoords).r;
-            gl_FragColor = v_color * vec4(rgb, a);
+            vec4 rgba = texture2D(u_texture, v_texCoords);
+            float a = mix(rgba.a, texture2D(u_alpha, v_texCoords).r, u_useDualSample);
+            gl_FragColor = v_color * vec4(rgba.rgb, a);
         }
     """
 
@@ -38,5 +39,12 @@ object Etc1DualShader {
         val program = ShaderProgram(VERT, FRAG)
         check(program.isCompiled) { "Etc1DualShader compile failed: ${program.log}" }
         return program
+    }
+
+    fun setUseDualSample(program: ShaderProgram, on: Boolean) {
+        program.bind()
+        program.setUniformf("u_useDualSample", if (on) 1f else 0f)
+        program.setUniformi("u_texture", 0)
+        program.setUniformi("u_alpha", 1)
     }
 }
