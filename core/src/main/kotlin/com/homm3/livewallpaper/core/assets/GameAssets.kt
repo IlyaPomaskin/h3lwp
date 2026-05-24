@@ -18,6 +18,8 @@ import com.homm3.livewallpaper.parser.h3m.H3mVersion
 import ktx.assets.async.AssetStorage
 import ktx.collections.gdxArrayOf
 import ktx.log.logger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class GameAssets : Disposable {
     private val storage = AssetStorage(fileResolver = LocalFileHandleResolver()).also {
@@ -142,7 +144,19 @@ class GameAssets : Disposable {
         return storage.load(fileName)
     }
 
-    fun loadSpritesForMaps(maps: List<H3mMap>) {
+    /** CPU phase result: a packer with all pixmaps drawn and the region descriptors.
+     *  Safe to compute off the render thread — no GL calls happen here. */
+    private data class SpriteBundle(val packer: PixmapPacker, val regionInfos: List<RegionInfo>)
+
+    /** Two-phase sprite load:
+     *  1. **CPU phase** (off-thread via `Dispatchers.IO`): read lods, parse DEF/PCX,
+     *     create `Pixmap`s, pack them into `PixmapPacker` pages.
+     *  2. **GL phase** (caller's context — must be the render thread): upload packer
+     *     pages to `Texture`s, register `AtlasRegion`s, dispose packer.
+     *
+     *  Frees the render thread during the heavy CPU work so the previous batch keeps
+     *  rendering smoothly until the new atlas is ready. */
+    suspend fun loadSpritesForMaps(maps: List<H3mMap>) {
         val reg = registry
         val allNeeded = SpriteCollector(isHotaAvailable()).collectNeededSprites(maps)
         // Filter out sprites already loaded
@@ -155,6 +169,23 @@ class GameAssets : Disposable {
         if (neededSprites.isEmpty()) return
         log.info { "Loading ${neededSprites.size} new sprites" }
 
+        val bundle = withContext(Dispatchers.IO) {
+            buildSpriteBundle(neededSprites)
+        }
+
+        val tReg = System.currentTimeMillis()
+        val r = registry
+        if (r != null) {
+            r.addFromPacker(bundle.packer, bundle.regionInfos)
+        } else {
+            registry = SpriteRegistry.fromPacker(bundle.packer, bundle.regionInfos)
+        }
+        bundle.packer.dispose()
+        log.info { "  registry build (GL): ${bundle.regionInfos.size} regions in ${System.currentTimeMillis() - tReg}ms" }
+    }
+
+    /** CPU-only sprite parsing + packing. No GL calls — safe on any thread. */
+    private fun buildSpriteBundle(neededSprites: Set<String>): SpriteBundle {
         val packer = PixmapPacker(2048, 2048, Pixmap.Format.RGBA4444, 2, true)
         val loader = LodSpriteLoader()
         val allRegionInfos = mutableListOf<RegionInfo>()
@@ -166,7 +197,7 @@ class GameAssets : Disposable {
             val hotaRegions = loader.loadSprites(hotaFile.read(), neededSprites, packer)
             allRegionInfos.addAll(hotaRegions)
             hotaRegions.forEach { loadedDefNames.add(it.packerName.substringBefore("/")) }
-            log.info { "  HotA.lod sprites: ${hotaRegions.size} regions in ${System.currentTimeMillis() - t0}ms" }
+            log.info { "  HotA.lod sprites (CPU): ${hotaRegions.size} regions in ${System.currentTimeMillis() - t0}ms" }
         }
 
         val remaining = neededSprites.filterNot { it in loadedDefNames }.toSet()
@@ -175,17 +206,10 @@ class GameAssets : Disposable {
             val t0 = System.currentTimeMillis()
             val h3Regions = loader.loadSprites(lodFile.read(), remaining, packer)
             allRegionInfos.addAll(h3Regions)
-            log.info { "  H3sprite.lod sprites: ${h3Regions.size} regions in ${System.currentTimeMillis() - t0}ms" }
+            log.info { "  H3sprite.lod sprites (CPU): ${h3Regions.size} regions in ${System.currentTimeMillis() - t0}ms" }
         }
 
-        val tReg = System.currentTimeMillis()
-        if (reg != null) {
-            reg.addFromPacker(packer, allRegionInfos)
-        } else {
-            registry = SpriteRegistry.fromPacker(packer, allRegionInfos)
-        }
-        packer.dispose()
-        log.info { "  registry build: ${allRegionInfos.size} regions in ${System.currentTimeMillis() - tReg}ms" }
+        return SpriteBundle(packer, allRegionInfos)
     }
 
     fun getTerrainFrames(defName: String, index: Int): Array<TextureAtlas.AtlasRegion> {
