@@ -217,7 +217,7 @@ class GameScreen(
     companion object {
         private val log = logger<GameScreen>()
         private const val MIN_OBJECT_COVERAGE = 0.8f
-        private const val MAX_REROLLS = 10
+        private const val MAX_REROLLS = 20
     }
 
     private fun showMapAtIndex(index: Int) {
