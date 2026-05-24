@@ -22,6 +22,7 @@ import ktx.async.KtxAsync
 import ktx.log.logger
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.random.Random
 
 class GameScreen(
     private val camera: MapCamera,
@@ -157,7 +158,10 @@ class GameScreen(
         if (maps.isEmpty()) return
 
         if (maps.size > 1) {
-            currentMapIndex = (currentMapIndex + 1) % maps.size
+            // Pick a random map other than the current one — avoids cycling in a
+            // predictable order and avoids landing on the same map twice in a row.
+            val next = Random.nextInt(maps.size - 1)
+            currentMapIndex = if (next < currentMapIndex) next else next + 1
         }
 
         if (tryRerollAtIndex(currentMapIndex, maps)) return
