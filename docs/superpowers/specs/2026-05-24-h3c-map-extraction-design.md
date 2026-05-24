@@ -1,12 +1,20 @@
 # H3C Campaign Map Extraction — Design
 
-**Goal:** Add a parser that extracts individual `.h3m` maps from a Heroes 3 `.h3c` campaign file. Output is gzipped `.h3m` files compatible with the existing `H3mReader` and with HoMM3 itself.
+**Goal:** During asset setup, automatically extract every `.h3m` map from every `.h3c` campaign found in the user-provided archives, and drop the maps into the live wallpaper's `user-maps/` directory so they appear in the rotation alongside bundled maps.
+
+**Trigger points in the existing setup flow:**
+
+1. **H3sprite.lod picker** (`AssetSetupActivity.filePickerLauncher`) — after `LodValidator.validate(...)` passes, scan the LOD for `.h3c` entries and extract their maps. (Standard H3sprite.lod has none, but the picker accepts arbitrary classic LODs, so a campaign-bearing LOD like the original `H3ab.lod` would yield maps here.)
+2. **HotA installer picker** (`AssetSetupActivity.hotaFilePickerLauncher`) — after `InnoSetupExtractor` finishes, also extract `HotA_lng.lod` from the same installer (it sits next to `data\HotA.lod` in the installer payload), then scan it for `.h3c` entries.
+3. **HotA_lng.lod itself** — same scan as step 1/2: list `.h3c` entries, extract each, and run `H3cExtractor` on each.
+
+The 11 h3c files we have in `data/h3c/` are all sourced from `HotA_lng.lod` (confirmed via `tools/find_h3_maps.py data/HotA_lng.lod`).
 
 **Scope:** All campaign versions present in `data/h3c/` — RoE, AB, SoD, Chronicles (`Chr`), HotA. WoG is in the version enum for completeness but is not represented in the sample corpus.
 
 ---
 
-## Format
+## H3C Format
 
 An `.h3c` file is **N + 1 concatenated gzip streams**:
 
@@ -57,7 +65,11 @@ We only consume `mapName`; everything else is skipped just enough to reach the n
 
 ## Architecture
 
-New package `core/src/main/kotlin/com/homm3/livewallpaper/parser/h3c/`. Same conventions as `parser.inno` and `parser.lod`: one public symbol, the rest `internal`.
+Two new packages, both inside `core`:
+
+### `core/src/main/kotlin/com/homm3/livewallpaper/parser/h3c/`
+
+The h3c parser. One public symbol; rest `internal`. Same conventions as `parser.inno` and `parser.lod`.
 
 | File | Responsibility |
 |---|---|
@@ -75,41 +87,106 @@ object H3cExtractor {
 
     /** Returns extracted maps in scenario order. `name` is the scenario's mapName
      *  (suffixed with .h3m if absent), or "map_<index>.h3m" if header parsing fails. */
+    fun extract(input: ByteArray): List<ExtractedMap>
     fun extract(input: File): List<ExtractedMap>
-
-    /** Writes each extracted map to `outputDir`, returning the resulting files in order.
-     *  If `outputDir` is null, defaults to `assets/user-maps/` relative to the project root. */
-    fun extractToDirectory(input: File, outputDir: File? = null): List<File>
 }
 ```
 
-### Data flow
+`extract` takes an in-memory `ByteArray` because the input often comes from a LOD entry that's already been decompressed into memory. The `File` overload is for direct file input (e.g., the `data/h3c/*.h3c` test corpus).
+
+### `core/src/main/kotlin/com/homm3/livewallpaper/core/assets/CampaignMapInstaller.kt`
+
+Glue between `LodReader`, `H3cExtractor`, and the filesystem. This is where the wallpaper-specific policy lives (output directory, overwrite behavior, progress reporting).
+
+```kotlin
+object CampaignMapInstaller {
+    data class Result(
+        val campaignsFound: Int,
+        val mapsWritten: Int,
+        val skipped: List<String>,   // h3c names that failed to parse
+    )
+
+    /** Scans the given LOD for .h3c entries, extracts each, and writes every map
+     *  to [outputDir]. Existing files with the same name are left untouched. */
+    fun installFromLod(
+        lod: File,
+        outputDir: File,
+        onProgress: ((current: Int, total: Int, message: String) -> Unit)? = null,
+    ): Result
+}
+```
+
+### `InnoSetupExtractor` change
+
+Generalize the existing single-target extraction into a multi-target call. The current public API stays as a thin wrapper for back-compat; a new variant extracts multiple destinations in one pass over the installer:
+
+```kotlin
+object InnoSetupExtractor {
+    data class Target(val destinationSuffix: String, val output: File)
+
+    fun extract(installer: File, targets: List<Target>, onProgress: ...): List<File>
+
+    // Existing call delegated to extract(...) with a single Target.
+    fun extractHotaLod(installer: File, output: File, onProgress: ...)
+}
+```
+
+The HotA installer picker then requests two targets in one call: `data\hota.lod` and `data\HotA_lng.lod`.
+
+---
+
+## Pipeline wiring (AssetSetupActivity)
 
 ```
-.h3c file
+H3sprite.lod picker:
+  copy LOD to filesDir
+  LodValidator.validate          ──── if error: delete + bail ────┐
+  CampaignMapInstaller.installFromLod(lod, userMapsDir)            │
+  copyBundledMaps()                                                ▼
+  startActivity(SettingsActivity)                              fail UI
+
+HotA installer picker:
+  copy installer to cacheDir
+  InnoSetupExtractor.extract(installer, [HotA.lod target, HotA_lng.lod target])
+  LodValidator.validate(HotA.lod)  ──── if error: delete + bail ──┐
+  CampaignMapInstaller.installFromLod(HotA_lng.lod, userMapsDir)   │
+  delete HotA_lng.lod (not needed at runtime, only for h3c)        ▼
+                                                                fail UI
+```
+
+`HotA_lng.lod` is a transient artifact: we extract it from the installer only to mine its `.h3c` entries, then delete it. It doesn't need to live in `filesDir` long-term.
+
+Progress callbacks bubble up via the existing `hotaStatusMessage` / `statusMessage` state.
+
+### Data flow inside `CampaignMapInstaller`
+
+```
+.lod file
    │
+   ▼  LodReader.read()
+LodArchive ── filter entries by .h3c suffix ──► List<LodEntry>
+   │
+   ▼  for each entry:
+   │     LodReader.readFileContent(entry) ──► ByteArrayInputStream
+   │     ByteArray ─► H3cExtractor.extract ──► List<ExtractedMap>
+   │     for each ExtractedMap:
+   │       write outputDir/<sanitized name>.h3m  (skip if exists)
    ▼
-GzipStreamSplitter ── yields ──► [Stream 0, Stream 1, ..., Stream N]
-   │                                  │            └──────┬──────┘
-   │                                  ▼                   ▼
-   │                       CampaignHeaderReader    (raw bytes — already gzipped h3m)
-   │                                  │                   │
-   │                                  ▼                   │
-   │                          List<String> names ─────────┤
-   │                                                       ▼
-   └─────────────────────────────────────────────► List<ExtractedMap>
+Result(campaignsFound, mapsWritten, skipped)
 ```
 
 ### Error handling
 
-- **Not a gzip stream at offset 0** → throw `IllegalArgumentException("Not an h3c file")`.
-- **Stream 0 parse fails partway** → log a warning, fall back to numeric names (`map_0.h3m`...`map_N.h3m`). All map streams still extracted.
-- **Scenario count from region table doesn't match stream count** → trust stream count (we have ground truth from gzip boundaries), log mismatch.
-- **A stream 1..N decompresses to bytes whose first u32 isn't a known `H3mVersion`** → still write it, log a warning. (Keeps extraction lossless even if the embedded map uses a version we don't model yet.)
+- **LOD with no `.h3c` entries** → `Result(campaignsFound = 0, ...)`. Not an error; setup proceeds.
+- **`H3cExtractor` throws on one entry** → catch, append entry name to `skipped`, continue with next entry. One bad campaign doesn't fail the whole install.
+- **`HotA_lng.lod` not found in installer** → log + skip the lng pass. We still extract `HotA.lod` (the critical one), so setup succeeds.
+- **Filename collision in `user-maps/`** → existing file wins (no overwrite). Rationale: user may have edited bundled maps; we don't want to clobber.
+- **Not a gzip stream at offset 0 of an h3c** → `H3cExtractor` throws `IllegalArgumentException("Not an h3c file")`; caller catches and records in `skipped`.
+- **Stream 0 parse fails partway** → fall back to numeric names (`<campaignFileStem>_0.h3m`...). All map streams still extracted.
 
 ### Filename sanitization
 
-`mapName` can contain characters illegal on some filesystems (`:`, `/`, `\`, `?`, etc.). Replace each with `_`. Append `.h3m` if not present. Collisions resolved by appending `_<index>`.
+`mapName` can contain characters illegal on some filesystems (`:`, `/`, `\`, `?`, etc.). Replace each with `_`. Append `.h3m` if not present. Collisions inside one campaign resolved by appending `_<index>`.
 
 ---
 
@@ -124,13 +201,26 @@ GzipStreamSplitter ── yields ──► [Stream 0, Stream 1, ..., Stream N]
   - Each `ExtractedMap.bytes` decompresses to a stream whose first u32 is in `{0x0e, 0x15, 0x1c, 0x20}`.
   - Each `bytes` parses end-to-end via `H3mReader(bytes.inputStream()).read()` without throwing.
 
-The sample corpus (`data/h3c/*.h3c`) is the golden test set. No new fixtures needed.
+`core/src/test/kotlin/.../assets/`:
+
+- **`CampaignMapInstallerTest`** — point at `data/HotA_lng.lod` (gated with `@Assume` if the file is missing for CI builds without the corpus), run `installFromLod` to a temp dir, assert:
+  - `Result.campaignsFound == 11`
+  - `Result.mapsWritten == <expected sum across the 11 campaigns>` (hard-coded table)
+  - Every output file parses through `H3mReader`
+  - Re-running the installer is a no-op (idempotent: no overwrite, same `mapsWritten` count is now 0)
+
+`core/src/test/kotlin/.../inno/`:
+
+- **`InnoSetupExtractorMultiTargetTest`** — extend the existing 1.8.0 golden test to also request `HotA_lng.lod` in the same call; assert both outputs match goldens (or that `HotA_lng.lod` is non-empty and contains the expected 11 h3c entry names via `LodReader`).
+
+The sample corpus (`data/h3c/*.h3c` and `data/HotA_lng.lod` and `data/HotA_1.8.0_setup.exe`) is the golden test set. No new binary fixtures needed.
 
 ---
 
 ## Out of scope
 
 - Parsing campaign progression / travel options semantically (only the bytes are skipped, not interpreted).
-- UI integration — this is a pure parser, mirroring `InnoSetupExtractor`. Wiring into the wallpaper picker is a separate task.
 - Repacking maps back into an `.h3c`.
 - WoG-specific edge cases beyond reusing the SoD layout (not in sample corpus).
+- Showing the user a list of campaigns to selectively extract — all maps go into `user-maps/`.
+- Cleanup of previously installed maps when the user re-runs setup with a different LOD.
