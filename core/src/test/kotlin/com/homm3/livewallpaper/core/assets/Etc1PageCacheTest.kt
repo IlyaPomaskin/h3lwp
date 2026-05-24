@@ -35,7 +35,7 @@ class Etc1PageCacheTest {
         val bundle = Etc1Bundle(
             pages = listOf(page),
             regionInfos = listOf(RegionInfo("foo/0", "foo", 0, 32, 32, 32, 32, 0, 0, false)),
-            pageOfPackerName = mapOf("foo/0" to 0),
+            packerRects = mapOf("foo/0" to PackedRect(0, 0, 0, 32, 32)),
         )
 
         val cache = Etc1PageCache(dir = "cache/atlas-test")
@@ -47,6 +47,6 @@ class Etc1PageCacheTest {
         assertEquals(1, read!!.pages.size)
         assertEquals(page.color.compressedData.capacity(), read.pages[0].color.compressedData.capacity())
         assertEquals(bundle.regionInfos, read.regionInfos)
-        assertEquals(bundle.pageOfPackerName, read.pageOfPackerName)
+        assertEquals(bundle.packerRects, read.packerRects)
     }
 }

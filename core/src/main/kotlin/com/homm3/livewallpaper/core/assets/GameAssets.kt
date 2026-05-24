@@ -144,49 +144,24 @@ class GameAssets : Disposable {
         return storage.load(fileName)
     }
 
-    /** CPU phase result: a packer with all pixmaps drawn and the region descriptors.
-     *  Safe to compute off the render thread — no GL calls happen here. */
-    private data class SpriteBundle(val packer: PixmapPacker, val regionInfos: List<RegionInfo>)
-
-    /** Two-phase sprite load:
-     *  1. **CPU phase** (off-thread via `Dispatchers.IO`): read lods, parse DEF/PCX,
-     *     create `Pixmap`s, pack them into `PixmapPacker` pages.
-     *  2. **GL phase** (caller's context — must be the render thread): upload packer
-     *     pages to `Texture`s, register `AtlasRegion`s, dispose packer.
-     *
-     *  Frees the render thread during the heavy CPU work so the previous batch keeps
-     *  rendering smoothly until the new atlas is ready. */
+    /** Two-phase sprite load: CPU encodes RGBA4444 packer pages to ETC1; GL uploads. */
     suspend fun loadSpritesForMaps(maps: List<H3mMap>) {
         val reg = registry
         val allNeeded = SpriteCollector(isHotaAvailable()).collectNeededSprites(maps)
-        // Filter out sprites already loaded
-        val neededSprites = if (reg != null) {
-            allNeeded.filterNot { reg.isDefLoaded(it) }.toSet()
-        } else {
-            allNeeded
-        }
-
+        val neededSprites = if (reg != null) allNeeded.filterNot { reg.isDefLoaded(it) }.toSet() else allNeeded
         if (neededSprites.isEmpty()) return
         log.info { "Loading ${neededSprites.size} new sprites" }
 
-        val bundle = withContext(Dispatchers.IO) {
-            buildSpriteBundle(neededSprites)
-        }
+        val bundle = withContext(Dispatchers.IO) { buildEtc1Bundle(neededSprites) }
 
         val tReg = System.currentTimeMillis()
         val r = registry
-        if (r != null) {
-            r.addFromPacker(bundle.packer, bundle.regionInfos)
-        } else {
-            registry = SpriteRegistry.fromPacker(bundle.packer, bundle.regionInfos)
-        }
-        bundle.packer.dispose()
+        if (r != null) r.addFromEtc1(bundle) else registry = SpriteRegistry.fromEtc1(bundle)
         log.info { "  registry build (GL): ${bundle.regionInfos.size} regions in ${System.currentTimeMillis() - tReg}ms" }
     }
 
-    /** CPU-only sprite parsing + packing. No GL calls — safe on any thread. */
-    private fun buildSpriteBundle(neededSprites: Set<String>): SpriteBundle {
-        val packer = PixmapPacker(2048, 2048, Pixmap.Format.RGBA4444, 2, true)
+    private fun buildEtc1Bundle(neededSprites: Set<String>): Etc1Bundle {
+        val packer = PixmapPacker(2048, 2048, Pixmap.Format.RGBA4444, 4, true)
         val loader = LodSpriteLoader()
         val allRegionInfos = mutableListOf<RegionInfo>()
         val loadedDefNames = mutableSetOf<String>()
@@ -199,7 +174,6 @@ class GameAssets : Disposable {
             hotaRegions.forEach { loadedDefNames.add(it.packerName.substringBefore("/")) }
             log.info { "  HotA.lod sprites (CPU): ${hotaRegions.size} regions in ${System.currentTimeMillis() - t0}ms" }
         }
-
         val remaining = neededSprites.filterNot { it in loadedDefNames }.toSet()
         val lodFile = Gdx.files.local(AssetPaths.LOD_FILE)
         if (lodFile.exists()) {
@@ -209,7 +183,20 @@ class GameAssets : Disposable {
             log.info { "  H3sprite.lod sprites (CPU): ${h3Regions.size} regions in ${System.currentTimeMillis() - t0}ms" }
         }
 
-        return SpriteBundle(packer, allRegionInfos)
+        val packerRects = mutableMapOf<String, PackedRect>()
+        packer.pages.forEachIndexed { i, page ->
+            page.rects.forEach { entry ->
+                val rect = entry.value
+                packerRects[entry.key] = PackedRect(i, rect.x.toInt(), rect.y.toInt(), rect.width.toInt(), rect.height.toInt())
+            }
+        }
+
+        val tEnc = System.currentTimeMillis()
+        val pages = Etc1AtlasEncoder().encodePages(packer)
+        log.info { "  ETC1 encode (CPU): ${pages.size} pages in ${System.currentTimeMillis() - tEnc}ms" }
+        packer.dispose()
+
+        return Etc1Bundle(pages, allRegionInfos, packerRects)
     }
 
     fun getTerrainFrames(defName: String, index: Int): Array<TextureAtlas.AtlasRegion> {

@@ -12,7 +12,7 @@ class Etc1PageCache(private val dir: String = "cache/atlas") {
     data class Manifest(
         val pageCount: Int,
         val regionInfos: List<RegionInfo>,
-        val pageOfPackerName: Map<String, Int>,
+        val packerRects: Map<String, PackedRect>,
     )
 
     fun cacheKey(neededSprites: Set<String>, lodFingerprint: String): String {
@@ -36,7 +36,7 @@ class Etc1PageCache(private val dir: String = "cache/atlas") {
             Etc1PageData(color, alpha)
         }
         log.info { "Etc1PageCache hit: key=$key pages=${pages.size}" }
-        return Etc1Bundle(pages, manifest.regionInfos, manifest.pageOfPackerName)
+        return Etc1Bundle(pages, manifest.regionInfos, manifest.packerRects)
     }
 
     fun write(key: String, bundle: Etc1Bundle) {
@@ -46,7 +46,7 @@ class Etc1PageCache(private val dir: String = "cache/atlas") {
             root.child("page_$i.color.pkm").writeBytes(writePkm(page.color), false)
             root.child("page_$i.alpha.pkm").writeBytes(writePkm(page.alpha), false)
         }
-        val manifest = Manifest(bundle.pages.size, bundle.regionInfos, bundle.pageOfPackerName)
+        val manifest = Manifest(bundle.pages.size, bundle.regionInfos, bundle.packerRects)
         root.child("manifest.json").writeString(Json().toJson(manifest), false)
         log.info { "Etc1PageCache wrote: key=$key pages=${bundle.pages.size}" }
     }
