@@ -27,7 +27,11 @@ class Hota18SpriteLoader(private val base: LodSpriteLoader) {
         packer: PixmapPacker,
         onProgress: (String) -> Unit
     ): List<RegionInfo> {
-        val neededLower = neededNames.map { it.lowercase(Locale.ROOT) }.toSet()
+        // Always pull both Factory terrains, even if no map in the current batch
+        // references them. Cost is ~250KB of atlas; in exchange we don't depend
+        // on which maps are in the batch to load them in the right order.
+        val neededLower = (neededNames + setOf("highlnd.def", "wastlnd.def"))
+            .map { it.lowercase(Locale.ROOT) }.toSet()
         val sortedEntries = archive.files.sortedBy { it.offset }
 
         // Build original-index map for terrain PCX grouping
@@ -163,11 +167,12 @@ class Hota18SpriteLoader(private val base: LodSpriteLoader) {
 
         log.info("HotA 1.8 terrain PCX: ${pcxTiles.size} tiles in ${runs.size} runs (sizes: ${runs.map { it.size }})")
 
-        // Assign runs to terrain types alphabetically: highland before wasteland
-        val terrainNames = listOf("highlnd.def", "wastlnd.def").filter { it in neededNames }
+        // Runs come back in LOD index order: highland first, wasteland second.
+        // Always load both — neededNames upstream already injects them.
+        val allTerrainNames = listOf("highlnd.def", "wastlnd.def")
         val allRegionInfos = mutableListOf<RegionInfo>()
 
-        for ((i, terrainName) in terrainNames.withIndex()) {
+        for ((i, terrainName) in allTerrainNames.withIndex()) {
             if (i >= runs.size) break
             log.info("HotA 1.8: loading ${runs[i].size} PCX tiles as $terrainName")
             allRegionInfos.addAll(loadTerrainPcxTiles(runs[i], terrainName, packer))
