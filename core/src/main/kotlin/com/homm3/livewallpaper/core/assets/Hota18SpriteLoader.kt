@@ -243,25 +243,29 @@ class Hota18SpriteLoader(private val base: LodSpriteLoader) {
 
         for ((gi, group) in def.groups.withIndex()) {
             for (frame in group.frames) {
-                // Resolve which def name this frame belongs to
-                val resolvedDefName = if (hasMultipleNames) {
+                // Resolve which def name(s) this frame belongs to. One frame
+                // may pack under several names when a sprite is aliased to
+                // additional needed defs (e.g. avxboat5 → also avxboat6).
+                val resolvedNames: List<String> = if (hasMultipleNames) {
                     val cleaned = cleanFrameName(frame.frameName)
                     if (cleaned.name.isNotEmpty()) {
-                        findMatchingDefName(cleaned.name.lowercase(Locale.ROOT), neededNames, cleaned.wasPrefixed)
-                            ?: primaryDefName
+                        val matches = findMatchingDefNames(cleaned.name.lowercase(Locale.ROOT), neededNames, cleaned.wasPrefixed)
+                        if (matches.isNotEmpty()) matches else listOf(primaryDefName)
                     } else {
-                        primaryDefName
+                        listOf(primaryDefName)
                     }
                 } else {
-                    primaryDefName
+                    listOf(primaryDefName)
                 }
 
-                val frameKey = resolvedDefName + frame.frameName
-                if (frameKey in seenFrames) continue
-                seenFrames.add(frameKey)
-                regionInfos.addAll(
-                    base.packObjectFrame(frame, resolvedDefName, palette, alpha, group.filenames, packer)
-                )
+                for (resolvedDefName in resolvedNames) {
+                    val frameKey = resolvedDefName + frame.frameName
+                    if (frameKey in seenFrames) continue
+                    seenFrames.add(frameKey)
+                    regionInfos.addAll(
+                        base.packObjectFrame(frame, resolvedDefName, palette, alpha, group.filenames, packer)
+                    )
+                }
             }
         }
         return regionInfos
@@ -344,8 +348,7 @@ class Hota18SpriteLoader(private val base: LodSpriteLoader) {
         for (frameName in frameNames) {
             val cleaned = cleanFrameName(frameName)
             if (cleaned.name.isEmpty()) continue
-            val match = findMatchingDefName(cleaned.name.lowercase(Locale.ROOT), neededNames, cleaned.wasPrefixed)
-            if (match != null) matched.add(match)
+            matched.addAll(findMatchingDefNames(cleaned.name.lowercase(Locale.ROOT), neededNames, cleaned.wasPrefixed))
         }
 
         if (matched.isNotEmpty()) return matched.toList()
@@ -369,33 +372,36 @@ class Hota18SpriteLoader(private val base: LodSpriteLoader) {
 
     /**
      * Try to match a cleaned frame base name against needed DEF names.
-     * Uses alias lookup, direct match, prefix prepending, and AWL→AVL swap.
+     * Returns all matches — direct match plus every alias whose target is
+     * needed — so one sprite can satisfy multiple def-name requests
+     * (e.g. avxboat5 is reused to fill the avxboat6 slot in 1.8).
      */
-    private fun findMatchingDefName(base: String, neededNames: Set<String>, tryPrefixes: Boolean = false): String? {
-        // Check alias mapping first
-        defAliases[base]?.firstOrNull { it in neededNames }?.let { return it }
+    private fun findMatchingDefNames(base: String, neededNames: Set<String>, tryPrefixes: Boolean = false): List<String> {
+        val results = mutableListOf<String>()
 
         // Direct match
-        if ("$base.def" in neededNames) return "$base.def"
+        val direct = "$base.def"
+        if (direct in neededNames) results.add(direct)
 
-        // Only try prepending prefixes for frames that had "0w_" prefix stripped
+        // Aliases (a single base name may alias to multiple needed defs)
+        defAliases[base]?.forEach { if (it in neededNames && it !in results) results.add(it) }
+
+        if (results.isNotEmpty()) return results
+
+        // Fallbacks — first match wins
         if (tryPrefixes) {
             for (prefix in h3Prefixes) {
-                if ("$prefix$base.def" in neededNames) return "$prefix$base.def"
+                if ("$prefix$base.def" in neededNames) return listOf("$prefix$base.def")
             }
         }
-
-        // AWL→AVL swap
         if (base.startsWith("awl")) {
-            val swapped = "avl${base.substring(3)}"
-            if ("$swapped.def" in neededNames) return "$swapped.def"
+            val swapped = "avl${base.substring(3)}.def"
+            if (swapped in neededNames) return listOf(swapped)
         }
-
-        // PCX terrain prefix mapping
         val pcxMapped = terrainPcxPrefixes[base]
-        if (pcxMapped != null && pcxMapped in neededNames) return pcxMapped
+        if (pcxMapped != null && pcxMapped in neededNames) return listOf(pcxMapped)
 
-        return null
+        return emptyList()
     }
 
     // -- Binary header parsing -------------------------------------------------
@@ -500,18 +506,42 @@ class Hota18SpriteLoader(private val base: LodSpriteLoader) {
     // For HotA 1.8 sprites where frame names don't match the expected def names
     private val defAliases = listOf(
         "4lvlshrn" to "4lvlxshrn.def",
-        "ava0128" to "ava0128w.def",
+        "pnd05" to "ava0128w.def",
+        "avgarma" to "avgarha.def",
         "avgcoatl" to "avwcoat.def",
         "avgjotn0" to "avgjotu.def",
         "avgkbl01" to "avgkobo.def",
         "avgmmth0" to "avgmamm.def",
         "avgshmn0" to "avgsham.def",
+        "garwh" to "avcgarw1.def",
+        "garwv" to "avcvgrw.def",
+        "avlldrt1" to "avllogdrt1.def",
+        "avlwloi" to "avlwloi1.def",
         "avmgosn0" to "avmgosn1.def",
+        "acad" to "avswacad.def",
+        "avwctl00" to "avwccoat.def",
         "avxamsn0" to "avxamsn1.def",
-        "avxl1sh0" to "avxl1sh0w.def",
-        "avxl2sh0" to "avxl2sh0w.def",
-        "avxl3sh0" to "avxl3sh0w.def",
+        "avxboat5" to "avxboat6.def",
+        "1sh0w" to "avxl1sh0w.def",
+        "2sh0w" to "avxl2sh0w.def",
+        "3sh0w" to "avxl3sh0w.def",
         "4sh0w" to "avxl4sh0.def",
+        "amn01" to "avxmaltw.def",
+        "mnr01" to "avxptw_0.def",
+        "mnb_01" to "avxptw_1.def",
+        "mng_01" to "avxptw_2.def",
+        "mny_01" to "avxptw_3.def",
+        "wbor7" to "avxwbor6.def",
+        "gr_bk" to "avxwgtbk.def",
+        "gr_bl" to "avxwgtbl.def",
+        "gr_br" to "avxwgtbr.def",
+        "gr_gr" to "avxwgtgr.def",
+        "gr_lb" to "avxwgtlb.def",
+        "quest" to "avxwgtqu.def",
+        "gr_rd" to "avxwgtrd.def",
+        "gr_vl" to "avxwgtvl.def",
+        "gr_wh" to "avxwgtwh.def",
+        "obs0" to "avxwobs.def",
         "avxmink0" to "avxmn2pink0.def",
         "avxseek" to "avxseek0.def",
         "avgyeti0" to "avgyeti.def",
@@ -519,7 +549,15 @@ class Hota18SpriteLoader(private val base: LodSpriteLoader) {
         "avlklp600" to "avlklp60.def",
         "avlklp700" to "avlklp70.def",
         "avlklp800" to "avlklp80.def",
+        "h4wt1f00" to "h4wt1f.def",
+        "h4wt2f00" to "h4wt2f.def",
+        "h4wt3f00" to "h4wt3f.def",
         "mntswpgl01" to "mntswpgl.def",
+        "roosr_01" to "rooster_01.def",
+        "roosr_02" to "rooster_02.def",
+        "bhld" to "sanct_wt.def",
+        "wball" to "waterball.def",
+        "wt_trn01" to "wt_tvrn01.def",
         "zref1" to "zreef1.def",
         "zref2" to "zreef2.def",
         "zref3" to "zreef3.def",
