@@ -612,10 +612,16 @@ class H3mObjectDataReader(
     }
 
     fun readHeroPlaceholder() {
-        stream.readByte()
+        stream.readByte() // owner
         val heroTypeId = stream.readByte()
         if (heroTypeId == 255) {
-            stream.skip(1)
+            stream.skip(1) // power rank
+        }
+        if (version == H3mVersion.HOTA && hotaSubVersion >= 5) {
+            stream.skip(1) // customizedStartingUnits (bool)
+            stream.skip(7 * (4 + 4)) // 7 stacks: amount(int32) + creatureId(int32)
+            val artifactsToGive = stream.readInt()
+            stream.skip(artifactsToGive * 4) // artifact IDs (int32 each)
         }
     }
 
