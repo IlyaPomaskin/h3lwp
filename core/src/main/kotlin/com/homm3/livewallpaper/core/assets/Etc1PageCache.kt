@@ -2,6 +2,7 @@ package com.homm3.livewallpaper.core.assets
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.glutils.ETC1.ETC1Data
+import com.badlogic.gdx.utils.BufferUtils
 import com.badlogic.gdx.utils.JsonReader
 import com.badlogic.gdx.utils.JsonValue
 import com.badlogic.gdx.utils.JsonWriter
@@ -137,7 +138,7 @@ class Etc1PageCache(private val dir: String = "cache/atlas") {
         require(String(magic) == "E1D ") { "bad ETC1 cache magic" }
         val w = buf.int
         val h = buf.int
-        val payload = ByteBuffer.allocateDirect(raw.size - 12).order(ByteOrder.nativeOrder())
+        val payload = BufferUtils.newUnsafeByteBuffer(raw.size - 12)
         payload.put(raw, 12, raw.size - 12)
         payload.position(0)
         return ETC1Data(w, h, payload, 0)
