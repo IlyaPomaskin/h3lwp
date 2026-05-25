@@ -751,6 +751,7 @@ class H3mReader(stream: InputStream) {
         val objects = mutableListOf<H3mObject>()
         val objectsCount = reader.readInt() - 1
         val objectsReader = H3mObjectDataReader(version, reader, hotaSubVersion)
+        var prevSummary: String? = null
         for (objectIndex in 0..objectsCount) {
             val posBeforeObject = reader.position
             val x = reader.readByte()
@@ -758,7 +759,25 @@ class H3mReader(stream: InputStream) {
             val z = reader.readByte()
             val index = reader.readInt()
             if (index < 0 || index >= defs.size) {
-                log.warning("Invalid def index $index at object $objectIndex/${objectsCount + 1} @ offset $posBeforeObject, stopping object parsing")
+                val dumpBefore = 32L
+                val dumpLen = 64
+                val dumpStart = maxOf(0L, posBeforeObject - dumpBefore)
+                val savedPos = reader.position
+                reader.seek(dumpStart)
+                val dump = reader.readBytes(dumpLen)
+                val hex = dump.joinToString(" ") { "%02x".format(it.toInt() and 0xFF) }
+                val markerPos = (posBeforeObject - dumpStart).toInt().coerceIn(0, dumpLen)
+                val marker = " ".repeat(markerPos * 3) + "^^"
+                log.warning(
+                    "Invalid def index $index (0x${"%08x".format(index)}) at object " +
+                        "$objectIndex/${objectsCount + 1} @ offset $posBeforeObject " +
+                        "(raw bytes: x=$x y=$y z=$z, defsCount=${defs.size}), stopping object parsing.\n" +
+                        "Previous object: ${prevSummary ?: "<none>"}\n" +
+                        "Bytes [@$dumpStart..@${dumpStart + dumpLen}) around failure (marker at offset $posBeforeObject):\n" +
+                        "  $hex\n" +
+                        "  $marker"
+                )
+                reader.seek(savedPos)
                 break
             }
             val def = defs[index]
@@ -853,6 +872,10 @@ class H3mReader(stream: InputStream) {
 //            log.info("  -> parsed as $parsedType, consumed $bytesConsumed bytes")
 
             objects.add(H3mObject(x, y, z, def, objectType))
+            prevSummary = "#$objectIndex ($x,$y,$z) def=$index '${def.spriteName}' " +
+                "type=$objectType subId=${def.objectClassSubId} parsedAs=$parsedType " +
+                "@ offset=$posBeforeObject dataOffset=$posBeforeData dataBytes=$bytesConsumed " +
+                "endOffset=${reader.position}"
         }
 
         return objects
