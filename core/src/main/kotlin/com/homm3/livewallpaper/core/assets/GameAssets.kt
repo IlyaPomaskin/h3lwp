@@ -15,6 +15,7 @@ import com.homm3.livewallpaper.core.assets.indexed.IndexedSpriteLoader
 import com.homm3.livewallpaper.core.assets.indexed.IndexedSpriteRegistry
 import com.homm3.livewallpaper.core.assets.indexed.LodSource
 import com.homm3.livewallpaper.parser.h3m.H3mHeaderReader
+import com.homm3.livewallpaper.parser.lod.FileLodDataSource
 import com.homm3.livewallpaper.parser.h3m.H3mMap
 import com.homm3.livewallpaper.parser.h3m.H3mVersion
 import ktx.assets.async.AssetStorage
@@ -174,7 +175,7 @@ class GameAssets : Disposable {
     ).mapNotNull { (path, archive) ->
         val file = Gdx.files.local(path)
         if (!file.exists()) return@mapNotNull null
-        LodSource(path, open = { file.read() }, aliases = DefAliases.targetsIn(archive))
+        LodSource(path, open = { FileLodDataSource(file.file()) }, aliases = DefAliases.targetsIn(archive))
     }
 
     fun getTerrainFrames(defName: String, index: Int): Array<TextureAtlas.AtlasRegion> {

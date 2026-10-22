@@ -3,20 +3,12 @@ package com.homm3.livewallpaper.parser.lod
 import com.homm3.livewallpaper.parser.BinaryReader
 import org.tukaani.xz.LZMAInputStream
 import java.io.ByteArrayInputStream
+import java.io.Closeable
 import java.io.InputStream
 import java.util.zip.Inflater
 
-class LodReader(stream: InputStream) {
-    private val reader: BinaryReader
-
-    init {
-        // Buffer fully to enable absolute positioning via mark/reset.
-        // Matches Python's f.seek(offset) pattern.
-        val data = stream.readBytes()
-        val bis = ByteArrayInputStream(data)
-        bis.mark(data.size)
-        reader = BinaryReader(bis)
-    }
+class LodReader(private val source: LodDataSource) : Closeable {
+    constructor(stream: InputStream) : this(ByteArrayLodDataSource(stream.readBytes()))
 
     private val magicHeader = byteArrayOf(
         0x4c.toByte(), 0x4f.toByte(), 0x44.toByte(), 0x00.toByte(),
@@ -24,34 +16,35 @@ class LodReader(stream: InputStream) {
     )
 
     fun read(): LodArchive {
-        val magic = reader.readBytes(8)
+        val header = BinaryReader(source.read(0, ENTRIES_OFFSET.toInt()).inputStream())
+        val magic = header.readBytes(magicHeader.size)
         if (!magic.contentEquals(magicHeader)) {
             throw IllegalArgumentException("Wrong file selected: invalid LOD magic header")
         }
-        val filesCount = reader.readInt()
-        val key = reader.readInt()
+        val filesCount = header.readInt()
+        val key = header.readInt()
         val isHashed = key != 0 && key != PLAIN_KEY_MAGIC
+        require(filesCount >= 0) { "Invalid LOD entry count: $filesCount" }
 
-        reader.skip(ENTRIES_OFFSET - reader.position)
+        val entries = BinaryReader(source.read(ENTRIES_OFFSET, filesCount * ENTRY_SIZE).inputStream())
         val files = (0 until filesCount).map {
-            if (isHashed) readHashedEntry(key) else readEntry()
+            if (isHashed) readHashedEntry(entries, key) else readEntry(entries)
         }
         return LodArchive(files, isHota18 = isHashed)
     }
+
+    override fun close() = source.close()
 
     /**
      * Decompress only the first [limit] bytes of an entry.
      * Used for header identification without full decompression.
      */
     fun readFileContentPartial(entry: LodEntry, limit: Int): ByteArray {
-        reader.seek(entry.offset.toLong())
-
         if (entry.compressedSize == 0) {
-            val toRead = minOf(entry.size, limit)
-            return reader.readBytes(toRead)
+            return source.read(entry.offset.toLong(), minOf(entry.size, limit))
         }
 
-        val raw = reader.readBytes(entry.compressedSize)
+        val raw = source.read(entry.offset.toLong(), entry.compressedSize)
 
         return when (entry.compressionMethod) {
             2 -> {
@@ -85,15 +78,12 @@ class LodReader(stream: InputStream) {
     }
 
     fun readFileContent(entry: LodEntry): ByteArrayInputStream {
-        // Absolute seek — matches Python's f.seek(offset)
-        reader.seek(entry.offset.toLong())
-
         // Python dispatch: if csize != 0 → (2=LZMA, 3=zlib, else=raw) ; csize==0 → raw(size)
         if (entry.compressedSize == 0) {
-            return reader.readBytes(entry.size).inputStream()
+            return source.read(entry.offset.toLong(), entry.size).inputStream()
         }
 
-        val raw = reader.readBytes(entry.compressedSize)
+        val raw = source.read(entry.offset.toLong(), entry.compressedSize)
 
         return when (entry.compressionMethod) {
             2 -> {
@@ -132,7 +122,7 @@ class LodReader(stream: InputStream) {
         }
     }
 
-    private fun readEntry(): LodEntry {
+    private fun readEntry(reader: BinaryReader): LodEntry {
         return LodEntry(
             name = reader.readString(16),
             offset = reader.readInt(),
@@ -144,7 +134,7 @@ class LodReader(stream: InputStream) {
     }
 
     // Layout per h3_re/lodread.py: u32 hash; u32 offset^key; u32 size^key; u32 csize^key; u8 codec; u8 junk[15]
-    private fun readHashedEntry(key: Int): LodEntry {
+    private fun readHashedEntry(reader: BinaryReader, key: Int): LodEntry {
         val nameHash = reader.readInt()
         val offset = reader.readInt() xor key
         val size = reader.readInt() xor key
@@ -166,5 +156,6 @@ class LodReader(stream: InputStream) {
         private const val ENTRIES_OFFSET = 0x5CL
         private const val PLAIN_KEY_MAGIC = 0x7E0213
         private const val HASHED_ENTRY_JUNK_SIZE = 15
+        private const val ENTRY_SIZE = 32
     }
 }

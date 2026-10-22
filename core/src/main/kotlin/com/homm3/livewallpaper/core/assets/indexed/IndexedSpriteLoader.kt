@@ -41,9 +41,16 @@ class IndexedSpriteLoader {
         return builder.build()
     }
 
-    private fun loadSource(source: LodSource, names: Set<String>, builder: BundleBuilder): Set<String> {
+    private fun loadSource(source: LodSource, names: Set<String>, builder: BundleBuilder): Set<String> =
+        LodReader(source.open()).use { lodReader -> loadFromReader(lodReader, source, names, builder) }
+
+    private fun loadFromReader(
+        lodReader: LodReader,
+        source: LodSource,
+        names: Set<String>,
+        builder: BundleBuilder,
+    ): Set<String> {
         val startMs = System.currentTimeMillis()
-        val lodReader = source.open().use { LodReader(it) }
         val archive = lodReader.read()
 
         val jobs = names.mapNotNull { name -> findJob(archive, source, name) }.sortedBy { it.offset }

@@ -12,6 +12,7 @@ import com.homm3.livewallpaper.core.assets.SpriteCollector
 import com.homm3.livewallpaper.parser.def.DefReader
 import com.homm3.livewallpaper.parser.def.DefSprite
 import com.homm3.livewallpaper.parser.h3m.H3mReader
+import com.homm3.livewallpaper.parser.lod.FileLodDataSource
 import com.homm3.livewallpaper.parser.lod.LodReader
 import org.junit.AfterClass
 import org.junit.Assume.assumeTrue
@@ -114,8 +115,8 @@ class IndexedSpriteLoaderTest {
     }
 
     private fun sources() = listOf(
-        LodSource("HotA.lod", { hotaLod.inputStream() }, DefAliases.targetsIn(SpriteArchive.HOTA)),
-        LodSource("H3sprite.lod", { h3SpriteLod.inputStream() }, DefAliases.targetsIn(SpriteArchive.H3SPRITE)),
+        LodSource("HotA.lod", { FileLodDataSource(hotaLod) }, DefAliases.targetsIn(SpriteArchive.HOTA)),
+        LodSource("H3sprite.lod", { FileLodDataSource(h3SpriteLod) }, DefAliases.targetsIn(SpriteArchive.H3SPRITE)),
     )
 
     private fun readFirstDef(lods: List<File>, name: String): DefSprite = lods.firstNotNullOf { lod ->

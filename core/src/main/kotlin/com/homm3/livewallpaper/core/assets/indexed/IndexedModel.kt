@@ -6,7 +6,7 @@ import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion
 import com.badlogic.gdx.utils.Disposable
 import com.homm3.livewallpaper.core.assets.PackedRect
-import java.io.InputStream
+import com.homm3.livewallpaper.parser.lod.LodDataSource
 
 /*
  * Shared contract for the indexed-palette sprite pipeline.
@@ -69,7 +69,7 @@ class IndexedBundle(
 }
 
 /** A LOD archive to read sprites from; sources are searched in list order (HotA.lod first). */
-class LodSource(val name: String, val open: () -> InputStream, val aliases: Map<String, String>)
+class LodSource(val name: String, val open: () -> LodDataSource, val aliases: Map<String, String>)
 
 /** AtlasRegion over an index page; [paletteRow] is its row in the palette texture. */
 class PaletteRegion(texture: Texture, x: Int, y: Int, width: Int, height: Int, val paletteRow: Int) :
