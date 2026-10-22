@@ -146,7 +146,7 @@ class LodSpriteLoader {
         return palette to alpha
     }
 
-    private val paletteRotations = hashMapOf(
+    internal val paletteRotations = hashMapOf(
         "watrtl.def" to listOf(229 to 241, 242 to 254),
         "lavatl.def" to listOf(246 to 254),
         "clrrvr.def" to listOf(183 to 195, 195 to 201),
