@@ -259,7 +259,12 @@ class GameAssets : Disposable {
             val t0 = System.currentTimeMillis()
             val h3Regions = loader.loadSprites(lodFile.read(), remaining, packer)
             allRegionInfos.addAll(h3Regions)
+            h3Regions.forEach { loadedDefNames.add(it.packerName.substringBefore("/")) }
             log.info { "  H3sprite.lod sprites (CPU): ${h3Regions.size} regions in ${System.currentTimeMillis() - t0}ms" }
+        }
+        val notFound = neededSprites.filterNot { it in loadedDefNames }
+        if (notFound.isNotEmpty()) {
+            log.error { "${notFound.size} sprites not found in HotA.lod or H3sprite.lod: $notFound" }
         }
 
         val packerRects = mutableMapOf<String, PackedRect>()
