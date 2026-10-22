@@ -4,11 +4,14 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
+private const val HEADER_SIZE = 12
+private const val PALETTE_SIZE = 256 * 3
+
 class PcxReader(stream: InputStream) {
     private val bytes = stream.readBytes()
 
     fun read(): PcxImage {
-        require(bytes.size >= 12) { "PCX file too small" }
+        require(bytes.size >= HEADER_SIZE) { "PCX file too small" }
 
         val buf = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
         val fSize = buf.int
@@ -26,16 +29,18 @@ class PcxReader(stream: InputStream) {
 
     private fun read8bit(width: Int, height: Int): PcxImage {
         val pixelCount = width * height
-        val data = bytes.copyOfRange(12, 12 + pixelCount)
-        val paletteOffset = bytes.size - 768
-        val palette = bytes.copyOfRange(paletteOffset, paletteOffset + 768)
+        val paletteOffset = HEADER_SIZE + pixelCount
+        require(bytes.size >= paletteOffset + PALETTE_SIZE) { "PCX missing palette" }
+        val data = bytes.copyOfRange(HEADER_SIZE, paletteOffset)
+        val palette = bytes.copyOfRange(paletteOffset, paletteOffset + PALETTE_SIZE)
         return PcxImage(width, height, palette, data)
     }
 
     private fun read24bit(width: Int, height: Int): PcxImage {
         val pixelCount = width * height
         val dataSize = pixelCount * 3
-        val data = bytes.copyOfRange(12, 12 + dataSize)
+        require(bytes.size >= HEADER_SIZE + dataSize) { "PCX truncated" }
+        val data = bytes.copyOfRange(HEADER_SIZE, HEADER_SIZE + dataSize)
         // Convert BGR to RGB in-place
         for (i in 0 until pixelCount) {
             val offset = i * 3
