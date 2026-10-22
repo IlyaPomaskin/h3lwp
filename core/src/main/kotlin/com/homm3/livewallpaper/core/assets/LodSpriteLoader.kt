@@ -452,11 +452,6 @@ class LodSpriteLoader {
             )
         }
 
-        if (regionInfos.size > 1) {
-            log.info("packObjectFrame: def=$defName frame=${frame.frameName} produced ${regionInfos.size} regions: " +
-                "indices=${regionInfos.map { it.regionIndex }} groupFilenames=$groupFilenames")
-        }
-
         return regionInfos
     }
 
