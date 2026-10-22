@@ -163,7 +163,7 @@ class LodSpriteLoader {
         "edg.def"
     )
 
-    private val terrainPcxPrefixes = mapOf(
+    internal val terrainPcxPrefixes = mapOf(
         "wstlt" to "wastlnd.def",
         "hglnt" to "highlnd.def"
     )
@@ -186,7 +186,6 @@ class LodSpriteLoader {
         val terrainGroupFilenames = buildTerrainGroupFilenames(archive.files, neededLower)
         val entriesToRead = archive.files.filter { entry ->
             val lowerName = entry.name.lowercase(Locale.ROOT)
-            val baseName = lowerName.substringBefore(".")
             when {
                 lowerName.endsWith(".def") -> lowerName in neededLower
                 lowerName.endsWith(".pcx") -> {
@@ -194,7 +193,7 @@ class LodSpriteLoader {
                     if (terrainDefName != null) {
                         terrainDefName in neededLower
                     } else {
-                        "$baseName.def" in neededLower || lowerName in neededLower
+                        lowerName in neededLower
                     }
                 }
                 else -> false
@@ -210,7 +209,7 @@ class LodSpriteLoader {
                 val lowerName = entry.name.lowercase(Locale.ROOT)
                 when {
                     lowerName.endsWith(".def") -> {
-                        allRegionInfos.addAll(loadDef(lodReader, entry, packer))
+                        allRegionInfos.addAll(loadDef(lodReader.readFileContent(entry), entry.name, packer))
                     }
                     else -> {
                         val terrainDefName = terrainPcxDefName(lowerName)
@@ -265,16 +264,15 @@ class LodSpriteLoader {
         return digits.toIntOrNull() ?: 0
     }
 
-    private fun loadDef(
-        lodReader: LodReader,
-        entry: LodEntry,
+    internal fun loadDef(
+        stream: InputStream,
+        defName: String,
         packer: PixmapPacker
     ): List<RegionInfo> {
-        val stream = lodReader.readFileContent(entry)
         val def = DefReader(stream).read()
         val (palette, alpha) = applySpecialPalette(def.rawPalette)
 
-        val defNameLower = entry.name.lowercase(Locale.ROOT)
+        val defNameLower = defName.lowercase(Locale.ROOT)
         val isTerrain = defNameLower in terrainDefNames
         val regionInfos = mutableListOf<RegionInfo>()
         val seenFrames = mutableSetOf<String>()
@@ -310,7 +308,7 @@ class LodSpriteLoader {
         return regionInfos
     }
 
-    private fun loadTerrainPcx(
+    internal fun loadTerrainPcx(
         lodReader: LodReader,
         entry: LodEntry,
         terrainDefName: String,

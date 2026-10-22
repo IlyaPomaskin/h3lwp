@@ -29,21 +29,14 @@ class LodReader(stream: InputStream) {
             throw IllegalArgumentException("Wrong file selected: invalid LOD magic header")
         }
         val filesCount = reader.readInt()
-        val key = reader.readBytes(4)
+        val key = reader.readInt()
+        val isHashed = key != 0 && key != PLAIN_KEY_MAGIC
 
-        val isHota18 = (key[0].toInt() and 0xFF) == 135
-
-        if (isHota18) {
-            // Skip to offset 80 (we've read 16 bytes so far)
-            reader.skip(64)
-            val files = (0 until filesCount).map { readHota18Entry(key) }
-            return LodArchive(files, isHota18 = true)
-        } else {
-            // Standard mode: skip remaining 76 bytes to reach offset 92
-            reader.skip(76)
-            val files = (0 until filesCount).map { readEntry() }
-            return LodArchive(files)
+        reader.skip(ENTRIES_OFFSET - reader.position)
+        val files = (0 until filesCount).map {
+            if (isHashed) readHashedEntry(key) else readEntry()
         }
+        return LodArchive(files, isHota18 = isHashed)
     }
 
     /**
@@ -150,25 +143,17 @@ class LodReader(stream: InputStream) {
         )
     }
 
-    private fun readHota18Entry(key: ByteArray): LodEntry {
-        val nameBytes = reader.readBytes(16)
-        val hexName = nameBytes.joinToString("") { "%02x".format(it) }
-        val encrypted = reader.readBytes(16)
-
-        // XOR decrypt with 4-byte key
-        val decrypted = ByteArray(16)
-        for (i in 0 until 16) {
-            decrypted[i] = (encrypted[i].toInt() xor key[i % 4].toInt()).toByte()
-        }
-
-        val offset = readLittleEndianInt(decrypted, 0)
-        val size = readLittleEndianInt(decrypted, 4)
-        val compressedSize = readLittleEndianInt(decrypted, 8)
-        // Compression method comes from the encrypted byte (NOT decrypted)
-        val compressionMethod = encrypted[12].toInt() and 0xFF
+    // Layout per h3_re/lodread.py: u32 hash; u32 offset^key; u32 size^key; u32 csize^key; u8 codec; u8 junk[15]
+    private fun readHashedEntry(key: Int): LodEntry {
+        val nameHash = reader.readInt()
+        val offset = reader.readInt() xor key
+        val size = reader.readInt() xor key
+        val compressedSize = reader.readInt() xor key
+        val compressionMethod = reader.readByte()
+        reader.skip(HASHED_ENTRY_JUNK_SIZE)
 
         return LodEntry(
-            name = hexName,
+            name = hashedEntryName(nameHash),
             offset = offset,
             size = size,
             fileType = null,
@@ -177,10 +162,9 @@ class LodReader(stream: InputStream) {
         )
     }
 
-    private fun readLittleEndianInt(data: ByteArray, offset: Int): Int {
-        return (data[offset].toInt() and 0xFF) or
-                ((data[offset + 1].toInt() and 0xFF) shl 8) or
-                ((data[offset + 2].toInt() and 0xFF) shl 16) or
-                ((data[offset + 3].toInt() and 0xFF) shl 24)
+    companion object {
+        private const val ENTRIES_OFFSET = 0x5CL
+        private const val PLAIN_KEY_MAGIC = 0x7E0213
+        private const val HASHED_ENTRY_JUNK_SIZE = 15
     }
 }

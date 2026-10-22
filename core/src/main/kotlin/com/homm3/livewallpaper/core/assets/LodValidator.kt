@@ -21,7 +21,7 @@ object LodValidator {
         "avgflh00.def"
     )
 
-    private val hexPattern = Regex("^[0-9a-fA-F]{32}$")
+    private val hexPattern = Regex("^[0-9a-f]{8}$")
 
     /**
      * Validates a LOD file by reading its header/index and checking for marker DEFs.
