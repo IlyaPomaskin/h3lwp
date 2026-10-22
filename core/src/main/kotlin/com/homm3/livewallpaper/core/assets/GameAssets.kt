@@ -248,7 +248,7 @@ class GameAssets : Disposable {
         val hotaFile = Gdx.files.local(AssetPaths.HOTA_LOD_FILE)
         if (hotaFile.exists()) {
             val t0 = System.currentTimeMillis()
-            val hotaRegions = loader.loadSprites(hotaFile.read(), neededSprites, packer)
+            val hotaRegions = loader.loadSprites(hotaFile.read(), neededSprites, packer, DefAliases.targetsIn(SpriteArchive.HOTA))
             allRegionInfos.addAll(hotaRegions)
             hotaRegions.forEach { loadedDefNames.add(it.packerName.substringBefore("/")) }
             log.info { "  HotA.lod sprites (CPU): ${hotaRegions.size} regions in ${System.currentTimeMillis() - t0}ms" }
@@ -257,7 +257,7 @@ class GameAssets : Disposable {
         val lodFile = Gdx.files.local(AssetPaths.LOD_FILE)
         if (lodFile.exists()) {
             val t0 = System.currentTimeMillis()
-            val h3Regions = loader.loadSprites(lodFile.read(), remaining, packer)
+            val h3Regions = loader.loadSprites(lodFile.read(), remaining, packer, DefAliases.targetsIn(SpriteArchive.H3SPRITE))
             allRegionInfos.addAll(h3Regions)
             h3Regions.forEach { loadedDefNames.add(it.packerName.substringBefore("/")) }
             log.info { "  H3sprite.lod sprites (CPU): ${h3Regions.size} regions in ${System.currentTimeMillis() - t0}ms" }

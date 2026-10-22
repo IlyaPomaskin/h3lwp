@@ -172,19 +172,20 @@ class LodSpriteLoader {
         lodStream: InputStream,
         neededNames: Set<String>,
         packer: PixmapPacker,
+        aliases: Map<String, String> = emptyMap(),
         onProgress: (String) -> Unit = {}
     ): List<RegionInfo> {
         val lodReader = LodReader(lodStream)
         val archive = lodReader.read()
 
         if (archive.isHota18) {
-            return Hota18SpriteLoader(this).loadSprites(lodReader, archive, neededNames, packer, onProgress)
+            return Hota18SpriteLoader(this).loadSprites(lodReader, archive, neededNames, packer, aliases, onProgress)
         }
 
         val neededLower = neededNames.map { it.lowercase(Locale.ROOT) }.toSet()
 
         val terrainGroupFilenames = buildTerrainGroupFilenames(archive.files, neededLower)
-        val entriesToRead = archive.files.filter { entry ->
+        val namedEntriesToRead = archive.files.filter { entry ->
             val lowerName = entry.name.lowercase(Locale.ROOT)
             when {
                 lowerName.endsWith(".def") -> lowerName in neededLower
@@ -198,18 +199,22 @@ class LodSpriteLoader {
                 }
                 else -> false
             }
-        }.sortedBy { it.offset }
+        }.map { entry -> entry to entry.name }
+        val aliasEntriesToRead = aliases
+            .filterKeys { alias -> alias in neededLower && archive.find(alias) == null }
+            .mapNotNull { (alias, target) -> archive.find(target)?.let { it to alias } }
+        val entriesToRead = (namedEntriesToRead + aliasEntriesToRead).sortedBy { (entry, _) -> entry.offset }
 
         onProgress("Loading ${entriesToRead.size} sprites...")
         val allRegionInfos = mutableListOf<RegionInfo>()
         var processed = 0
 
-        for (entry in entriesToRead) {
+        for ((entry, spriteName) in entriesToRead) {
             try {
                 val lowerName = entry.name.lowercase(Locale.ROOT)
                 when {
                     lowerName.endsWith(".def") -> {
-                        allRegionInfos.addAll(loadDef(lodReader.readFileContent(entry), entry.name, packer))
+                        allRegionInfos.addAll(loadDef(lodReader.readFileContent(entry), spriteName, packer))
                     }
                     else -> {
                         val terrainDefName = terrainPcxDefName(lowerName)

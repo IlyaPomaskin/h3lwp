@@ -23,12 +23,13 @@ class Hota18SpriteLoader(private val base: LodSpriteLoader) {
         archive: LodArchive,
         neededNames: Set<String>,
         packer: PixmapPacker,
+        aliases: Map<String, String>,
         onProgress: (String) -> Unit
     ): List<RegionInfo> {
         onProgress("Loading HotA 1.8 sprites...")
         val neededLower = neededNames.map { it.lowercase(Locale.ROOT) }.toSet()
         val defEntries = neededLower
-            .mapNotNull { defName -> findDefEntry(archive, defName)?.let { defName to it } }
+            .mapNotNull { defName -> findDefEntry(archive, aliases, defName)?.let { defName to it } }
             .sortedBy { (_, entry) -> entry.offset }
 
         val defRegions = defEntries.flatMapIndexed { index, (defName, entry) ->
@@ -46,8 +47,8 @@ class Hota18SpriteLoader(private val base: LodSpriteLoader) {
         return defRegions + terrainRegions
     }
 
-    private fun findDefEntry(archive: LodArchive, defName: String): LodEntry? =
-        archive.find(defName) ?: substituteDefs[defName]?.let { archive.find(it) }
+    private fun findDefEntry(archive: LodArchive, aliases: Map<String, String>, defName: String): LodEntry? =
+        archive.find(defName) ?: aliases[defName]?.let { archive.find(it) }
 
     private fun loadDefEntry(
         lodReader: LodReader,
@@ -149,12 +150,6 @@ class Hota18SpriteLoader(private val base: LodSpriteLoader) {
     // -- Constants & data ------------------------------------------------------
 
     private val D32_MAGIC_BYTES = byteArrayOf(0x44, 0x33, 0x32, 0x46) // "D32F"
-
-    // Needed DEFs absent from HotA 1.8, drawn with the closest sprite the archive does have.
-    private val substituteDefs = mapOf(
-        "tpbridg4.def" to "tpbridg3.def",
-        "avwcoat.def" to "avgcoatl.def",
-    )
 
     companion object {
         private const val PROGRESS_STEP = 50
