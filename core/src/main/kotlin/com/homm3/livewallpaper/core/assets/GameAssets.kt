@@ -14,7 +14,6 @@ import com.badlogic.gdx.utils.I18NBundle
 import com.homm3.livewallpaper.core.AssetPaths
 import com.homm3.livewallpaper.parser.h3m.H3mHeaderReader
 import com.homm3.livewallpaper.parser.h3m.H3mMap
-import com.homm3.livewallpaper.parser.h3m.H3mReader
 import com.homm3.livewallpaper.parser.h3m.H3mVersion
 import ktx.assets.async.AssetStorage
 import ktx.collections.gdxArrayOf
@@ -33,6 +32,7 @@ class GameAssets : Disposable {
     lateinit var i18n: I18NBundle
 
     private var registry: SpriteRegistry? = null
+    private val notFoundSprites = mutableSetOf<String>()
 
     private val lazyEmptyTexture = lazy {
         val pixmap = Pixmap(1, 1, Pixmap.Format.RGBA8888)
@@ -56,6 +56,7 @@ class GameAssets : Disposable {
     fun resetRegistry() {
         registry?.dispose()
         registry = null
+        notFoundSprites.clear()
     }
 
     fun isLodAvailable(): Boolean {
@@ -104,94 +105,15 @@ class GameAssets : Disposable {
         }
 
         val totalStart = System.currentTimeMillis()
-
-        // One-shot at startup: load every DEF listed in def-list.txt, pack & ETC1-encode
-        // them, then never load sprites on the fly. Map rotation / next-map only swap
-        // H3mMap instances; the sprite registry is frozen after this.
-        if (registry == null) {
-            val preStart = System.currentTimeMillis()
-            preloadDefList()
-            log.info { "loadGameAssets: preloadDefList=${System.currentTimeMillis() - preStart}ms" }
-        }
-
-        val maps = filesToLoad.map { fileName ->
-            val t0 = System.currentTimeMillis()
-            val map = storage.load<H3mMap>(fileName)
-            log.info { "  loaded map '$fileName' in ${System.currentTimeMillis() - t0}ms" }
-            map
-        }
-
-        warnMissingSprites(maps)
+        val maps = loadMaps(filesToLoad)
+        loadSpritesForMaps(maps)
         log.info { "loadGameAssets: total=${System.currentTimeMillis() - totalStart}ms" }
         return LoadResult(maps, filesToLoad)
     }
 
     /**
-     * Read def-list.txt, build the ETC1 atlas from those DEFs, and freeze the sprite
-     * registry. If the file is missing (fresh install), scan every map once to derive
-     * the list and write it out — so the next startup is a cache hit.
-     */
-    private suspend fun preloadDefList() {
-        val listFile = Gdx.files.local("def-list.txt")
-        val needed: Set<String> = if (listFile.exists()) {
-            val entries = listFile.readString()
-                .splitToSequence('\n')
-                .map { it.trim() }
-                .filter { it.isNotEmpty() }
-                .toSet()
-            log.info { "preloadDefList: ${entries.size} entries from ${listFile.file().absolutePath}" }
-            entries
-        } else {
-            log.info { "preloadDefList: def-list.txt missing — scanning maps to seed it" }
-            scanMapsForSprites().also { derived ->
-                if (derived.isNotEmpty()) {
-                    listFile.writeString(derived.sorted().joinToString("\n"), false)
-                    log.info { "preloadDefList: wrote ${derived.size} entries to ${listFile.file().absolutePath}" }
-                }
-            }
-        }
-
-        if (needed.isEmpty()) return
-        val bundle = withContext(Dispatchers.IO) { buildEtc1Bundle(needed) }
-
-        val tReg = System.currentTimeMillis()
-        registry = SpriteRegistry.fromEtc1(bundle)
-        log.info { "  registry build (GL): ${bundle.regionInfos.size} regions in ${System.currentTimeMillis() - tReg}ms" }
-    }
-
-    private suspend fun scanMapsForSprites(): Set<String> {
-        val allMapFiles = getAllMapFiles()
-        if (allMapFiles.isEmpty()) return emptySet()
-        // Stream maps one at a time: parse → collect sprite names → drop the map.
-        // Holding 50+ H3mMap instances simultaneously is enough to OOM on Android heap.
-        return withContext(Dispatchers.IO) {
-            val collector = SpriteCollector(isHotaAvailable())
-            val acc = mutableSetOf<String>()
-            for (fileName in allMapFiles) {
-                try {
-                    val fh = Gdx.files.local("${AssetPaths.USER_MAPS_FOLDER}/$fileName")
-                    val map = H3mReader(fh.read()).read()
-                    acc.addAll(collector.collectNeededSprites(listOf(map)))
-                } catch (e: Exception) {
-                    log.error { "Skipping unreadable map '$fileName' during sprite scan: ${e.message}" }
-                }
-            }
-            acc
-        }
-    }
-
-    private fun warnMissingSprites(maps: List<H3mMap>) {
-        val reg = registry ?: return
-        val needed = SpriteCollector(isHotaAvailable()).collectNeededSprites(maps)
-        val missing = needed.filterNot { reg.isDefLoaded(it) }
-        if (missing.isNotEmpty()) {
-            log.error { "${missing.size} DEFs needed by current maps are missing from def-list.txt (will render empty): $missing" }
-        }
-    }
-
-    /**
      * Rotates the map queue if at least 3h has passed since the last rotation.
-     * Returns the [LoadResult] for the new batch (with sprites preloaded) or
+     * Returns the [LoadResult] for the new batch (with sprites loaded) or
      * `null` if not yet due. Caller is responsible for adding the new maps to
      * the screen and unloading the ones that fell out of the batch.
      */
@@ -200,30 +122,45 @@ class GameAssets : Disposable {
         val newBatch = MapQueue().advanceIfDue(allMapFiles, force) ?: return null
         log.info { "rotateBatchIfDue: new batch = $newBatch (force=$force)" }
         val totalStart = System.currentTimeMillis()
-        val maps = newBatch.map { fileName ->
-            val t0 = System.currentTimeMillis()
-            val map = storage.load<H3mMap>(fileName)
-            log.info { "  loaded map '$fileName' in ${System.currentTimeMillis() - t0}ms" }
-            map
-        }
-        warnMissingSprites(maps)
+        val maps = loadMaps(newBatch)
+        loadSpritesForMaps(maps)
         log.info { "rotateBatchIfDue: total=${System.currentTimeMillis() - totalStart}ms" }
         return LoadResult(maps, newBatch)
+    }
+
+    private suspend fun loadMaps(fileNames: List<String>): List<H3mMap> = fileNames.map { fileName ->
+        val t0 = System.currentTimeMillis()
+        val map = storage.load<H3mMap>(fileName)
+        log.info { "  loaded map '$fileName' in ${System.currentTimeMillis() - t0}ms" }
+        map
     }
 
     suspend fun loadMapFile(fileName: String): H3mMap {
         return storage.load(fileName)
     }
 
-    /**
-     * No-op since the sprite atlas is fully built from def-list.txt at startup
-     * and frozen for the session. Kept so callers (Engine.loadNextMap) don't break;
-     * logs an error if a map needs DEFs that weren't in the preload set.
-     */
-    @Suppress("RedundantSuspendModifier")
+    /** Loads sprites the maps need that aren't in the registry yet; CPU encodes ETC1 pages, GL uploads. */
     suspend fun loadSpritesForMaps(maps: List<H3mMap>) {
-        warnMissingSprites(maps)
+        val needed = SpriteCollector(isHotaAvailable()).collectNeededSprites(maps)
+        val toLoad = needed.filterNot { isSpriteLoaded(it) || it in notFoundSprites }.toSet()
+        if (toLoad.isEmpty()) return
+        log.info { "Loading ${toLoad.size} new sprites" }
+
+        val bundle = withContext(Dispatchers.IO) { buildEtc1Bundle(toLoad) }
+
+        val tReg = System.currentTimeMillis()
+        val currentRegistry = registry
+        if (currentRegistry != null) currentRegistry.addFromEtc1(bundle) else registry = SpriteRegistry.fromEtc1(bundle)
+        log.info { "  registry build (GL): ${bundle.regionInfos.size} regions in ${System.currentTimeMillis() - tReg}ms" }
+
+        val notFound = toLoad.filterNot { isSpriteLoaded(it) }
+        if (notFound.isNotEmpty()) {
+            notFoundSprites.addAll(notFound)
+            log.error { "${notFound.size} sprites not found in HotA.lod or H3sprite.lod: $notFound" }
+        }
     }
+
+    private fun isSpriteLoaded(defName: String): Boolean = registry?.isDefLoaded(defName) ?: false
 
     private fun lodFingerprint(): String {
         val lod = Gdx.files.local(AssetPaths.LOD_FILE).file()
@@ -259,12 +196,7 @@ class GameAssets : Disposable {
             val t0 = System.currentTimeMillis()
             val h3Regions = loader.loadSprites(lodFile.read(), remaining, packer, DefAliases.targetsIn(SpriteArchive.H3SPRITE))
             allRegionInfos.addAll(h3Regions)
-            h3Regions.forEach { loadedDefNames.add(it.packerName.substringBefore("/")) }
             log.info { "  H3sprite.lod sprites (CPU): ${h3Regions.size} regions in ${System.currentTimeMillis() - t0}ms" }
-        }
-        val notFound = neededSprites.filterNot { it in loadedDefNames }
-        if (notFound.isNotEmpty()) {
-            log.error { "${notFound.size} sprites not found in HotA.lod or H3sprite.lod: $notFound" }
         }
 
         val packerRects = mutableMapOf<String, PackedRect>()
@@ -288,22 +220,14 @@ class GameAssets : Disposable {
     fun getTerrainFrames(defName: String, index: Int): Array<TextureAtlas.AtlasRegion> {
         val reg = registry ?: return gdxArrayOf(emptyRegion)
         val frames = reg.getTerrainFrames(defName, index)
-        if (frames.isEmpty) {
-            log.error { "Can't find terrain $defName/$index" }
-            return gdxArrayOf(emptyRegion)
-        }
-        return frames
+        return if (frames.isEmpty) gdxArrayOf(emptyRegion) else frames
     }
 
     fun getObjectFrames(defName: String): Array<TextureAtlas.AtlasRegion> {
         if (defName.isEmpty()) return gdxArrayOf(emptyRegion)
         val reg = registry ?: return gdxArrayOf(emptyRegion)
         val frames = reg.getObjectFrames(defName)
-        if (frames.isEmpty) {
-            log.error { "Can't find def $defName" }
-            return gdxArrayOf(emptyRegion)
-        }
-        return frames
+        return if (frames.isEmpty) gdxArrayOf(emptyRegion) else frames
     }
 
     internal fun findAtlasRegions(name: String): Array<TextureAtlas.AtlasRegion> {
