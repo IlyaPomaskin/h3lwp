@@ -5,6 +5,8 @@ import com.badlogic.gdx.maps.tiled.renderers.BatchTiledMapRenderer
 import com.badlogic.gdx.utils.Array
 import com.homm3.livewallpaper.core.GameConfig.FRAME_TIME
 import com.homm3.livewallpaper.core.GameConfig.TILE_SIZE
+import com.homm3.livewallpaper.core.assets.indexed.PaletteColor
+import com.homm3.livewallpaper.core.assets.indexed.PaletteRegion
 import com.homm3.livewallpaper.parser.h3m.H3mObject
 import kotlin.random.Random
 
@@ -23,6 +25,7 @@ class MapSprite(mapObject: H3mObject, private val frames: Array<TextureAtlas.Atl
         stateTime = (stateTime % animationLength) + delta
         val frameIndex = ((stateTime / FRAME_TIME) % frames.size).toInt()
         val frame = frames.get(frameIndex)
+        renderer.batch.packedColor = PaletteColor.encode((frame as? PaletteRegion)?.paletteRow ?: 0)
         renderer.batch.draw(frame, getFrameX(frame), getFrameY(frame))
     }
 
