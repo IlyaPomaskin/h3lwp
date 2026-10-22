@@ -55,3 +55,20 @@ class PaletteSpriteBatch(size: Int, paletteTexture: () -> Texture?) : SpriteBatc
 class PaletteTiledMapRenderer(map: TiledMap, batch: PaletteSpriteBatch) : OrthogonalTiledMapRenderer
 // MapSprite.render sets batch.packedColor = PaletteColor.encode(region.paletteRow) before drawing
 ```
+
+## Results (desktop, map "Aeten Noemere 1.87", 1466 sprites)
+
+| | ETC1 (main) | Indexed palette |
+|---|---|---|
+| Cold start, no cache | 12.9–16.6 s | 1.33–1.37 s |
+| Warm start (ETC1 cache hit) | 1.3–2.0 s | n/a, no cache |
+| Atlas pages | 11 (ETC1 colour+alpha, 4 MB each) | 11 (GL_ALPHA, 4 MB each) + 2 MB palette |
+| Draw calls/frame, pinned view, 0–5 s → 15–20 s | 50 → 201 | 52 → 260 |
+| Map render CPU | 0.16–0.59 ms | 0.21–0.77 ms |
+| Palette cycling | 1932 baked copies | runtime palette rows |
+
+Open issues:
+- 1353 palettes for one map vs MAX_PALETTE_ROWS = 2048: a second map can overflow. Fix before adopting
+  (several palettes per texture row, or 4096 rows where supported).
+- Draw calls grow over time with a fixed view in both builds (animated frames spread over pages).
+- Textures are unmanaged: GL context loss on Android needs a reload (same as the ETC1 path).

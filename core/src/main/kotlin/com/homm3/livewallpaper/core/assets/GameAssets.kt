@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.loaders.resolvers.LocalFileHandleResolver
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.graphics.g2d.PixmapPacker
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
@@ -12,6 +11,9 @@ import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.Disposable
 import com.badlogic.gdx.utils.I18NBundle
 import com.homm3.livewallpaper.core.AssetPaths
+import com.homm3.livewallpaper.core.assets.indexed.IndexedSpriteLoader
+import com.homm3.livewallpaper.core.assets.indexed.IndexedSpriteRegistry
+import com.homm3.livewallpaper.core.assets.indexed.LodSource
 import com.homm3.livewallpaper.parser.h3m.H3mHeaderReader
 import com.homm3.livewallpaper.parser.h3m.H3mMap
 import com.homm3.livewallpaper.parser.h3m.H3mVersion
@@ -31,7 +33,7 @@ class GameAssets : Disposable {
     lateinit var skin: Skin
     lateinit var i18n: I18NBundle
 
-    private var registry: SpriteRegistry? = null
+    private var registry: IndexedSpriteRegistry? = null
     private val notFoundSprites = mutableSetOf<String>()
 
     private val lazyEmptyTexture = lazy {
@@ -139,19 +141,23 @@ class GameAssets : Disposable {
         return storage.load(fileName)
     }
 
-    /** Loads sprites the maps need that aren't in the registry yet; CPU encodes ETC1 pages, GL uploads. */
+    /** Loads sprites the maps need that aren't in the registry yet; CPU decodes index pages, GL uploads. */
     suspend fun loadSpritesForMaps(maps: List<H3mMap>) {
         val needed = SpriteCollector(isHotaAvailable()).collectNeededSprites(maps)
         val toLoad = needed.filterNot { isSpriteLoaded(it) || it in notFoundSprites }.toSet()
         if (toLoad.isEmpty()) return
         log.info { "Loading ${toLoad.size} new sprites" }
 
-        val bundle = withContext(Dispatchers.IO) { buildEtc1Bundle(toLoad) }
+        val tDecode = System.currentTimeMillis()
+        val bundle = withContext(Dispatchers.IO) { IndexedSpriteLoader().load(lodSources(), toLoad) }
+        val regionCount = bundle.regions.size
+        log.info { "  decode+pack (CPU): $regionCount regions, ${bundle.pages.size} pages, ${bundle.palettes.size} palettes in ${System.currentTimeMillis() - tDecode}ms" }
 
         val tReg = System.currentTimeMillis()
         val currentRegistry = registry
-        if (currentRegistry != null) currentRegistry.addFromEtc1(bundle) else registry = SpriteRegistry.fromEtc1(bundle)
-        log.info { "  registry build (GL): ${bundle.regionInfos.size} regions in ${System.currentTimeMillis() - tReg}ms" }
+        val targetRegistry = currentRegistry ?: IndexedSpriteRegistry().also { registry = it }
+        targetRegistry.add(bundle)
+        log.info { "  registry build (GL): $regionCount regions in ${System.currentTimeMillis() - tReg}ms" }
 
         val notFound = toLoad.filterNot { isSpriteLoaded(it) }
         if (notFound.isNotEmpty()) {
@@ -162,59 +168,13 @@ class GameAssets : Disposable {
 
     private fun isSpriteLoaded(defName: String): Boolean = registry?.isDefLoaded(defName) ?: false
 
-    private fun lodFingerprint(): String {
-        val lod = Gdx.files.local(AssetPaths.LOD_FILE).file()
-        val hota = Gdx.files.local(AssetPaths.HOTA_LOD_FILE).file()
-        fun fp(f: java.io.File) = if (f.exists()) "${f.length()}:${f.lastModified()}" else "absent"
-        return "lod=${fp(lod)};hota=${fp(hota)}"
-    }
-
-    private fun buildEtc1Bundle(neededSprites: Set<String>): Etc1Bundle {
-        val cache = Etc1PageCache()
-        val key = cache.cacheKey(neededSprites, lodFingerprint())
-        cache.read(key)?.let {
-            log.info { "  ETC1 atlas: cache hit key=$key (${it.pages.size} pages)" }
-            return it
-        }
-
-        val packer = PixmapPacker(2048, 2048, Pixmap.Format.RGBA4444, 4, true)
-        val loader = LodSpriteLoader()
-        val allRegionInfos = mutableListOf<RegionInfo>()
-        val loadedDefNames = mutableSetOf<String>()
-
-        val hotaFile = Gdx.files.local(AssetPaths.HOTA_LOD_FILE)
-        if (hotaFile.exists()) {
-            val t0 = System.currentTimeMillis()
-            val hotaRegions = loader.loadSprites(hotaFile.read(), neededSprites, packer, DefAliases.targetsIn(SpriteArchive.HOTA))
-            allRegionInfos.addAll(hotaRegions)
-            hotaRegions.forEach { loadedDefNames.add(it.packerName.substringBefore("/")) }
-            log.info { "  HotA.lod sprites (CPU): ${hotaRegions.size} regions in ${System.currentTimeMillis() - t0}ms" }
-        }
-        val remaining = neededSprites.filterNot { it in loadedDefNames }.toSet()
-        val lodFile = Gdx.files.local(AssetPaths.LOD_FILE)
-        if (lodFile.exists()) {
-            val t0 = System.currentTimeMillis()
-            val h3Regions = loader.loadSprites(lodFile.read(), remaining, packer, DefAliases.targetsIn(SpriteArchive.H3SPRITE))
-            allRegionInfos.addAll(h3Regions)
-            log.info { "  H3sprite.lod sprites (CPU): ${h3Regions.size} regions in ${System.currentTimeMillis() - t0}ms" }
-        }
-
-        val packerRects = mutableMapOf<String, PackedRect>()
-        packer.pages.forEachIndexed { i, page ->
-            page.rects.forEach { entry ->
-                val rect = entry.value
-                packerRects[entry.key] = PackedRect(i, rect.x.toInt(), rect.y.toInt(), rect.width.toInt(), rect.height.toInt())
-            }
-        }
-
-        val tEnc = System.currentTimeMillis()
-        val pages = Etc1AtlasEncoder().encodePages(packer)
-        log.info { "  ETC1 encode (CPU): ${pages.size} pages in ${System.currentTimeMillis() - tEnc}ms" }
-        packer.dispose()
-
-        val bundle = Etc1Bundle(pages, allRegionInfos, packerRects)
-        cache.write(key, bundle)
-        return bundle
+    private fun lodSources(): List<LodSource> = listOf(
+        AssetPaths.HOTA_LOD_FILE to SpriteArchive.HOTA,
+        AssetPaths.LOD_FILE to SpriteArchive.H3SPRITE,
+    ).mapNotNull { (path, archive) ->
+        val file = Gdx.files.local(path)
+        if (!file.exists()) return@mapNotNull null
+        LodSource(path, open = { file.read() }, aliases = DefAliases.targetsIn(archive))
     }
 
     fun getTerrainFrames(defName: String, index: Int): Array<TextureAtlas.AtlasRegion> {
@@ -235,7 +195,11 @@ class GameAssets : Disposable {
         return reg.findRegions(name)
     }
 
-    fun companionFor(color: Texture): Texture? = registry?.companionFor(color)
+    fun paletteTexture(): Texture? = registry?.paletteTexture
+
+    fun updatePalettes(delta: Float) {
+        registry?.update(delta)
+    }
 
     override fun dispose() {
         if (::skin.isInitialized) skin.dispose()

@@ -11,9 +11,11 @@ import com.homm3.livewallpaper.core.assets.GameAssets
 import com.homm3.livewallpaper.core.input.CameraInputProcessor
 import com.homm3.livewallpaper.core.map.GameMap
 import com.homm3.livewallpaper.core.render.BrightnessOverlay
-import com.homm3.livewallpaper.core.render.Etc1SpriteBatch
-import com.homm3.livewallpaper.core.render.Etc1TiledMapRenderer
+import com.homm3.livewallpaper.core.render.DebugCapture
 import com.homm3.livewallpaper.core.render.MapCamera
+import com.homm3.livewallpaper.core.render.PaletteSpriteBatch
+import com.homm3.livewallpaper.core.render.PaletteTiledMapRenderer
+import com.homm3.livewallpaper.core.render.RenderStats
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -32,15 +34,15 @@ class GameScreen(
 ) : KtxScreen {
 
     private val viewport = ScreenViewport(camera)
-    private val spriteBatch = Etc1SpriteBatch(size = 1000) {
-        { tex -> assets.companionFor(tex) }
-    }
+    private val spriteBatch = PaletteSpriteBatch(size = 1000) { assets.paletteTexture() }
     private val tiledMap = TiledMap()
-    private val renderer = Etc1TiledMapRenderer(tiledMap, spriteBatch)
+    private val renderer = PaletteTiledMapRenderer(tiledMap, spriteBatch)
     private val inputProcessor = CameraInputProcessor(viewport).apply {
         onEnter = { randomizeVisibleMapPart(force = true) }
     }
     private val brightnessOverlay = BrightnessOverlay(camera)
+    private val renderStats = RenderStats()
+    private val debugCapture = DebugCapture()
     private var mapUpdateInterval = 0f
     private var lastMapUpdateTime = 0L
     private var currentMapIndex = 0
@@ -91,10 +93,14 @@ class GameScreen(
 
     override fun render(delta: Float) {
         inputProcessor.handlePressedKeys()
+        assets.updatePalettes(delta)
         camera.update()
         renderer.setView(camera)
+        val renderStart = System.nanoTime()
         renderer.render()
+        renderStats.record(spriteBatch.renderCalls, System.nanoTime() - renderStart)
         brightnessOverlay.render()
+        debugCapture.onFrameRendered(hasMap = tiledMap.layers.size() > 0)
     }
 
     override fun hide() {
@@ -151,6 +157,10 @@ class GameScreen(
     }
 
     fun randomizeVisibleMapPart(force: Boolean = false) {
+        if (debugCapture.isEnabled) {
+            showPinnedView()
+            return
+        }
         if (!shouldUpdateVisibleMapPart(force)) {
             return
         }
@@ -227,6 +237,13 @@ class GameScreen(
         private const val MIN_OBJECT_COVERAGE = 0.8f
         private const val MAX_REROLLS = 20
         private const val MAX_SWITCHES_BEFORE_BATCH_ROTATE = 20
+    }
+
+    private fun showPinnedView() {
+        showMapAtIndex(0)
+        val (x, y) = debugCapture.pinnedCamera ?: return
+        camera.position.set(x, y, 0f)
+        camera.update()
     }
 
     private fun showMapAtIndex(index: Int) {
