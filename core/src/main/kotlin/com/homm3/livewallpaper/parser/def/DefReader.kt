@@ -4,10 +4,13 @@ import com.homm3.livewallpaper.parser.BinaryReader
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.Arrays
+import java.util.logging.Level
+import java.util.logging.Logger
 
 private const val MAX_DIMENSION = 4096
 private const val MAX_GROUPS = 256
 private const val MAX_FRAMES_PER_GROUP = 10000
+private const val SEGMENT_WIDTH = 32
 
 class DefReader(stream: InputStream) {
     private val reader = BinaryReader(stream)
@@ -90,12 +93,17 @@ class DefReader(stream: InputStream) {
 
         reader.seek(dataOffset)
 
-        val data = when (compression) {
-            0 -> decompressType0(width * height)
-            1 -> decompressType1(width, height, dataOffset)
-            2 -> decompressType2(width, height, dataOffset)
-            3 -> decompressType3(width, height, dataOffset)
-            else -> decompressType0(width * height)
+        val data = try {
+            when (compression) {
+                0 -> decompressType0(width * height)
+                1 -> decompressType1(width, height, dataOffset)
+                2 -> decompressType2(width, height, dataOffset)
+                3 -> decompressType3(width, height, dataOffset)
+                else -> decompressType0(width * height)
+            }
+        } catch (e: IllegalArgumentException) {
+            log.log(Level.WARNING, "DEF frame $frameName is corrupt, drawing it transparent", e)
+            ByteArray(width * height)
         }
 
         return DefFrame(frameName, width, height, fullWidth, fullHeight, x, y, data)
@@ -115,6 +123,7 @@ class DefReader(stream: InputStream) {
             while (left > 0) {
                 val index = reader.readByte()
                 val length = reader.readByte() + 1
+                require(length <= left) { "DEF RLE: run overflows row" }
                 if (index == 0xFF) {
                     output.write(reader.readBytes(length))
                 } else {
@@ -135,6 +144,7 @@ class DefReader(stream: InputStream) {
             val code = reader.readByte()
             val index = code shr 5
             val length = (code and 0x1F) + 1
+            require(length <= left) { "DEF RLE: run overflows row" }
             if (index == 0x7) {
                 output.write(reader.readBytes(length))
             } else {
@@ -147,25 +157,34 @@ class DefReader(stream: InputStream) {
     }
 
     private fun decompressType2(width: Int, height: Int, dataOffset: Long): ByteArray {
-        val firstOffset = reader.readShort()
-        reader.seek(dataOffset + firstOffset)
+        val rowOffsets = IntArray(height) { reader.readShort() }
 
         val output = ByteArrayOutputStream()
-        for (i in 0 until height) {
+        for (rowOffset in rowOffsets) {
+            reader.seek(dataOffset + rowOffset)
             decodePackedRLELine(output, width)
         }
         return output.toByteArray()
     }
 
+    // Each row is split into 32-pixel segments with their own offsets; pixels past the last full segment stay transparent.
     private fun decompressType3(width: Int, height: Int, dataOffset: Long): ByteArray {
-        val blocksPerLine = width / 32
+        val segmentsPerRow = width / SEGMENT_WIDTH
+        val segmentOffsets = IntArray(height * segmentsPerRow) { reader.readShort() }
+        val rowRemainder = ByteArray(width - segmentsPerRow * SEGMENT_WIDTH)
+
         val output = ByteArrayOutputStream()
-        for (i in 0 until height) {
-            reader.seek(dataOffset + i.toLong() * 2 * blocksPerLine)
-            val lineOffset = reader.readShort()
-            reader.seek(dataOffset + lineOffset)
-            decodePackedRLELine(output, width)
+        for (row in 0 until height) {
+            for (segment in 0 until segmentsPerRow) {
+                reader.seek(dataOffset + segmentOffsets[row * segmentsPerRow + segment])
+                decodePackedRLELine(output, SEGMENT_WIDTH)
+            }
+            output.write(rowRemainder)
         }
         return output.toByteArray()
+    }
+
+    companion object {
+        private val log = Logger.getLogger(DefReader::class.java.name)
     }
 }
