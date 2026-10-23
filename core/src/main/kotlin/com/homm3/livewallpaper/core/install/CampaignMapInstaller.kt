@@ -1,4 +1,4 @@
-package com.homm3.livewallpaper.core.assets
+package com.homm3.livewallpaper.core.install
 
 import com.homm3.livewallpaper.parser.h3c.H3cExtractor
 import com.homm3.livewallpaper.parser.lod.LodReader

@@ -1,6 +1,7 @@
 package com.homm3.livewallpaper.android
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -18,12 +19,18 @@ import androidx.compose.ui.unit.dp
 import android.os.Build
 import com.homm3.livewallpaper.R
 import com.homm3.livewallpaper.core.AssetPaths
-import com.homm3.livewallpaper.core.assets.CampaignMapInstaller
-import com.homm3.livewallpaper.core.assets.LodValidator
-import com.homm3.livewallpaper.parser.inno.InnoSetupExtractor
+import com.homm3.livewallpaper.core.install.BundledMapSource
+import com.homm3.livewallpaper.core.install.GameDataInstaller
+import com.homm3.livewallpaper.core.install.InstallResult
+import java.io.File
+import java.io.InputStream
 import kotlin.concurrent.thread
 
 class AssetSetupActivity : ComponentActivity() {
+
+    private val installer by lazy {
+        GameDataInstaller(dataDir = filesDir, tempDir = cacheDir, bundledMaps = AssetBundledMaps())
+    }
 
     private val filePickerLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -33,72 +40,16 @@ class AssetSetupActivity : ComponentActivity() {
         statusMessage = ""
 
         thread {
-            try {
-                val inputStream = contentResolver.openInputStream(uri)
-                    ?: run {
-                        runOnUiThread {
-                            statusMessage = "Failed to open file"
-                            isConverting = false
-                        }
-                        return@thread
-                    }
-
-                runOnUiThread { statusMessage = "Copying file..." }
-                val outputFile = filesDir.resolve(AssetPaths.LOD_FILE)
-                inputStream.use { input ->
-                    outputFile.outputStream().use { output -> input.copyTo(output) }
-                }
-
-                runOnUiThread { statusMessage = "Validating H3sprite.lod..." }
-                val error = LodValidator.validate(outputFile.inputStream(), isHota = false)
-                if (error != null) {
-                    outputFile.delete()
-                    runOnUiThread {
-                        statusMessage = error
-                        isConverting = false
-                    }
-                    return@thread
-                }
-
-                copyBundledMaps()
-
-                runOnUiThread {
-                    statusMessage = "Done!"
-                    isConverting = false
-                    startActivity(Intent(this, SettingsActivity::class.java))
-                    finish()
-                }
-            } catch (e: Exception) {
-                runOnUiThread {
-                    statusMessage = "Error: ${e.message}"
-                    isConverting = false
-                }
+            val inputStream = runCatching { contentResolver.openInputStream(uri) }.getOrNull()
+            if (inputStream == null) {
+                showBaseResult(InstallResult.Failure(FAILED_TO_OPEN_MESSAGE))
+                return@thread
             }
-        }
-    }
-
-    private fun copyBundledMaps() {
-        val mapsDir = filesDir.resolve(AssetPaths.USER_MAPS_FOLDER)
-        mapsDir.mkdirs()
-        val bundled = assets.list(AssetPaths.USER_MAPS_FOLDER) ?: return
-        for (name in bundled) {
-            if (!name.endsWith(".h3m", ignoreCase = true)) continue
-            val target = mapsDir.resolve(name)
-            if (target.exists()) continue
-            assets.open("${AssetPaths.USER_MAPS_FOLDER}/$name").use { input ->
-                target.outputStream().use { output -> input.copyTo(output) }
+            val result = installer.installBaseLod(inputStream) { message ->
+                runOnUiThread { statusMessage = message }
             }
+            showBaseResult(result)
         }
-    }
-
-    private fun sanitizeBasename(name: String): String {
-        val illegal = setOf(':', '/', '\\', '?', '*', '<', '>', '|', '"')
-        val cleaned = buildString(name.length) {
-            for (c in name.trim()) {
-                if (c.code < 0x20 || c in illegal) append('_') else append(c)
-            }
-        }
-        return cleaned.ifBlank { "unnamed.h3m" }
     }
 
     private val hotaFilePickerLauncher = registerForActivityResult(
@@ -109,110 +60,60 @@ class AssetSetupActivity : ComponentActivity() {
         hotaStatusMessage = ""
 
         thread {
-            val installerCache = cacheDir.resolve("hota_installer.exe")
-            val lngCache = cacheDir.resolve("HotA_lng.lod")
-            val hotaLodOut = filesDir.resolve(AssetPaths.HOTA_LOD_FILE)
-            val userMapsDir = filesDir.resolve(AssetPaths.USER_MAPS_FOLDER).apply { mkdirs() }
-            Log.i(HOTA_TAG, "picker fired: uri=$uri")
-            Log.i(
-                HOTA_TAG,
-                "paths: installerCache=$installerCache lngCache=$lngCache " +
-                    "hotaLodOut=$hotaLodOut userMapsDir=$userMapsDir",
-            )
+            val installerCache = cacheDir.resolve(INSTALLER_CACHE_NAME)
             try {
-                val inputStream = contentResolver.openInputStream(uri)
-                    ?: run {
-                        Log.e(HOTA_TAG, "openInputStream returned null for $uri")
-                        runOnUiThread {
-                            hotaStatusMessage = "Failed to open file"
-                            isHotaConverting = false
-                        }
-                        return@thread
-                    }
-
-                runOnUiThread { hotaStatusMessage = "Copying installer..." }
-                inputStream.use { input ->
-                    installerCache.outputStream().use { output -> input.copyTo(output) }
-                }
-                Log.i(HOTA_TAG, "installer copied: ${installerCache.length()} bytes")
-
-                runOnUiThread { hotaStatusMessage = "Extracting installer..." }
-                val targets = listOf(
-                    InnoSetupExtractor.Target(
-                        matcher = { it.endsWith("data\\hota.lod", ignoreCase = true) },
-                        outputFor = { _ -> hotaLodOut },
-                    ),
-                    InnoSetupExtractor.Target(
-                        matcher = { it.endsWith("data\\hota_lng.lod", ignoreCase = true) },
-                        outputFor = { _ -> lngCache },
-                    ),
-                    InnoSetupExtractor.Target(
-                        matcher = { it.endsWith(".h3m", ignoreCase = true) },
-                        outputFor = { dest ->
-                            val basename = dest.substringAfterLast('\\').substringAfterLast('/')
-                            userMapsDir.resolve(sanitizeBasename(basename))
-                        },
-                    ),
-                )
-                InnoSetupExtractor.extract(installerCache, targets) { written, total, _ ->
-                    val pct = if (total > 0) ((written * 100L) / total).toInt() else 0
-                    runOnUiThread { hotaStatusMessage = "Extracting: $pct%" }
-                }
-
-                Log.i(
-                    HOTA_TAG,
-                    "extract done. HotA.lod=${hotaLodOut.length()} lng exists=${lngCache.isFile} " +
-                        "lng=${if (lngCache.isFile) lngCache.length() else 0} " +
-                        "userMaps count=${userMapsDir.list()?.size ?: 0}",
-                )
-
-                runOnUiThread { hotaStatusMessage = "Validating HotA.lod..." }
-                val error = LodValidator.validate(hotaLodOut.inputStream(), isHota = true)
-                if (error != null) {
-                    Log.e(HOTA_TAG, "LodValidator rejected HotA.lod: $error")
-                    hotaLodOut.delete()
-                    runOnUiThread {
-                        hotaStatusMessage = error
-                        isHotaConverting = false
-                    }
+                val copyFailure = copyToFile(uri, installerCache)
+                if (copyFailure != null) {
+                    showHotaResult(copyFailure)
                     return@thread
                 }
-
-                if (lngCache.isFile) {
-                    runOnUiThread { hotaStatusMessage = "Extracting campaigns..." }
-                    val r = CampaignMapInstaller.installFromLod(lngCache, userMapsDir) { i, total, msg ->
-                        runOnUiThread { hotaStatusMessage = "$msg ($i/$total)" }
-                    }
-                    Log.i(
-                        HOTA_TAG,
-                        "campaigns: found=${r.campaignsFound} mapsWritten=${r.mapsWritten} skipped=${r.skipped}",
-                    )
-                    runOnUiThread {
-                        hotaStatusMessage = "Extracted ${r.mapsWritten} maps from ${r.campaignsFound} campaigns"
-                    }
+                val result = installer.installHota(installerCache, extractInstallerMaps = true) { message ->
+                    runOnUiThread { hotaStatusMessage = message }
                 }
-
-                Log.i(HOTA_TAG, "done")
-                runOnUiThread {
-                    hotaStatusMessage = "Done!"
-                    isHotaConverting = false
-                }
-            } catch (e: Exception) {
-                Log.e(HOTA_TAG, "HotA pipeline failed", e)
-                hotaLodOut.delete()
-                runOnUiThread {
-                    hotaStatusMessage = "Error: ${e.message}"
-                    isHotaConverting = false
-                }
+                showHotaResult(result)
             } finally {
                 installerCache.delete()
-                lngCache.delete()
             }
         }
     }
 
+    /** Copies [uri] to [target]; returns a failure to show, or `null` once copied. */
+    private fun copyToFile(uri: Uri, target: File): InstallResult.Failure? {
+        try {
+            val inputStream = contentResolver.openInputStream(uri) ?: return InstallResult.Failure(FAILED_TO_OPEN_MESSAGE)
+            runOnUiThread { hotaStatusMessage = "Copying installer..." }
+            inputStream.use { input -> target.outputStream().use { output -> input.copyTo(output) } }
+            return null
+        } catch (e: Exception) {
+            Log.e(HOTA_TAG, "Copying installer failed", e)
+            return InstallResult.Failure("Error: ${e.message}")
+        }
+    }
+
+    private fun showBaseResult(result: InstallResult) = runOnUiThread {
+        statusMessage = result.message
+        isConverting = false
+        if (result is InstallResult.Success) {
+            startActivity(Intent(this, SettingsActivity::class.java))
+            finish()
+        }
+    }
+
+    private fun showHotaResult(result: InstallResult) = runOnUiThread {
+        hotaStatusMessage = result.message
+        isHotaConverting = false
+    }
+
+    private inner class AssetBundledMaps : BundledMapSource {
+        override fun list(): List<String> = assets.list(AssetPaths.USER_MAPS_FOLDER)?.toList().orEmpty()
+
+        override fun open(fileName: String): InputStream = assets.open("${AssetPaths.USER_MAPS_FOLDER}/$fileName")
+    }
+
     companion object {
         private const val HOTA_TAG = "HotaSetup"
+        private const val INSTALLER_CACHE_NAME = "hota_installer.exe"
+        private const val FAILED_TO_OPEN_MESSAGE = "Failed to open file"
     }
 
     private var isConverting by mutableStateOf(false)

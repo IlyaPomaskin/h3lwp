@@ -7,11 +7,12 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
 import com.homm3.livewallpaper.core.AssetPaths
 import com.homm3.livewallpaper.core.Engine
 import com.homm3.livewallpaper.core.WallpaperPreferences
-import com.homm3.livewallpaper.core.assets.CampaignMapInstaller
-import com.homm3.livewallpaper.core.assets.LodValidator
-import com.homm3.livewallpaper.parser.inno.InnoSetupExtractor
+import com.homm3.livewallpaper.core.install.BundledMapSource
+import com.homm3.livewallpaper.core.install.GameDataInstaller
+import com.homm3.livewallpaper.core.install.InstallResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.File
+import java.io.InputStream
 import java.util.logging.Logger
 import kotlin.concurrent.thread
 
@@ -53,143 +54,55 @@ fun main(args: Array<String>) {
         })
 }
 
-private fun sanitizeBasename(name: String): String {
-    val illegal = setOf(':', '/', '\\', '?', '*', '<', '>', '|', '"')
-    val cleaned = buildString(name.length) {
-        for (c in name.trim()) {
-            if (c.code < 0x20 || c in illegal) append('_') else append(c)
-        }
-    }
-    return cleaned.ifBlank { "unnamed.h3m" }
-}
+private const val LOD_SOURCE = "data/H3sprite.lod"
+private const val HOTA_INSTALLER_SOURCE = "data/HotA_1.8.0_setup.exe"
 
-private fun copyBundledMaps() {
-    val mapsDir = Gdx.files.local(AssetPaths.USER_MAPS_FOLDER).file().apply { mkdirs() }
-    val internalHandle = Gdx.files.internal(AssetPaths.USER_MAPS_FOLDER)
-    val bundled = internalHandle.list(".h3m")
-    log.info("copyBundledMaps: dest=${mapsDir.absolutePath} internalPath=${internalHandle.path()} bundledCount=${bundled.size}")
-    for (handle in bundled) {
-        val target = mapsDir.resolve(handle.name())
-        if (target.exists()) {
-            log.fine("copyBundledMaps: skip existing ${target.name}")
-            continue
-        }
-        handle.read().use { input ->
-            target.outputStream().use { output -> input.copyTo(output) }
-        }
-        log.info("copyBundledMaps: wrote ${target.absolutePath} (${target.length()}B)")
-    }
+/** Created on use: [Gdx.files] only exists once the application has started. */
+private fun createInstaller() = GameDataInstaller(
+    dataDir = File(Gdx.files.localStoragePath),
+    tempDir = File(System.getProperty("java.io.tmpdir")),
+    bundledMaps = InternalBundledMaps(),
+)
+
+private class InternalBundledMaps : BundledMapSource {
+    private val folder get() = Gdx.files.internal(AssetPaths.USER_MAPS_FOLDER)
+
+    override fun list(): List<String> = folder.list().map { it.name() }
+
+    override fun open(fileName: String): InputStream = folder.child(fileName).read()
 }
 
 private fun copyLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
-    val lodFile = CWD.resolve("data/H3sprite.lod")
+    val lodFile = CWD.resolve(LOD_SOURCE)
     log.info("copyLodFile: source=${lodFile.absolutePath} exists=${lodFile.exists()}")
     if (!lodFile.exists()) {
-        onProgress("data/H3sprite.lod not found")
+        onProgress("$LOD_SOURCE not found")
         return
     }
 
     thread(isDaemon = true) {
-        val outputFile = Gdx.files.local(AssetPaths.LOD_FILE).file()
-        log.info("copyLodFile: dest=${outputFile.absolutePath}")
-        try {
-            outputFile.parentFile?.mkdirs()
-            onProgress("Copying file...")
-            lodFile.copyTo(outputFile, overwrite = true)
-            log.info("copyLodFile: copied ${outputFile.length()}B → ${outputFile.absolutePath}")
-
-            onProgress("Validating H3sprite.lod...")
-            val error = LodValidator.validate(outputFile.inputStream(), isHota = false)
-            if (error != null) {
-                log.warning("copyLodFile: validation failed: $error")
-                outputFile.delete()
-                onProgress(error)
-                return@thread
-            }
-
-            copyBundledMaps()
-
-            log.info("copyLodFile: done")
-            onProgress("Done!")
-            onDone()
-        } catch (e: Exception) {
-            log.severe("copyLodFile: failed: ${e.javaClass.name}: ${e.message}")
-            onProgress("Error: ${e.message}")
-        }
+        val result = createInstaller().installBaseLod(lodFile.inputStream(), onProgress)
+        reportResult(result, onProgress, onDone)
     }
 }
 
 private fun copyHotaLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
-    val installer = CWD.resolve("data/HotA_1.8.0_setup.exe")
+    val installer = CWD.resolve(HOTA_INSTALLER_SOURCE)
     log.info("copyHotaLodFile: source=${installer.absolutePath} exists=${installer.exists()}")
     if (!installer.exists()) {
-        onProgress("data/HotA_1.8.0_setup.exe not found")
+        onProgress("$HOTA_INSTALLER_SOURCE not found")
         return
     }
 
     thread(isDaemon = true) {
-        val hotaLodOut = Gdx.files.local(AssetPaths.HOTA_LOD_FILE).file()
-        val userMapsDir = Gdx.files.local(AssetPaths.USER_MAPS_FOLDER).file().apply { mkdirs() }
-        val lngCache = File.createTempFile("HotA_lng_", ".lod").apply { deleteOnExit() }
-        log.info("copyHotaLodFile: dest hotaLodOut=${hotaLodOut.absolutePath} userMapsDir=${userMapsDir.absolutePath} lngCache=${lngCache.absolutePath}")
-        try {
-            hotaLodOut.parentFile?.mkdirs()
-            onProgress("Extracting installer...")
-            val targets = listOf(
-                InnoSetupExtractor.Target(
-                    matcher = { it.endsWith("data\\hota.lod", ignoreCase = true) },
-                    outputFor = { _ -> hotaLodOut },
-                ),
-                InnoSetupExtractor.Target(
-                    matcher = { it.endsWith("data\\hota_lng.lod", ignoreCase = true) },
-                    outputFor = { _ -> lngCache },
-                ),
-             // InnoSetupExtractor.Target(
-             //     matcher = {
-             //         // it.contains("\\app\\maps\\", ignoreCase = true) &&
-             //             it.endsWith(".h3m", ignoreCase = true)
-             //     },
-             //     outputFor = { dest ->
-             //         val basename = dest.substringAfterLast('\\').substringAfterLast('/')
-             //         userMapsDir.resolve(sanitizeBasename(basename))
-             //     },
-             // ),
-            )
-            InnoSetupExtractor.extract(installer, targets) { written, total, _ ->
-                val pct = if (total > 0) ((written * 100L) / total).toInt() else 0
-                onProgress("Extracting: $pct%")
-            }
-            log.info("copyHotaLodFile: extract done — hotaLod=${hotaLodOut.length()}B lngExists=${lngCache.isFile} lng=${if (lngCache.isFile) lngCache.length() else 0L}B")
-
-            onProgress("Validating HotA.lod...")
-            val error = LodValidator.validate(hotaLodOut.inputStream(), isHota = true)
-            if (error != null) {
-                log.warning("copyHotaLodFile: validation failed: $error")
-                hotaLodOut.delete()
-                onProgress(error)
-                return@thread
-            }
-
-            if (lngCache.isFile) {
-                onProgress("Extracting campaigns...")
-                val r = CampaignMapInstaller.installFromLod(lngCache, userMapsDir) { i, total, msg ->
-                    onProgress("$msg ($i/$total)")
-                }
-                log.info("copyHotaLodFile: campaigns done — found=${r.campaignsFound} written=${r.mapsWritten} skipped=${r.skipped}")
-                onProgress("Extracted ${r.mapsWritten} maps from ${r.campaignsFound} campaigns")
-            }
-
-            log.info("copyHotaLodFile: done")
-            onProgress("Done!")
-            onDone()
-        } catch (e: Exception) {
-            log.severe("copyHotaLodFile: failed: ${e.javaClass.name}: ${e.message}")
-            hotaLodOut.delete()
-            onProgress("Error: ${e.message}")
-        } finally {
-            lngCache.delete()
-        }
+        val result = createInstaller().installHota(installer, extractInstallerMaps = false, onProgress)
+        reportResult(result, onProgress, onDone)
     }
+}
+
+private fun reportResult(result: InstallResult, onProgress: (String) -> Unit, onDone: () -> Unit) {
+    onProgress(result.message)
+    if (result is InstallResult.Success) onDone()
 }
 
 private data class ParsedArgs(
