@@ -152,9 +152,10 @@ class IndexedSpriteLoader {
     }
 }
 
-/** Mutable accumulator for one load() call: packer pages, regions and deduplicated palettes. */
+/** Mutable accumulator for one load() call: terrain and object packer pages, regions and deduplicated palettes. */
 private class BundleBuilder {
-    private val packer = PixmapPacker(PAGE_SIZE, PAGE_SIZE, Pixmap.Format.Alpha, PAGE_PADDING, true)
+    private val terrainPacker = newPacker()
+    private val objectPacker = newPacker()
     private val regions = mutableListOf<IndexedRegionInfo>()
     private val palettes = mutableListOf<PaletteData>()
     private val staticPaletteIndices = mutableMapOf<ByteBuffer, Int>()
@@ -191,7 +192,7 @@ private class BundleBuilder {
     fun packTerrainFrame(defName: String, frame: DefFrame, filenames: List<String>, paletteIndex: Int) {
         val packerName = "$defName/${frame.frameName}"
         val canvas = makeTerrainCanvas(frame)
-        packer.pack(packerName, canvas)
+        terrainPacker.pack(packerName, canvas)
         canvas.dispose()
 
         val defNameNoExt = defName.removeSuffix(DEF_EXTENSION)
@@ -215,7 +216,7 @@ private class BundleBuilder {
     fun packObjectFrame(defName: String, frame: DefFrame, filenames: List<String>, paletteIndex: Int) {
         val packerName = "$defName/${frame.frameName}"
         val pixmap = makeObjectPixmap(frame)
-        packer.pack(packerName, pixmap)
+        objectPacker.pack(packerName, pixmap)
         pixmap.dispose()
 
         val defNameNoExt = defName.removeSuffix(DEF_EXTENSION)
@@ -237,16 +238,19 @@ private class BundleBuilder {
     }
 
     fun build(): IndexedBundle {
-        val packerRects = packer.pages.flatMapIndexed { pageIndex, page ->
+        val packerPages = terrainPacker.pages + objectPacker.pages
+        val packerRects = packerPages.flatMapIndexed { pageIndex, page ->
             page.rects.map { entry ->
                 val rect = entry.value
                 entry.key to PackedRect(pageIndex, rect.x.toInt(), rect.y.toInt(), rect.width.toInt(), rect.height.toInt())
             }
         }.toMap()
         // Pages are handed over without packer.dispose(): the bundle owns and disposes the pixmaps.
-        val pages = packer.pages.map { it.pixmap }
+        val pages = packerPages.map { it.pixmap }
         return IndexedBundle(pages, regions.toList(), packerRects, palettes.toList())
     }
+
+    private fun newPacker() = PixmapPacker(PAGE_SIZE, PAGE_SIZE, Pixmap.Format.Alpha, PAGE_PADDING, true)
 
     private fun positionsOf(frameName: String, filenames: List<String>): List<Int> =
         filenames.indices.filter { filenames[it] == frameName }
