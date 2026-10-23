@@ -2,14 +2,14 @@ package com.homm3.livewallpaper.core.render
 
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.utils.NumberUtils
-import com.homm3.livewallpaper.core.assets.indexed.MAX_PALETTE_ROWS
+import com.homm3.livewallpaper.core.assets.indexed.MAX_PALETTE_SLOTS
 import com.homm3.livewallpaper.core.assets.indexed.PaletteColor
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import kotlin.math.floor
 
 class PaletteColorTest {
-    private val rows = listOf(0, 1, 255, 256, 1000, MAX_PALETTE_ROWS - 1)
+    private val rows = listOf(0, 1, 255, 256, 1000, MAX_PALETTE_SLOTS - 1)
 
     @Test
     fun rowSurvivesVertexColorPacking() {
@@ -33,7 +33,7 @@ class PaletteColorTest {
     @Test
     fun alphaSurvivesPackingWithinTwoSteps() {
         listOf(0f, 0.25f, 0.5f, 1f).forEach { alpha ->
-            val color = unpack(PaletteColor.encode(MAX_PALETTE_ROWS - 1, alpha))
+            val color = unpack(PaletteColor.encode(MAX_PALETTE_SLOTS - 1, alpha))
             val shaderAlpha = color.a * (BYTE_MAX / PACKED_ALPHA_MAX)
             assertEquals("alpha $alpha", alpha, shaderAlpha, ALPHA_TOLERANCE)
         }

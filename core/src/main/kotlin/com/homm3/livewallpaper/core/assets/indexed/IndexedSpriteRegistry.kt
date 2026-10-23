@@ -48,7 +48,7 @@ class IndexedSpriteRegistry : Disposable {
 
         val textureByPage = newRegions.map { (_, rect) -> rect.pageIndex }.distinct()
             .associateWith { pageIndex -> uploadPage(bundle, pageIndex) }
-        val rowByPalette = newRegions.map { (info, _) -> info.paletteIndex }.distinct()
+        val slotByPalette = newRegions.map { (info, _) -> info.paletteIndex }.distinct()
             .associateWith { paletteIndex -> paletteAtlas.add(paletteOf(bundle, paletteIndex)) }
 
         newRegions.forEach { (info, rect) ->
@@ -58,7 +58,7 @@ class IndexedSpriteRegistry : Disposable {
                 y = rect.y,
                 width = info.width,
                 height = info.height,
-                paletteRow = rowByPalette.getValue(info.paletteIndex),
+                paletteSlot = slotByPalette.getValue(info.paletteIndex),
             ).apply {
                 name = info.regionName
                 index = info.regionIndex
@@ -79,7 +79,7 @@ class IndexedSpriteRegistry : Disposable {
         if (EDGE_DEF in newRegionNames) registerEdgeFrames()
 
         log.info {
-            "Added ${newRegionNames.size} indexed regions, ${textureByPage.size} pages, ${rowByPalette.size} palettes"
+            "Added ${newRegionNames.size} indexed regions, ${textureByPage.size} pages, ${slotByPalette.size} palettes"
         }
     }
 

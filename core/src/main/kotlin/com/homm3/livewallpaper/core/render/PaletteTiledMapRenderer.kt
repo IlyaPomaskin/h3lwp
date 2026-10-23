@@ -12,7 +12,7 @@ import com.homm3.livewallpaper.core.map.layers.ObjectsLayer
 
 /**
  * OrthogonalTiledMapRenderer that draws through PaletteShader. Tile layers are rendered with a per-tile
- * vertex colour carrying the tile's palette row instead of one colour for the whole layer.
+ * vertex colour carrying the tile's palette slot instead of one colour for the whole layer.
  */
 class PaletteTiledMapRenderer(
     map: TiledMap,
@@ -68,7 +68,7 @@ class PaletteTiledMapRenderer(
                 val tile = cell?.tile
                 if (cell != null && tile != null) {
                     val region = tile.textureRegion
-                    val color = PaletteColor.encode(paletteRowOf(region), alpha)
+                    val color = PaletteColor.encode(paletteSlotOf(region), alpha)
 
                     val x1 = x + tile.offsetX * unitScale
                     val y1 = y + tile.offsetY * unitScale
@@ -127,8 +127,8 @@ class PaletteTiledMapRenderer(
         paletteShader.dispose()
     }
 
-    private fun paletteRowOf(region: TextureRegion): Int {
-        return (region as? PaletteRegion)?.paletteRow ?: DEFAULT_PALETTE_ROW
+    private fun paletteSlotOf(region: TextureRegion): Int {
+        return (region as? PaletteRegion)?.paletteSlot ?: DEFAULT_PALETTE_SLOT
     }
 
     private fun swap(vertices: FloatArray, first: Int, second: Int) {
@@ -176,7 +176,7 @@ class PaletteTiledMapRenderer(
 
     private companion object {
         const val INDEX_UNIT = 0
-        const val DEFAULT_PALETTE_ROW = 0
+        const val DEFAULT_PALETTE_SLOT = 0
         const val NUM_VERTICES = 20
 
         const val X1 = 0

@@ -25,7 +25,7 @@ class MapSprite(mapObject: H3mObject, private val frames: Array<TextureAtlas.Atl
         stateTime = (stateTime % animationLength) + delta
         val frameIndex = ((stateTime / FRAME_TIME) % frames.size).toInt()
         val frame = frames.get(frameIndex)
-        renderer.batch.packedColor = PaletteColor.encode((frame as? PaletteRegion)?.paletteRow ?: 0)
+        renderer.batch.packedColor = PaletteColor.encode((frame as? PaletteRegion)?.paletteSlot ?: 0)
         renderer.batch.draw(frame, getFrameX(frame), getFrameY(frame))
     }
 

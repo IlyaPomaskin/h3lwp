@@ -7,18 +7,18 @@ import com.homm3.livewallpaper.core.GameConfig.FRAME_TIME
 
 class PaletteAtlas : Disposable {
     private val table = PaletteTable()
-    private val rowPixmap = Pixmap(PALETTE_SIZE, ROW_HEIGHT, Pixmap.Format.RGBA8888)
+    private val slotPixmap = Pixmap(PALETTE_SIZE, SLOT_HEIGHT, Pixmap.Format.RGBA8888)
     private var elapsedSinceStep = 0f
 
-    val texture: Texture = Texture(PALETTE_SIZE, MAX_PALETTE_ROWS, Pixmap.Format.RGBA8888).apply {
+    val texture: Texture = Texture(PALETTE_TEXTURE_WIDTH, PALETTE_TEXTURE_HEIGHT, Pixmap.Format.RGBA8888).apply {
         setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         setWrap(Texture.TextureWrap.ClampToEdge, Texture.TextureWrap.ClampToEdge)
     }
 
     fun add(palette: PaletteData): Int {
         val assignment = table.add(palette)
-        if (assignment.isNew) uploadRow(assignment.row)
-        return assignment.row
+        if (assignment.isNew) uploadSlot(assignment.slot)
+        return assignment.slot
     }
 
     /** Advances at most one rotation step per call, so a long pause does not replay missed steps. */
@@ -27,32 +27,34 @@ class PaletteAtlas : Disposable {
         if (elapsedSinceStep < FRAME_TIME) return
 
         elapsedSinceStep %= FRAME_TIME
-        table.step().forEach(::uploadRow)
+        table.step().forEach(::uploadSlot)
     }
 
-    private fun uploadRow(row: Int) {
-        val pixels = rowPixmap.pixels
+    private fun uploadSlot(slot: Int) {
+        val pixels = slotPixmap.pixels
         pixels.clear()
-        pixels.put(table.rowBytes(row))
+        pixels.put(table.slotBytes(slot))
         pixels.position(0)
-        texture.draw(rowPixmap, 0, row)
+        val column = slot % PALETTES_PER_ROW
+        val row = slot / PALETTES_PER_ROW
+        texture.draw(slotPixmap, column * PALETTE_SIZE, row)
     }
 
     override fun dispose() {
         texture.dispose()
-        rowPixmap.dispose()
+        slotPixmap.dispose()
     }
 
     private companion object {
-        const val ROW_HEIGHT = 1
+        const val SLOT_HEIGHT = 1
     }
 }
 
-/** GL-free palette rows: assignment, dedupe of static palettes and runtime colour cycling. */
-internal class PaletteTable(private val maxRows: Int = MAX_PALETTE_ROWS) {
-    data class Assignment(val row: Int, val isNew: Boolean)
+/** GL-free palette slots: assignment, dedupe of static palettes and runtime colour cycling. */
+internal class PaletteTable(private val maxSlots: Int = MAX_PALETTE_SLOTS) {
+    data class Assignment(val slot: Int, val isNew: Boolean)
 
-    private class RotatingRow(val row: Int, val rotations: List<Pair<Int, Int>>)
+    private class RotatingSlot(val slot: Int, val rotations: List<Pair<Int, Int>>)
 
     private class PaletteKey(val bytes: ByteArray) {
         private val hash = bytes.contentHashCode()
@@ -60,43 +62,43 @@ internal class PaletteTable(private val maxRows: Int = MAX_PALETTE_ROWS) {
         override fun equals(other: Any?) = other is PaletteKey && bytes.contentEquals(other.bytes)
     }
 
-    private val rows = mutableListOf<ByteArray>()
-    private val staticRowByContent = mutableMapOf<PaletteKey, Int>()
-    private val rotatingRows = mutableListOf<RotatingRow>()
+    private val slots = mutableListOf<ByteArray>()
+    private val staticSlotByContent = mutableMapOf<PaletteKey, Int>()
+    private val rotatingSlots = mutableListOf<RotatingSlot>()
 
-    val rowCount: Int get() = rows.size
+    val slotCount: Int get() = slots.size
 
     fun add(palette: PaletteData): Assignment {
         val isRotating = palette.rotations.isNotEmpty()
         if (isRotating) {
             palette.rotations.forEach { (from, to) -> validateRange(from, to) }
-            val row = appendRow(palette.rgba)
-            rotatingRows.add(RotatingRow(row, palette.rotations))
-            return Assignment(row, isNew = true)
+            val slot = appendSlot(palette.rgba)
+            rotatingSlots.add(RotatingSlot(slot, palette.rotations))
+            return Assignment(slot, isNew = true)
         }
 
         val key = PaletteKey(palette.rgba.copyOf())
-        staticRowByContent[key]?.let { return Assignment(it, isNew = false) }
+        staticSlotByContent[key]?.let { return Assignment(it, isNew = false) }
 
-        val row = appendRow(key.bytes)
-        staticRowByContent[key] = row
-        return Assignment(row, isNew = true)
+        val slot = appendSlot(key.bytes)
+        staticSlotByContent[key] = slot
+        return Assignment(slot, isNew = true)
     }
 
-    fun rowBytes(row: Int): ByteArray = rows[row]
+    fun slotBytes(slot: Int): ByteArray = slots[slot]
 
-    /** Rotates every rotating row by one step; returns the rows that changed. */
-    fun step(): List<Int> = rotatingRows.map { rotating ->
-        rows[rotating.row] = rotating.rotations.fold(rows[rotating.row]) { palette, (from, to) ->
+    /** Rotates every rotating palette by one step; returns the slots that changed. */
+    fun step(): List<Int> = rotatingSlots.map { rotating ->
+        slots[rotating.slot] = rotating.rotations.fold(slots[rotating.slot]) { palette, (from, to) ->
             rotatePaletteEntries(palette, from, to)
         }
-        rotating.row
+        rotating.slot
     }
 
-    private fun appendRow(rgba: ByteArray): Int {
-        check(rows.size < maxRows) { "Palette atlas is full: all $maxRows rows are used" }
-        rows.add(rgba.copyOf())
-        return rows.size - 1
+    private fun appendSlot(rgba: ByteArray): Int {
+        check(slots.size < maxSlots) { "Palette atlas is full: all $maxSlots slots are used" }
+        slots.add(rgba.copyOf())
+        return slots.size - 1
     }
 
     private fun validateRange(from: Int, to: Int) {

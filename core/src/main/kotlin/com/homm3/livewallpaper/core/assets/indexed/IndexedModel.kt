@@ -21,8 +21,14 @@ const val PALETTE_SIZE = 256
 const val PALETTE_ENTRY_BYTES = 4
 const val PALETTE_BYTES = PALETTE_SIZE * PALETTE_ENTRY_BYTES
 
-/** Palette texture is PALETTE_SIZE x MAX_PALETTE_ROWS RGBA8888; row = one palette. */
-const val MAX_PALETTE_ROWS = 2048
+/**
+ * Palette texture: PALETTE_TEXTURE_WIDTH x PALETTE_TEXTURE_HEIGHT RGBA8888 holding PALETTES_PER_ROW palettes per row.
+ * Palette slot s lives in row s / PALETTES_PER_ROW, column s % PALETTES_PER_ROW.
+ */
+const val PALETTES_PER_ROW = 4
+const val PALETTE_TEXTURE_WIDTH = PALETTE_SIZE * PALETTES_PER_ROW
+const val PALETTE_TEXTURE_HEIGHT = 2048
+const val MAX_PALETTE_SLOTS = PALETTES_PER_ROW * PALETTE_TEXTURE_HEIGHT
 
 /**
  * One 256-colour palette, RGBA8888 (1024 bytes), special indices already applied
@@ -71,20 +77,20 @@ class IndexedBundle(
 /** A LOD archive to read sprites from; sources are searched in list order (HotA.lod first). */
 class LodSource(val name: String, val open: () -> LodDataSource, val aliases: Map<String, String>)
 
-/** AtlasRegion over an index page; [paletteRow] is its row in the palette texture. */
-class PaletteRegion(texture: Texture, x: Int, y: Int, width: Int, height: Int, val paletteRow: Int) :
+/** AtlasRegion over an index page; [paletteSlot] is its palette slot in the palette texture. */
+class PaletteRegion(texture: Texture, x: Int, y: Int, width: Int, height: Int, val paletteSlot: Int) :
     AtlasRegion(texture, x, y, width, height)
 
 /**
- * Encodes a palette row into the SpriteBatch vertex colour: r = row low byte, g = row high byte,
+ * Encodes a palette slot into the SpriteBatch vertex colour: r = slot low byte, g = slot high byte,
  * b unused, a = alpha. The shader decodes it back (see PaletteShader).
  */
 object PaletteColor {
     private const val BYTE_MAX = 255f
-    private const val ROW_BYTE = 256
+    private const val SLOT_BYTE = 256
 
-    fun encode(row: Int, alpha: Float = 1f): Float {
-        require(row in 0 until MAX_PALETTE_ROWS) { "palette row out of range: $row" }
-        return Color.toFloatBits((row % ROW_BYTE) / BYTE_MAX, (row / ROW_BYTE) / BYTE_MAX, 0f, alpha)
+    fun encode(slot: Int, alpha: Float = 1f): Float {
+        require(slot in 0 until MAX_PALETTE_SLOTS) { "palette slot out of range: $slot" }
+        return Color.toFloatBits((slot % SLOT_BYTE) / BYTE_MAX, (slot / SLOT_BYTE) / BYTE_MAX, 0f, alpha)
     }
 }
