@@ -21,6 +21,7 @@ import com.homm3.livewallpaper.parser.h3m.H3mVersion
 import ktx.assets.async.AssetStorage
 import ktx.collections.gdxArrayOf
 import ktx.log.logger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -108,10 +109,10 @@ class GameAssets : Disposable {
         }
 
         val totalStart = System.currentTimeMillis()
-        val maps = loadMaps(filesToLoad)
-        loadSpritesForMaps(maps)
+        val result = loadMaps(filesToLoad)
+        loadSpritesForMaps(result.maps)
         log.info { "loadGameAssets: total=${System.currentTimeMillis() - totalStart}ms" }
-        return LoadResult(maps, filesToLoad)
+        return result
     }
 
     /**
@@ -125,17 +126,29 @@ class GameAssets : Disposable {
         val newBatch = MapQueue().advanceIfDue(allMapFiles, force) ?: return null
         log.info { "rotateBatchIfDue: new batch = $newBatch (force=$force)" }
         val totalStart = System.currentTimeMillis()
-        val maps = loadMaps(newBatch)
-        loadSpritesForMaps(maps)
+        val result = loadMaps(newBatch)
+        loadSpritesForMaps(result.maps)
         log.info { "rotateBatchIfDue: total=${System.currentTimeMillis() - totalStart}ms" }
-        return LoadResult(maps, newBatch)
+        return result
     }
 
-    private suspend fun loadMaps(fileNames: List<String>): List<H3mMap> = fileNames.map { fileName ->
+    /** Maps that fail to parse are skipped and logged, so one broken file can't block startup or rotation. */
+    private suspend fun loadMaps(fileNames: List<String>): LoadResult {
+        val loaded = fileNames.mapNotNull { fileName -> loadMapOrNull(fileName)?.let { fileName to it } }
+        return LoadResult(maps = loaded.map { (_, map) -> map }, loadedFileNames = loaded.map { (fileName, _) -> fileName })
+    }
+
+    private suspend fun loadMapOrNull(fileName: String): H3mMap? = try {
         val t0 = System.currentTimeMillis()
-        val map = storage.load<H3mMap>(fileName)
-        log.info { "  loaded map '$fileName' in ${System.currentTimeMillis() - t0}ms" }
-        map
+        storage.load<H3mMap>(fileName).also {
+            log.info { "  loaded map '$fileName' in ${System.currentTimeMillis() - t0}ms" }
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        log.error(e) { "Skipping map '$fileName': failed to load" }
+        storage.unload<H3mMap>(fileName)
+        null
     }
 
     suspend fun loadMapFile(fileName: String): H3mMap {
