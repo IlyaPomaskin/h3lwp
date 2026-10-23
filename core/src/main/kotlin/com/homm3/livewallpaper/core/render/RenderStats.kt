@@ -1,9 +1,10 @@
 package com.homm3.livewallpaper.core.render
 
+import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import ktx.log.logger
 
-/** Logs average draw calls and map render CPU time every [REPORT_INTERVAL_NS]. */
+/** Logs average draw calls and map render CPU time every [REPORT_INTERVAL_NS]; does nothing below debug log level. */
 class RenderStats {
     private var frames = 0
     private var drawCalls = 0L
@@ -11,6 +12,8 @@ class RenderStats {
     private var windowStart = System.nanoTime()
 
     fun record(frameDrawCalls: Int, frameRenderNanos: Long) {
+        val isDebugLogging = Gdx.app.logLevel >= Application.LOG_DEBUG
+        if (!isDebugLogging) return
         frames++
         drawCalls += frameDrawCalls
         renderNanos += frameRenderNanos
@@ -18,7 +21,7 @@ class RenderStats {
         val now = System.nanoTime()
         if (now - windowStart < REPORT_INTERVAL_NS) return
 
-        log.info {
+        log.debug {
             "render stats: fps=${Gdx.graphics.framesPerSecond} drawCalls/frame=${drawCalls / frames} " +
                 "mapRender=${"%.2f".format(renderNanos / frames / NANOS_PER_MS)}ms over $frames frames"
         }

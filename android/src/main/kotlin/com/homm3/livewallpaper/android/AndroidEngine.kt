@@ -2,6 +2,9 @@ package com.homm3.livewallpaper.android
 
 import android.content.Context
 import android.content.Intent
+import com.badlogic.gdx.Application
+import com.badlogic.gdx.Gdx
+import com.homm3.livewallpaper.BuildConfig
 import com.badlogic.gdx.backends.android.AndroidWallpaperListener
 import com.homm3.livewallpaper.core.Engine
 import com.homm3.livewallpaper.core.WallpaperPreferences
@@ -37,6 +40,7 @@ class AndroidEngine(
     private var useScroll = WallpaperPreferences.defaultUseScroll
 
     override fun create() {
+        if (BuildConfig.DEBUG) Gdx.app.logLevel = Application.LOG_DEBUG
         super.create()
         prefsScope.launch {
             prefs.collect { useScroll = it.useScroll }
