@@ -9,15 +9,14 @@ import com.badlogic.gdx.utils.Disposable
 import com.homm3.livewallpaper.core.assets.indexed.IndexedSpriteLoader
 import com.homm3.livewallpaper.core.assets.indexed.IndexedSpriteRegistry
 import com.homm3.livewallpaper.core.assets.indexed.LodSource
-import com.homm3.livewallpaper.parser.h3m.H3mMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ktx.collections.gdxArrayOf
 import ktx.log.logger
 
 /**
- * Sprites (index pages + palette texture) of the loaded maps, kept across batch rotations: a new batch loads only
- * the DEFs not loaded yet. Create, fill and dispose it on the GL thread.
+ * Sprites (index pages + palette texture) of every DEF the maps folder uses; one set lives as long as the map
+ * library's data. Create, fill and dispose it on the GL thread.
  */
 class SpriteSet(
     private val sources: List<LodSource>,
@@ -35,34 +34,20 @@ class SpriteSet(
         TextureAtlas.AtlasRegion(TextureRegion(lazyEmptyTexture.value))
     }
 
-    /** Loads the sprites [maps] need that aren't in this set yet: decodes on IO, uploads on the caller's (GL) thread. */
-    suspend fun loadSpritesFor(maps: List<H3mMap>) = loadDefs(SpriteCollector(hasHotaAssets).collectNeededDefNames(maps))
-
-    /** Loads the DEFs of [defNames] (lowercase) that aren't in this set yet; same threading as [loadSpritesFor]. */
+    /** Loads the DEFs of [defNames] (lowercase) not in this set yet: decodes on IO, uploads on the caller's (GL) thread. */
     suspend fun loadDefs(defNames: Set<String>) {
-        if (isDisposed) {
-            log.info { "Sprite set is disposed; skipping sprite load for ${defNames.size} DEFs" }
-            return
-        }
         val toLoad = defNames.filterNot { registry.isDefLoaded(it) || it in notFoundSprites }.toSet()
         if (toLoad.isEmpty()) return
-        log.info { "Loading ${toLoad.size} new sprites" }
 
         val decodeStart = System.currentTimeMillis()
         val bundle = withContext(Dispatchers.IO) { IndexedSpriteLoader().load(sources, toLoad) }
-        log.info {
-            "  decode+pack (CPU): ${bundle.regions.size} regions, ${bundle.pages.size} pages, " +
-                "${bundle.palettes.size} palettes in ${System.currentTimeMillis() - decodeStart}ms"
-        }
-        if (isDisposed) {
-            log.info { "  sprite set disposed while decoding; dropping ${bundle.regions.size} regions" }
-            bundle.dispose()
-            return
-        }
-
         val uploadStart = System.currentTimeMillis()
+        val pageCount = bundle.pages.size
         registry.add(bundle)
-        log.info { "  registry build (GL): ${bundle.regions.size} regions in ${System.currentTimeMillis() - uploadStart}ms" }
+        log.info {
+            "Loaded ${toLoad.size} DEFs (${bundle.regions.size} regions, $pageCount pages, ${bundle.palettes.size} " +
+                "palettes): decode+pack ${uploadStart - decodeStart}ms, upload ${System.currentTimeMillis() - uploadStart}ms"
+        }
 
         val notFound = toLoad.filterNot { registry.isDefLoaded(it) }
         if (notFound.isEmpty()) return

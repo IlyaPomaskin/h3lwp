@@ -35,48 +35,6 @@ class LodReader(private val source: LodDataSource) : Closeable {
 
     override fun close() = source.close()
 
-    /**
-     * Decompress only the first [limit] bytes of an entry.
-     * Used for header identification without full decompression.
-     */
-    fun readFileContentPartial(entry: LodEntry, limit: Int): ByteArray {
-        if (entry.compressedSize == 0) {
-            return source.read(entry.offset.toLong(), minOf(entry.size, limit))
-        }
-
-        val raw = source.read(entry.offset.toLong(), entry.compressedSize)
-
-        return when (entry.compressionMethod) {
-            2 -> {
-                val lzmaStream = ByteArrayInputStream(raw, 1, raw.size - 1)
-                val lzma = LZMAInputStream(lzmaStream, -1, 0x5D.toByte(), 262144)
-                val output = ByteArray(limit)
-                var pos = 0
-                try {
-                    while (pos < limit) {
-                        val n = lzma.read(output, pos, limit - pos)
-                        if (n <= 0) break
-                        pos += n
-                    }
-                } catch (_: Exception) {}
-                try { lzma.close() } catch (_: Exception) {}
-                if (pos < limit) output.copyOf(pos) else output
-            }
-            3 -> {
-                val output = ByteArray(limit)
-                val inflater = Inflater()
-                inflater.setInput(raw)
-                val n = inflater.inflate(output)
-                inflater.end()
-                if (n < limit) output.copyOf(n) else output
-            }
-            else -> {
-                val toRead = minOf(raw.size, limit)
-                raw.copyOf(toRead)
-            }
-        }
-    }
-
     fun readFileContent(entry: LodEntry): ByteArrayInputStream {
         // Python dispatch: if csize != 0 → (2=LZMA, 3=zlib, else=raw) ; csize==0 → raw(size)
         if (entry.compressedSize == 0) {

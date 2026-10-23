@@ -22,7 +22,7 @@ class GameDataLocator(private val scanner: MapFileScanner = MapFileScanner()) {
     suspend fun findMapFiles(): List<String> {
         val folder = mapsFolder()
         val includeHota = isHotaAvailable()
-        log.info { "Maps folder: ${folder.absolutePath}" }
+        log.debug { "Maps folder: ${folder.absolutePath}" }
         return withContext(Dispatchers.IO) { scanner.listMapFiles(folder, includeHota) }
     }
 

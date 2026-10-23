@@ -8,6 +8,7 @@ import com.homm3.livewallpaper.core.GameConfig
 import com.homm3.livewallpaper.core.MapUpdateInterval
 import com.homm3.livewallpaper.core.Scale
 import com.homm3.livewallpaper.core.WallpaperPreferences
+import com.homm3.livewallpaper.core.assets.SpriteSet
 import com.homm3.livewallpaper.core.input.CameraInputProcessor
 import com.homm3.livewallpaper.core.library.Direction
 import com.homm3.livewallpaper.core.map.GameMap
@@ -31,13 +32,14 @@ import kotlin.random.Random
 
 /** Shows one [GameMap] at a time out of the maps handed to [setMaps]. */
 class GameScreen(
+    private val currentSpriteSet: () -> SpriteSet?,
     private val camera: MapCamera,
     private val prefs: Flow<WallpaperPreferences>,
     private val onSwitchThresholdReached: () -> Unit = {},
 ) : KtxScreen {
 
     private val viewport = ScreenViewport(camera)
-    private val spriteBatch = PaletteSpriteBatch(size = 1000) { currentMap?.spriteSet?.paletteTexture() }
+    private val spriteBatch = PaletteSpriteBatch(size = 1000) { currentSpriteSet()?.paletteTexture() }
     private val emptyTiledMap = TiledMap()
     private val renderer = PaletteTiledMapRenderer(emptyTiledMap, spriteBatch)
     private val animationTicker = AnimationTicker()
@@ -53,10 +55,7 @@ class GameScreen(
     private var prefsJob: Job? = null
     private var mapSwitchCount = 0
 
-    /**
-     * Replaces the maps to pick from. Keeps showing the current map until the next switch even when it isn't
-     * among [maps], so its sprite set must stay alive until then.
-     */
+    /** Replaces the maps to pick from. Keeps showing the current map until the next switch even when it isn't among [maps]. */
     fun setMaps(maps: List<GameMap>) {
         this.maps = maps
     }
@@ -124,8 +123,8 @@ class GameScreen(
     override fun render(delta: Float) {
         clearScreen(0f, 0f, 0f, 1f)
         inputProcessor.handlePressedKeys()
-        val map = currentMap ?: return
-        map.spriteSet.updatePalettes(delta)
+        if (currentMap == null) return
+        currentSpriteSet()?.updatePalettes(delta)
         camera.update()
         renderer.setView(camera)
         val renderStart = System.nanoTime()
@@ -198,7 +197,7 @@ class GameScreen(
         if (!shouldUpdateVisibleMapPart(force || isNothingShown)) return
 
         mapSwitchCount++
-        log.info { "map switch #$mapSwitchCount/$MAX_SWITCHES_BEFORE_BATCH_ROTATE (force=$force)" }
+        val switchNumber = mapSwitchCount
         if (mapSwitchCount >= MAX_SWITCHES_BEFORE_BATCH_ROTATE) {
             mapSwitchCount = 0
             onSwitchThresholdReached()
@@ -209,8 +208,8 @@ class GameScreen(
         val showStart = System.currentTimeMillis()
         show(nextMap)
         log.info {
-            "${Engine.TIMING_TAG} map switch to '${nextMap.fileName}': reroll ${showStart - rerollStart}ms, " +
-                "show ${System.currentTimeMillis() - showStart}ms"
+            "${Engine.TIMING_TAG} map switch #$switchNumber/$MAX_SWITCHES_BEFORE_BATCH_ROTATE (force=$force) " +
+                "to '${nextMap.fileName}': reroll ${showStart - rerollStart}ms, show ${System.currentTimeMillis() - showStart}ms"
         }
     }
 
@@ -223,7 +222,7 @@ class GameScreen(
                 camera.position.x, camera.position.y,
                 camera.viewportWidth, camera.viewportHeight
             )
-            log.info {
+            log.debug {
                 "Reroll ${attempt + 1}/$MAX_REROLLS: map='${candidate.fileName}' " +
                     "(underground=${candidate.isUnderground}) coverage=${"%.2f".format(coverage)}"
             }

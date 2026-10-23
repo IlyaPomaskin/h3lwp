@@ -55,14 +55,16 @@ class SerialCommandQueueTest {
         val done = CompletableDeferred<Unit>()
         val queue = recordingQueue(executed, lastCommand = MapCommand.Reinit, done)
 
-        assertTrue(queue.submit(MapCommand.Rotate(force = false)))
-        assertFalse(queue.submit(MapCommand.Rotate(force = false)))
-        assertTrue(queue.submit(MapCommand.Rotate(force = true)))
+        val forward = MapCommand.LoadNext(Direction.FORWARD)
+        val backward = MapCommand.LoadNext(Direction.BACKWARD)
+        assertTrue(queue.submit(forward))
+        assertFalse(queue.submit(MapCommand.LoadNext(Direction.FORWARD)))
+        assertTrue(queue.submit(backward))
         assertTrue(queue.submit(MapCommand.Reinit))
         withTimeout(timeoutMillis) { done.await() }
         queue.close()
 
-        assertEquals(listOf(MapCommand.Rotate(force = false), MapCommand.Rotate(force = true), MapCommand.Reinit), executed)
+        assertEquals(listOf(forward, backward, MapCommand.Reinit), executed)
     }
 
     @Test

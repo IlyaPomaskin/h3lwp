@@ -9,12 +9,7 @@ import ktx.log.logger
 
 class MapQueue {
 
-    /**
-     * Current batch with no rotation. Initializes/rebuilds the queue if the
-     * fingerprint has changed (or if there's no saved state yet) — first
-     * initialization stamps `lastRotationTime = now`, so [advanceIfDue] won't
-     * fire immediately after install / first-run.
-     */
+    /** Current batch with no rotation. Initializes/rebuilds the queue if the fingerprint has changed (or if there's no saved state yet). */
     fun currentBatch(availableFiles: List<String>): List<String> {
         if (availableFiles.isEmpty()) return emptyList()
 
@@ -24,7 +19,7 @@ class MapQueue {
         if (state == null || state.fingerprint != fingerprint) {
             val shuffled = availableFiles.shuffled()
             val batch = selectBatch(shuffled, 0)
-            saveState(QueueState(now(), 0, fingerprint, shuffled))
+            saveState(QueueState(0, fingerprint, shuffled))
             log.info { "Map queue rebuilt. Queue order (${shuffled.size}): $shuffled" }
             log.info { "Loading ${batch.size} maps at position 0: $batch" }
             return batch
@@ -36,45 +31,27 @@ class MapQueue {
     }
 
     /**
-     * If at least [ROTATION_INTERVAL_MS] has elapsed since the last rotation
-     * (or since first initialization), advances `position` by the current
-     * batch size, persists the new state with `lastRotationTime = now`, and
-     * returns the new batch. Otherwise returns `null`.
-     *
-     * When [force] is true, skips the elapsed-time check and rotates immediately.
-     *
-     * Like [currentBatch], rebuilds the queue if the fingerprint has changed.
+     * Advances `position` by the current batch size, persists it and returns the new batch; empty when there are
+     * no files. Like [currentBatch], rebuilds the queue (starting at its first batch) if the fingerprint has changed.
      */
-    fun advanceIfDue(availableFiles: List<String>, force: Boolean = false): List<String>? {
-        if (availableFiles.isEmpty()) return null
+    fun advance(availableFiles: List<String>): List<String> {
+        if (availableFiles.isEmpty()) return emptyList()
 
         val fingerprint = computeFingerprint(availableFiles)
         val state = loadState()
 
         if (state == null || state.fingerprint != fingerprint) {
-            // Treat first initialization as a rotation point so the next due-check
-            // starts the timer from now.
             val shuffled = availableFiles.shuffled()
-            val batch = selectBatch(shuffled, 0)
-            saveState(QueueState(now(), 0, fingerprint, shuffled))
-            log.info { "Map queue rebuilt during advanceIfDue. Queue (${shuffled.size}): $shuffled" }
-            return batch
-        }
-
-        val elapsed = now() - state.lastRotationTime
-        if (!force && elapsed < ROTATION_INTERVAL_MS) {
-            log.info { "advanceIfDue: not yet due (${elapsed / 60_000}min / ${ROTATION_INTERVAL_MS / 60_000}min)" }
-            return null
+            saveState(QueueState(0, fingerprint, shuffled))
+            log.info { "Map queue rebuilt during advance. Queue (${shuffled.size}): $shuffled" }
+            return selectBatch(shuffled, 0)
         }
 
         val currentBatchSize = selectBatch(state.queue, state.position).size
         val newPosition = (state.position + currentBatchSize) % state.queue.size
         val newBatch = selectBatch(state.queue, newPosition)
-        saveState(QueueState(now(), newPosition, fingerprint, state.queue))
-        log.info {
-            "advanceIfDue: rotated after ${elapsed / 60_000}min (force=$force); " +
-                "new position=$newPosition, batch=$newBatch"
-        }
+        saveState(QueueState(newPosition, fingerprint, state.queue))
+        log.info { "Map queue advanced to position $newPosition: $newBatch" }
         return newBatch
     }
 
@@ -89,16 +66,12 @@ class MapQueue {
         return files.sorted().joinToString(",").hashCode().toString(16)
     }
 
-    private fun now(): Long = System.currentTimeMillis()
-
     private fun loadState(): QueueState? {
         return try {
             val prefs = Gdx.app.getPreferences(PREFS_NAME)
             val json = prefs.getString(PREFS_KEY, null) ?: return null
             val root = JsonReader().parse(json)
 
-            val lastRotationTime = root.getLong("lastRotationTime", -1L)
-            if (lastRotationTime < 0L) return null
             val position = root.getInt("position", -1)
             if (position < 0) return null
             val fingerprint = root.getString("fingerprint", null) ?: return null
@@ -112,7 +85,7 @@ class MapQueue {
             }
 
             if (queue.isEmpty()) return null
-            QueueState(lastRotationTime, position, fingerprint, queue)
+            QueueState(position, fingerprint, queue)
         } catch (e: Exception) {
             log.error { "Failed to load map queue state: ${e.message}" }
             null
@@ -124,7 +97,6 @@ class MapQueue {
             val writer = Json()
             writer.setOutputType(JsonWriter.OutputType.json)
             val json = writer.toJson(mapOf(
-                "lastRotationTime" to state.lastRotationTime,
                 "position" to state.position,
                 "fingerprint" to state.fingerprint,
                 "queue" to state.queue
@@ -139,7 +111,6 @@ class MapQueue {
     }
 
     private data class QueueState(
-        val lastRotationTime: Long,
         val position: Int,
         val fingerprint: String,
         val queue: List<String>
@@ -148,7 +119,6 @@ class MapQueue {
     companion object {
         private val log = logger<MapQueue>()
         private const val BATCH_SIZE = 3
-        private const val ROTATION_INTERVAL_MS = 60L * 60L * 1000L  // 1 hour
         private const val PREFS_NAME = "map-queue"
         private const val PREFS_KEY = "state"
     }

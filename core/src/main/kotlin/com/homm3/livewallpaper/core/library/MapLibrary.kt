@@ -10,9 +10,9 @@ import com.homm3.livewallpaper.core.map.GameMap
 import ktx.log.logger
 
 /**
- * The loaded maps and the [SpriteSet] they draw from. Every call must come from the rendering thread and
- * the suspending ones from one coroutine at a time (see [SerialCommandQueue]); [maps] is stale after any
- * call that changes the entries, so re-read it.
+ * The loaded maps and the one [SpriteSet] they all draw from, which holds every DEF the maps folder uses. Every
+ * call must come from the rendering thread and the suspending ones from one coroutine at a time (see
+ * [SerialCommandQueue]); [maps] is stale after any call that changes the entries, so re-read it.
  */
 class MapLibrary(
     private val locator: GameDataLocator,
@@ -27,6 +27,8 @@ class MapLibrary(
 
     val isLoaded: Boolean get() = spriteSet != null
 
+    val currentSpriteSet: SpriteSet? get() = spriteSet
+
     /** Every level of every loaded map, in load order. */
     val maps: List<GameMap> get() = entries.values.flatMap { it.levels }
 
@@ -38,19 +40,19 @@ class MapLibrary(
         val newSpriteSet = SpriteSet(locator.spriteSources(), hasHotaAssets = locator.isHotaAvailable())
         spriteSet = newSpriteSet
         loadFolderDefs(newSpriteSet)
-        replaceBatch(newSpriteSet, batchLoader.loadInitialBatch(explicitMaps, allMapFiles, newSpriteSet))
+        replaceBatch(batchLoader.loadInitialBatch(explicitMaps, allMapFiles))
         loadedWithHota = locator.isHotaAvailable()
     }
 
-    /** Swaps in the next batch when due (or [force]d). Returns whether the maps changed. */
-    suspend fun rotateBatchIfDue(force: Boolean): Boolean {
-        val currentSpriteSet = spriteSet ?: return false
-        val maps = batchLoader.rotateBatchIfDue(locator.findMapFiles(), currentSpriteSet, force) ?: return false
+    /** Swaps in the next batch of the map queue. Returns whether the maps changed. */
+    suspend fun rotateBatch(): Boolean {
+        if (!isLoaded) return false
+        val maps = batchLoader.loadNextBatch(locator.findMapFiles())
         if (maps.isEmpty()) {
-            log.error { "rotateBatchIfDue: no map of the new batch loaded; keeping the current batch" }
+            log.error { "rotateBatch: no map of the new batch loaded; keeping the current batch" }
             return false
         }
-        replaceBatch(currentSpriteSet, maps)
+        replaceBatch(maps)
         return true
     }
 
@@ -68,28 +70,22 @@ class MapLibrary(
         return change
     }
 
-    /** Loads the maps of the queue's current batch that aren't loaded yet into the current sprite set. */
+    /** Loads the maps of the queue's current batch that aren't loaded yet. */
     suspend fun loadMissingFromCurrentBatch() {
-        val currentSpriteSet = spriteSet ?: return
-        val maps = batchLoader.loadCurrentBatchInto(
-            spriteSet = currentSpriteSet,
-            availableFiles = allMapFiles,
-            excluded = entries.keys.toSet(),
-        )
-        addEntries(currentSpriteSet, maps)
+        if (!isLoaded) return
+        addEntries(batchLoader.loadCurrentBatch(allMapFiles, excluded = entries.keys.toSet()))
         loadedWithHota = locator.isHotaAvailable()
     }
 
     suspend fun loadNext(direction: Direction): NextMapResult {
-        val currentSpriteSet = spriteSet ?: return NextMapResult.NotLoaded
-        if (allMapFiles.isEmpty()) return NextMapResult.NotLoaded
+        if (!isLoaded || allMapFiles.isEmpty()) return NextMapResult.NotLoaded
         val index = findNextUnloadedIndex(allMapFiles, browseIndex, direction.step) { it in entries }
             ?: return NextMapResult.AllLoaded
         browseIndex = index
         val fileName = allMapFiles[index]
-        val maps = batchLoader.loadMapsInto(currentSpriteSet, listOf(fileName))
+        val maps = batchLoader.parseMaps(listOf(fileName))
         if (maps.isEmpty()) return NextMapResult.NotLoaded
-        addEntries(currentSpriteSet, maps)
+        addEntries(maps)
         return NextMapResult.Loaded(fileName)
     }
 
@@ -102,9 +98,9 @@ class MapLibrary(
 
     override fun dispose() = clear()
 
-    private fun replaceBatch(batchSpriteSet: SpriteSet, maps: List<LoadedMap>) {
+    private fun replaceBatch(maps: List<LoadedMap>) {
         entries.clear()
-        addEntries(batchSpriteSet, maps)
+        addEntries(maps)
     }
 
     /** Loads every DEF any map of the folder has used, so batch rotations and folder browsing load none. */
@@ -112,9 +108,10 @@ class MapLibrary(
         target.loadDefs(defListStore.update(allMapFiles, target.hasHotaAssets).defNames)
     }
 
-    private fun addEntries(entrySpriteSet: SpriteSet, maps: List<LoadedMap>) {
+    private fun addEntries(maps: List<LoadedMap>) {
+        val currentSpriteSet = spriteSet ?: return
         maps.filterNot { it.fileName in entries }.forEach { map ->
-            entries[map.fileName] = MapEntry(entrySpriteSet, map)
+            entries[map.fileName] = MapEntry(currentSpriteSet, map)
         }
     }
 

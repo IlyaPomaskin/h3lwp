@@ -39,7 +39,7 @@ class MapDefListStore(private val locator: GameDataLocator) {
 
     private fun collectDefs(stamp: MapFileStamp, collector: SpriteCollector): Set<String>? = try {
         val map = locator.mapFile(stamp.fileName).read().use { H3mReader(it).read() }
-        collector.collectNeededDefNames(listOf(map))
+        collector.collectNeededSprites(listOf(map))
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {

@@ -10,6 +10,7 @@ import java.util.Locale
 class SpriteCollector(hasHotaAssets: Boolean = false) {
     private val randomizer = ObjectsRandomizer(hasHotaAssets)
 
+    /** Lowercase names of the DEFs [maps] draw, as the sprite registry keys them. */
     fun collectNeededSprites(maps: List<H3mMap>): Set<String> {
         val names = mutableSetOf<String>()
 
@@ -38,10 +39,6 @@ class SpriteCollector(hasHotaAssets: Boolean = false) {
         }
 
         names.add("edg.def")
-        return names
+        return names.map { it.lowercase(Locale.ROOT) }.toSet()
     }
-
-    /** [collectNeededSprites] with every name lowercase, as the sprite registry keys DEFs. */
-    fun collectNeededDefNames(maps: List<H3mMap>): Set<String> =
-        collectNeededSprites(maps).map { it.lowercase(Locale.ROOT) }.toSet()
 }

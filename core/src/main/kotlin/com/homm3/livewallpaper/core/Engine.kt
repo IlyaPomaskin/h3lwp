@@ -66,9 +66,10 @@ open class Engine(
         addScreen(LoadingScreen(ui))
         addScreen(AssetSetupScreen(ui, onSettingsButtonClick, onHotaButtonClick, onConversionDone = { submit(MapCommand.Load) }))
         addScreen(GameScreen(
+            currentSpriteSet = { library.currentSpriteSet },
             camera = camera,
             prefs = prefs,
-            onSwitchThresholdReached = { submit(MapCommand.Rotate(force = true)) },
+            onSwitchThresholdReached = { submit(MapCommand.Rotate) },
         ))
 
         val scope = CoroutineScope(SupervisorJob() + RenderingDispatcher)
@@ -108,35 +109,16 @@ open class Engine(
         Gdx.app.postRunnable {
             // After a timeout this runnable only runs once rendering resumes; resume() has switched by then.
             if (!isSwitchPending.compareAndSet(true, false)) return@postRunnable
-            val switchStart = System.currentTimeMillis()
             if (shownScreen is GameScreen) gameScreen.randomizeVisibleMapPart()
             isViewSwitchedOnHide = true
             hideFrames = renderedFrames
-            log.info {
-                "$TIMING_TAG hide switch: ${System.currentTimeMillis() - switchStart}ms " +
-                    "(GL thread picked it up after ${switchStart - hideStart}ms)"
-            }
         }
         Gdx.graphics.requestRendering()
         val isRendered = renderedFrames.await(HIDE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
         isSwitchPending.set(false)
         val elapsed = System.currentTimeMillis() - hideStart
-        if (isRendered) {
-            log.info { "$TIMING_TAG prepareForHide: $FRAMES_BEFORE_HIDE frames rendered in ${elapsed}ms" }
-            return
-        }
-        log.info { "$TIMING_TAG prepareForHide: timed out after ${elapsed}ms (limit ${HIDE_TIMEOUT_MS}ms)" }
-    }
-
-    /** Called by the wallpaper service from its own thread. */
-    fun onVisibilityChanged(visible: Boolean) {
-        if (visible) {
-            submit(MapCommand.Refresh)
-            return
-        }
-        // Wallpaper just got hidden — do the batch rotation work while the
-        // user isn't looking, so when they come back they see a new map.
-        submit(MapCommand.Rotate(force = false))
+        val outcome = if (isRendered) "$FRAMES_BEFORE_HIDE frames rendered" else "timed out (limit ${HIDE_TIMEOUT_MS}ms)"
+        log.info { "$TIMING_TAG prepareForHide: $outcome in ${elapsed}ms" }
     }
 
     override fun render() {
@@ -179,7 +161,7 @@ open class Engine(
             MapCommand.Load -> load()
             MapCommand.Refresh -> refresh()
             MapCommand.Reinit -> reinit()
-            is MapCommand.Rotate -> rotate(command.force)
+            MapCommand.Rotate -> rotate()
             is MapCommand.LoadNext -> loadNext(command.direction)
         }
     }
@@ -224,12 +206,12 @@ open class Engine(
         load()
     }
 
-    private suspend fun rotate(force: Boolean) {
+    private suspend fun rotate() {
         val rotateStart = System.currentTimeMillis()
-        val isRotated = library.rotateBatchIfDue(force)
+        val isRotated = library.rotateBatch()
         if (!isRotated) return
         gameScreen.setMaps(library.maps)
-        log.info { "$TIMING_TAG batch rotation (force=$force): ${System.currentTimeMillis() - rotateStart}ms" }
+        log.info { "$TIMING_TAG batch rotation: ${System.currentTimeMillis() - rotateStart}ms" }
     }
 
     private suspend fun loadNext(direction: Direction) {

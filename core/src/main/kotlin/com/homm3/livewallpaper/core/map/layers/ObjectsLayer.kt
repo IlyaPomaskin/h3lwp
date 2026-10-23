@@ -36,14 +36,6 @@ class ObjectsLayer(assets: SpriteSet, h3m: H3mMap, isUnderground: Boolean) : Map
         visibleSprites.forEach { it.render(renderer, Gdx.graphics.deltaTime) }
     }
 
-    fun findSpriteAt(worldX: Float, worldY: Float): MapSprite? {
-        return visibleSprites.lastOrNull { it.contains(worldX, worldY) }
-    }
-
-    fun findAllSpritesAt(worldX: Float, worldY: Float): List<MapSprite> {
-        return visibleSprites.filter { it.contains(worldX, worldY) }
-    }
-
     fun objectCoverage(viewBounds: Rectangle): Float {
         updateVisibleObjects(viewBounds)
 

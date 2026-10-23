@@ -8,74 +8,40 @@ import kotlinx.coroutines.withContext
 import ktx.log.logger
 
 /**
- * Parses maps on [Dispatchers.IO] and loads their sprites into the given [SpriteSet]. Call from a coroutine on
- * the GL thread (KtxAsync), since sprite sets create and upload textures.
+ * Picks batches from the [MapQueue] and parses their maps on [Dispatchers.IO], skipping broken ones. Sprites are
+ * not loaded here: the library preloads every DEF the maps folder uses.
  */
 class MapBatchLoader(
     private val locator: GameDataLocator,
     private val mapQueue: MapQueue = MapQueue(),
 ) {
     /** The batch to show on start: [explicitMaps] if given, otherwise the queue's current batch of [availableFiles]. */
-    suspend fun loadInitialBatch(
-        explicitMaps: List<String>,
-        availableFiles: List<String>,
-        spriteSet: SpriteSet,
-    ): List<LoadedMap> {
+    suspend fun loadInitialBatch(explicitMaps: List<String>, availableFiles: List<String>): List<LoadedMap> {
         val fileNames = if (explicitMaps.isNotEmpty()) {
             locator.filterSupportedMaps(explicitMaps)
         } else {
             log.info { "Available maps in folder (${availableFiles.size}): $availableFiles" }
             mapQueue.currentBatch(availableFiles)
         }
-        return loadBatch(fileNames, spriteSet)
+        return parseMaps(fileNames)
     }
 
-    /**
-     * The next batch's maps if the queue rotation is due (or [force]d), otherwise `null`. Only sprites missing
-     * from [spriteSet] are loaded; freeing the previous batch's sprites is up to the caller.
-     */
-    suspend fun rotateBatchIfDue(
-        availableFiles: List<String>,
-        spriteSet: SpriteSet,
-        force: Boolean = false,
-    ): List<LoadedMap>? {
-        val fileNames = mapQueue.advanceIfDue(availableFiles, force) ?: return null
-        log.info { "rotateBatchIfDue: new batch = $fileNames (force=$force)" }
-        return loadBatch(fileNames, spriteSet)
-    }
+    /** The maps of the queue's next batch. */
+    suspend fun loadNextBatch(availableFiles: List<String>): List<LoadedMap> =
+        parseMaps(mapQueue.advance(availableFiles))
 
-    /** Maps of the queue's current batch that aren't in [excluded], with sprites added to [spriteSet]. */
-    suspend fun loadCurrentBatchInto(
-        spriteSet: SpriteSet,
-        availableFiles: List<String>,
-        excluded: Set<String>,
-    ): List<LoadedMap> {
-        val fileNames = mapQueue.currentBatch(availableFiles).filterNot { it in excluded }
-        return loadMapsInto(spriteSet, fileNames)
-    }
+    /** The maps of the queue's current batch that aren't in [excluded]. */
+    suspend fun loadCurrentBatch(availableFiles: List<String>, excluded: Set<String>): List<LoadedMap> =
+        parseMaps(mapQueue.currentBatch(availableFiles).filterNot { it in excluded })
 
-    /** Parses [fileNames] (skipping broken ones) and adds their sprites to [spriteSet]. */
-    suspend fun loadMapsInto(spriteSet: SpriteSet, fileNames: List<String>): List<LoadedMap> {
-        val maps = parseMaps(fileNames)
-        spriteSet.loadSpritesFor(maps.map { it.h3m })
-        return maps
-    }
-
-    private suspend fun loadBatch(fileNames: List<String>, spriteSet: SpriteSet): List<LoadedMap> {
-        val totalStart = System.currentTimeMillis()
-        val maps = loadMapsInto(spriteSet, fileNames)
-        log.info { "loadBatch: ${maps.size}/${fileNames.size} maps in ${System.currentTimeMillis() - totalStart}ms" }
-        return maps
-    }
-
-    private suspend fun parseMaps(fileNames: List<String>): List<LoadedMap> =
+    suspend fun parseMaps(fileNames: List<String>): List<LoadedMap> =
         fileNames.mapNotNull { fileName -> parseMapOrNull(fileName)?.let { LoadedMap(fileName, it) } }
 
     private suspend fun parseMapOrNull(fileName: String): H3mMap? = try {
         val start = System.currentTimeMillis()
         val fileHandle = locator.mapFile(fileName)
         withContext(Dispatchers.IO) { fileHandle.read().use { H3mReader(it).read() } }.also {
-            log.info { "  loaded map '$fileName' in ${System.currentTimeMillis() - start}ms" }
+            log.debug { "Parsed map '$fileName' in ${System.currentTimeMillis() - start}ms" }
         }
     } catch (e: CancellationException) {
         throw e

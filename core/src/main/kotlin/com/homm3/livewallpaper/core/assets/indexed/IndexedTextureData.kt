@@ -45,7 +45,8 @@ internal class IndexPageTextureData(width: Int, height: Int, indices: ByteBuffer
         }
     }
 
-    fun indexBytes(): ByteArray = ByteArray(indices.capacity()).also { indices.duplicate().get(it) }
+    /** Copy of the index bytes, for tests. */
+    internal fun indexBytes(): ByteArray = ByteArray(indices.capacity()).also { indices.duplicate().get(it) }
 
     override fun consumeCustomData(target: Int) {
         Gdx.gl.glPixelStorei(GL20.GL_UNPACK_ALIGNMENT, UNPACK_ALIGNMENT)

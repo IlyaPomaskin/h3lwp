@@ -11,8 +11,8 @@ sealed interface MapCommand {
     /** Drops all maps and sprites and loads them again. */
     data object Reinit : MapCommand
 
-    /** Swaps in the next batch if its rotation is due, or right away when [force]d. */
-    data class Rotate(val force: Boolean) : MapCommand
+    /** Swaps in the next batch of the map queue. */
+    data object Rotate : MapCommand
 
     /** Loads the next not yet loaded map file in [direction], or cycles shown maps when all are loaded. */
     data class LoadNext(val direction: Direction) : MapCommand

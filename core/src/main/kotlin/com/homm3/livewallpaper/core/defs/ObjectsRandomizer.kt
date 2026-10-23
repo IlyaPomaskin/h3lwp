@@ -7,13 +7,7 @@ import kotlin.random.Random
 class ObjectsRandomizer(hasHotaAssets: Boolean = false) {
     enum class Faction {
         CASTLE, RAMPART, TOWER, INFERNO, NECROPOLIS,
-        DUNGEON, STRONGHOLD, FORTRESS, CONFLUX, COVE, FACTORY;
-
-        companion object {
-            fun fromOrdinal(value: Int): Faction? {
-                return entries.find { it.ordinal == value }
-            }
-        }
+        DUNGEON, STRONGHOLD, FORTRESS, CONFLUX, COVE, FACTORY
     }
 
     private val hotaFactions = setOf(Faction.COVE, Faction.FACTORY)

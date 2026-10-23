@@ -16,7 +16,7 @@ import ktx.log.logger
  * Use it on the rendering thread only: building resolves sprites from the [SpriteSet].
  */
 class GameMap(
-    val spriteSet: SpriteSet,
+    private val spriteSet: SpriteSet,
     private val h3m: H3mMap,
     val fileName: String,
     val isUnderground: Boolean,
