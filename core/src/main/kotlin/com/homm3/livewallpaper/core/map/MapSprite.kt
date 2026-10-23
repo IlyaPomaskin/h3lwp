@@ -10,8 +10,9 @@ import com.homm3.livewallpaper.core.assets.indexed.PaletteRegion
 import com.homm3.livewallpaper.parser.h3m.H3mObject
 import kotlin.random.Random
 
-class MapSprite(mapObject: H3mObject, private val frames: Array<TextureAtlas.AtlasRegion>) {
-    private val x = (mapObject.x + 1) * TILE_SIZE
+/** [shiftTiles] moves the sprite right of the object's anchor tile, e.g. [MonsterAnchor.shiftTiles]. */
+class MapSprite(mapObject: H3mObject, private val frames: Array<TextureAtlas.AtlasRegion>, shiftTiles: Int = 0) {
+    private val x = (mapObject.x + 1 + shiftTiles) * TILE_SIZE
     private val y = (mapObject.y + 1) * TILE_SIZE
     private val animationLength = frames.size * FRAME_TIME
     private var stateTime = animationLength * Random.nextFloat()

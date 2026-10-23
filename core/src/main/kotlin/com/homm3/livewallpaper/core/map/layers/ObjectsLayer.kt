@@ -2,6 +2,8 @@ package com.homm3.livewallpaper.core.map.layers
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.maps.MapLayer
+import com.badlogic.gdx.graphics.g2d.TextureAtlas
+import com.badlogic.gdx.utils.Array as GdxArray
 import com.badlogic.gdx.maps.tiled.renderers.BatchTiledMapRenderer
 import com.badlogic.gdx.math.Rectangle
 import com.homm3.livewallpaper.core.GameConfig.FRUSTUM_PADDING_TILES
@@ -9,7 +11,10 @@ import com.homm3.livewallpaper.core.GameConfig.TILE_SIZE
 import com.homm3.livewallpaper.core.assets.SpriteSet
 import com.homm3.livewallpaper.core.defs.ObjectsRandomizer
 import com.homm3.livewallpaper.core.map.MapSprite
+import com.homm3.livewallpaper.core.map.MonsterAnchor
 import com.homm3.livewallpaper.parser.h3m.H3mMap
+import com.homm3.livewallpaper.parser.h3m.H3mObject
+import com.homm3.livewallpaper.parser.h3m.H3mObjectType
 
 class ObjectsLayer(assets: SpriteSet, h3m: H3mMap, isUnderground: Boolean) : MapLayer() {
     private val randomizer = ObjectsRandomizer(hasHotaAssets = assets.hasHotaAssets)
@@ -17,7 +22,10 @@ class ObjectsLayer(assets: SpriteSet, h3m: H3mMap, isUnderground: Boolean) : Map
         .objects
         .sorted()
         .filter { it.z == if (isUnderground) 1 else 0 }
-        .map { MapSprite(it, assets.getObjectFrames(randomizer.resolveSpriteName(it))) }
+        .map { obj ->
+            val frames = assets.getObjectFrames(randomizer.resolveSpriteName(obj))
+            MapSprite(obj, frames, anchorShiftTiles(obj, frames))
+        }
 
     private val spritesIndices: Map<Int, Map<Int, List<Int>>> = buildSpatialIndex(h3m, isUnderground)
 
@@ -29,6 +37,12 @@ class ObjectsLayer(assets: SpriteSet, h3m: H3mMap, isUnderground: Boolean) : Map
 
     init {
         name = "objects"
+    }
+
+    private fun anchorShiftTiles(obj: H3mObject, frames: GdxArray<TextureAtlas.AtlasRegion>): Int {
+        val isMonster = obj.objectType in MONSTER_TYPES
+        if (!isMonster || frames.isEmpty) return 0
+        return MonsterAnchor.shiftTiles(frames.first().originalWidth, obj.def.activeCells)
     }
 
     fun render(renderer: BatchTiledMapRenderer) {
@@ -104,5 +118,19 @@ class ObjectsLayer(assets: SpriteSet, h3m: H3mMap, isUnderground: Boolean) : Map
                     .add(i)
             }
         return index
+    }
+
+    private companion object {
+        val MONSTER_TYPES = setOf(
+            H3mObjectType.MONSTER,
+            H3mObjectType.RANDOM_MONSTER,
+            H3mObjectType.RANDOM_MONSTER_L1,
+            H3mObjectType.RANDOM_MONSTER_L2,
+            H3mObjectType.RANDOM_MONSTER_L3,
+            H3mObjectType.RANDOM_MONSTER_L4,
+            H3mObjectType.RANDOM_MONSTER_L5,
+            H3mObjectType.RANDOM_MONSTER_L6,
+            H3mObjectType.RANDOM_MONSTER_L7,
+        )
     }
 }
