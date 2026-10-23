@@ -7,6 +7,7 @@ import kotlin.random.Random
 
 class MapCamera : OrthographicCamera() {
     private val cameraPoint = Vector2()
+    private var scrollOffset = 0f
 
     init {
         setToOrtho(true)
@@ -28,10 +29,16 @@ class MapCamera : OrthographicCamera() {
 
         cameraPoint.set(nextCameraX, nextCameraY)
         position.set(cameraPoint, 0f)
+        applyScrollOffset()
         update()
     }
 
     fun moveByScrollOffset(offset: Float) {
-        position.x = cameraPoint.x + offset * GameConfig.SCROLL_OFFSET
+        scrollOffset = offset
+        applyScrollOffset()
+    }
+
+    private fun applyScrollOffset() {
+        position.x = cameraPoint.x + scrollOffset * GameConfig.SCROLL_OFFSET
     }
 }
