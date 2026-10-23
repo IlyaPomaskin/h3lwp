@@ -17,8 +17,3 @@ sealed interface MapCommand {
     /** Loads the next not yet loaded map file in [direction], or cycles shown maps when all are loaded. */
     data class LoadNext(val direction: Direction) : MapCommand
 }
-
-enum class Direction(val step: Int) {
-    FORWARD(1),
-    BACKWARD(-1),
-}

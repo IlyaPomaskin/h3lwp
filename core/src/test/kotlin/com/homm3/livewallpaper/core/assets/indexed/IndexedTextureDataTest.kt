@@ -15,7 +15,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class ManagedTextureDataTest {
+class IndexedTextureDataTest {
     private class Upload(val name: String, val args: List<Any?>) {
         val bytes: ByteArray?
             get() = (args.last() as ByteBuffer?)?.let { buffer ->

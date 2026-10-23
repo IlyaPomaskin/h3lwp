@@ -7,11 +7,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ktx.log.logger
 
-data class LoadedMap(val fileName: String, val h3m: H3mMap)
-
-/** Maps of one batch plus the [spriteSet] built for them; the receiver owns and must dispose the set. */
-class MapBatch(val maps: List<LoadedMap>, val spriteSet: SpriteSet)
-
 /**
  * Parses maps on [Dispatchers.IO] and loads their sprites. Call from a coroutine on the GL thread
  * (KtxAsync), since sprite sets create and upload textures.

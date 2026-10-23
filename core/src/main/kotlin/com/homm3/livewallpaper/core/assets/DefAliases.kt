@@ -1,7 +1,5 @@
 package com.homm3.livewallpaper.core.assets
 
-enum class SpriteArchive { HOTA, H3SPRITE }
-
 private data class DefAlias(val alias: String, val target: String, val archive: SpriteArchive)
 
 /** DEFs that exist in no LOD; the game draws them with a target DEF from a specific archive. */

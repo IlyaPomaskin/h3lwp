@@ -8,6 +8,14 @@ import ktx.collections.gdxArrayOf
 import ktx.log.logger
 import java.util.Locale
 
+/**
+ * Uploads loaded sprites to the GPU. The indexed-palette sprite pipeline:
+ *
+ * CPU side  : IndexedSpriteLoader  -> IndexedBundle   (8-bit index pages + palettes, no GL)
+ * GPU side  : IndexedSpriteRegistry.add(bundle)       (uploads pages as GL_ALPHA textures, palettes into PaletteAtlas)
+ * Rendering : PaletteShader + PaletteSpriteBatch + PaletteTiledMapRenderer
+ *             fragment colour = palette[row][index]; row comes from the vertex colour (PaletteColor).
+ */
 class IndexedSpriteRegistry : Disposable {
     private val paletteAtlas = PaletteAtlas()
     private val regions = mutableMapOf<String, Array<AtlasRegion>>()

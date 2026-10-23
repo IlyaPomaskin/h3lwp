@@ -9,14 +9,6 @@ import com.homm3.livewallpaper.core.assets.SpriteSet
 import com.homm3.livewallpaper.core.map.GameMap
 import ktx.log.logger
 
-enum class FolderChange { UNCHANGED, CHANGED, EMPTY }
-
-sealed interface NextMapResult {
-    data class Loaded(val fileName: String) : NextMapResult
-    data object AllLoaded : NextMapResult
-    data object NotLoaded : NextMapResult
-}
-
 /**
  * The loaded maps and the [SpriteSet] they draw from. Every call must come from the rendering thread and
  * the suspending ones from one coroutine at a time (see [SerialCommandQueue]); [maps] is stale after any

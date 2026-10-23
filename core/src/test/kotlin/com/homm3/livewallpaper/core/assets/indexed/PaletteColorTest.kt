@@ -1,9 +1,7 @@
-package com.homm3.livewallpaper.core.render
+package com.homm3.livewallpaper.core.assets.indexed
 
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.utils.NumberUtils
-import com.homm3.livewallpaper.core.assets.indexed.MAX_PALETTE_SLOTS
-import com.homm3.livewallpaper.core.assets.indexed.PaletteColor
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import kotlin.math.floor
