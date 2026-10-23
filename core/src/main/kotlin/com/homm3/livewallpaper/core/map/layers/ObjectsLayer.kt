@@ -7,8 +7,8 @@ import com.badlogic.gdx.math.Rectangle
 import com.homm3.livewallpaper.core.GameConfig.FRUSTUM_PADDING_TILES
 import com.homm3.livewallpaper.core.GameConfig.TILE_SIZE
 import com.homm3.livewallpaper.core.assets.SpriteSet
+import com.homm3.livewallpaper.core.defs.ObjectsRandomizer
 import com.homm3.livewallpaper.core.map.MapSprite
-import com.homm3.livewallpaper.core.map.ObjectsRandomizer
 import com.homm3.livewallpaper.parser.h3m.H3mMap
 
 class ObjectsLayer(assets: SpriteSet, h3m: H3mMap, isUnderground: Boolean) : MapLayer() {

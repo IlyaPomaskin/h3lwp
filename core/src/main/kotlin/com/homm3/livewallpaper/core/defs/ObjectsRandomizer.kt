@@ -1,4 +1,4 @@
-package com.homm3.livewallpaper.core.map
+package com.homm3.livewallpaper.core.defs
 
 import com.homm3.livewallpaper.parser.h3m.H3mObject
 import com.homm3.livewallpaper.parser.h3m.H3mObjectType

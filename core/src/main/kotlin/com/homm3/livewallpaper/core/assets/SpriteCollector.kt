@@ -1,7 +1,9 @@
 package com.homm3.livewallpaper.core.assets
 
-import com.homm3.livewallpaper.core.map.ObjectsRandomizer
-import com.homm3.livewallpaper.core.map.layers.TerrainLayer
+import com.homm3.livewallpaper.core.defs.ObjectsRandomizer
+import com.homm3.livewallpaper.core.defs.RiverDef
+import com.homm3.livewallpaper.core.defs.RoadDef
+import com.homm3.livewallpaper.core.defs.TerrainDef
 import com.homm3.livewallpaper.parser.h3m.H3mMap
 import java.util.Locale
 
@@ -13,12 +15,12 @@ class SpriteCollector(hasHotaAssets: Boolean = false) {
 
         for (map in maps) {
             for (tile in map.tiles) {
-                names.add(TerrainLayer.TerrainDef.byId(tile.terrain) + ".def")
+                names.add(TerrainDef.byId(tile.terrain) + ".def")
                 if (tile.river > 0) {
-                    names.add(TerrainLayer.RiverDef.byId(tile.river) + ".def")
+                    names.add(RiverDef.byId(tile.river) + ".def")
                 }
                 if (tile.road > 0) {
-                    names.add(TerrainLayer.RoadDef.byId(tile.road) + ".def")
+                    names.add(RoadDef.byId(tile.road) + ".def")
                 }
             }
 
