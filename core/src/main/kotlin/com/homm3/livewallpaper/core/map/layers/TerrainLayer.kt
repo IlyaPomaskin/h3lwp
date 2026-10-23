@@ -3,11 +3,11 @@ package com.homm3.livewallpaper.core.map.layers
 import com.badlogic.gdx.maps.MapGroupLayer
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer
 import com.homm3.livewallpaper.core.GameConfig.TILE_SIZE
-import com.homm3.livewallpaper.core.assets.GameAssets
+import com.homm3.livewallpaper.core.assets.SpriteSet
 import com.homm3.livewallpaper.parser.h3m.H3mMap
 import com.homm3.livewallpaper.parser.h3m.H3mTile
 
-class TerrainLayer(private val assets: GameAssets, h3m: H3mMap, isUnderground: Boolean) :
+class TerrainLayer(private val assets: SpriteSet, h3m: H3mMap, isUnderground: Boolean) :
     MapGroupLayer() {
 
     enum class TerrainDef(val id: Int) {

@@ -5,12 +5,12 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile
 import com.badlogic.gdx.math.Rectangle
 import com.homm3.livewallpaper.core.GameConfig
-import com.homm3.livewallpaper.core.assets.GameAssets
+import com.homm3.livewallpaper.core.assets.SpriteSet
 import ktx.log.logger
 import kotlin.random.Random
 
 class BorderLayer(
-    private val assets: GameAssets,
+    private val assets: SpriteSet,
     private val mapSize: Int,
     borderWidth: Int,
     borderHeight: Int

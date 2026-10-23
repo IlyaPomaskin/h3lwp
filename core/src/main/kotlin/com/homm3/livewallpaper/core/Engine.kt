@@ -4,9 +4,13 @@ import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.Screen
-import com.homm3.livewallpaper.core.assets.GameAssets
+import com.homm3.livewallpaper.core.assets.GameDataLocator
+import com.homm3.livewallpaper.core.assets.LoadedMap
+import com.homm3.livewallpaper.core.assets.MapBatch
+import com.homm3.livewallpaper.core.assets.MapBatchLoader
+import com.homm3.livewallpaper.core.assets.SpriteSet
+import com.homm3.livewallpaper.core.assets.UiAssets
 import com.homm3.livewallpaper.core.map.GameMap
-import com.homm3.livewallpaper.parser.h3m.H3mMap
 import com.homm3.livewallpaper.core.render.MapCamera
 import com.homm3.livewallpaper.core.screen.AssetSetupScreen
 import com.homm3.livewallpaper.core.screen.GameScreen
@@ -16,6 +20,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import ktx.app.KtxGame
 import ktx.async.KtxAsync
+import ktx.log.logger
 
 open class Engine(
     private val prefs: Flow<WallpaperPreferences>,
@@ -24,7 +29,10 @@ open class Engine(
     private val explicitMaps: List<String> = emptyList(),
     private val headless: Boolean = false
 ) : KtxGame<Screen>(null, false) {
-    private var assets: GameAssets? = null
+    private var uiAssets: UiAssets? = null
+    private val dataLocator = GameDataLocator()
+    private val batchLoader = MapBatchLoader(dataLocator)
+    private var spriteSet: SpriteSet? = null
     private lateinit var camera: MapCamera
     private var allMapFiles = emptyList<String>()
     private val loadedMapFiles = mutableSetOf<String>()
@@ -32,6 +40,7 @@ open class Engine(
     private var isLoadingMap = false
     private var lastHotaAvailable: Boolean? = null
     private var rotationJob: Job? = null
+    private var loadJob: Job? = null
 
     fun moveCameraByOffset(offset: Float) {
         camera.moveByScrollOffset(offset)
@@ -41,14 +50,13 @@ open class Engine(
         KtxAsync.initiate()
 
         camera = MapCamera()
-        val gameAssets = GameAssets()
-        assets = gameAssets
-        gameAssets.loadUiAssets()
+        val ui = UiAssets()
+        uiAssets = ui
 
-        addScreen(LoadingScreen(gameAssets))
-        addScreen(AssetSetupScreen(gameAssets, onSettingsButtonClick, onHotaButtonClick, onConversionDone = ::loadAndStart))
+        addScreen(LoadingScreen(ui))
+        addScreen(AssetSetupScreen(ui, onSettingsButtonClick, onHotaButtonClick, onConversionDone = ::loadAndStart))
         addScreen(GameScreen(
-            assets = gameAssets,
+            currentSpriteSet = { spriteSet },
             camera = camera,
             prefs = prefs,
             onSwitchThresholdReached = { rotateBatchIfDue(force = true) },
@@ -60,9 +68,9 @@ open class Engine(
     override fun resume() {
         super.resume()
 
-        val a = assets ?: return
-        if (a.isGameAssetsLoaded()) {
-            if (a.isHotaAvailable() != lastHotaAvailable) reinitAssets()
+        if (uiAssets == null) return
+        if (isGameAssetsLoaded()) {
+            if (dataLocator.isHotaAvailable() != lastHotaAvailable) reinitAssets()
             else refreshMaps()
         } else {
             loadAndStart()
@@ -70,11 +78,10 @@ open class Engine(
     }
 
     fun onVisibilityChanged(visible: Boolean) {
-        val a = assets ?: return
-        if (!a.isGameAssetsLoaded()) return
+        if (!isGameAssetsLoaded()) return
         if (visible) {
             Gdx.app.postRunnable {
-                if (a.isHotaAvailable() != lastHotaAvailable) reinitAssets()
+                if (dataLocator.isHotaAvailable() != lastHotaAvailable) reinitAssets()
                 else refreshMaps()
             }
         } else {
@@ -84,41 +91,50 @@ open class Engine(
         }
     }
 
+    private fun isGameAssetsLoaded(): Boolean = spriteSet != null
+
     private fun rotateBatchIfDue(force: Boolean = false) {
-        val a = assets ?: return
-        if (!a.isGameAssetsLoaded()) return
+        if (!isGameAssetsLoaded()) return
         if (rotationJob?.isActive == true) return  // already rotating
         rotationJob = KtxAsync.launch {
-            val result = a.rotateBatchIfDue(force) ?: return@launch
-            val newBatchSet = result.loadedFileNames.toSet()
-
-            // Add new maps first.
-            result.maps.zip(result.loadedFileNames)
-                .filter { (_, name) -> name !in loadedMapFiles }
-                .forEach { (map, name) ->
-                    loadedMapFiles.add(name)
-                    getScreen<GameScreen>().addMap(GameMap(a, map, name))
-                    if (map.header.hasUnderground) {
-                        getScreen<GameScreen>().addMap(GameMap(a, map, name, isUnderground = true))
-                    }
-                }
-
-            // Then drop maps that fell out of the batch.
-            val toRemove = loadedMapFiles.filter { it !in newBatchSet }.toSet()
-            if (toRemove.isNotEmpty()) {
-                getScreen<GameScreen>().removeMaps(toRemove)
-                loadedMapFiles.removeAll(toRemove)
+            val availableFiles = dataLocator.findMapFiles()
+            val batch = batchLoader.rotateBatchIfDue(availableFiles, force) ?: return@launch
+            if (batch.maps.isEmpty()) {
+                log.error { "rotateBatchIfDue: no map of the new batch loaded; keeping the current batch" }
+                batch.spriteSet.dispose()
+                return@launch
             }
-
+            showBatch(batch)
             getScreen<GameScreen>().randomizeVisibleMapPart(force = true)
         }
     }
 
-    private fun reinitAssets() {
-        val a = assets ?: return
+    /** Replaces every shown map with [batch]'s maps and swaps in its sprite set, disposing the previous one. */
+    private fun showBatch(batch: MapBatch) {
+        val previousSpriteSet = spriteSet
         getScreen<GameScreen>().removeMaps(loadedMapFiles.toSet())
         loadedMapFiles.clear()
-        a.resetRegistry()
+        spriteSet = batch.spriteSet
+        addMaps(batch.spriteSet, batch.maps)
+        previousSpriteSet?.dispose()
+    }
+
+    private fun addMaps(mapSpriteSet: SpriteSet, maps: List<LoadedMap>) {
+        val gameScreen = getScreen<GameScreen>()
+        maps.filter { it.fileName !in loadedMapFiles }.forEach { (fileName, h3m) ->
+            loadedMapFiles.add(fileName)
+            gameScreen.addMap(GameMap(mapSpriteSet, h3m, fileName))
+            if (h3m.header.hasUnderground) {
+                gameScreen.addMap(GameMap(mapSpriteSet, h3m, fileName, isUnderground = true))
+            }
+        }
+    }
+
+    private fun reinitAssets() {
+        getScreen<GameScreen>().removeMaps(loadedMapFiles.toSet())
+        loadedMapFiles.clear()
+        spriteSet?.dispose()
+        spriteSet = null
         loadAndStart()
     }
 
@@ -136,74 +152,66 @@ open class Engine(
 
     override fun dispose() {
         super.dispose()
-        assets?.dispose()
+        uiAssets?.dispose()
+        spriteSet?.dispose()
+        spriteSet = null
     }
 
     private fun loadAndStart() {
-        val a = assets ?: return
-        if (!a.isLodAvailable()) {
+        if (loadJob?.isActive == true) return
+        if (!dataLocator.isLodAvailable()) {
             setScreen<AssetSetupScreen>()
             return
         }
         setScreen<LoadingScreen>()
-        KtxAsync.launch {
-            allMapFiles = a.getAllMapFiles()
-            val result = a.loadGameAssets(explicitMaps)
-            loadedMapFiles.addAll(result.loadedFileNames)
-            result.maps.zip(result.loadedFileNames).forEach { (map, name) ->
-                getScreen<GameScreen>().addMap(GameMap(a, map, name))
-                if (map.header.hasUnderground) {
-                    getScreen<GameScreen>().addMap(GameMap(a, map, name, isUnderground = true))
-                }
-            }
-            lastHotaAvailable = a.isHotaAvailable()
+        loadJob = KtxAsync.launch {
+            allMapFiles = dataLocator.findMapFiles()
+            showBatch(batchLoader.loadInitialBatch(explicitMaps, allMapFiles))
+            lastHotaAvailable = dataLocator.isHotaAvailable()
             setScreen<GameScreen>()
             if (headless) Gdx.app.exit()
         }
     }
 
     private fun refreshMaps() {
-        val a = assets ?: return
-        val currentFiles = a.getAllMapFiles()
-        val currentFileSet = currentFiles.toSet()
-
-        // Remove deleted maps
-        val removedFiles = loadedMapFiles.filter { it !in currentFileSet }.toSet()
-        if (removedFiles.isNotEmpty()) {
-            getScreen<GameScreen>().removeMaps(removedFiles)
-            loadedMapFiles.removeAll(removedFiles)
-        }
-
-        val previousFiles = allMapFiles.toSet()
-        allMapFiles = currentFiles
-
-        if (currentFileSet == previousFiles && removedFiles.isEmpty()) {
-            // No changes
-            setScreen<GameScreen>()
-            getScreen<GameScreen>().randomizeVisibleMapPart()
-            return
-        }
-
-        if (currentFiles.isEmpty()) {
-            setScreen<GameScreen>()
-            getScreen<GameScreen>().randomizeVisibleMapPart(force = true)
-            return
-        }
-
-        // Files changed — rebuild queue and load new maps
-        setScreen<LoadingScreen>()
         KtxAsync.launch {
-            val result = a.loadGameAssets()
-            result.maps.zip(result.loadedFileNames)
-                .filter { (_, name) -> name !in loadedMapFiles }
-                .forEach { (map, name) ->
-                    loadedMapFiles.add(name)
-                    getScreen<GameScreen>().addMap(GameMap(a, map, name))
-                    if (map.header.hasUnderground) {
-                        getScreen<GameScreen>().addMap(GameMap(a, map, name, isUnderground = true))
-                    }
-                }
-            lastHotaAvailable = a.isHotaAvailable()
+            val currentFiles = dataLocator.findMapFiles()
+            val currentSpriteSet = spriteSet ?: return@launch
+            val currentFileSet = currentFiles.toSet()
+
+            // Remove deleted maps
+            val removedFiles = loadedMapFiles.filter { it !in currentFileSet }.toSet()
+            if (removedFiles.isNotEmpty()) {
+                getScreen<GameScreen>().removeMaps(removedFiles)
+                loadedMapFiles.removeAll(removedFiles)
+            }
+
+            val previousFiles = allMapFiles.toSet()
+            allMapFiles = currentFiles
+
+            if (currentFileSet == previousFiles && removedFiles.isEmpty()) {
+                // No changes
+                setScreen<GameScreen>()
+                getScreen<GameScreen>().randomizeVisibleMapPart()
+                return@launch
+            }
+
+            if (currentFiles.isEmpty()) {
+                setScreen<GameScreen>()
+                getScreen<GameScreen>().randomizeVisibleMapPart(force = true)
+                return@launch
+            }
+
+            // Files changed — rebuild queue and load new maps
+            setScreen<LoadingScreen>()
+            val newMaps = batchLoader.loadCurrentBatchInto(
+                spriteSet = currentSpriteSet,
+                availableFiles = currentFiles,
+                excluded = loadedMapFiles.toSet(),
+            )
+            val isSpriteSetStillCurrent = currentSpriteSet === spriteSet
+            if (isSpriteSetStillCurrent) addMaps(currentSpriteSet, newMaps)
+            lastHotaAvailable = dataLocator.isHotaAvailable()
             setScreen<GameScreen>()
             getScreen<GameScreen>().randomizeVisibleMapPart(force = true)
         }
@@ -211,7 +219,7 @@ open class Engine(
 
     private fun loadNextMap(direction: Int) {
         if (isLoadingMap || allMapFiles.isEmpty()) return
-        val a = assets ?: return
+        val currentSpriteSet = spriteSet ?: return
 
         // Find next unloaded map in the given direction
         var fileName: String? = null
@@ -234,20 +242,20 @@ open class Engine(
         isLoadingMap = true
         KtxAsync.launch {
             try {
-                val map = a.loadMapFile(fileName)
-                a.loadSpritesForMaps(listOf(map))
-                loadedMapFiles.add(fileName)
-                getScreen<GameScreen>().addMap(GameMap(a, map, fileName))
-                if (map.header.hasUnderground) {
-                    getScreen<GameScreen>().addMap(GameMap(a, map, fileName, isUnderground = true))
-                }
+                val maps = batchLoader.loadMapsInto(currentSpriteSet, listOf(fileName))
+                val isSpriteSetStillCurrent = currentSpriteSet === spriteSet
+                if (maps.isEmpty() || !isSpriteSetStillCurrent) return@launch
+                addMaps(currentSpriteSet, maps)
                 getScreen<GameScreen>().showLastMap()
             } catch (e: Throwable) {
-                ktx.log.logger<Engine>().error(e) { "Failed to load map $fileName" }
+                log.error(e) { "Failed to load map $fileName" }
             } finally {
                 isLoadingMap = false
             }
         }
     }
 
+    companion object {
+        private val log = logger<Engine>()
+    }
 }

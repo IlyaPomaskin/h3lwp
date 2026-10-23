@@ -3,7 +3,7 @@ package com.homm3.livewallpaper.core.screen
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.viewport.ScreenViewport
-import com.homm3.livewallpaper.core.assets.GameAssets
+import com.homm3.livewallpaper.core.assets.UiAssets
 import ktx.actors.stage
 import ktx.app.KtxScreen
 import ktx.app.clearScreen
@@ -11,7 +11,7 @@ import ktx.scene2d.actors
 import ktx.scene2d.label
 import kotlin.math.min
 
-class LoadingScreen(private val assets: GameAssets) : KtxScreen {
+class LoadingScreen(private val assets: UiAssets) : KtxScreen {
 
     private val viewport = ScreenViewport().apply {
         unitsPerPixel = min(1 / Gdx.graphics.density, 1f)

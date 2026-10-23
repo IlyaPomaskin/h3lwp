@@ -7,7 +7,7 @@ import com.homm3.livewallpaper.core.GameConfig
 import com.homm3.livewallpaper.core.MapUpdateInterval
 import com.homm3.livewallpaper.core.Scale
 import com.homm3.livewallpaper.core.WallpaperPreferences
-import com.homm3.livewallpaper.core.assets.GameAssets
+import com.homm3.livewallpaper.core.assets.SpriteSet
 import com.homm3.livewallpaper.core.input.CameraInputProcessor
 import com.homm3.livewallpaper.core.map.GameMap
 import com.homm3.livewallpaper.core.render.DebugCapture
@@ -27,14 +27,14 @@ import kotlin.math.min
 import kotlin.random.Random
 
 class GameScreen(
-    private val assets: GameAssets,
+    private val currentSpriteSet: () -> SpriteSet?,
     private val camera: MapCamera,
     private val prefs: Flow<WallpaperPreferences>,
     private val onSwitchThresholdReached: () -> Unit = {},
 ) : KtxScreen {
 
     private val viewport = ScreenViewport(camera)
-    private val spriteBatch = PaletteSpriteBatch(size = 1000) { assets.paletteTexture() }
+    private val spriteBatch = PaletteSpriteBatch(size = 1000) { currentSpriteSet()?.paletteTexture() }
     private val tiledMap = TiledMap()
     private val renderer = PaletteTiledMapRenderer(tiledMap, spriteBatch)
     private val inputProcessor = CameraInputProcessor(viewport).apply {
@@ -93,7 +93,7 @@ class GameScreen(
     override fun render(delta: Float) {
         clearScreen(0f, 0f, 0f, 1f)
         inputProcessor.handlePressedKeys()
-        assets.updatePalettes(delta)
+        currentSpriteSet()?.updatePalettes(delta)
         camera.update()
         renderer.setView(camera)
         val renderStart = System.nanoTime()
