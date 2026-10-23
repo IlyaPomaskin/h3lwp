@@ -9,6 +9,7 @@ import com.homm3.livewallpaper.core.Scale
 import com.homm3.livewallpaper.core.WallpaperPreferences
 import com.homm3.livewallpaper.core.assets.SpriteSet
 import com.homm3.livewallpaper.core.input.CameraInputProcessor
+import com.homm3.livewallpaper.core.library.Direction
 import com.homm3.livewallpaper.core.map.GameMap
 import com.homm3.livewallpaper.core.render.DebugCapture
 import com.homm3.livewallpaper.core.render.MapCamera
@@ -48,23 +49,23 @@ class GameScreen(
     private var prefsJob: Job? = null
     private var mapSwitchCount = 0
 
-    fun addMap(map: GameMap) {
-        tiledMap.layers.add(map)
-
-        if (tiledMap.layers.size() == 1) {
-            Gdx.app.postRunnable(::randomizeVisibleMapPart)
-        }
+    /** Replaces the shown maps; keeps showing the current one if it's still among [maps]. */
+    fun setMaps(maps: List<GameMap>) {
+        val current = tiledMap.layers.toList().filterIsInstance<GameMap>().getOrNull(currentMapIndex)
+        tiledMap.layers.toList().forEach { tiledMap.layers.remove(it) }
+        maps.forEach { tiledMap.layers.add(it) }
+        maps.forEach { it.isVisible = it === current }
+        currentMapIndex = maps.indexOf(current).coerceAtLeast(0)
     }
 
-    fun removeMaps(fileNames: Set<String>) {
-        val toRemove = tiledMap.layers.toList()
-            .filterIsInstance<GameMap>()
-            .filter { it.fileName in fileNames }
-        toRemove.forEach { tiledMap.layers.remove(it) }
+    fun showMap(fileName: String) {
+        val maps = tiledMap.layers.toList().filterIsInstance<GameMap>()
+        val index = maps.indexOfFirst { it.fileName == fileName && !it.isUnderground }
+        if (index >= 0) showMapAtIndex(index)
+    }
 
-        val remaining = tiledMap.layers.toList().filterIsInstance<GameMap>()
-        currentMapIndex = if (remaining.isEmpty()) 0
-        else currentMapIndex.coerceAtMost(remaining.size - 1)
+    fun showAdjacentMap(direction: Direction) {
+        if (direction == Direction.FORWARD) showNextMap() else showPreviousMap()
     }
 
     init {
