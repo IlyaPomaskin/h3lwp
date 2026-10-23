@@ -86,7 +86,7 @@ class IndexedSpriteRegistry : Disposable {
     private fun uploadPage(bundle: IndexedBundle, pageIndex: Int): Texture {
         val page = bundle.pages.getOrNull(pageIndex)
         requireNotNull(page) { "page $pageIndex missing, bundle has ${bundle.pages.size}" }
-        return Texture(page).apply {
+        return Texture(IndexPageTextureData.of(page)).apply {
             setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
             pageTextures.add(this)
         }

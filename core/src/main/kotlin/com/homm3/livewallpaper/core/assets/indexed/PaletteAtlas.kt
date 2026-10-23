@@ -1,16 +1,18 @@
 package com.homm3.livewallpaper.core.assets.indexed
 
-import com.badlogic.gdx.graphics.Pixmap
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Texture
+import com.badlogic.gdx.utils.BufferUtils
 import com.badlogic.gdx.utils.Disposable
 import com.homm3.livewallpaper.core.GameConfig.FRAME_TIME
 
 class PaletteAtlas : Disposable {
     private val table = PaletteTable()
-    private val slotPixmap = Pixmap(PALETTE_SIZE, SLOT_HEIGHT, Pixmap.Format.RGBA8888)
+    private val slotBuffer = BufferUtils.newByteBuffer(PALETTE_BYTES)
     private var elapsedSinceStep = 0f
 
-    val texture: Texture = Texture(PALETTE_TEXTURE_WIDTH, PALETTE_TEXTURE_HEIGHT, Pixmap.Format.RGBA8888).apply {
+    val texture: Texture = Texture(PaletteTextureData(table)).apply {
         setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         setWrap(Texture.TextureWrap.ClampToEdge, Texture.TextureWrap.ClampToEdge)
     }
@@ -31,22 +33,22 @@ class PaletteAtlas : Disposable {
     }
 
     private fun uploadSlot(slot: Int) {
-        val pixels = slotPixmap.pixels
-        pixels.clear()
-        pixels.put(table.slotBytes(slot))
-        pixels.position(0)
+        slotBuffer.clear()
+        slotBuffer.put(table.slotBytes(slot)).flip()
         val column = slot % PALETTES_PER_ROW
         val row = slot / PALETTES_PER_ROW
-        texture.draw(slotPixmap, column * PALETTE_SIZE, row)
+        texture.bind()
+        Gdx.gl.glTexSubImage2D(
+            GL20.GL_TEXTURE_2D, BASE_LEVEL, column * PALETTE_SIZE, row, PALETTE_SIZE, SLOT_HEIGHT,
+            GL20.GL_RGBA, GL20.GL_UNSIGNED_BYTE, slotBuffer,
+        )
     }
 
-    override fun dispose() {
-        texture.dispose()
-        slotPixmap.dispose()
-    }
+    override fun dispose() = texture.dispose()
 
     private companion object {
         const val SLOT_HEIGHT = 1
+        const val BASE_LEVEL = 0
     }
 }
 
