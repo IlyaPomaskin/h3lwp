@@ -50,8 +50,8 @@ class AssetSetupScreen(
                         converting = true
                         isDisabled = true
                         onSettingsButtonClick(
-                            { status -> Gdx.app.postRunnable { statusLabel.setText(status) } },
-                            { Gdx.app.postRunnable { onConversionDone() } }
+                            { status -> runOnRenderThread { statusLabel.setText(status) } },
+                            { runOnRenderThread { onConversionDone() } }
                         )
                     }
                 }
@@ -65,9 +65,9 @@ class AssetSetupScreen(
                         hotaConverting = true
                         isDisabled = true
                         onHotaButtonClick(
-                            { status -> Gdx.app.postRunnable { hotaStatusLabel.setText(status) } },
+                            { status -> runOnRenderThread { hotaStatusLabel.setText(status) } },
                             {
-                                Gdx.app.postRunnable {
+                                runOnRenderThread {
                                     hotaConverting = false
                                     isDisabled = false
                                 }
@@ -103,5 +103,11 @@ class AssetSetupScreen(
 
     override fun dispose() {
         stage.dispose()
+    }
+
+    /** Runs [block] on the rendering thread and requests the frame that both runs it and shows its effect. */
+    private fun runOnRenderThread(block: () -> Unit) {
+        Gdx.app.postRunnable(block)
+        Gdx.graphics.requestRendering()
     }
 }

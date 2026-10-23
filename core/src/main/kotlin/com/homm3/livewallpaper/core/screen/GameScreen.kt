@@ -11,11 +11,14 @@ import com.homm3.livewallpaper.core.assets.SpriteSet
 import com.homm3.livewallpaper.core.input.CameraInputProcessor
 import com.homm3.livewallpaper.core.library.Direction
 import com.homm3.livewallpaper.core.map.GameMap
+import com.homm3.livewallpaper.core.render.AnimationTicker
 import com.homm3.livewallpaper.core.render.DebugCapture
 import com.homm3.livewallpaper.core.render.MapCamera
 import com.homm3.livewallpaper.core.render.PaletteSpriteBatch
 import com.homm3.livewallpaper.core.render.PaletteTiledMapRenderer
 import com.homm3.livewallpaper.core.render.RenderStats
+import com.homm3.livewallpaper.core.render.RenderingDispatcher
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -38,6 +41,7 @@ class GameScreen(
     private val spriteBatch = PaletteSpriteBatch(size = 1000) { currentSpriteSet()?.paletteTexture() }
     private val emptyTiledMap = TiledMap()
     private val renderer = PaletteTiledMapRenderer(emptyTiledMap, spriteBatch)
+    private val animationTicker = AnimationTicker()
     private val inputProcessor = CameraInputProcessor(viewport).apply {
         onEnter = { randomizeVisibleMapPart(force = true) }
     }
@@ -88,13 +92,23 @@ class GameScreen(
         if (Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.Desktop) {
             Gdx.input.inputProcessor = inputProcessor
         }
-        prefsJob = KtxAsync.launch {
+        prefsJob = KtxAsync.launch(RenderingDispatcher, start = CoroutineStart.UNDISPATCHED) {
             prefs.collect {
                 renderer.brightness = it.brightness
                 setUnitsPerPixelByScale(it.scale)
                 setMapUpdateInterval(it.mapUpdateInterval)
+                Gdx.graphics.requestRendering()
             }
         }
+        animationTicker.start()
+    }
+
+    override fun pause() {
+        animationTicker.stop()
+    }
+
+    override fun resume() {
+        animationTicker.start()
     }
 
     override fun resize(width: Int, height: Int) {
@@ -116,10 +130,12 @@ class GameScreen(
 
     override fun hide() {
         prefsJob?.cancel()
+        animationTicker.stop()
     }
 
     override fun dispose() {
         prefsJob?.cancel()
+        animationTicker.dispose()
         renderer.dispose()
         spriteBatch.dispose()
     }
@@ -229,6 +245,7 @@ class GameScreen(
     private fun show(map: GameMap) {
         currentMap = map
         renderer.map = map.tiledMap
+        Gdx.graphics.requestRendering()
     }
 
     companion object {

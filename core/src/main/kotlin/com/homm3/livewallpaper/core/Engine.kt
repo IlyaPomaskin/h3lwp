@@ -13,6 +13,7 @@ import com.homm3.livewallpaper.core.library.MapLibrary
 import com.homm3.livewallpaper.core.library.NextMapResult
 import com.homm3.livewallpaper.core.library.SerialCommandQueue
 import com.homm3.livewallpaper.core.render.MapCamera
+import com.homm3.livewallpaper.core.render.RenderingDispatcher
 import com.homm3.livewallpaper.core.screen.AssetSetupScreen
 import com.homm3.livewallpaper.core.screen.GameScreen
 import com.homm3.livewallpaper.core.screen.LoadingScreen
@@ -22,7 +23,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import ktx.app.KtxGame
 import ktx.async.KtxAsync
-import ktx.async.MainDispatcher
 
 open class Engine(
     private val prefs: Flow<WallpaperPreferences>,
@@ -44,10 +44,12 @@ open class Engine(
 
     fun moveCameraByOffset(offset: Float) {
         camera.moveByScrollOffset(offset)
+        Gdx.graphics.requestRendering()
     }
 
     override fun create() {
         KtxAsync.initiate()
+        Gdx.graphics.isContinuousRendering = false
 
         camera = MapCamera()
         val ui = UiAssets()
@@ -62,10 +64,20 @@ open class Engine(
             onSwitchThresholdReached = { submit(MapCommand.Rotate(force = true)) },
         ))
 
-        val scope = CoroutineScope(SupervisorJob() + MainDispatcher)
+        val scope = CoroutineScope(SupervisorJob() + RenderingDispatcher)
         commandScope = scope
         commands = SerialCommandQueue(scope, ::execute)
         submit(MapCommand.Load)
+    }
+
+    override fun resize(width: Int, height: Int) {
+        super.resize(width, height)
+        Gdx.graphics.requestRendering()
+    }
+
+    override fun <Type : Screen> setScreen(type: Class<Type>) {
+        super.setScreen(type)
+        Gdx.graphics.requestRendering()
     }
 
     override fun resume() {

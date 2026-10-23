@@ -17,6 +17,7 @@ class CameraInputProcessor(private val viewport: ScreenViewport) : KtxInputAdapt
 
     override fun keyDown(keycode: Int): Boolean {
         pressedKeys.add(keycode)
+        Gdx.graphics.requestRendering()
         return true
     }
 
@@ -26,6 +27,8 @@ class CameraInputProcessor(private val viewport: ScreenViewport) : KtxInputAdapt
     }
 
     fun handlePressedKeys() {
+        if (pressedKeys.isEmpty()) return
+        Gdx.graphics.requestRendering()
         var inputOccurred = false
 
         for (keycode in pressedKeys) {
@@ -82,6 +85,7 @@ class CameraInputProcessor(private val viewport: ScreenViewport) : KtxInputAdapt
     override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
         dragged = true
         viewport.camera.translate(Gdx.input.deltaX.toFloat(), Gdx.input.deltaY.toFloat(), 0f)
+        Gdx.graphics.requestRendering()
         return super.touchDragged(screenX, screenY, pointer)
     }
 

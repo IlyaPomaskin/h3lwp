@@ -7,6 +7,8 @@ import com.homm3.livewallpaper.core.Engine
 import com.homm3.livewallpaper.core.WallpaperPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
@@ -29,12 +31,21 @@ class AndroidEngine(
     ),
     AndroidWallpaperListener {
 
+    private val prefsScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    @Volatile
     private var useScroll = WallpaperPreferences.defaultUseScroll
 
-    init {
-        CoroutineScope(Dispatchers.Default).launch {
+    override fun create() {
+        super.create()
+        prefsScope.launch {
             prefs.collect { useScroll = it.useScroll }
         }
+    }
+
+    override fun dispose() {
+        prefsScope.cancel()
+        super.dispose()
     }
 
     override fun offsetChange(
