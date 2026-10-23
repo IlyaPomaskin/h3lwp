@@ -18,6 +18,7 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -42,6 +43,7 @@ import com.homm3.livewallpaper.android.ui.components.BackButton
 import com.homm3.livewallpaper.android.ui.theme.H3WallpaperTheme
 
 private val BASE_LOD_MIME_TYPES = arrayOf("*/*")
+private val GOG_INSTALLER_MIME_TYPES = arrayOf("*/*")
 private val HOTA_INSTALLER_MIME_TYPES = arrayOf(
     "application/x-msdownload",
     "application/x-msdos-program",
@@ -60,6 +62,9 @@ fun AssetSetupRoute(onBack: (() -> Unit)?, onContinue: (() -> Unit)?) {
     val pickBaseLod = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) viewModel.installBase(uri)
     }
+    val pickGogInstaller = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        if (uris.isNotEmpty()) viewModel.installBaseFromGog(uris)
+    }
     val pickHotaInstaller = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) viewModel.installHota(uri)
     }
@@ -69,6 +74,7 @@ fun AssetSetupRoute(onBack: (() -> Unit)?, onContinue: (() -> Unit)?) {
         onBack = onBack,
         onContinue = onContinue,
         onSelectBaseLod = { pickBaseLod.launch(BASE_LOD_MIME_TYPES) },
+        onSelectGogInstaller = { pickGogInstaller.launch(GOG_INSTALLER_MIME_TYPES) },
         onSelectHotaInstaller = { pickHotaInstaller.launch(HOTA_INSTALLER_MIME_TYPES) },
     )
 }
@@ -80,6 +86,7 @@ fun AssetSetupScreen(
     onBack: (() -> Unit)?,
     onContinue: (() -> Unit)?,
     onSelectBaseLod: () -> Unit,
+    onSelectGogInstaller: () -> Unit,
     onSelectHotaInstaller: () -> Unit,
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -112,6 +119,10 @@ fun AssetSetupScreen(
                 task = uiState.base,
                 isSelectEnabled = !uiState.isBusy,
                 onSelect = onSelectBaseLod,
+                secondaryAction = AssetAction(
+                    text = stringResource(R.string.asset_setup_base_gog_button),
+                    onClick = onSelectGogInstaller,
+                ),
             )
             AssetCard(
                 title = stringResource(R.string.asset_setup_hota_title),
@@ -135,6 +146,7 @@ private fun AssetCard(
     task: InstallTaskState,
     isSelectEnabled: Boolean,
     onSelect: () -> Unit,
+    secondaryAction: AssetAction? = null,
 ) {
     ElevatedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -153,9 +165,14 @@ private fun AssetCard(
             } else {
                 Button(onClick = onSelect, enabled = isSelectEnabled) { Text(buttonText) }
             }
+            secondaryAction?.let { action ->
+                OutlinedButton(onClick = action.onClick, enabled = isSelectEnabled) { Text(action.text) }
+            }
         }
     }
 }
+
+private data class AssetAction(val text: String, val onClick: () -> Unit)
 
 @Composable
 private fun ContinueBar(isEnabled: Boolean, onClick: () -> Unit) {
@@ -212,6 +229,7 @@ private fun AssetSetupScreenPreview() {
             onBack = null,
             onContinue = {},
             onSelectBaseLod = {},
+            onSelectGogInstaller = {},
             onSelectHotaInstaller = {},
         )
     }

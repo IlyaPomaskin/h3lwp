@@ -1,14 +1,18 @@
 package com.homm3.livewallpaper.core.install
 
 import com.homm3.livewallpaper.core.AssetPaths
+import com.homm3.livewallpaper.parser.h3m.H3mHeaderReader
+import com.homm3.livewallpaper.parser.h3m.H3mVersion
 import com.homm3.livewallpaper.parser.inno.InnoSetupExtractor
 import java.io.File
 import java.io.InputStream
+import java.nio.channels.FileChannel
 import java.util.logging.Level
 import java.util.logging.Logger
 
 /**
- * Installs the game data the wallpaper reads into [dataDir]: H3sprite.lod with the bundled maps, and HotA.lod
+ * Installs the game data the wallpaper reads into [dataDir]: H3sprite.lod (as a file or from a GOG installer)
+ * with the bundled maps, and HotA.lod
  * with the maps from the HotA installer. Blocking; call off the UI and GL threads.
  */
 class GameDataInstaller(
@@ -24,21 +28,84 @@ class GameDataInstaller(
             dataDir.mkdirs()
             progress.report("Copying file...")
             source.use { input -> lodFile.outputStream().use { output -> input.copyTo(output) } }
-
-            progress.report("Validating ${AssetPaths.LOD_FILE}...")
-            val error = lodFile.inputStream().use { LodValidator.validate(it, isHota = false) }
-            if (error != null) {
-                log.warning("installBaseLod: validation failed: $error")
-                lodFile.delete()
-                return InstallResult.Failure(error)
-            }
-
-            copyBundledMaps()
-            return InstallResult.Success(DONE_MESSAGE)
+            return finishBaseInstall(lodFile, progress)
         } catch (e: Exception) {
             log.log(Level.SEVERE, "installBaseLod failed", e)
             return InstallResult.Failure("Error: ${e.message}")
         }
+    }
+
+    /**
+     * Extracts H3sprite.lod from a GOG offline installer: [setupExe] holds the setup headers and
+     * [dataSlices] are its `-1.bin`, `-2.bin`... files in order. The caller owns the channels.
+     * Also extracts the original SoD maps (not RoE/AB) with a [BASE_GAME_MAP_PREFIX] name, unless HotA is installed.
+     */
+    fun installBaseFromGog(setupExe: File, dataSlices: List<FileChannel>, progress: InstallProgress): InstallResult {
+        val lodFile = dataDir.resolve(AssetPaths.LOD_FILE)
+        try {
+            dataDir.mkdirs()
+            progress.report("Extracting installer...")
+            val extracted = InnoSetupExtractor.extract(setupExe, gogTargets(lodFile), dataSlices) { written, total, _ ->
+                progress.report("Extracting: ${percent(written, total)}%")
+            }
+            val isLodExtracted = extracted.any { it.output == lodFile }
+            if (!isLodExtracted) {
+                removeBaseGameMaps()
+                return InstallResult.Failure(BASE_LOD_NOT_FOUND_MESSAGE)
+            }
+
+            removeNonSodBaseGameMaps()
+            val result = finishBaseInstall(lodFile, progress)
+            if (result is InstallResult.Failure) removeBaseGameMaps()
+            return result
+        } catch (e: Exception) {
+            log.log(Level.SEVERE, "installBaseFromGog failed", e)
+            lodFile.delete()
+            removeBaseGameMaps()
+            return InstallResult.Failure("Error: ${e.message}")
+        }
+    }
+
+    private fun gogTargets(lodFile: File): List<InnoSetupExtractor.Target> {
+        val lodTarget = InnoSetupExtractor.Target(
+            matcher = { it.endsWith(INSTALLER_BASE_LOD, ignoreCase = true) },
+            outputFor = { lodFile },
+        )
+        val isHotaInstalled = dataDir.resolve(AssetPaths.HOTA_LOD_FILE).exists()
+        if (isHotaInstalled) return listOf(lodTarget)
+
+        mapsDir.mkdirs()
+        val mapTarget = InnoSetupExtractor.Target(
+            matcher = { it.endsWith(MAP_EXTENSION, ignoreCase = true) },
+            outputFor = { destination -> mapsDir.resolve(sanitizeFileName(BASE_GAME_MAP_PREFIX + baseName(destination))) },
+        )
+        return listOf(lodTarget, mapTarget)
+    }
+
+    private fun removeBaseGameMaps() {
+        baseGameMaps().forEach { it.delete() }
+    }
+
+    private fun removeNonSodBaseGameMaps() {
+        baseGameMaps()
+            .filterNot { map -> map.inputStream().use { H3mHeaderReader.readVersion(it) } == H3mVersion.SOD }
+            .forEach { it.delete() }
+    }
+
+    private fun baseGameMaps(): List<File> =
+        mapsDir.listFiles { file -> file.name.startsWith(BASE_GAME_MAP_PREFIX) }.orEmpty().toList()
+
+    private fun finishBaseInstall(lodFile: File, progress: InstallProgress): InstallResult {
+        progress.report("Validating ${AssetPaths.LOD_FILE}...")
+        val error = lodFile.inputStream().use { LodValidator.validate(it, isHota = false) }
+        if (error != null) {
+            log.warning("finishBaseInstall: validation failed: $error")
+            lodFile.delete()
+            return InstallResult.Failure(error)
+        }
+
+        copyBundledMaps()
+        return InstallResult.Success(DONE_MESSAGE)
     }
 
     /** Extracts HotA.lod and the campaign maps from [installer]; [extractInstallerMaps] also extracts its .h3m files. */
@@ -64,6 +131,7 @@ class GameDataInstaller(
 
             val isLngExtracted = lngFile.length() > 0
             if (isLngExtracted) installCampaignMaps(lngFile, progress)
+            removeBaseGameMaps()
             return InstallResult.Success(DONE_MESSAGE)
         } catch (e: Exception) {
             log.log(Level.SEVERE, "installHota failed", e)
@@ -118,6 +186,9 @@ class GameDataInstaller(
         private val log = Logger.getLogger(GameDataInstaller::class.java.name)
 
         private const val DONE_MESSAGE = "Done!"
+        private const val INSTALLER_BASE_LOD = "data\\h3sprite.lod"
+        private const val BASE_LOD_NOT_FOUND_MESSAGE = "H3sprite.lod not found in the installer"
+        private const val BASE_GAME_MAP_PREFIX = "[SoD] "
         private const val INSTALLER_HOTA_LOD = "data\\hota.lod"
         private const val INSTALLER_HOTA_LNG_LOD = "data\\hota_lng.lod"
         private const val LNG_TEMP_PREFIX = "HotA_lng_"

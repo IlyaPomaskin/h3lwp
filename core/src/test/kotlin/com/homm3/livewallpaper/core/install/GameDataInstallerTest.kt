@@ -4,10 +4,16 @@ import com.homm3.livewallpaper.core.AssetPaths
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import com.homm3.livewallpaper.parser.h3m.H3mHeaderReader
+import com.homm3.livewallpaper.parser.h3m.H3mVersion
+import com.homm3.livewallpaper.parser.inno.TestFixtures
+import java.io.File
 import java.io.InputStream
+import java.io.RandomAccessFile
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 class GameDataInstallerTest {
     @get:Rule
@@ -31,9 +37,95 @@ class GameDataInstallerTest {
     }
 
     @Test
+    fun gogInstallerInstallsBaseLodAndBundledMaps() {
+        TestFixtures.requireGogInstaller()
+        val dataDir = tempFolder.newFolder("data")
+        val installer = GameDataInstaller(dataDir, tempFolder.newFolder("tmp"), oneBundledMap)
+
+        val result = RandomAccessFile(TestFixtures.gogDataSlice, "r").use { slice ->
+            installer.installBaseFromGog(TestFixtures.gogSetupExe, listOf(slice.channel)) {}
+        }
+
+        assertIs<InstallResult.Success>(result)
+        assertEquals(GOG_H3SPRITE_SIZE, dataDir.resolve(AssetPaths.LOD_FILE).length())
+        assertTrue(dataDir.resolve("${AssetPaths.USER_MAPS_FOLDER}/bundled.h3m").exists())
+        val maps = baseGameMaps(dataDir)
+        assertEquals(GOG_SOD_MAP_COUNT, maps.size)
+        assertTrue(maps.all { map -> map.inputStream().use { H3mHeaderReader.readVersion(it) } == H3mVersion.SOD })
+    }
+
+    @Test
+    fun gogInstallerSkipsBaseGameMapsWhenHotaIsInstalled() {
+        TestFixtures.requireGogInstaller()
+        val dataDir = tempFolder.newFolder("data")
+        dataDir.resolve(AssetPaths.HOTA_LOD_FILE).writeText("hota")
+        val installer = GameDataInstaller(dataDir, tempFolder.newFolder("tmp"), oneBundledMap)
+
+        val result = RandomAccessFile(TestFixtures.gogDataSlice, "r").use { slice ->
+            installer.installBaseFromGog(TestFixtures.gogSetupExe, listOf(slice.channel)) {}
+        }
+
+        assertIs<InstallResult.Success>(result)
+        assertTrue(baseGameMaps(dataDir).isEmpty())
+    }
+
+    @Test
+    fun hotaInstallRemovesBaseGameMapsAndKeepsOthers() {
+        TestFixtures.requireInstallers()
+        val dataDir = tempFolder.newFolder("data")
+        val mapsDir = dataDir.resolve(AssetPaths.USER_MAPS_FOLDER).apply { mkdirs() }
+        mapsDir.resolve("[SoD] Arrogance.h3m").writeText("sod")
+        mapsDir.resolve("imported.h3m").writeText("user")
+        val installer = GameDataInstaller(dataDir, tempFolder.newFolder("tmp"), oneBundledMap)
+
+        val result = installer.installHota(TestFixtures.installer180, extractInstallerMaps = false) {}
+
+        assertIs<InstallResult.Success>(result)
+        assertTrue(baseGameMaps(dataDir).isEmpty())
+        assertTrue(mapsDir.resolve("imported.h3m").exists())
+    }
+
+    @Test
+    fun failedHotaInstallKeepsBaseGameMaps() {
+        TestFixtures.requireGogInstaller()
+        val dataDir = tempFolder.newFolder("data")
+        val mapsDir = dataDir.resolve(AssetPaths.USER_MAPS_FOLDER).apply { mkdirs() }
+        mapsDir.resolve("[SoD] Arrogance.h3m").writeText("sod")
+        val installer = GameDataInstaller(dataDir, tempFolder.newFolder("tmp"), oneBundledMap)
+
+        val result = installer.installHota(TestFixtures.gogSetupExe, extractInstallerMaps = false) {}
+
+        assertIs<InstallResult.Failure>(result)
+        assertEquals(1, baseGameMaps(dataDir).size)
+    }
+
+    @Test
+    fun installerWithoutBaseLodIsRejected() {
+        TestFixtures.requireInstallers()
+        val dataDir = tempFolder.newFolder("data")
+        val installer = GameDataInstaller(dataDir, tempFolder.newFolder("tmp"), oneBundledMap)
+
+        val result = installer.installBaseFromGog(TestFixtures.installer180, dataSlices = emptyList()) {}
+
+        assertIs<InstallResult.Failure>(result)
+        assertFalse(dataDir.resolve(AssetPaths.LOD_FILE).exists())
+    }
+
+    @Test
     fun sanitizeFileNameReplacesIllegalCharacters() {
         assertEquals("a_b_c.h3m", sanitizeFileName(" a:b?c.h3m "))
         assertEquals("x_y.h3m", sanitizeFileName("x\u0001y.h3m"))
         assertEquals("unnamed.h3m", sanitizeFileName("   "))
+    }
+
+    private fun baseGameMaps(dataDir: File): List<File> =
+        dataDir.resolve(AssetPaths.USER_MAPS_FOLDER)
+            .listFiles { file -> file.name.startsWith("[SoD] ") }
+            .orEmpty()
+            .toList()
+
+    private companion object {
+        const val GOG_H3SPRITE_SIZE = 64_973_159L
+        const val GOG_SOD_MAP_COUNT = 56
     }
 }

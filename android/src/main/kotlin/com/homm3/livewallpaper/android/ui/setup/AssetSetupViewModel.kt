@@ -47,6 +47,11 @@ class AssetSetupViewModel(private val repository: GameDataRepository) : ViewMode
         install = { progress -> repository.installBase(uri, progress) },
     )
 
+    fun installBaseFromGog(uris: List<Uri>) = launchInstall(
+        updateTask = { state, task -> state.copy(base = task) },
+        install = { progress -> repository.installBaseFromGog(uris, progress) },
+    )
+
     fun installHota(uri: Uri) = launchInstall(
         updateTask = { state, task -> state.copy(hota = task) },
         install = { progress -> repository.installHota(uri, progress) },

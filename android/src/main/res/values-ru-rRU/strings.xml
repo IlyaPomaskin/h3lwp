@@ -29,10 +29,11 @@
     <string name="asset_setup_title">Файлы игры</string>
     <string name="asset_setup_installed">Установлено</string>
     <string name="asset_setup_base_title">Файлы Heroes III</string>
-    <string name="asset_setup_base_description">Приложению нужны оригинальные файлы из Heroes of Might and Magic III: Дыхание Смерти (или Полное издание). Из-за авторских прав эти файлы не могут быть включены в приложение.\n\nСкопируйте файл H3sprite.lod из папки Data вашей установки игры на телефон, затем выберите его ниже.\n\nHD-версия из Steam, Возрождение Эрафии и Клинок Армагеддона не поддерживаются.</string>
+    <string name="asset_setup_base_description">Приложению нужны оригинальные файлы из Heroes of Might and Magic III: Дыхание Смерти (или Полное издание). Из-за авторских прав эти файлы не могут быть включены в приложение.\n\nСкопируйте файл H3sprite.lod из папки Data вашей установки игры на телефон, затем выберите его ниже. Если у вас есть офлайн-установщик GOG, скопируйте на телефон setup_heroes_of_might_and_magic_3_complete_*.exe вместе с его файлом .bin и выберите оба файла сразу.\n\nHD-версия из Steam, Возрождение Эрафии и Клинок Армагеддона не поддерживаются.</string>
     <string name="asset_setup_base_button">Выбрать H3sprite.lod</string>
+    <string name="asset_setup_base_gog_button">Выбрать установщик GOG</string>
     <string name="asset_setup_hota_title">Файлы HotA (необязательно)</string>
-    <string name="asset_setup_hota_description">Если у вас есть Horn of the Abyss, вы можете добавить его спрайты. Скачайте официальный установщик HotA (HotA_*_setup.exe) с hota.acidcave.net и выберите его ниже — приложение само извлечёт нужные данные.\n\nПоддерживается HotA 1.7.x и 1.8.0 (Бастион).</string>
+    <string name="asset_setup_hota_description">Если у вас есть Horn of the Abyss, вы можете добавить его спрайты. Скачайте официальный установщик HotA (HotA_*_setup.exe) с hota.acidcave.net и выберите его ниже — приложение само извлечёт нужные данные.\n\nПоддерживается HotA 1.7.x и 1.8.0 (Бастион). После установки HotA оригинальные карты игры заменяются картами HotA.</string>
     <string name="asset_setup_hota_button">Выбрать установщик HotA</string>
     <string name="asset_setup_continue_button">Продолжить</string>
 

@@ -18,14 +18,16 @@ object CompressedBlockReader {
      * at the start of the secondary block (data entries block).
      */
     fun readSetup0(raf: RandomAccessFile, offset0: Long): ByteArray {
+        readVersion(raf, offset0)
+        return readCompressedBlock(raf)
+    }
+
+    /** Reads the 64-byte setup-0 identity string at [offset0] and leaves [raf] positioned right after it. */
+    fun readVersion(raf: RandomAccessFile, offset0: Long): SetupDataVersion {
         raf.seek(offset0)
         val setupId = ByteArray(SETUP_ID_SIZE); raf.readFully(setupId)
-        val idStr = String(setupId, Charsets.US_ASCII).trimEnd(' ', ' ')
-        require(idStr.startsWith("Inno Setup Setup Data (5.5.7)") && idStr.contains("(u)")) {
-            "Unsupported Inno Setup version. Expected 5.5.7 unicode, got: '$idStr'"
-        }
-
-        return readCompressedBlock(raf)
+        val idStr = String(setupId, Charsets.US_ASCII).trimEnd(' ', '\u0000')
+        return SetupDataVersion.fromSetupId(idStr)
     }
 
     /**
@@ -38,7 +40,8 @@ object CompressedBlockReader {
     }
 
     /**
-     * Reads one CRC-framed LZMA-compressed block from [raf]'s current position.
+     * Reads one CRC-framed block from [raf]'s current position; the payload is LZMA-compressed
+     * or stored as-is (GOG installers store it).
      * Format: HdrCRC(u32) + StoredSize(u32) + Compressed(u8) + StoredSize bytes of
      * 4096-byte chunks, each prefixed with a 4-byte CRC.
      */
@@ -49,7 +52,6 @@ object CompressedBlockReader {
         hdrBuf.int /* hdrCrc -- unverified */
         val storedSize = hdrBuf.int.toLong() and 0xFFFFFFFFL
         val compressed = hdrBuf.get().toInt() != 0
-        require(compressed) { "block is not compressed -- unsupported" }
 
         // Read StoredSize bytes; concat all 4096-byte LZMA blocks (after stripping 4-byte CRC each)
         val raw = ByteArray(storedSize.toInt())
@@ -65,6 +67,7 @@ object CompressedBlockReader {
             pos += take
         }
         val concatenated = SequenceInputStream(Collections.enumeration(streams))
+        if (!compressed) return concatenated.readBytes()
 
         // Inno Setup LZMA streams have a 5-byte header: 1 byte props + 4 bytes dict size (no uncompressed size).
         // Read and parse it so we can pass the values to LZMAInputStream(stream, uncompSize, props, dictSize),

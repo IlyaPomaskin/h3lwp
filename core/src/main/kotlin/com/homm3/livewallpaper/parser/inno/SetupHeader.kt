@@ -1,9 +1,11 @@
 package com.homm3.livewallpaper.parser.inno
 
 import java.io.InputStream
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 /**
- * Parsed Inno Setup TSetupHeader for version 5.5.7 unicode.
+ * Parsed Inno Setup TSetupHeader for setup data 5.5.7 and 5.6.2 unicode.
  *
  * Layout (after the 64-byte setup-0 identity string):
  *   - 31 PascalString fields (UTF-16LE, u32 length-prefix)
@@ -33,11 +35,10 @@ data class SetupHeader(
     val uninstallDeleteEntryCount: Int,
     val runEntryCount: Int,
     val uninstallRunEntryCount: Int,
+    val slicesPerDisk: Int,
+    val compression: ChunkCompression,
 ) {
     companion object {
-        /** Number of PascalString fields in TSetupHeader for Inno Setup 5.5.7u. */
-        private const val STRING_FIELD_COUNT = 31
-
         /**
          * Number of bytes in the trailing fixed-size section after the 16 entry counts.
          * Covers: winver (u64), colors, wizard params, password hash+salt, disk space,
@@ -47,11 +48,17 @@ data class SetupHeader(
          */
         private const val TRAILING_FIXED_BYTES = 93
 
-        fun parse(stream: InputStream): SetupHeader {
+        // Offsets inside the trailing block, per innoextract's header::load for 5.5.7u–5.6.2u:
+        // winver(20) colors(8) alpha(1) sha1(20) salt(8) extra_disk_space(8) → slices_per_disk,
+        // then log/dir/privileges/language enums(5) → compression method.
+        private const val SLICES_PER_DISK_OFFSET = 65
+        private const val COMPRESSION_OFFSET = 74
+
+        fun parse(stream: InputStream, version: SetupDataVersion = SetupDataVersion.V5_5_7): SetupHeader {
             // --- String fields ---
-            // Field 0 is app_name; remaining 30 strings are skipped.
+            // Field 0 is app_name; the remaining strings are skipped.
             val appName = PascalString.read(stream)
-            for (i in 1 until STRING_FIELD_COUNT) {
+            for (i in 1 until version.headerStringCount) {
                 PascalString.skip(stream)
             }
 
@@ -83,7 +90,11 @@ data class SetupHeader(
             // winver (u64) + colors (2×u32) + wizard image/small image params +
             // password.sha1 (u32) + salt bytes + extra_disk_space (u64) +
             // slices_per_disk (u32) + various enum/flag bytes.
-            stream.skipNBytes(TRAILING_FIXED_BYTES.toLong())
+            val trailing = ByteArray(TRAILING_FIXED_BYTES)
+            readFully(stream, trailing)
+            val trailingBuffer = ByteBuffer.wrap(trailing).order(ByteOrder.LITTLE_ENDIAN)
+            val slicesPerDisk = trailingBuffer.getInt(SLICES_PER_DISK_OFFSET)
+            val compression = ChunkCompression.fromStored(trailing[COMPRESSION_OFFSET].toInt())
 
             // Cursor is now positioned at the first language entry.
             return SetupHeader(
@@ -104,7 +115,18 @@ data class SetupHeader(
                 uninstallDeleteEntryCount  = uninstallDeleteEntryCount,
                 runEntryCount              = runEntryCount,
                 uninstallRunEntryCount     = uninstallRunEntryCount,
+                slicesPerDisk              = slicesPerDisk,
+                compression                = compression,
             )
+        }
+
+        private fun readFully(stream: InputStream, target: ByteArray) {
+            var offset = 0
+            while (offset < target.size) {
+                val read = stream.read(target, offset, target.size - offset)
+                require(read > 0) { "Unexpected EOF reading setup header" }
+                offset += read
+            }
         }
 
         private fun readU32(stream: InputStream): Int {
@@ -112,6 +134,18 @@ data class SetupHeader(
             val b2 = stream.read(); val b3 = stream.read()
             require(b3 != -1) { "Unexpected EOF reading u32" }
             return b0 or (b1 shl 8) or (b2 shl 16) or (b3 shl 24)
+        }
+    }
+}
+
+/** Stored compression method for 5.3.9+ (innoextract's stored_compression_method_3). */
+enum class ChunkCompression {
+    STORED, ZLIB, BZIP2, LZMA1, LZMA2;
+
+    companion object {
+        fun fromStored(value: Int): ChunkCompression {
+            require(value in entries.indices) { "Unknown compression method: $value" }
+            return entries[value]
         }
     }
 }
