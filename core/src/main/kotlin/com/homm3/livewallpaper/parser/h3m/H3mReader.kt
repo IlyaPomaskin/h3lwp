@@ -380,12 +380,7 @@ class H3mReader(stream: InputStream) {
                 }
                 11 -> { // SET_QUEST_HINT
                     reader.readString() // message
-                    val numberOfImages = reader.readInt()
-                    for (k in 0 until numberOfImages) {
-                        reader.readInt() // imageType
-                        reader.readInt() // imageSubtype
-                        skipHotaScriptExpression()
-                    }
+                    skipHotaScriptComponents()
                     reader.readBool() // showInLog
                 }
                 12 -> { // SHOW_QUESTION
@@ -396,19 +391,12 @@ class H3mReader(stream: InputStream) {
                     if (imageShowType == 2) {
                         skipHotaScriptActions()
                     }
-                    var numberOfImages = 2
-                    if (imageShowType == 0 || imageShowType == 3) {
-                        numberOfImages = reader.readInt()
-                    }
-                    for (k in 0 until numberOfImages) {
-                        reader.readInt() // imageType
-                        reader.readInt() // imageSubtype
-                        skipHotaScriptExpression()
-                    }
                     if (imageShowType == 1 || imageShowType == 2) {
+                        skipHotaScriptComponent() // first option image
+                        skipHotaScriptComponent() // second option image
                         reader.readBool() // showOrBetweenImages
-                        reader.readInt() // unknown
                     }
+                    skipHotaScriptComponents()
                 }
                 13 -> { // CONDITIONAL
                     skipHotaScriptCondition()
@@ -487,16 +475,23 @@ class H3mReader(stream: InputStream) {
                 }
                 29 -> { // SHOW_MESSAGE
                     reader.readString() // text
-                    val numberOfImages = reader.readInt()
-                    for (k in 0 until numberOfImages) {
-                        reader.readInt() // imageType
-                        reader.readInt() // imageSubtype
-                        skipHotaScriptExpression()
-                    }
+                    skipHotaScriptComponents()
                 }
                 else -> throw IllegalArgumentException("Unknown HotA script action type: $actionType")
             }
         }
+    }
+
+    private fun skipHotaScriptComponents() {
+        val componentsCount = reader.readInt()
+        repeat(componentsCount) { skipHotaScriptComponent() }
+    }
+
+    private fun skipHotaScriptComponent() {
+        reader.readInt() // type
+        reader.readInt() // subtype
+        reader.readByte() // unknown
+        reader.readInt() // value
     }
 
     private fun skipHotaScriptCondition() {

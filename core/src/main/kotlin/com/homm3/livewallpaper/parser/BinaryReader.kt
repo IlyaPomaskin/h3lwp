@@ -3,6 +3,9 @@ package com.homm3.livewallpaper.parser
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.charset.Charset
+
+private val MAP_CHARSET = Charset.forName("windows-1251")
 
 class BinaryReader(private val stream: InputStream) {
     var position: Long = 0
@@ -29,7 +32,7 @@ class BinaryReader(private val stream: InputStream) {
     }
 
     fun readString(length: Int): String {
-        return String(readBytes(length)).replace("\u0000.*".toRegex(), "")
+        return String(readBytes(length), MAP_CHARSET).replace("\u0000.*".toRegex(), "")
     }
 
     fun readBytes(length: Int): ByteArray {
