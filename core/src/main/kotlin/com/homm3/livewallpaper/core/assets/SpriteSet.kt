@@ -16,9 +16,8 @@ import ktx.collections.gdxArrayOf
 import ktx.log.logger
 
 /**
- * Sprites (index pages + palette texture) for one batch of maps. A batch rotation builds a new set while the
- * old one keeps rendering; the old set is disposed once its maps are gone. Create, fill and dispose it on the
- * GL thread.
+ * Sprites (index pages + palette texture) of the loaded maps, kept across batch rotations: a new batch loads only
+ * the DEFs not loaded yet. Create, fill and dispose it on the GL thread.
  */
 class SpriteSet(
     private val sources: List<LodSource>,
@@ -37,13 +36,15 @@ class SpriteSet(
     }
 
     /** Loads the sprites [maps] need that aren't in this set yet: decodes on IO, uploads on the caller's (GL) thread. */
-    suspend fun loadSpritesFor(maps: List<H3mMap>) {
+    suspend fun loadSpritesFor(maps: List<H3mMap>) = loadDefs(SpriteCollector(hasHotaAssets).collectNeededDefNames(maps))
+
+    /** Loads the DEFs of [defNames] (lowercase) that aren't in this set yet; same threading as [loadSpritesFor]. */
+    suspend fun loadDefs(defNames: Set<String>) {
         if (isDisposed) {
-            log.info { "Sprite set is disposed; skipping sprite load for ${maps.size} maps" }
+            log.info { "Sprite set is disposed; skipping sprite load for ${defNames.size} DEFs" }
             return
         }
-        val needed = SpriteCollector(hasHotaAssets).collectNeededSprites(maps)
-        val toLoad = needed.filterNot { registry.isDefLoaded(it) || it in notFoundSprites }.toSet()
+        val toLoad = defNames.filterNot { registry.isDefLoaded(it) || it in notFoundSprites }.toSet()
         if (toLoad.isEmpty()) return
         log.info { "Loading ${toLoad.size} new sprites" }
 

@@ -3,11 +3,11 @@ package com.homm3.livewallpaper.core.screen
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.maps.tiled.TiledMap
 import com.badlogic.gdx.utils.viewport.ScreenViewport
+import com.homm3.livewallpaper.core.Engine
 import com.homm3.livewallpaper.core.GameConfig
 import com.homm3.livewallpaper.core.MapUpdateInterval
 import com.homm3.livewallpaper.core.Scale
 import com.homm3.livewallpaper.core.WallpaperPreferences
-import com.homm3.livewallpaper.core.assets.SpriteSet
 import com.homm3.livewallpaper.core.input.CameraInputProcessor
 import com.homm3.livewallpaper.core.library.Direction
 import com.homm3.livewallpaper.core.map.GameMap
@@ -31,14 +31,13 @@ import kotlin.random.Random
 
 /** Shows one [GameMap] at a time out of the maps handed to [setMaps]. */
 class GameScreen(
-    private val currentSpriteSet: () -> SpriteSet?,
     private val camera: MapCamera,
     private val prefs: Flow<WallpaperPreferences>,
     private val onSwitchThresholdReached: () -> Unit = {},
 ) : KtxScreen {
 
     private val viewport = ScreenViewport(camera)
-    private val spriteBatch = PaletteSpriteBatch(size = 1000) { currentSpriteSet()?.paletteTexture() }
+    private val spriteBatch = PaletteSpriteBatch(size = 1000) { currentMap?.spriteSet?.paletteTexture() }
     private val emptyTiledMap = TiledMap()
     private val renderer = PaletteTiledMapRenderer(emptyTiledMap, spriteBatch)
     private val animationTicker = AnimationTicker()
@@ -54,10 +53,17 @@ class GameScreen(
     private var prefsJob: Job? = null
     private var mapSwitchCount = 0
 
-    /** Replaces the maps to pick from; keeps showing the current one if it's still among [maps]. */
+    /**
+     * Replaces the maps to pick from. Keeps showing the current map until the next switch even when it isn't
+     * among [maps], so its sprite set must stay alive until then.
+     */
     fun setMaps(maps: List<GameMap>) {
         this.maps = maps
-        if (currentMap in maps) return
+    }
+
+    /** Drops all maps and stops showing the current one, e.g. before its sprite set is disposed. */
+    fun clearMaps() {
+        maps = emptyList()
         currentMap = null
         renderer.map = emptyTiledMap
     }
@@ -118,8 +124,8 @@ class GameScreen(
     override fun render(delta: Float) {
         clearScreen(0f, 0f, 0f, 1f)
         inputProcessor.handlePressedKeys()
-        if (currentMap == null) return
-        currentSpriteSet()?.updatePalettes(delta)
+        val map = currentMap ?: return
+        map.spriteSet.updatePalettes(delta)
         camera.update()
         renderer.setView(camera)
         val renderStart = System.nanoTime()
@@ -198,7 +204,14 @@ class GameScreen(
             onSwitchThresholdReached()
         }
 
-        show(rollWellCoveredView(excludedIndex = maps.indexOf(currentMap)))
+        val rerollStart = System.currentTimeMillis()
+        val nextMap = rollWellCoveredView(excludedIndex = maps.indexOf(currentMap))
+        val showStart = System.currentTimeMillis()
+        show(nextMap)
+        log.info {
+            "${Engine.TIMING_TAG} map switch to '${nextMap.fileName}': reroll ${showStart - rerollStart}ms, " +
+                "show ${System.currentTimeMillis() - showStart}ms"
+        }
     }
 
     /** Rerolls map and camera position until objects cover enough of the view; leaves the camera on the result. */

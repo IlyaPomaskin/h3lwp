@@ -8,30 +8,40 @@ import kotlinx.coroutines.withContext
 import ktx.log.logger
 
 /**
- * Parses maps on [Dispatchers.IO] and loads their sprites. Call from a coroutine on the GL thread
- * (KtxAsync), since sprite sets create and upload textures.
+ * Parses maps on [Dispatchers.IO] and loads their sprites into the given [SpriteSet]. Call from a coroutine on
+ * the GL thread (KtxAsync), since sprite sets create and upload textures.
  */
 class MapBatchLoader(
     private val locator: GameDataLocator,
     private val mapQueue: MapQueue = MapQueue(),
 ) {
-
     /** The batch to show on start: [explicitMaps] if given, otherwise the queue's current batch of [availableFiles]. */
-    suspend fun loadInitialBatch(explicitMaps: List<String>, availableFiles: List<String>): MapBatch {
+    suspend fun loadInitialBatch(
+        explicitMaps: List<String>,
+        availableFiles: List<String>,
+        spriteSet: SpriteSet,
+    ): List<LoadedMap> {
         val fileNames = if (explicitMaps.isNotEmpty()) {
             locator.filterSupportedMaps(explicitMaps)
         } else {
             log.info { "Available maps in folder (${availableFiles.size}): $availableFiles" }
             mapQueue.currentBatch(availableFiles)
         }
-        return loadBatch(fileNames)
+        return loadBatch(fileNames, spriteSet)
     }
 
-    /** A new batch with its own sprite set if the queue rotation is due (or [force]d), otherwise `null`. */
-    suspend fun rotateBatchIfDue(availableFiles: List<String>, force: Boolean = false): MapBatch? {
+    /**
+     * The next batch's maps if the queue rotation is due (or [force]d), otherwise `null`. Only sprites missing
+     * from [spriteSet] are loaded; freeing the previous batch's sprites is up to the caller.
+     */
+    suspend fun rotateBatchIfDue(
+        availableFiles: List<String>,
+        spriteSet: SpriteSet,
+        force: Boolean = false,
+    ): List<LoadedMap>? {
         val fileNames = mapQueue.advanceIfDue(availableFiles, force) ?: return null
         log.info { "rotateBatchIfDue: new batch = $fileNames (force=$force)" }
-        return loadBatch(fileNames)
+        return loadBatch(fileNames, spriteSet)
     }
 
     /** Maps of the queue's current batch that aren't in [excluded], with sprites added to [spriteSet]. */
@@ -51,18 +61,11 @@ class MapBatchLoader(
         return maps
     }
 
-    private suspend fun loadBatch(fileNames: List<String>): MapBatch {
+    private suspend fun loadBatch(fileNames: List<String>, spriteSet: SpriteSet): List<LoadedMap> {
         val totalStart = System.currentTimeMillis()
-        val maps = parseMaps(fileNames)
-        val spriteSet = SpriteSet(locator.spriteSources(), hasHotaAssets = locator.isHotaAvailable())
-        try {
-            spriteSet.loadSpritesFor(maps.map { it.h3m })
-        } catch (e: Throwable) {
-            spriteSet.dispose()
-            throw e
-        }
+        val maps = loadMapsInto(spriteSet, fileNames)
         log.info { "loadBatch: ${maps.size}/${fileNames.size} maps in ${System.currentTimeMillis() - totalStart}ms" }
-        return MapBatch(maps, spriteSet)
+        return maps
     }
 
     private suspend fun parseMaps(fileNames: List<String>): List<LoadedMap> =

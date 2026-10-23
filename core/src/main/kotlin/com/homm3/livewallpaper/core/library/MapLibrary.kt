@@ -3,8 +3,8 @@ package com.homm3.livewallpaper.core.library
 import com.badlogic.gdx.utils.Disposable
 import com.homm3.livewallpaper.core.assets.GameDataLocator
 import com.homm3.livewallpaper.core.assets.LoadedMap
-import com.homm3.livewallpaper.core.assets.MapBatch
 import com.homm3.livewallpaper.core.assets.MapBatchLoader
+import com.homm3.livewallpaper.core.assets.MapDefListStore
 import com.homm3.livewallpaper.core.assets.SpriteSet
 import com.homm3.livewallpaper.core.map.GameMap
 import ktx.log.logger
@@ -17,6 +17,7 @@ import ktx.log.logger
 class MapLibrary(
     private val locator: GameDataLocator,
     private val batchLoader: MapBatchLoader = MapBatchLoader(locator),
+    private val defListStore: MapDefListStore = MapDefListStore(locator),
 ) : Disposable {
     private var spriteSet: SpriteSet? = null
     private val entries = LinkedHashMap<String, MapEntry>()
@@ -26,8 +27,6 @@ class MapLibrary(
 
     val isLoaded: Boolean get() = spriteSet != null
 
-    val currentSpriteSet: SpriteSet? get() = spriteSet
-
     /** Every level of every loaded map, in load order. */
     val maps: List<GameMap> get() = entries.values.flatMap { it.levels }
 
@@ -36,24 +35,26 @@ class MapLibrary(
     suspend fun loadInitialBatch(explicitMaps: List<String>) {
         clear()
         allMapFiles = locator.findMapFiles()
-        replaceBatch(batchLoader.loadInitialBatch(explicitMaps, allMapFiles))
+        val newSpriteSet = SpriteSet(locator.spriteSources(), hasHotaAssets = locator.isHotaAvailable())
+        spriteSet = newSpriteSet
+        loadFolderDefs(newSpriteSet)
+        replaceBatch(newSpriteSet, batchLoader.loadInitialBatch(explicitMaps, allMapFiles, newSpriteSet))
         loadedWithHota = locator.isHotaAvailable()
     }
 
     /** Swaps in the next batch when due (or [force]d). Returns whether the maps changed. */
     suspend fun rotateBatchIfDue(force: Boolean): Boolean {
-        if (!isLoaded) return false
-        val batch = batchLoader.rotateBatchIfDue(locator.findMapFiles(), force) ?: return false
-        if (batch.maps.isEmpty()) {
+        val currentSpriteSet = spriteSet ?: return false
+        val maps = batchLoader.rotateBatchIfDue(locator.findMapFiles(), currentSpriteSet, force) ?: return false
+        if (maps.isEmpty()) {
             log.error { "rotateBatchIfDue: no map of the new batch loaded; keeping the current batch" }
-            batch.spriteSet.dispose()
             return false
         }
-        replaceBatch(batch)
+        replaceBatch(currentSpriteSet, maps)
         return true
     }
 
-    /** Rescans the maps folder and drops loaded maps whose files are gone. */
+    /** Rescans the maps folder and drops loaded maps whose files are gone; on a change, loads new maps' sprites. */
     suspend fun syncWithFolder(): FolderChange {
         val currentFiles = locator.findMapFiles()
         val currentFileSet = currentFiles.toSet()
@@ -61,7 +62,10 @@ class MapLibrary(
         entries.keys.removeAll(removedFiles)
         val previousFileSet = allMapFiles.toSet()
         allMapFiles = currentFiles
-        return classifyFolderChange(previousFileSet, currentFileSet, removedFiles)
+        val change = classifyFolderChange(previousFileSet, currentFileSet, removedFiles)
+        val currentSpriteSet = spriteSet
+        if (change != FolderChange.UNCHANGED && currentSpriteSet != null) loadFolderDefs(currentSpriteSet)
+        return change
     }
 
     /** Loads the maps of the queue's current batch that aren't loaded yet into the current sprite set. */
@@ -98,12 +102,14 @@ class MapLibrary(
 
     override fun dispose() = clear()
 
-    private fun replaceBatch(batch: MapBatch) {
-        val previousSpriteSet = spriteSet
+    private fun replaceBatch(batchSpriteSet: SpriteSet, maps: List<LoadedMap>) {
         entries.clear()
-        spriteSet = batch.spriteSet
-        addEntries(batch.spriteSet, batch.maps)
-        previousSpriteSet?.dispose()
+        addEntries(batchSpriteSet, maps)
+    }
+
+    /** Loads every DEF any map of the folder has used, so batch rotations and folder browsing load none. */
+    private suspend fun loadFolderDefs(target: SpriteSet) {
+        target.loadDefs(defListStore.update(allMapFiles, target.hasHotaAssets).defNames)
     }
 
     private fun addEntries(entrySpriteSet: SpriteSet, maps: List<LoadedMap>) {

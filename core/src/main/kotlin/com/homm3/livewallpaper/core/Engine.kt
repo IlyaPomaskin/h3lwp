@@ -23,6 +23,10 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import ktx.app.KtxGame
 import ktx.async.KtxAsync
+import ktx.log.logger
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 open class Engine(
     private val prefs: Flow<WallpaperPreferences>,
@@ -39,6 +43,10 @@ open class Engine(
 
     @Volatile
     private var commands: SerialCommandQueue<MapCommand>? = null
+
+    @Volatile
+    private var hideFrames: CountDownLatch? = null
+    private var isViewSwitchedOnHide = false
 
     private val gameScreen: GameScreen get() = getScreen<GameScreen>()
 
@@ -58,7 +66,6 @@ open class Engine(
         addScreen(LoadingScreen(ui))
         addScreen(AssetSetupScreen(ui, onSettingsButtonClick, onHotaButtonClick, onConversionDone = { submit(MapCommand.Load) }))
         addScreen(GameScreen(
-            currentSpriteSet = { library.currentSpriteSet },
             camera = camera,
             prefs = prefs,
             onSwitchThresholdReached = { submit(MapCommand.Rotate(force = true)) },
@@ -82,7 +89,43 @@ open class Engine(
 
     override fun resume() {
         super.resume()
+        // Fallback when prepareForHide didn't run or timed out. Switching here, not in the queued Refresh,
+        // still puts the new view into the first frame after resume.
+        if (!isViewSwitchedOnHide && shownScreen is GameScreen) gameScreen.randomizeVisibleMapPart()
+        isViewSwitchedOnHide = false
         submit(MapCommand.Refresh)
+    }
+
+    /**
+     * Called by the wallpaper service on its main thread right before rendering pauses. Switches the view (if due)
+     * and blocks until it's drawn into every swap-chain buffer, so the frame left on screen while hidden, and shown
+     * again on screen-on before the first new frame, is already the next view. Gives up after [HIDE_TIMEOUT_MS].
+     */
+    fun prepareForHide() {
+        val hideStart = System.currentTimeMillis()
+        val renderedFrames = CountDownLatch(FRAMES_BEFORE_HIDE)
+        val isSwitchPending = AtomicBoolean(true)
+        Gdx.app.postRunnable {
+            // After a timeout this runnable only runs once rendering resumes; resume() has switched by then.
+            if (!isSwitchPending.compareAndSet(true, false)) return@postRunnable
+            val switchStart = System.currentTimeMillis()
+            if (shownScreen is GameScreen) gameScreen.randomizeVisibleMapPart()
+            isViewSwitchedOnHide = true
+            hideFrames = renderedFrames
+            log.info {
+                "$TIMING_TAG hide switch: ${System.currentTimeMillis() - switchStart}ms " +
+                    "(GL thread picked it up after ${switchStart - hideStart}ms)"
+            }
+        }
+        Gdx.graphics.requestRendering()
+        val isRendered = renderedFrames.await(HIDE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        isSwitchPending.set(false)
+        val elapsed = System.currentTimeMillis() - hideStart
+        if (isRendered) {
+            log.info { "$TIMING_TAG prepareForHide: $FRAMES_BEFORE_HIDE frames rendered in ${elapsed}ms" }
+            return
+        }
+        log.info { "$TIMING_TAG prepareForHide: timed out after ${elapsed}ms (limit ${HIDE_TIMEOUT_MS}ms)" }
     }
 
     /** Called by the wallpaper service from its own thread. */
@@ -106,6 +149,17 @@ open class Engine(
             }
         }
         super.render()
+        countHideFrame()
+    }
+
+    private fun countHideFrame() {
+        val frames = hideFrames ?: return
+        frames.countDown()
+        if (frames.count == 0L) {
+            hideFrames = null
+            return
+        }
+        Gdx.graphics.requestRendering()
     }
 
     override fun dispose() {
@@ -152,7 +206,6 @@ open class Engine(
         gameScreen.setMaps(library.maps)
         if (folderChange == FolderChange.UNCHANGED) {
             showGameScreen()
-            gameScreen.randomizeVisibleMapPart()
             return
         }
 
@@ -166,16 +219,17 @@ open class Engine(
     }
 
     private suspend fun reinit() {
+        gameScreen.clearMaps()
         library.clear()
-        gameScreen.setMaps(emptyList())
         load()
     }
 
     private suspend fun rotate(force: Boolean) {
+        val rotateStart = System.currentTimeMillis()
         val isRotated = library.rotateBatchIfDue(force)
         if (!isRotated) return
         gameScreen.setMaps(library.maps)
-        gameScreen.randomizeVisibleMapPart(force = true)
+        log.info { "$TIMING_TAG batch rotation (force=$force): ${System.currentTimeMillis() - rotateStart}ms" }
     }
 
     private suspend fun loadNext(direction: Direction) {
@@ -192,5 +246,12 @@ open class Engine(
     private fun showGameScreen() {
         if (shownScreen is GameScreen) return
         setScreen<GameScreen>()
+    }
+
+    companion object {
+        private val log = logger<Engine>()
+        private const val FRAMES_BEFORE_HIDE = 2
+        private const val HIDE_TIMEOUT_MS = 500L
+        const val TIMING_TAG = "[timing]"
     }
 }

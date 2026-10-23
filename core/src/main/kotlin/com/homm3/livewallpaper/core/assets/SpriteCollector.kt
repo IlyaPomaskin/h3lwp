@@ -40,4 +40,8 @@ class SpriteCollector(hasHotaAssets: Boolean = false) {
         names.add("edg.def")
         return names
     }
+
+    /** [collectNeededSprites] with every name lowercase, as the sprite registry keys DEFs. */
+    fun collectNeededDefNames(maps: List<H3mMap>): Set<String> =
+        collectNeededSprites(maps).map { it.lowercase(Locale.ROOT) }.toSet()
 }

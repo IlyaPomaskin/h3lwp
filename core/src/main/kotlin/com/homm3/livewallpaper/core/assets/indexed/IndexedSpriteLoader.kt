@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.g2d.PixmapPacker
 import com.homm3.livewallpaper.parser.def.DefFrame
 import com.homm3.livewallpaper.parser.def.DefReader
+import com.homm3.livewallpaper.parser.def.DefSprite
 import com.homm3.livewallpaper.parser.lod.LodArchive
 import com.homm3.livewallpaper.parser.lod.LodEntry
 import com.homm3.livewallpaper.parser.lod.LodReader
@@ -16,12 +17,15 @@ import java.util.logging.Logger
 
 /**
  * Loads sprites from LOD archives as 8-bit palette indices packed into Pixmap.Format.Alpha pages.
- * CPU only; every call works on its own state, so it is safe to run on a background thread.
+ * CPU only and safe to run on a background thread; use one instance per load.
  *
  * Factory terrains (wastlnd/highlnd) stored as "<prefix>000.pcx".. tiles are loaded only when their
  * terrain DEF is needed and the same source has no DEF with that name.
  */
 class IndexedSpriteLoader {
+    private var readNanos = 0L
+    private var decodeNanos = 0L
+    private var packNanos = 0L
 
     fun load(sources: List<LodSource>, neededNames: Set<String>): IndexedBundle {
         val needed = neededNames.map { it.lowercase(Locale.ROOT) }.toSet()
@@ -49,6 +53,10 @@ class IndexedSpriteLoader {
     ): Set<String> {
         val startMs = System.currentTimeMillis()
         val archive = lodReader.read()
+        val indexMs = System.currentTimeMillis() - startMs
+        readNanos = 0L
+        decodeNanos = 0L
+        packNanos = 0L
 
         val jobs = names.mapNotNull { name -> findJob(archive, source, name) }.sortedBy { it.offset }
         val loadedNames = jobs
@@ -58,7 +66,9 @@ class IndexedSpriteLoader {
 
         log.info(
             "Indexed sprites ${source.name}: ${loadedNames.size} of ${names.size} DEFs, " +
-                "${builder.regionCount} regions total, ${System.currentTimeMillis() - startMs}ms"
+                "${builder.regionCount} regions total, ${System.currentTimeMillis() - startMs}ms " +
+                "(index ${indexMs}ms, read ${readNanos / NANOS_PER_MS}ms, decode ${decodeNanos / NANOS_PER_MS}ms, " +
+                "pack ${packNanos / NANOS_PER_MS}ms)"
         )
         return loadedNames
     }
@@ -78,52 +88,83 @@ class IndexedSpriteLoader {
         return LoadJob.Tiles(name, tiles)
     }
 
-    private fun runJob(lodReader: LodReader, job: LoadJob, builder: BundleBuilder): Boolean = try {
+    private fun runJob(lodReader: LodReader, job: LoadJob, builder: BundleBuilder): Boolean {
+        val decoded = try {
+            when (job) {
+                is LoadJob.Def -> decodeDef(lodReader, job)
+                is LoadJob.Tiles -> decodeTiles(lodReader, job)
+            }
+        } catch (e: Throwable) {
+            log.log(Level.WARNING, "Failed to load indexed ${job.defName}", e)
+            null
+        } ?: return false
+
+        val packStart = System.nanoTime()
+        val isPacked = packSafely(job.defName, decoded, builder)
+        packNanos += System.nanoTime() - packStart
+        return isPacked
+    }
+
+    private fun packSafely(defName: String, decoded: DecodedDef, builder: BundleBuilder): Boolean = try {
         val regionsBefore = builder.regionCount
-        when (job) {
-            is LoadJob.Def -> loadDef(lodReader, job, builder)
-            is LoadJob.Tiles -> loadTiles(lodReader, job, builder)
+        when (decoded) {
+            is DecodedDef.Def -> packDef(defName, decoded.sprite, builder)
+            is DecodedDef.Tiles -> packTiles(defName, decoded, builder)
         }
         builder.regionCount > regionsBefore
     } catch (e: Throwable) {
-        log.log(Level.WARNING, "Failed to load indexed ${job.defName}", e)
+        log.log(Level.WARNING, "Failed to pack indexed $defName", e)
         false
     }
 
-    private fun loadDef(lodReader: LodReader, job: LoadJob.Def, builder: BundleBuilder) {
+    private fun decodeDef(lodReader: LodReader, job: LoadJob.Def): DecodedDef? {
+        val readStart = System.nanoTime()
         val bytes = lodReader.readFileContent(job.entry).readBytes()
+        readNanos += System.nanoTime() - readStart
         if (isD32(bytes)) {
             log.info("Indexed sprites: skipping D32 ${job.defName} (not supported)")
-            return
+            return null
         }
 
+        val decodeStart = System.nanoTime()
         val def = DefReader(ByteArrayInputStream(bytes)).read()
-        val paletteIndex = builder.addPalette(def.rawPalette, DefPalette.paletteRotations[job.defName].orEmpty())
+        decodeNanos += System.nanoTime() - decodeStart
+        return DecodedDef.Def(def)
+    }
+
+    private fun decodeTiles(lodReader: LodReader, job: LoadJob.Tiles): DecodedDef {
+        val tiles = job.tiles.mapNotNull { (tileName, entry) ->
+            val pcx = PcxReader(lodReader.readFileContent(entry)).read()
+            val palette = pcx.palette
+            if (palette == null) {
+                log.warning("Indexed sprites: ${job.defName} tile $tileName is not 8-bit, skipped")
+                return@mapNotNull null
+            }
+            DecodedTile(DefFrame(tileName, pcx.width, pcx.height, pcx.width, pcx.height, 0, 0, pcx.data), palette)
+        }
+        return DecodedDef.Tiles(job.tiles.map { (tileName, _) -> tileName }, tiles)
+    }
+
+    private fun packDef(defName: String, def: DefSprite, builder: BundleBuilder) {
+        val paletteIndex = builder.addPalette(def.rawPalette, DefPalette.paletteRotations[defName].orEmpty())
         val uniqueFrames = def.groups.flatMap { it.frames }.distinctBy { it.frameName }
 
-        if (job.defName in DefPalette.terrainDefNames) {
+        if (defName in DefPalette.terrainDefNames) {
             val allFilenames = def.groups.flatMap { it.filenames }
-            uniqueFrames.forEach { frame -> builder.packTerrainFrame(job.defName, frame, allFilenames, paletteIndex) }
+            uniqueFrames.forEach { frame -> builder.packTerrainFrame(defName, frame, allFilenames, paletteIndex) }
             return
         }
 
         uniqueFrames.forEach { frame ->
             val filenames = def.groups.first { group -> frame.frameName in group.filenames }.filenames
-            builder.packObjectFrame(job.defName, frame, filenames, paletteIndex)
+            builder.packObjectFrame(defName, frame, filenames, paletteIndex)
         }
     }
 
-    private fun loadTiles(lodReader: LodReader, job: LoadJob.Tiles, builder: BundleBuilder) {
-        val tileNames = job.tiles.map { (tileName, _) -> tileName }
-        job.tiles.forEach { (tileName, entry) ->
-            val pcx = PcxReader(lodReader.readFileContent(entry)).read()
-            val palette = pcx.palette
-            if (palette == null) {
-                log.warning("Indexed sprites: ${job.defName} tile $tileName is not 8-bit, skipped")
-                return@forEach
-            }
-            val frame = DefFrame(tileName, pcx.width, pcx.height, pcx.width, pcx.height, 0, 0, pcx.data)
-            builder.packTerrainFrame(job.defName, frame, tileNames, builder.addPalette(palette, emptyList()))
+    private fun packTiles(defName: String, decoded: DecodedDef.Tiles, builder: BundleBuilder) {
+        decoded.tiles.forEach { tile ->
+            val paletteIndex = builder.addPalette(tile.rawPalette, emptyList())
+            builder.packTerrainFrame(defName, tile.frame, decoded.tileNames, paletteIndex)
         }
     }
 
@@ -147,6 +188,7 @@ class IndexedSpriteLoader {
 
     companion object {
         private const val TILE_INDEX_FORMAT = "%03d"
+        private const val NANOS_PER_MS = 1_000_000L
         private val D32_MAGIC = "D32F".toByteArray(Charsets.US_ASCII)
         private val log = Logger.getLogger(IndexedSpriteLoader::class.java.name)
     }
@@ -293,3 +335,12 @@ internal fun indexPixmap(width: Int, height: Int, indices: ByteArray): Pixmap {
     pixmap.pixels.put(indices).position(0)
     return pixmap
 }
+
+/** A sprite file decoded from a LOD and ready to pack: a DEF, or the PCX tiles of a factory terrain. */
+private sealed interface DecodedDef {
+    class Def(val sprite: DefSprite) : DecodedDef
+
+    class Tiles(val tileNames: List<String>, val tiles: List<DecodedTile>) : DecodedDef
+}
+
+private class DecodedTile(val frame: DefFrame, val rawPalette: ByteArray)
