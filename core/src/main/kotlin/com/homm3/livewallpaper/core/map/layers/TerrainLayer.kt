@@ -1,18 +1,11 @@
 package com.homm3.livewallpaper.core.map.layers
 
-import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion
 import com.badlogic.gdx.maps.MapGroupLayer
-import com.badlogic.gdx.maps.tiled.TiledMapTile
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer
-import com.badlogic.gdx.maps.tiled.tiles.AnimatedTiledMapTile
-import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile
-import com.badlogic.gdx.utils.Array
-import com.homm3.livewallpaper.core.GameConfig.FRAME_TIME
 import com.homm3.livewallpaper.core.GameConfig.TILE_SIZE
 import com.homm3.livewallpaper.core.assets.GameAssets
 import com.homm3.livewallpaper.parser.h3m.H3mMap
 import com.homm3.livewallpaper.parser.h3m.H3mTile
-import ktx.collections.map
 
 class TerrainLayer(private val assets: GameAssets, h3m: H3mMap, isUnderground: Boolean) :
     MapGroupLayer() {
@@ -44,6 +37,12 @@ class TerrainLayer(private val assets: GameAssets, h3m: H3mMap, isUnderground: B
     }
 
     private enum class TileType { TERRAIN, RIVER, ROAD }
+
+    private data class TileKey(val defName: String, val frameIndex: Int)
+
+    private val tileCache = TileCache<TileKey> { key ->
+        createMapTile(assets.getTerrainFrames(key.defName, key.frameIndex))
+    }
 
     init {
         val mapSize = h3m.header.size
@@ -77,36 +76,22 @@ class TerrainLayer(private val assets: GameAssets, h3m: H3mMap, isUnderground: B
         name = "terrain"
     }
 
-    private fun createMapTile(frames: Array<AtlasRegion>): TiledMapTile {
-        return if (frames.size > 1) {
-            AnimatedTiledMapTile(FRAME_TIME, frames.map { StaticTiledMapTile(it) })
-        } else {
-            StaticTiledMapTile(frames.first())
-        }
-    }
-
     private fun createCell(tile: H3mTile, type: TileType): TiledMapTileLayer.Cell {
         return when (type) {
             TileType.TERRAIN -> TiledMapTileLayer.Cell().apply {
-                this.tile = createMapTile(
-                    assets.getTerrainFrames(TerrainDef.byId(tile.terrain), tile.terrainIndex)
-                )
+                this.tile = tileCache[TileKey(TerrainDef.byId(tile.terrain), tile.terrainIndex)]
                 this.flipHorizontally = tile.mirrorConfig.get(0)
                 this.flipVertically = tile.mirrorConfig.get(1)
             }
 
             TileType.RIVER -> TiledMapTileLayer.Cell().apply {
-                this.tile = createMapTile(
-                    assets.getTerrainFrames(RiverDef.byId(tile.river), tile.riverIndex)
-                )
+                this.tile = tileCache[TileKey(RiverDef.byId(tile.river), tile.riverIndex)]
                 this.flipHorizontally = tile.mirrorConfig.get(2)
                 this.flipVertically = tile.mirrorConfig.get(3)
             }
 
             TileType.ROAD -> TiledMapTileLayer.Cell().apply {
-                this.tile = createMapTile(
-                    assets.getTerrainFrames(RoadDef.byId(tile.road), tile.roadIndex)
-                )
+                this.tile = tileCache[TileKey(RoadDef.byId(tile.road), tile.roadIndex)]
                 this.flipHorizontally = tile.mirrorConfig.get(4)
                 this.flipVertically = tile.mirrorConfig.get(5)
             }

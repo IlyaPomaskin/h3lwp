@@ -20,6 +20,8 @@ class BorderLayer(
     GameConfig.TILE_SIZE.toInt(),
     GameConfig.TILE_SIZE.toInt()
 ) {
+    private val tileCache = TileCache<Int> { index -> StaticTiledMapTile(getBorderFrame(index)) }
+
     init {
         offsetX = -(borderWidth * GameConfig.TILE_SIZE)
         offsetY = (borderHeight * GameConfig.TILE_SIZE)
@@ -33,8 +35,8 @@ class BorderLayer(
             mapSize - 1f, mapSize - 1f
         )
 
-        (0..mapSize + borderWidth * 2).forEach { x ->
-            (0..mapSize + borderHeight * 2).forEach { y ->
+        (0 until width).forEach { x ->
+            (0 until height).forEach { y ->
                 if (mapRect.contains(x.toFloat(), y.toFloat())) {
                     return@forEach
                 }
@@ -72,9 +74,7 @@ class BorderLayer(
 
     private fun createBorderCell(from: Int, to: Int? = null): Cell {
         val index = if (to == null) from else Random.nextInt(from, to)
-        val cell = Cell()
-        cell.tile = StaticTiledMapTile(getBorderFrame(index))
-        return cell
+        return Cell().apply { tile = tileCache[index] }
     }
 
     companion object {
