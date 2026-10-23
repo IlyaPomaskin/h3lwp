@@ -9,12 +9,12 @@ import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile
 import com.badlogic.gdx.utils.Array
 import com.homm3.livewallpaper.core.GameConfig.FRAME_TIME
 import com.homm3.livewallpaper.core.GameConfig.TILE_SIZE
-import com.homm3.livewallpaper.core.assets.GameAssets
+import com.homm3.livewallpaper.core.assets.SpriteSet
 import com.homm3.livewallpaper.parser.h3m.H3mMap
 import com.homm3.livewallpaper.parser.h3m.H3mTile
 import ktx.collections.map
 
-class TerrainLayer(private val assets: GameAssets, h3m: H3mMap, isUnderground: Boolean) :
+class TerrainLayer(private val assets: SpriteSet, h3m: H3mMap, isUnderground: Boolean) :
     MapGroupLayer() {
 
     enum class TerrainDef(val id: Int) {

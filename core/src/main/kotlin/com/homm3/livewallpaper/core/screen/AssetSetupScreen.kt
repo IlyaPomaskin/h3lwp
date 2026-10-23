@@ -5,7 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.viewport.ScreenViewport
-import com.homm3.livewallpaper.core.assets.GameAssets
+import com.homm3.livewallpaper.core.assets.UiAssets
 import ktx.actors.onClick
 import ktx.actors.stage
 import ktx.app.KtxScreen
@@ -17,7 +17,7 @@ import ktx.scene2d.verticalGroup
 import kotlin.math.min
 
 class AssetSetupScreen(
-    private val assets: GameAssets,
+    private val assets: UiAssets,
     private val onSettingsButtonClick: (onProgress: (String) -> Unit, onDone: () -> Unit) -> Unit,
     private val onHotaButtonClick: (onProgress: (String) -> Unit, onDone: () -> Unit) -> Unit = { _, _ -> },
     private val onConversionDone: () -> Unit = {}
