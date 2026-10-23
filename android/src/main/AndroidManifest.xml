@@ -4,24 +4,38 @@
     <uses-feature android:name="android.software.live_wallpaper" />
 
     <application
+        android:name=".android.H3WallpaperApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:largeHeap="true"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.DeviceDefault">
+        android:theme="@style/Theme.H3Wallpaper">
 
         <activity
             android:name=".android.MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@android:style/Theme.NoDisplay">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".android.SettingsActivity"
+            android:exported="true" />
+
+        <activity
+            android:name=".android.MapsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".android.AssetSetupActivity"
+            android:exported="false" />
 
         <service
             android:name=".android.LiveWallpaperService"
@@ -34,17 +48,5 @@
                 android:name="android.service.wallpaper"
                 android:resource="@xml/livewallpaper" />
         </service>
-
-        <activity
-            android:name=".android.SettingsActivity"
-            android:exported="true" />
-
-        <activity
-            android:name=".android.AssetSetupActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".android.MapsActivity"
-            android:exported="false" />
     </application>
 </manifest>

@@ -1,22 +1,20 @@
 package com.homm3.livewallpaper.android
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import com.homm3.livewallpaper.core.AssetPaths
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val lodFile = filesDir.resolve(AssetPaths.LOD_FILE)
-        val target = if (lodFile.exists()) {
-            SettingsActivity::class.java
+        val isBaseInstalled = appContainer.gameDataRepository.status.value.isBaseInstalled
+        val startIntent = if (isBaseInstalled) {
+            SettingsActivity.intent(this)
         } else {
-            AssetSetupActivity::class.java
+            AssetSetupActivity.intent(this, isInitialSetup = true)
         }
-
-        startActivity(Intent(this, target))
+        startActivity(startIntent)
         finish()
     }
 }

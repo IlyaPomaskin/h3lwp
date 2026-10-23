@@ -2,8 +2,7 @@ package com.homm3.livewallpaper.android
 
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration
 import com.badlogic.gdx.backends.android.AndroidLiveWallpaperService
-import com.homm3.livewallpaper.android.data.WallpaperPreferencesRepository
-import com.homm3.livewallpaper.android.data.dataStore
+import com.homm3.livewallpaper.android.wallpaper.AndroidEngine
 
 class LiveWallpaperService : AndroidLiveWallpaperService() {
     private var androidEngine: AndroidEngine? = null
@@ -24,8 +23,7 @@ class LiveWallpaperService : AndroidLiveWallpaperService() {
     override fun onCreateApplication() {
         super.onCreateApplication()
 
-        val prefs = WallpaperPreferencesRepository(dataStore)
-        val engine = AndroidEngine(this, prefs.preferencesFlow)
+        val engine = AndroidEngine(this, appContainer.preferencesRepository.preferences)
         androidEngine = engine
 
         initialize(

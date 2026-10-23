@@ -2,7 +2,13 @@ package com.homm3.livewallpaper.android.data
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.core.MutablePreferences
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.homm3.livewallpaper.core.MapUpdateInterval
 import com.homm3.livewallpaper.core.Scale
@@ -12,50 +18,42 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 
-val Context.dataStore by preferencesDataStore(name = "wallpaper_preferences")
+private const val DATA_STORE_NAME = "wallpaper_preferences"
+
+val Context.wallpaperDataStore: DataStore<Preferences> by preferencesDataStore(name = DATA_STORE_NAME)
 
 class WallpaperPreferencesRepository(private val dataStore: DataStore<Preferences>) {
-    companion object PreferencesKeys {
+
+    val preferences: Flow<WallpaperPreferences> = dataStore.data
+        .catch { exception ->
+            if (exception !is IOException) throw exception
+            emit(emptyPreferences())
+        }
+        .map(::toWallpaperPreferences)
+
+    suspend fun setScale(scale: Scale) = edit { it[Keys.SCALE] = scale.value }
+
+    suspend fun setMapUpdateInterval(interval: MapUpdateInterval) = edit { it[Keys.MAP_UPDATE_INTERVAL] = interval.value }
+
+    suspend fun setUseScroll(useScroll: Boolean) = edit { it[Keys.USE_SCROLL] = useScroll }
+
+    suspend fun setBrightness(brightness: Float) = edit { it[Keys.BRIGHTNESS] = brightness }
+
+    private suspend fun edit(transform: (MutablePreferences) -> Unit) {
+        dataStore.edit { transform(it) }
+    }
+
+    private fun toWallpaperPreferences(preferences: Preferences) = WallpaperPreferences(
+        scale = Scale.fromInt(preferences[Keys.SCALE]),
+        mapUpdateInterval = MapUpdateInterval.fromInt(preferences[Keys.MAP_UPDATE_INTERVAL]),
+        useScroll = preferences[Keys.USE_SCROLL] ?: WallpaperPreferences.defaultUseScroll,
+        brightness = preferences[Keys.BRIGHTNESS] ?: WallpaperPreferences.defaultBrightness,
+    )
+
+    private object Keys {
         val USE_SCROLL = booleanPreferencesKey("use_scroll")
         val SCALE = intPreferencesKey("scale")
         val BRIGHTNESS = floatPreferencesKey("brightness")
         val MAP_UPDATE_INTERVAL = intPreferencesKey("map_update_interval")
-    }
-
-    val preferencesFlow: Flow<WallpaperPreferences> = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
-        }
-        .map { preferences -> mapUserPreferences(preferences) }
-
-    suspend fun toggleUseScroll() {
-        dataStore.edit { preferences ->
-            preferences[USE_SCROLL] = preferences[USE_SCROLL]?.not() ?: false
-        }
-    }
-
-    suspend fun setScale(value: Scale) {
-        dataStore.edit { prefs -> prefs[SCALE] = value.value }
-    }
-
-    suspend fun setMapUpdateInterval(value: MapUpdateInterval) {
-        dataStore.edit { prefs -> prefs[MAP_UPDATE_INTERVAL] = value.value }
-    }
-
-    suspend fun setBrightness(value: Float) {
-        dataStore.edit { prefs -> prefs[BRIGHTNESS] = value }
-    }
-
-    private fun mapUserPreferences(preferences: Preferences): WallpaperPreferences {
-        val scale = Scale.fromInt(preferences[SCALE])
-        val mapUpdateInterval = MapUpdateInterval.fromInt(preferences[MAP_UPDATE_INTERVAL])
-        val useScroll = preferences[USE_SCROLL] ?: WallpaperPreferences.defaultUseScroll
-        val brightness = preferences[BRIGHTNESS] ?: WallpaperPreferences.defaultBrightness
-
-        return WallpaperPreferences(scale, mapUpdateInterval, useScroll, brightness)
     }
 }

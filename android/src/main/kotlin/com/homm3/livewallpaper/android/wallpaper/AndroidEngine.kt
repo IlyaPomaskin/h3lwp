@@ -1,11 +1,13 @@
-package com.homm3.livewallpaper.android
+package com.homm3.livewallpaper.android.wallpaper
 
 import android.content.Context
-import android.content.Intent
+import androidx.core.app.TaskStackBuilder
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
-import com.homm3.livewallpaper.BuildConfig
 import com.badlogic.gdx.backends.android.AndroidWallpaperListener
+import com.homm3.livewallpaper.BuildConfig
+import com.homm3.livewallpaper.android.AssetSetupActivity
+import com.homm3.livewallpaper.android.SettingsActivity
 import com.homm3.livewallpaper.core.Engine
 import com.homm3.livewallpaper.core.WallpaperPreferences
 import kotlinx.coroutines.CoroutineScope
@@ -16,23 +18,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 class AndroidEngine(
-    private val context: Context,
-    private val prefs: Flow<WallpaperPreferences>
-) :
-    Engine(
-        prefs = prefs,
-        onSettingsButtonClick = { _, _ ->
-            val intent = Intent(context, SettingsActivity::class.java)
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
-        },
-        onHotaButtonClick = { _, _ ->
-            val intent = Intent(context, AssetSetupActivity::class.java)
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
-        }
-    ),
-    AndroidWallpaperListener {
+    context: Context,
+    private val prefs: Flow<WallpaperPreferences>,
+) : Engine(
+    prefs = prefs,
+    onSettingsButtonClick = { _, _ -> openSettings(context) },
+    onHotaButtonClick = { _, _ -> openAssetSetup(context) },
+), AndroidWallpaperListener {
 
     private val prefsScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -58,13 +50,25 @@ class AndroidEngine(
         xOffsetStep: Float,
         yOffsetStep: Float,
         xPixelOffset: Int,
-        yPixelOffset: Int
+        yPixelOffset: Int,
     ) {
-        if (useScroll) {
-            moveCameraByOffset(xOffset)
-        }
+        if (useScroll) moveCameraByOffset(xOffset)
     }
 
     override fun previewStateChange(isPreview: Boolean) {}
+
     override fun iconDropped(x: Int, y: Int) {}
+}
+
+private fun openSettings(context: Context) {
+    TaskStackBuilder.create(context)
+        .addNextIntent(SettingsActivity.intent(context))
+        .startActivities()
+}
+
+private fun openAssetSetup(context: Context) {
+    TaskStackBuilder.create(context)
+        .addNextIntent(SettingsActivity.intent(context))
+        .addNextIntent(AssetSetupActivity.intent(context, isInitialSetup = false))
+        .startActivities()
 }

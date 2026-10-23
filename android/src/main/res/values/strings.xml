@@ -2,46 +2,58 @@
 <resources>
     <string name="app_name" translatable="false">Heroes 3 Wallpaper</string>
 
-    <string name="preferences_header">Preferences</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_back">Back</string>
+
+    <string name="settings_section_wallpaper">Wallpaper</string>
+    <string name="settings_section_content">Content</string>
+    <string name="settings_section_links">Links</string>
+
     <string name="scale_title">Scale</string>
-    <string name="update_time_title">Map change interval</string>
-    <string name="update_timeout_every_switch">Every home screen switch</string>
-    <string name="update_timeout_10minutes">10 minutes</string>
-    <string name="update_timeout_30minutes">30 minutes</string>
-    <string name="update_timeout_2hour">2 hours</string>
-    <string name="update_timeout_24hours">24 hours</string>
+    <string name="scale_option" translatable="false">x%d</string>
+    <string name="update_interval_title">Map change interval</string>
+    <string name="update_interval_every_switch">Every home screen switch</string>
+    <string name="update_interval_10_minutes">10 minutes</string>
+    <string name="update_interval_30_minutes">30 minutes</string>
+    <string name="update_interval_2_hours">2 hours</string>
+    <string name="update_interval_24_hours">24 hours</string>
     <string name="use_scroll_title">Scroll map</string>
-    <string name="use_scroll_summary">Scroll map while switching screens\nNote: Some devices don\'t support this</string>
+    <string name="use_scroll_summary">Scroll map while switching screens. Some devices don\'t support this.</string>
     <string name="brightness_title">Brightness</string>
-    <string name="wallpaper_change_button">Set wallpaper</string>
 
-    <string name="asset_setup_title">Game assets required</string>
-    <string name="asset_setup_description">This app needs original game files from Heroes of Might and Magic III: Shadow of Death (or Complete Edition). These files cannot be bundled with the app due to copyright.\n\nCopy the file H3sprite.lod from the Data folder of your game installation to your phone, then select it below.\n\nNote: HD Edition, Restoration of Erathia, and Armageddon\'s Blade are not supported.</string>
-    <string name="asset_setup_select_button">Select H3sprite.lod</string>
+    <string name="set_wallpaper_button">Set wallpaper</string>
+    <string name="set_wallpaper_dialog_title">Before you continue</string>
+    <string name="set_wallpaper_dialog_text">Some devices do not support live wallpapers on the lock screen.\n\nOn certain devices, live wallpapers may not be supported at all.</string>
+    <string name="set_wallpaper_dialog_confirm">OK</string>
+    <string name="set_wallpaper_dialog_confirm_countdown">OK (%d)</string>
+    <string name="set_wallpaper_unsupported">This device doesn\'t support live wallpapers</string>
 
+    <string name="asset_setup_title">Game assets</string>
+    <string name="asset_setup_installed">Installed</string>
+    <string name="asset_setup_base_title">Heroes III game data</string>
+    <string name="asset_setup_base_description">This app needs original game files from Heroes of Might and Magic III: Shadow of Death (or Complete Edition). These files cannot be bundled with the app due to copyright.\n\nCopy the file H3sprite.lod from the Data folder of your game installation to your phone, then select it below.\n\nNote: HD Edition, Restoration of Erathia, and Armageddon\'s Blade are not supported.</string>
+    <string name="asset_setup_base_button">Select H3sprite.lod</string>
     <string name="asset_setup_hota_title">HotA assets (optional)</string>
     <string name="asset_setup_hota_description">If you have Horn of the Abyss, you can add its sprites. Download the official HotA installer (HotA_*_setup.exe) from hota.acidcave.net and select it below — the app will extract the required data automatically.\n\nHotA 1.7.x and 1.8.0 (Bulwark) are supported.</string>
-    <string name="asset_setup_hota_select_button">Select HotA installer</string>
+    <string name="asset_setup_hota_button">Select HotA installer</string>
+    <string name="asset_setup_continue_button">Continue</string>
 
-    <string name="asset_setup_title_short">Game assets</string>
     <string name="maps_title">Maps</string>
     <string name="maps_empty">No maps added yet</string>
     <string name="maps_add_button">Add map</string>
     <string name="maps_note">Maps from Shadow of Death and HotA (up to 1.8.0) are supported.</string>
-    <string name="maps_delete_confirm">Delete %s?</string>
+    <string name="maps_delete_title">Delete map?</string>
+    <string name="maps_delete_text">%s will be removed from the wallpaper rotation.</string>
+    <string name="maps_delete_description">Delete %s</string>
+    <string name="maps_import_success">%s added</string>
+    <string name="maps_import_error_cannot_open">Failed to open file</string>
+    <string name="maps_import_error_too_small">File is too small to be a valid map</string>
+    <string name="maps_import_error_unknown_version">Unknown map version: 0x%s</string>
+    <string name="maps_import_error_invalid">Invalid map file: %s</string>
 
-    <string name="credits_header">Credits</string>
-    <string name="credits_button">Open</string>
-    <string name="credits_title">Credits</string>
-    <string name="source_code_title" translatable="false">Source code</string>
-    <string name="source_code_summary" translatable="false">https://github.com/IlyaPomaskin/h3lwp</string>
-    <string name="map_author_title" translatable="false">Map by Fosgen</string>
-    <string name="map_author_summary" translatable="false">https://en.heroesportal.net/maps/view/1737</string>
+    <string name="source_code_title">Source code</string>
+    <string name="source_code_url" translatable="false">https://github.com/IlyaPomaskin/h3lwp</string>
     <string name="icon_author_title">App icon by Wit Olszewski</string>
     <string name="icon_author_url" translatable="false">https://www.instagram.com/witolszewski/</string>
-
-    <string name="phone_limitation_note">Before you continue</string>
-    <string name="phone_limitation_miui">Some devices do not support live wallpapers on the lock screen.</string>
-    <string name="phone_limitation_no">On certain devices, live wallpapers may not be supported at all.</string>
-    <string name="phone_limitation_okay">OK</string>
 </resources>
