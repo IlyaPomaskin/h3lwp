@@ -5,7 +5,6 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion
 import com.badlogic.gdx.utils.Disposable
-import com.homm3.livewallpaper.core.assets.PackedRect
 import com.homm3.livewallpaper.parser.lod.LodDataSource
 
 /*
@@ -34,7 +33,7 @@ const val MAX_PALETTE_SLOTS = PALETTES_PER_ROW * PALETTE_TEXTURE_HEIGHT
  * One 256-colour palette, RGBA8888 (1024 bytes), special indices already applied
  * (index 0 transparent, shadows as black with alpha, player colour neutralised).
  *
- * [rotations]: palette-cycling ranges as in LodSpriteLoader.paletteRotations, e.g. 229..241 means
+ * [rotations]: palette-cycling ranges as in DefPalette.paletteRotations, e.g. 229..241 means
  * entries [229, 241) rotate left by one entry per animation step. Empty for static palettes.
  */
 class PaletteData(val rgba: ByteArray, val rotations: List<Pair<Int, Int>> = emptyList()) {
@@ -44,7 +43,8 @@ class PaletteData(val rgba: ByteArray, val rotations: List<Pair<Int, Int>> = emp
 }
 
 /**
- * Same meaning as RegionInfo, plus [paletteIndex] into [IndexedBundle.palettes].
+ * One sprite region: packer rectangle plus placement inside the full DEF frame, and [paletteIndex]
+ * into [IndexedBundle.palettes].
  * Naming rules (consumers depend on them):
  *  - objects: regionName = def name lowercase without ".def", regionIndex = frame position in its group
  *  - terrain: regionName = "<def without .def>/<tile index>", regionIndex = 0 (no rotation copies any more)
@@ -63,6 +63,9 @@ data class IndexedRegionInfo(
     val isTerrain: Boolean,
     val paletteIndex: Int,
 )
+
+/** Position of a packed sprite: page and rectangle inside it. */
+data class PackedRect(val pageIndex: Int, val x: Int, val y: Int, val w: Int, val h: Int)
 
 /** Output of IndexedSpriteLoader. [pages] are Pixmap.Format.Alpha, each byte = palette index. Owns the pixmaps. */
 class IndexedBundle(

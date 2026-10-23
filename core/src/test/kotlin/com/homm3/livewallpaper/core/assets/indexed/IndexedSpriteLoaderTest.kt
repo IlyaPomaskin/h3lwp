@@ -6,7 +6,6 @@ import com.badlogic.gdx.backends.headless.HeadlessApplicationConfiguration
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.g2d.PixmapPacker
 import com.homm3.livewallpaper.core.assets.DefAliases
-import com.homm3.livewallpaper.core.assets.PackedRect
 import com.homm3.livewallpaper.core.assets.SpriteArchive
 import com.homm3.livewallpaper.core.assets.SpriteCollector
 import com.homm3.livewallpaper.parser.def.DefReader

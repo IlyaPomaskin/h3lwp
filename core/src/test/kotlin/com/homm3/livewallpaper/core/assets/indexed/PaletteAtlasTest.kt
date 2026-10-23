@@ -1,6 +1,5 @@
 package com.homm3.livewallpaper.core.assets.indexed
 
-import com.homm3.livewallpaper.core.assets.LodSpriteLoader
 import org.junit.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -19,12 +18,12 @@ class PaletteAtlasTest {
         rgba[(i / rgbEntryBytes) * PALETTE_ENTRY_BYTES + i % rgbEntryBytes]
     }
 
+    // Independent reference: entries [from, to) rotate left by one, the first entry moves to the end.
     private fun referenceRotate(rgb: ByteArray, from: Int, to: Int) {
-        val method = LodSpriteLoader::class.java.getDeclaredMethod(
-            "rotatePalette", ByteArray::class.java, Int::class.javaPrimitiveType, Int::class.javaPrimitiveType,
-        )
-        method.isAccessible = true
-        method.invoke(LodSpriteLoader(), rgb, from, to)
+        val entries = (from until to).map { rgb.copyOfRange(it * rgbEntryBytes, (it + 1) * rgbEntryBytes) }
+        (entries.drop(1) + entries.take(1)).forEachIndexed { offset, entry ->
+            entry.copyInto(rgb, (from + offset) * rgbEntryBytes)
+        }
     }
 
     @Test
@@ -75,7 +74,7 @@ class PaletteAtlasTest {
     }
 
     @Test
-    fun `rotation matches LodSpriteLoader rotatePalette after each step`() {
+    fun `rotation matches reference left rotation after each step`() {
         val table = PaletteTable()
         val slot = table.add(PaletteData(gradientPalette(), waterRotations)).slot
         val reference = toRgb(gradientPalette())

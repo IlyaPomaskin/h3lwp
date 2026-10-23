@@ -2,8 +2,6 @@ package com.homm3.livewallpaper.core.assets.indexed
 
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.g2d.PixmapPacker
-import com.homm3.livewallpaper.core.assets.LodSpriteLoader
-import com.homm3.livewallpaper.core.assets.PackedRect
 import com.homm3.livewallpaper.parser.def.DefFrame
 import com.homm3.livewallpaper.parser.def.DefReader
 import com.homm3.livewallpaper.parser.lod.LodArchive
@@ -24,11 +22,10 @@ import java.util.logging.Logger
  * terrain DEF is needed and the same source has no DEF with that name.
  */
 class IndexedSpriteLoader {
-    private val paletteSource = LodSpriteLoader()
 
     fun load(sources: List<LodSource>, neededNames: Set<String>): IndexedBundle {
         val needed = neededNames.map { it.lowercase(Locale.ROOT) }.toSet()
-        val builder = BundleBuilder(paletteSource)
+        val builder = BundleBuilder()
 
         val resolved = sources.fold(emptySet<String>()) { resolvedSoFar, source ->
             val unresolved = needed - resolvedSoFar
@@ -101,10 +98,10 @@ class IndexedSpriteLoader {
         }
 
         val def = DefReader(ByteArrayInputStream(bytes)).read()
-        val paletteIndex = builder.addPalette(def.rawPalette, paletteSource.paletteRotations[job.defName].orEmpty())
+        val paletteIndex = builder.addPalette(def.rawPalette, DefPalette.paletteRotations[job.defName].orEmpty())
         val uniqueFrames = def.groups.flatMap { it.frames }.distinctBy { it.frameName }
 
-        if (job.defName in paletteSource.terrainDefNames) {
+        if (job.defName in DefPalette.terrainDefNames) {
             val allFilenames = def.groups.flatMap { it.filenames }
             uniqueFrames.forEach { frame -> builder.packTerrainFrame(job.defName, frame, allFilenames, paletteIndex) }
             return
@@ -134,7 +131,7 @@ class IndexedSpriteLoader {
         bytes.size >= D32_MAGIC.size && bytes.copyOf(D32_MAGIC.size).contentEquals(D32_MAGIC)
 
     private val factoryTilePrefixes: Map<String, String> =
-        paletteSource.terrainPcxPrefixes.entries.associate { (prefix, defName) -> defName to prefix }
+        DefPalette.terrainPcxPrefixes.entries.associate { (prefix, defName) -> defName to prefix }
 
     private sealed class LoadJob(val defName: String) {
         abstract val offset: Int
@@ -156,7 +153,7 @@ class IndexedSpriteLoader {
 }
 
 /** Mutable accumulator for one load() call: packer pages, regions and deduplicated palettes. */
-private class BundleBuilder(private val paletteSource: LodSpriteLoader) {
+private class BundleBuilder {
     private val packer = PixmapPacker(PAGE_SIZE, PAGE_SIZE, Pixmap.Format.Alpha, PAGE_PADDING, true)
     private val regions = mutableListOf<IndexedRegionInfo>()
     private val palettes = mutableListOf<PaletteData>()
@@ -178,7 +175,7 @@ private class BundleBuilder(private val paletteSource: LodSpriteLoader) {
     }
 
     private fun toRgba(rawPalette: ByteArray): ByteArray {
-        val (rgb, specialAlpha) = paletteSource.applySpecialPalette(rawPalette)
+        val (rgb, specialAlpha) = DefPalette.applySpecialPalette(rawPalette)
         val rgba = ByteArray(PALETTE_BYTES)
         for (i in 0 until PALETTE_SIZE) {
             val rgbOffset = i * RGB_BYTES

@@ -108,7 +108,7 @@ internal class PaletteTable(private val maxSlots: Int = MAX_PALETTE_SLOTS) {
 }
 
 /**
- * Same direction as LodSpriteLoader.rotatePalette, on RGBA entries: entries [from, to) shift left by one,
+ * Rotation as in the original game's palette cycling, on RGBA entries: entries [from, to) shift left by one,
  * the entry at [from] moves to position to - 1. Returns a new array.
  */
 internal fun rotatePaletteEntries(palette: ByteArray, from: Int, to: Int): ByteArray {

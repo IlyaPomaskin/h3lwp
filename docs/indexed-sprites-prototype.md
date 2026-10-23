@@ -20,7 +20,7 @@ Shared types: `core/assets/indexed/IndexedModel.kt` (do not change signatures wi
 | `core/assets/GameAssets.kt` | integrator | edit: use loader + registry, drop ETC1 cache |
 | `core/screen/GameScreen.kt` | integrator | edit: use new batch/renderer, tick palette rotation |
 
-Old ETC1 classes stay untouched (unused) in the prototype.
+The old ETC1 path (LodSpriteLoader, Hota18SpriteLoader, Etc1*, SpriteRegistry, D32Reader) was removed after integration; its palette rules live in `core/assets/indexed/DefPalette.kt`.
 
 ## Public API
 
