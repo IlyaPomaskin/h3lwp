@@ -6,6 +6,7 @@ import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.tiled.TiledMap
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
+import com.homm3.livewallpaper.core.WallpaperPreferences
 import com.homm3.livewallpaper.core.assets.indexed.PaletteColor
 import com.homm3.livewallpaper.core.assets.indexed.PaletteRegion
 import com.homm3.livewallpaper.core.map.layers.ObjectsLayer
@@ -21,11 +22,21 @@ class PaletteTiledMapRenderer(
 
     val paletteShader = PaletteShader.compile()
 
+    var brightness = WallpaperPreferences.defaultBrightness
+        set(value) {
+            field = value.coerceIn(MIN_BRIGHTNESS, MAX_BRIGHTNESS)
+        }
+
     init {
         batch.shader = paletteShader
         paletteShader.bind()
-        paletteShader.setUniformi("u_texture", INDEX_UNIT)
-        paletteShader.setUniformi("u_palette", PaletteSpriteBatch.PALETTE_UNIT)
+        paletteShader.setUniformi(PaletteShader.TEXTURE_UNIFORM, INDEX_UNIT)
+        paletteShader.setUniformi(PaletteShader.PALETTE_UNIFORM, PaletteSpriteBatch.PALETTE_UNIT)
+    }
+
+    override fun beginRender() {
+        super.beginRender()
+        paletteShader.setUniformf(PaletteShader.BRIGHTNESS_UNIFORM, brightness)
     }
 
     override fun renderObjects(layer: MapLayer?) {
@@ -176,6 +187,8 @@ class PaletteTiledMapRenderer(
 
     private companion object {
         const val INDEX_UNIT = 0
+        const val MIN_BRIGHTNESS = 0f
+        const val MAX_BRIGHTNESS = 1f
         const val DEFAULT_PALETTE_SLOT = 0
         const val NUM_VERTICES = 20
 

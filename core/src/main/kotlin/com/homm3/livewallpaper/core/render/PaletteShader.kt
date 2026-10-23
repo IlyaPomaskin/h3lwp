@@ -12,6 +12,10 @@ import com.homm3.livewallpaper.core.assets.indexed.PALETTE_TEXTURE_WIDTH
  * Slot s is stored in texture row s / PALETTES_PER_ROW at column offset (s % PALETTES_PER_ROW) * PALETTE_SIZE.
  */
 object PaletteShader {
+    const val TEXTURE_UNIFORM = "u_texture"
+    const val PALETTE_UNIFORM = "u_palette"
+    const val BRIGHTNESS_UNIFORM = "u_brightness"
+
     private const val BYTE_MAX = 255
     private const val SLOT_BYTE = 256
     private const val PACKED_ALPHA_MAX = 254
@@ -58,14 +62,15 @@ object PaletteShader {
         varying PALETTE_PRECISION float v_paletteV;
         varying PALETTE_PRECISION float v_paletteOffset;
         varying float v_alpha;
-        uniform sampler2D u_texture;
-        uniform sampler2D u_palette;
+        uniform sampler2D $TEXTURE_UNIFORM;
+        uniform sampler2D $PALETTE_UNIFORM;
+        uniform float $BRIGHTNESS_UNIFORM;
         void main() {
-            PALETTE_PRECISION float index = floor(texture2D(u_texture, v_texCoords).a * $BYTE_MAX.0 + 0.5);
+            PALETTE_PRECISION float index = floor(texture2D($TEXTURE_UNIFORM, v_texCoords).a * $BYTE_MAX.0 + 0.5);
             PALETTE_PRECISION float paletteU = (v_paletteOffset + index + 0.5) / $PALETTE_TEXTURE_WIDTH.0;
             vec2 paletteUv = vec2(paletteU, v_paletteV);
-            vec4 color = texture2D(u_palette, paletteUv);
-            gl_FragColor = vec4(color.rgb, color.a * v_alpha);
+            vec4 color = texture2D($PALETTE_UNIFORM, paletteUv);
+            gl_FragColor = vec4(color.rgb * $BRIGHTNESS_UNIFORM, color.a * v_alpha);
         }
     """.trimIndent()
 

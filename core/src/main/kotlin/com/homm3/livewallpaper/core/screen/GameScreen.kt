@@ -10,7 +10,6 @@ import com.homm3.livewallpaper.core.WallpaperPreferences
 import com.homm3.livewallpaper.core.assets.GameAssets
 import com.homm3.livewallpaper.core.input.CameraInputProcessor
 import com.homm3.livewallpaper.core.map.GameMap
-import com.homm3.livewallpaper.core.render.BrightnessOverlay
 import com.homm3.livewallpaper.core.render.DebugCapture
 import com.homm3.livewallpaper.core.render.MapCamera
 import com.homm3.livewallpaper.core.render.PaletteSpriteBatch
@@ -20,6 +19,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import ktx.app.KtxScreen
+import ktx.app.clearScreen
 import ktx.async.KtxAsync
 import ktx.log.logger
 import kotlin.math.max
@@ -40,7 +40,6 @@ class GameScreen(
     private val inputProcessor = CameraInputProcessor(viewport).apply {
         onEnter = { randomizeVisibleMapPart(force = true) }
     }
-    private val brightnessOverlay = BrightnessOverlay(camera)
     private val renderStats = RenderStats()
     private val debugCapture = DebugCapture()
     private var mapUpdateInterval = 0f
@@ -80,7 +79,7 @@ class GameScreen(
         }
         prefsJob = KtxAsync.launch {
             prefs.collect {
-                brightnessOverlay.brightness = it.brightness
+                renderer.brightness = it.brightness
                 setUnitsPerPixelByScale(it.scale)
                 setMapUpdateInterval(it.mapUpdateInterval)
             }
@@ -92,6 +91,7 @@ class GameScreen(
     }
 
     override fun render(delta: Float) {
+        clearScreen(0f, 0f, 0f, 1f)
         inputProcessor.handlePressedKeys()
         assets.updatePalettes(delta)
         camera.update()
@@ -99,7 +99,6 @@ class GameScreen(
         val renderStart = System.nanoTime()
         renderer.render()
         renderStats.record(spriteBatch.renderCalls, System.nanoTime() - renderStart)
-        brightnessOverlay.render()
         debugCapture.onFrameRendered(hasMap = tiledMap.layers.size() > 0)
     }
 
@@ -111,7 +110,6 @@ class GameScreen(
         prefsJob?.cancel()
         renderer.dispose()
         spriteBatch.dispose()
-        brightnessOverlay.dispose()
     }
 
     private fun setUnitsPerPixelByScale(scale: Scale) {

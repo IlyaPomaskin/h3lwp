@@ -15,7 +15,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import ktx.app.KtxGame
-import ktx.app.clearScreen
 import ktx.async.KtxAsync
 
 open class Engine(
@@ -124,7 +123,6 @@ open class Engine(
     }
 
     override fun render() {
-        clearScreen(0f,0f,0f,0f)
         if (Gdx.app.type == Application.ApplicationType.Desktop) {
             when {
                 Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) -> { Gdx.app.exit(); return }
