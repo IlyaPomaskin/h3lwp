@@ -247,7 +247,7 @@ private fun MapGroupHeader(
             )
         },
         trailingContent = {
-            Switch(checked = group.isEnabled, onCheckedChange = onEnabledChange, enabled = group.isAvailable)
+            Switch(checked = group.isEnabled, onCheckedChange = onEnabledChange, enabled = group.canToggle)
         },
         colors = availabilityColors(hasAvailableContent),
     )
@@ -265,7 +265,7 @@ private fun MapRow(
         headlineContent = { Text(map.displayName) },
         modifier = modifier.toggleable(
             value = isChecked,
-            enabled = map.isAvailable,
+            enabled = map.canToggle,
             role = Role.Switch,
             onValueChange = onEnabledChange,
         ),
@@ -280,7 +280,7 @@ private fun MapRow(
                         )
                     }
                 }
-                Switch(checked = isChecked, onCheckedChange = null, enabled = map.isAvailable)
+                Switch(checked = isChecked, onCheckedChange = null, enabled = map.canToggle)
             }
         },
         colors = availabilityColors(map.isAvailable),
@@ -337,8 +337,8 @@ private fun importResultMessage(result: MapImportResult): String = when (result)
     MapImportResult.TooSmall -> stringResource(R.string.maps_import_error_too_small)
     is MapImportResult.UnknownVersion -> stringResource(R.string.maps_import_error_unknown_version, result.versionHex)
     MapImportResult.UnsupportedVersion -> stringResource(R.string.maps_import_error_unsupported_version)
-    is MapImportResult.Invalid -> stringResource(R.string.maps_import_error_invalid, result.details)
     is MapImportResult.TooLarge -> stringResource(R.string.maps_import_error_too_large, result.size, result.maxSize)
+    is MapImportResult.Invalid -> stringResource(R.string.maps_import_error_invalid, result.details)
 }
 
 @Preview
@@ -354,14 +354,17 @@ private fun MapsScreenPreview() {
                             previewMap("[SoD] Arrogance.h3m", "Arrogance"),
                             previewMap("[SoD] Dragon Orb.h3m", "Dragon Orb", isEnabled = false),
                         ),
+                        activeMapCount = PREVIEW_ACTIVE_MAP_COUNT,
                     ),
                     MapGroup(
                         id = MapGroupId.HOTA_BASE,
                         maps = listOf(previewMap("[HotA] Jebus.h3m", "Jebus", isAvailable = false)),
+                        activeMapCount = PREVIEW_ACTIVE_MAP_COUNT,
                     ),
                     MapGroup(
                         id = MapGroupId.USER,
                         maps = listOf(previewMap("My map.h3m", "My map", canDelete = true)),
+                        activeMapCount = PREVIEW_ACTIVE_MAP_COUNT,
                     ),
                 ),
             ),
@@ -387,4 +390,7 @@ private fun previewMap(
     isEnabled = isEnabled,
     isAvailable = isAvailable,
     canDelete = canDelete,
+    canToggle = isAvailable,
 )
+
+private const val PREVIEW_ACTIVE_MAP_COUNT = 2

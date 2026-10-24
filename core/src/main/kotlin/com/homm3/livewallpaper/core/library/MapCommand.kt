@@ -5,7 +5,7 @@ sealed interface MapCommand {
     /** Loads a random map unless one is loaded; shows asset setup when the LOD is missing. */
     data object Load : MapCommand
 
-    /** Picks up added/removed map files; reloads everything when HotA availability changed. */
+    /** Picks up added/removed/toggled map files and switches to a random map on a change; reloads everything when HotA availability changed. */
     data object Refresh : MapCommand
 
     /** Drops all maps and sprites and loads them again. */

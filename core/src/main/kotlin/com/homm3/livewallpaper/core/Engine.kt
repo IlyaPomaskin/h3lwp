@@ -224,9 +224,8 @@ open class Engine(
             return
         }
 
-        val isMapRemoved = folderChange == FolderChange.CHANGED && !library.hasMap
-        if (isMapRemoved) {
-            setScreen<LoadingScreen>()
+        if (folderChange == FolderChange.CHANGED) {
+            if (!library.hasMap) setScreen<LoadingScreen>()
             library.loadRandomMap()
             gameScreen.setMaps(library.maps)
         }

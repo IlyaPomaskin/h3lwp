@@ -29,9 +29,12 @@ data class MapItem(
     val isEnabled: Boolean,
     val isAvailable: Boolean,
     val canDelete: Boolean,
-)
+    val canToggle: Boolean,
+) {
+    val isActive: Boolean get() = isAvailable && isEnabled
+}
 
-data class MapGroup(val id: MapGroupId, val maps: List<MapItem>) {
+data class MapGroup(val id: MapGroupId, val maps: List<MapItem>, val activeMapCount: Int) {
     private val availableMaps: List<MapItem> get() = maps.filter { it.isAvailable }
 
     val isAvailable: Boolean get() = availableMaps.isNotEmpty()
@@ -39,6 +42,7 @@ data class MapGroup(val id: MapGroupId, val maps: List<MapItem>) {
     val isEnabled: Boolean get() = availableMaps.any { it.isEnabled }
     val enabledCount: Int get() = availableMaps.count { it.isEnabled }
     val availableFileNames: List<String> get() = availableMaps.map { it.fileName }
+    val canToggle: Boolean get() = isAvailable && (!isEnabled || enabledCount < activeMapCount)
 }
 
 data class MapsUiState(
@@ -60,13 +64,13 @@ class MapsViewModel(
         gameDataRepository.status,
         importState,
     ) { maps, disabledMaps, gameDataStatus, state ->
-        val canDelete = maps.size > 1
-        val items = maps.associateWith { map ->
-            toMapItem(map, disabledMaps, isHotaInstalled = gameDataStatus.isHotaInstalled, canDelete = canDelete)
-        }
+        val isHotaInstalled = gameDataStatus.isHotaInstalled
+        val activeMapCount = maps.count { it.fileName !in disabledMaps && isAvailable(it, isHotaInstalled) }
+        val context = MapItemContext(disabledMaps, isHotaInstalled, activeMapCount)
+        val items = maps.associateWith { map -> toMapItem(map, context) }
         val mapsByGroup = maps.groupBy(::groupIdOf)
         val groups = MapGroupId.entries
-            .map { groupId -> MapGroup(groupId, mapsByGroup[groupId].orEmpty().map(items::getValue)) }
+            .map { groupId -> MapGroup(groupId, mapsByGroup[groupId].orEmpty().map(items::getValue), activeMapCount) }
             .filter { group -> group.id == MapGroupId.USER || group.maps.isNotEmpty() }
         state.copy(groups = groups)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), MapsUiState())
@@ -101,17 +105,25 @@ class MapsViewModel(
     }
 }
 
-private fun toMapItem(map: MapInfo, disabledMaps: Set<String>, isHotaInstalled: Boolean, canDelete: Boolean): MapItem {
-    val isHotaMap = map.version == H3mVersion.HOTA
+private class MapItemContext(val disabledMaps: Set<String>, val isHotaInstalled: Boolean, val activeMapCount: Int)
+
+private fun toMapItem(map: MapInfo, context: MapItemContext): MapItem {
     val isUserMap = map.origin == MapOrigin.USER
+    val isEnabled = map.fileName !in context.disabledMaps
+    val isAvailable = isAvailable(map, context.isHotaInstalled)
+    val isLastActiveMap = isEnabled && isAvailable && context.activeMapCount <= 1
     return MapItem(
         fileName = map.fileName,
         displayName = displayNameOf(map.fileName),
-        isEnabled = map.fileName !in disabledMaps,
-        isAvailable = isHotaInstalled || !isHotaMap,
-        canDelete = isUserMap && canDelete,
+        isEnabled = isEnabled,
+        isAvailable = isAvailable,
+        canDelete = isUserMap && !isLastActiveMap,
+        canToggle = isAvailable && !isLastActiveMap,
     )
 }
+
+private fun isAvailable(map: MapInfo, isHotaInstalled: Boolean): Boolean =
+    isHotaInstalled || map.version != H3mVersion.HOTA
 
 private fun groupIdOf(map: MapInfo): MapGroupId = when (map.origin) {
     MapOrigin.SOD_BASE -> MapGroupId.SOD_BASE
