@@ -172,7 +172,7 @@ open class Engine(
             return
         }
         setScreen<LoadingScreen>()
-        library.loadInitialBatch(explicitMaps)
+        library.loadInitialMap(explicitMaps)
         gameScreen.setMaps(library.maps)
         showGameScreen()
         gameScreen.randomizeVisibleMapPart()
@@ -190,9 +190,10 @@ open class Engine(
             return
         }
 
-        if (folderChange == FolderChange.CHANGED) {
+        val isMapRemoved = folderChange == FolderChange.CHANGED && !library.hasMap
+        if (isMapRemoved) {
             setScreen<LoadingScreen>()
-            library.loadMissingFromCurrentBatch()
+            library.loadRandomMap()
             gameScreen.setMaps(library.maps)
         }
         showGameScreen()
@@ -207,10 +208,10 @@ open class Engine(
 
     private suspend fun rotate() {
         val rotateStart = System.currentTimeMillis()
-        val isRotated = library.rotateBatch()
-        if (!isRotated) return
+        val isChanged = library.loadRandomMap()
+        if (!isChanged) return
         gameScreen.setMaps(library.maps)
-        log.info { "$TIMING_TAG batch rotation: ${System.currentTimeMillis() - rotateStart}ms" }
+        log.info { "$TIMING_TAG map change: ${System.currentTimeMillis() - rotateStart}ms" }
     }
 
     private suspend fun loadNext(direction: Direction) {
@@ -219,7 +220,6 @@ open class Engine(
                 gameScreen.setMaps(library.maps)
                 gameScreen.showMap(result.fileName)
             }
-            NextMapResult.AllLoaded -> gameScreen.showAdjacentMap(direction)
             NextMapResult.NotLoaded -> Unit
         }
     }

@@ -1,36 +1,33 @@
 package com.homm3.livewallpaper.core.library
 
 import org.junit.Test
+import kotlin.random.Random
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class MapLibraryTest {
     private val files = listOf("a.h3m", "b.h3m", "c.h3m", "d.h3m")
 
     @Test
-    fun `next unloaded file is searched forward with wrap-around`() {
-        val loaded = setOf("b.h3m", "c.h3m")
-        assertEquals(3, findNextUnloadedIndex(files, fromIndex = 0, step = 1) { it in loaded })
-        assertEquals(0, findNextUnloadedIndex(files, fromIndex = 3, step = 1) { it in loaded })
+    fun `random load order tries every other file before the current one`() {
+        repeat(20) { seed ->
+            val order = randomLoadOrder(files, currentFile = "b.h3m", random = Random(seed))
+
+            assertEquals(files.toSet(), order.toSet())
+            assertEquals("b.h3m", order.last())
+        }
     }
 
     @Test
-    fun `next unloaded file is searched backward with wrap-around`() {
-        val loaded = setOf("a.h3m", "d.h3m")
-        assertEquals(2, findNextUnloadedIndex(files, fromIndex = 0, step = -1) { it in loaded })
-        assertEquals(1, findNextUnloadedIndex(files, fromIndex = 2, step = -1) { it in loaded })
+    fun `random load order varies the first pick`() {
+        val firstPicks = (0 until 50).map { seed -> randomLoadOrder(files, currentFile = null, random = Random(seed)).first() }
+
+        assertEquals(files.toSet(), firstPicks.toSet())
     }
 
     @Test
-    fun `the start file is checked last`() {
-        val loaded = files.toSet() - "b.h3m"
-        assertEquals(1, findNextUnloadedIndex(files, fromIndex = 1, step = 1) { it in loaded })
-    }
-
-    @Test
-    fun `no next file when everything is loaded or there are no files`() {
-        assertNull(findNextUnloadedIndex(files, fromIndex = 0, step = 1) { true })
-        assertNull(findNextUnloadedIndex(emptyList(), fromIndex = 0, step = 1) { false })
+    fun `random load order of a single file is that file`() {
+        assertEquals(listOf("a.h3m"), randomLoadOrder(listOf("a.h3m"), currentFile = "a.h3m", random = Random(0)))
+        assertEquals(emptyList(), randomLoadOrder(emptyList(), currentFile = null, random = Random(0)))
     }
 
     @Test

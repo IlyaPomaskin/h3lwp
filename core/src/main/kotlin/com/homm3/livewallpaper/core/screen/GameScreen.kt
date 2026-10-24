@@ -10,7 +10,6 @@ import com.homm3.livewallpaper.core.Scale
 import com.homm3.livewallpaper.core.WallpaperPreferences
 import com.homm3.livewallpaper.core.assets.SpriteSet
 import com.homm3.livewallpaper.core.input.CameraInputProcessor
-import com.homm3.livewallpaper.core.library.Direction
 import com.homm3.livewallpaper.core.map.GameMap
 import com.homm3.livewallpaper.core.render.AnimationTicker
 import com.homm3.livewallpaper.core.render.DebugCapture
@@ -28,7 +27,8 @@ import ktx.app.clearScreen
 import ktx.async.KtxAsync
 import ktx.log.logger
 import kotlin.math.max
-import kotlin.random.Random
+import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 /** Shows one [GameMap] at a time out of the maps handed to [setMaps]. */
 class GameScreen(
@@ -71,12 +71,6 @@ class GameScreen(
     fun showMap(fileName: String) {
         val map = maps.firstOrNull { it.fileName == fileName && !it.isUnderground } ?: return
         showFromRandomPosition(map)
-    }
-
-    fun showAdjacentMap(direction: Direction) {
-        if (maps.isEmpty()) return
-        val fromIndex = maps.indexOf(currentMap).coerceAtLeast(0)
-        showFromRandomPosition(maps[Math.floorMod(fromIndex + direction.step, maps.size)])
     }
 
     fun toggleUnderground() {
@@ -198,24 +192,30 @@ class GameScreen(
 
         mapSwitchCount++
         val switchNumber = mapSwitchCount
-        if (mapSwitchCount >= MAX_SWITCHES_BEFORE_BATCH_ROTATE) {
+        val switchesPerMap = switchesBeforeMapChange(
+            mapSize = maps.first().mapSize,
+            hasUnderground = maps.any { it.isUnderground },
+            tilesAcross = camera.viewportWidth / GameConfig.TILE_SIZE,
+            tilesDown = camera.viewportHeight / GameConfig.TILE_SIZE,
+        )
+        if (mapSwitchCount >= switchesPerMap) {
             mapSwitchCount = 0
             onSwitchThresholdReached()
         }
 
         val rerollStart = System.currentTimeMillis()
-        val nextMap = rollWellCoveredView(excludedIndex = maps.indexOf(currentMap))
+        val nextMap = rollWellCoveredView()
         val showStart = System.currentTimeMillis()
         show(nextMap)
         log.info {
-            "${Engine.TIMING_TAG} map switch #$switchNumber/$MAX_SWITCHES_BEFORE_BATCH_ROTATE (force=$force) " +
+            "${Engine.TIMING_TAG} map switch #$switchNumber/$switchesPerMap (force=$force) " +
                 "to '${nextMap.fileName}': reroll ${showStart - rerollStart}ms, show ${System.currentTimeMillis() - showStart}ms"
         }
     }
 
-    /** Rerolls map and camera position until objects cover enough of the view; leaves the camera on the result. */
-    private fun rollWellCoveredView(excludedIndex: Int): GameMap {
-        val candidates = List(MAX_REROLLS) { maps[randomIndexExcluding(maps.size, excludedIndex)] }
+    /** Rerolls level and camera position until objects cover enough of the view; leaves the camera on the result. */
+    private fun rollWellCoveredView(): GameMap {
+        val candidates = List(MAX_REROLLS) { maps.random() }
         for ((attempt, candidate) in candidates.withIndex()) {
             camera.randomizePosition(candidate.mapSize)
             val coverage = candidate.objectCoverage(
@@ -230,15 +230,6 @@ class GameScreen(
         }
         log.info { "All $MAX_REROLLS attempts below coverage threshold; showing last view" }
         return candidates.last()
-    }
-
-    /** Uniform random index in `[0, size)` other than [exclude] when that is a valid index. Returns 0 if `size <= 1`. */
-    private fun randomIndexExcluding(size: Int, exclude: Int): Int {
-        if (size <= 1) return 0
-        val isExcludedIndexValid = exclude in 0 until size
-        if (!isExcludedIndexValid) return Random.nextInt(size)
-        val next = Random.nextInt(size - 1)
-        return if (next < exclude) next else next + 1
     }
 
     private fun showPinnedView() {
@@ -264,6 +255,26 @@ class GameScreen(
         private val log = logger<GameScreen>()
         private const val MIN_OBJECT_COVERAGE = 0.8f
         private const val MAX_REROLLS = 20
-        private const val MAX_SWITCHES_BEFORE_BATCH_ROTATE = 20
     }
+}
+
+private const val MIN_SWITCHES_PER_MAP = 10
+private const val MAX_SWITCHES_PER_MAP = 30
+private const val SCREENS_FOR_MAX_SWITCHES = 144
+private const val UNDERGROUND_SCREEN_FACTOR = 1.5
+
+/**
+ * Views shown on one map before another map loads. Counts the screens that fit side by side on its surface, given
+ * the [tilesAcross] by [tilesDown] tiles a screen shows at the current scale, adds half of them for an underground,
+ * and maps the square root of that count from 1..[SCREENS_FOR_MAX_SWITCHES] onto 10..30, so the views grow with
+ * the map's side length.
+ */
+internal fun switchesBeforeMapChange(mapSize: Int, hasUnderground: Boolean, tilesAcross: Float, tilesDown: Float): Int {
+    val screensAcross = (mapSize / tilesAcross).toInt().coerceAtLeast(1)
+    val screensDown = (mapSize / tilesDown).toInt().coerceAtLeast(1)
+    val surfaceScreens = (screensAcross * screensDown).toDouble()
+    val screens = if (hasUnderground) surfaceScreens * UNDERGROUND_SCREEN_FACTOR else surfaceScreens
+    val progress = (sqrt(screens) - 1) / (sqrt(SCREENS_FOR_MAX_SWITCHES.toDouble()) - 1)
+    val switches = MIN_SWITCHES_PER_MAP + progress * (MAX_SWITCHES_PER_MAP - MIN_SWITCHES_PER_MAP)
+    return switches.roundToInt().coerceIn(MIN_SWITCHES_PER_MAP, MAX_SWITCHES_PER_MAP)
 }
