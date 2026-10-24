@@ -11,6 +11,10 @@ import com.homm3.livewallpaper.core.WallpaperPreferences
 import com.homm3.livewallpaper.core.assets.SpriteSet
 import com.homm3.livewallpaper.core.defs.TerrainDef
 import com.homm3.livewallpaper.core.input.CameraInputProcessor
+import com.homm3.livewallpaper.core.input.ZoomAction
+import com.homm3.livewallpaper.core.input.panByScreenFraction
+import com.homm3.livewallpaper.core.input.panByTiles
+import com.homm3.livewallpaper.core.input.zoom
 import com.homm3.livewallpaper.core.map.GameMap
 import com.homm3.livewallpaper.core.render.AnimationTicker
 import com.homm3.livewallpaper.core.render.DebugCapture
@@ -57,6 +61,10 @@ class GameScreen(
     private var prefsJob: Job? = null
     private var mapSwitchCount = 0
 
+    val currentMapName: String? get() = currentMap?.fileName
+    val isUndergroundShown: Boolean get() = currentMap?.isUnderground ?: false
+    val zoom: Float get() = viewport.unitsPerPixel
+
     /** Replaces the maps to pick from. Keeps showing the current map until the next switch even when it isn't among [maps]. */
     fun setMaps(maps: List<GameMap>) {
         this.maps = maps
@@ -81,6 +89,26 @@ class GameScreen(
             it.fileName == current.fileName && it.isUnderground != current.isUnderground
         } ?: return
         showFromRandomPosition(counterpart)
+    }
+
+    fun panByTiles(dx: Int, dy: Int) {
+        viewport.panByTiles(dx, dy)
+        applyCameraChange()
+    }
+
+    fun panByScreenFraction(fractionX: Float, fractionY: Float) {
+        viewport.panByScreenFraction(fractionX, fractionY)
+        applyCameraChange()
+    }
+
+    fun applyZoom(action: ZoomAction) {
+        viewport.zoom(action)
+        applyCameraChange()
+    }
+
+    private fun applyCameraChange() {
+        viewport.update(Gdx.graphics.width, Gdx.graphics.height)
+        Gdx.graphics.requestRendering()
     }
 
     init {

@@ -39,9 +39,11 @@ class AndroidEngine(
         prefsScope.launch {
             prefs.collect { useScroll = it.useScroll }
         }
+        RunningEngine.register(this)
     }
 
     override fun dispose() {
+        RunningEngine.unregister(this)
         prefsScope.cancel()
         super.dispose()
     }

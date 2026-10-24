@@ -6,6 +6,7 @@ import com.badlogic.gdx.Input
 import com.badlogic.gdx.Screen
 import com.homm3.livewallpaper.core.assets.GameDataLocator
 import com.homm3.livewallpaper.core.assets.UiAssets
+import com.homm3.livewallpaper.core.input.ZoomAction
 import com.homm3.livewallpaper.core.library.Direction
 import com.homm3.livewallpaper.core.library.FolderChange
 import com.homm3.livewallpaper.core.library.MapCommand
@@ -54,6 +55,31 @@ open class Engine(
         camera.moveByScrollOffset(offset)
         Gdx.graphics.requestRendering()
     }
+
+    /** Debug controls below must be called on the render thread after [create]. */
+    fun loadNextMap(direction: Direction) = submit(MapCommand.LoadNext(direction))
+
+    fun randomizeView() = gameScreen.randomizeVisibleMapPart(force = true)
+
+    fun toggleUnderground() = gameScreen.toggleUnderground()
+
+    fun panCameraByTiles(dx: Int, dy: Int) = gameScreen.panByTiles(dx, dy)
+
+    fun panCameraByScreenFraction(fractionX: Float, fractionY: Float) =
+        gameScreen.panByScreenFraction(fractionX, fractionY)
+
+    fun zoomCamera(action: ZoomAction) = gameScreen.applyZoom(action)
+
+    fun requestRefresh() = submit(MapCommand.Refresh)
+
+    fun snapshotState() = EngineState(
+        screen = shownScreen.javaClass.takeIf { screens.containsKey(it) }?.simpleName,
+        mapName = gameScreen.currentMapName,
+        isUnderground = gameScreen.isUndergroundShown,
+        zoom = gameScreen.zoom,
+        cameraX = camera.position.x,
+        cameraY = camera.position.y,
+    )
 
     override fun create() {
         KtxAsync.initiate()
@@ -126,9 +152,9 @@ open class Engine(
         if (Gdx.app.type == Application.ApplicationType.Desktop) {
             when {
                 Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) -> { Gdx.app.exit(); return }
-                Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET) -> submit(MapCommand.LoadNext(Direction.FORWARD))
-                Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET) -> submit(MapCommand.LoadNext(Direction.BACKWARD))
-                Gdx.input.isKeyJustPressed(Input.Keys.U) -> gameScreen.toggleUnderground()
+                Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET) -> loadNextMap(Direction.FORWARD)
+                Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET) -> loadNextMap(Direction.BACKWARD)
+                Gdx.input.isKeyJustPressed(Input.Keys.U) -> toggleUnderground()
             }
         }
         super.render()
