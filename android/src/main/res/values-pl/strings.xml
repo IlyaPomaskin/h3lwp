@@ -52,6 +52,7 @@
     <string name="maps_import_error_unknown_version">Nieznana wersja mapy: 0x%s</string>
     <string name="maps_import_error_invalid">Nieprawidłowy plik mapy: %s</string>
     <string name="maps_import_error_too_large">Ta mapa ma rozmiar %1$d×%1$d. Mapy większe niż XL (%2$d×%2$d) nie są obsługiwane.</string>
+    <string name="maps_import_summary">Dodano map: %1$d z %2$d</string>
 
     <string name="source_code_title">Kod źródłowy</string>
     <string name="icon_author_title">Ikona aplikacji: Wit Olszewski</string>

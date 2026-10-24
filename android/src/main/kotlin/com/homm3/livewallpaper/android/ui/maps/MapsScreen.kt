@@ -54,14 +54,15 @@ fun MapsRoute(onBack: () -> Unit) {
     val context = LocalContext.current
     val viewModel = viewModel { MapsViewModel(context.appContainer.mapsRepository) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val pickMap = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) viewModel.importMap(uri)
-    }
+    val pickMaps = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenMultipleDocuments(),
+        viewModel::importMaps,
+    )
 
     MapsScreen(
         uiState = uiState,
         onBack = onBack,
-        onAddMap = { pickMap.launch(arrayOf(ANY_FILE_MIME_TYPE)) },
+        onAddMap = { pickMaps.launch(arrayOf(ANY_FILE_MIME_TYPE)) },
         onDeleteMap = viewModel::deleteMap,
         onImportResultShown = viewModel::onImportResultShown,
     )
@@ -80,9 +81,10 @@ fun MapsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var mapPendingDeletion by rememberSaveable { mutableStateOf<String?>(null) }
 
-    uiState.importResult?.let { result ->
-        val message = importResultMessage(result)
-        LaunchedEffect(result) {
+    val importResults = uiState.importResults
+    if (importResults.isNotEmpty()) {
+        val message = importResultsMessage(importResults)
+        LaunchedEffect(importResults) {
             snackbarHostState.showSnackbar(message)
             onImportResultShown()
         }
@@ -183,6 +185,14 @@ private fun DeleteMapDialog(mapName: String, onConfirm: () -> Unit, onDismiss: (
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
     )
+}
+
+@Composable
+private fun importResultsMessage(results: List<MapImportResult>): String {
+    val singleResult = results.singleOrNull()
+    if (singleResult != null) return importResultMessage(singleResult)
+    val addedCount = results.count { it is MapImportResult.Success }
+    return stringResource(R.string.maps_import_summary, addedCount, results.size)
 }
 
 @Composable

@@ -53,6 +53,7 @@
     <string name="maps_import_error_unknown_version">Unknown map version: 0x%s</string>
     <string name="maps_import_error_invalid">Invalid map file: %s</string>
     <string name="maps_import_error_too_large">This map is %1$d×%1$d. Maps larger than XL (%2$d×%2$d) are not supported.</string>
+    <string name="maps_import_summary">Maps added: %1$d of %2$d</string>
 
     <string name="source_code_title">Source code</string>
     <string name="source_code_url" translatable="false">https://github.com/IlyaPomaskin/h3lwp</string>

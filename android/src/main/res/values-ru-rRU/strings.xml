@@ -52,6 +52,7 @@
     <string name="maps_import_error_unknown_version">Неизвестная версия карты: 0x%s</string>
     <string name="maps_import_error_invalid">Некорректный файл карты: %s</string>
     <string name="maps_import_error_too_large">Размер карты %1$d×%1$d. Карты больше XL (%2$d×%2$d) не поддерживаются.</string>
+    <string name="maps_import_summary">Добавлено карт: %1$d из %2$d</string>
 
     <string name="source_code_title">Исходный код</string>
     <string name="icon_author_title">Иконка: Wit Olszewski</string>
