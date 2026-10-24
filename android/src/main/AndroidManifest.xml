@@ -37,6 +37,10 @@
             android:name=".android.AssetSetupActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".android.LinksActivity"
+            android:exported="false" />
+
         <service
             android:name=".android.LiveWallpaperService"
             android:exported="true"

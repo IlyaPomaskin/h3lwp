@@ -16,6 +16,7 @@ class SettingsActivity : ComponentActivity() {
             SettingsRoute(
                 onOpenMaps = { startActivity(MapsActivity.intent(this)) },
                 onOpenAssetSetup = { startActivity(AssetSetupActivity.intent(this, isInitialSetup = false)) },
+                onOpenLinks = { startActivity(LinksActivity.intent(this)) },
             )
         }
     }

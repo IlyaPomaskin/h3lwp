@@ -25,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -52,7 +51,7 @@ private val BRIGHTNESS_RANGE = 0f..0.99f
 private val FAB_CLEARANCE = 88.dp
 
 @Composable
-fun SettingsRoute(onOpenMaps: () -> Unit, onOpenAssetSetup: () -> Unit) {
+fun SettingsRoute(onOpenMaps: () -> Unit, onOpenAssetSetup: () -> Unit, onOpenLinks: () -> Unit) {
     val context = LocalContext.current
     val viewModel = viewModel { SettingsViewModel(context.appContainer.preferencesRepository) }
     val preferences by viewModel.preferences.collectAsStateWithLifecycle()
@@ -69,6 +68,7 @@ fun SettingsRoute(onOpenMaps: () -> Unit, onOpenAssetSetup: () -> Unit) {
         onBrightnessChanged = viewModel::setBrightness,
         onOpenMaps = onOpenMaps,
         onOpenAssetSetup = onOpenAssetSetup,
+        onOpenLinks = onOpenLinks,
         onSetWallpaper = {
             val isPickerOpened = context.openLiveWallpaperPicker()
             if (!isPickerOpened) scope.launch { snackbarHostState.showSnackbar(unsupportedMessage) }
@@ -87,6 +87,7 @@ fun SettingsScreen(
     onBrightnessChanged: (Float) -> Unit,
     onOpenMaps: () -> Unit,
     onOpenAssetSetup: () -> Unit,
+    onOpenLinks: () -> Unit,
     onSetWallpaper: () -> Unit,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -129,8 +130,7 @@ fun SettingsScreen(
                     onBrightnessChanged = onBrightnessChanged,
                 )
             }
-            contentSection(onOpenMaps = onOpenMaps, onOpenAssetSetup = onOpenAssetSetup)
-            linksSection()
+            contentSection(onOpenMaps = onOpenMaps, onOpenAssetSetup = onOpenAssetSetup, onOpenLinks = onOpenLinks)
         }
     }
 }
@@ -177,7 +177,11 @@ private fun LazyListScope.wallpaperSection(
     }
 }
 
-private fun LazyListScope.contentSection(onOpenMaps: () -> Unit, onOpenAssetSetup: () -> Unit) {
+private fun LazyListScope.contentSection(
+    onOpenMaps: () -> Unit,
+    onOpenAssetSetup: () -> Unit,
+    onOpenLinks: () -> Unit,
+) {
     item { PreferenceCategory(stringResource(R.string.settings_section_content)) }
     item {
         NavigationPreference(
@@ -193,13 +197,13 @@ private fun LazyListScope.contentSection(onOpenMaps: () -> Unit, onOpenAssetSetu
             onClick = onOpenAssetSetup,
         )
     }
-}
-
-private fun LazyListScope.linksSection() {
-    item { PreferenceCategory(stringResource(R.string.settings_section_links)) }
-    item { LinkPreference(stringResource(R.string.source_code_title), stringResource(R.string.source_code_url)) }
-    item { LinkPreference(stringResource(R.string.icon_author_title), stringResource(R.string.icon_author_url)) }
-    item { Preference(title = stringResource(R.string.disclaimer_title), summary = stringResource(R.string.disclaimer_text)) }
+    item {
+        NavigationPreference(
+            title = stringResource(R.string.settings_section_links),
+            iconRes = R.drawable.ic_open_in_new,
+            onClick = onOpenLinks,
+        )
+    }
 }
 
 @Composable
@@ -209,17 +213,6 @@ private fun NavigationPreference(title: String, iconRes: Int, onClick: () -> Uni
         leadingContent = { Icon(painterResource(iconRes), contentDescription = null) },
         trailingContent = { Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null) },
         onClick = onClick,
-    )
-}
-
-@Composable
-private fun LinkPreference(title: String, url: String) {
-    val uriHandler = LocalUriHandler.current
-    Preference(
-        title = title,
-        summary = url,
-        trailingContent = { Icon(painterResource(R.drawable.ic_open_in_new), contentDescription = null) },
-        onClick = { uriHandler.openUri(url) },
     )
 }
 
@@ -256,6 +249,7 @@ private fun SettingsScreenPreview() {
             onBrightnessChanged = {},
             onOpenMaps = {},
             onOpenAssetSetup = {},
+            onOpenLinks = {},
             onSetWallpaper = {},
         )
     }

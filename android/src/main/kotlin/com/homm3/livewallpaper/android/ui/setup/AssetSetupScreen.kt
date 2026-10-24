@@ -151,6 +151,7 @@ fun AssetSetupScreen(
                     url = stringResource(R.string.hota_site_url),
                 ),
             )
+            Disclaimer()
         }
     }
 }
@@ -230,6 +231,22 @@ private fun ContinueBar(isEnabled: Boolean, onClick: () -> Unit) {
         ) {
             Text(stringResource(R.string.asset_setup_continue_button))
         }
+    }
+}
+
+@Composable
+private fun Disclaimer() {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = stringResource(R.string.disclaimer_title),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelLarge,
+        )
+        Text(
+            text = stringResource(R.string.disclaimer_text),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall,
+        )
     }
 }
 
