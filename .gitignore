@@ -153,6 +153,7 @@ sprites/*
 user-maps/*
 assets/sprites/*
 assets/user-maps/*
+!assets/user-maps/*.h3m
 *.lod
 *.exe
 
