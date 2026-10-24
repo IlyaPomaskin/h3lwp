@@ -29,6 +29,7 @@ data class AssetSetupUiState(
     val hota: InstallTaskState = InstallTaskState(),
 ) {
     val isBusy: Boolean get() = base.isRunning || hota.isRunning
+    val canInstallHota: Boolean get() = status.isBaseInstalled && !isBusy
     val canContinue: Boolean get() = status.isBaseInstalled && !isBusy
 }
 

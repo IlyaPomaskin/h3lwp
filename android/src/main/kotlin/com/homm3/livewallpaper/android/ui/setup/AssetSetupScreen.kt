@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -49,6 +50,7 @@ import com.homm3.livewallpaper.android.data.GameDataStatus
 import com.homm3.livewallpaper.android.ui.components.BackButton
 import com.homm3.livewallpaper.android.ui.theme.H3WallpaperTheme
 
+private const val DISABLED_CARD_ALPHA = 0.38f
 private val BASE_LOD_MIME_TYPES = arrayOf("*/*")
 private val GOG_INSTALLER_MIME_TYPES = arrayOf("*/*")
 private val HOTA_INSTALLER_MIME_TYPES = arrayOf(
@@ -141,8 +143,9 @@ fun AssetSetupScreen(
                 buttonText = stringResource(R.string.asset_setup_hota_button),
                 isInstalled = uiState.status.isHotaInstalled,
                 task = uiState.hota,
-                isSelectEnabled = !uiState.isBusy,
+                isSelectEnabled = uiState.canInstallHota,
                 onSelect = onSelectHotaInstaller,
+                modifier = Modifier.greyedOut(!uiState.status.isBaseInstalled),
                 descriptionLink = DescriptionLink(
                     label = stringResource(R.string.hota_site_label),
                     url = stringResource(R.string.hota_site_url),
@@ -161,10 +164,11 @@ private fun AssetCard(
     task: InstallTaskState,
     isSelectEnabled: Boolean,
     onSelect: () -> Unit,
+    modifier: Modifier = Modifier,
     secondaryAction: AssetAction? = null,
     descriptionLink: DescriptionLink? = null,
 ) {
-    ElevatedCard(Modifier.fillMaxWidth()) {
+    ElevatedCard(modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
@@ -186,6 +190,11 @@ private fun AssetCard(
             }
         }
     }
+}
+
+private fun Modifier.greyedOut(isGreyedOut: Boolean): Modifier {
+    if (!isGreyedOut) return this
+    return alpha(DISABLED_CARD_ALPHA)
 }
 
 private data class AssetAction(val text: String, val onClick: () -> Unit)
