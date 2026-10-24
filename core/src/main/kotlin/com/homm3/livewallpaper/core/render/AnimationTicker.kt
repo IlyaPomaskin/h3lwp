@@ -14,7 +14,8 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * Requests a frame every [interval] while started, so animations advance with non-continuous rendering.
+ * Advances [AnimationClock] and requests a frame every [interval] while started, so animations advance with
+ * non-continuous rendering.
  * Ticks run on [Dispatchers.Default]: KtxAsync/libGDX timers are driven by frames and would never fire.
  * [start] and [stop] are meant for the rendering thread.
  */
@@ -30,6 +31,7 @@ class AnimationTicker(private val interval: Duration = GameConfig.FRAME_TIME.toD
         if (tickJob?.isActive == true) return
         tickJob = scope.launch {
             while (isActive) {
+                AnimationClock.advance()
                 Gdx.graphics.requestRendering()
                 delay(interval)
             }

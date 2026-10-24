@@ -16,6 +16,7 @@ import com.homm3.livewallpaper.core.input.panByScreenFraction
 import com.homm3.livewallpaper.core.input.panByTiles
 import com.homm3.livewallpaper.core.input.zoom
 import com.homm3.livewallpaper.core.map.GameMap
+import com.homm3.livewallpaper.core.render.AnimationClock
 import com.homm3.livewallpaper.core.render.AnimationTicker
 import com.homm3.livewallpaper.core.render.DebugCapture
 import com.homm3.livewallpaper.core.render.MapCamera
@@ -148,7 +149,8 @@ class GameScreen(
         clearScreen(0f, 0f, 0f, 1f)
         inputProcessor.handlePressedKeys()
         if (currentMap == null) return
-        currentSpriteSet()?.updatePalettes(delta)
+        AnimationClock.beginFrame()
+        currentSpriteSet()?.updatePalettes(AnimationClock.frameStep)
         camera.update()
         renderer.setView(camera)
         val renderStart = System.nanoTime()

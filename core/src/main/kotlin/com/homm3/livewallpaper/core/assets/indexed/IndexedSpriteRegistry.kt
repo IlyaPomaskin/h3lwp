@@ -36,7 +36,7 @@ class IndexedSpriteRegistry : Disposable {
 
     fun isDefLoaded(defName: String): Boolean = defName in loadedDefNames
 
-    fun update(delta: Float) = paletteAtlas.update(delta)
+    fun update(step: Long) = paletteAtlas.update(step)
 
     fun add(bundle: IndexedBundle) {
         try {

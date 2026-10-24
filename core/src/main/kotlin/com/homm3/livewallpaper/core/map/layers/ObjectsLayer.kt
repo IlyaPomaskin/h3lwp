@@ -1,6 +1,5 @@
 package com.homm3.livewallpaper.core.map.layers
 
-import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 import com.badlogic.gdx.utils.Array as GdxArray
@@ -47,7 +46,7 @@ class ObjectsLayer(assets: SpriteSet, h3m: H3mMap, isUnderground: Boolean) : Map
 
     fun render(renderer: BatchTiledMapRenderer) {
         updateVisibleObjects(renderer.viewBounds)
-        visibleSprites.forEach { it.render(renderer, Gdx.graphics.deltaTime) }
+        visibleSprites.forEach { it.render(renderer) }
     }
 
     fun objectCoverage(viewBounds: Rectangle): Float {

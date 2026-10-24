@@ -5,12 +5,11 @@ import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.utils.BufferUtils
 import com.badlogic.gdx.utils.Disposable
-import com.homm3.livewallpaper.core.GameConfig.FRAME_TIME
 
 class PaletteAtlas : Disposable {
     private val table = PaletteTable()
     private val slotBuffer = BufferUtils.newByteBuffer(PALETTE_BYTES)
-    private var elapsedSinceStep = 0f
+    private var lastStep = 0L
 
     val texture: Texture = Texture(PaletteTextureData(table)).apply {
         setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
@@ -23,12 +22,11 @@ class PaletteAtlas : Disposable {
         return assignment.slot
     }
 
-    /** Advances at most one rotation step per call, so a long pause does not replay missed steps. */
-    fun update(delta: Float) {
-        elapsedSinceStep += delta
-        if (elapsedSinceStep < FRAME_TIME) return
+    /** Rotates once per new animation [step], so steps coalesced by a late frame are not replayed. */
+    fun update(step: Long) {
+        if (step == lastStep) return
 
-        elapsedSinceStep %= FRAME_TIME
+        lastStep = step
         table.step().forEach(::uploadSlot)
     }
 
