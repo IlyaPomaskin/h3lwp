@@ -53,4 +53,6 @@
 
     <string name="source_code_title">Kod źródłowy</string>
     <string name="icon_author_title">Ikona aplikacji: Wit Olszewski</string>
+    <string name="disclaimer_title">Informacje prawne</string>
+    <string name="disclaimer_text">Heroes of Might and Magic jest znakiem towarowym Ubisoft Entertainment. Ta aplikacja jest projektem fanowskim i nie jest powiązana z Ubisoft ani zespołem Horn of the Abyss, ani przez nich zatwierdzona. Aplikacja nie zawiera treści z gry.</string>
 </resources>

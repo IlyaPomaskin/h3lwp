@@ -53,4 +53,6 @@
 
     <string name="source_code_title">Исходный код</string>
     <string name="icon_author_title">Иконка: Wit Olszewski</string>
+    <string name="disclaimer_title">Правовая информация</string>
+    <string name="disclaimer_text">Heroes of Might and Magic — товарный знак Ubisoft Entertainment. Это фанатский проект, не связанный с Ubisoft или командой Horn of the Abyss и не одобренный ими. Игровой контент не включён в приложение.</string>
 </resources>

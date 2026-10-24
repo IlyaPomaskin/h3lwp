@@ -199,6 +199,7 @@ private fun LazyListScope.linksSection() {
     item { PreferenceCategory(stringResource(R.string.settings_section_links)) }
     item { LinkPreference(stringResource(R.string.source_code_title), stringResource(R.string.source_code_url)) }
     item { LinkPreference(stringResource(R.string.icon_author_title), stringResource(R.string.icon_author_url)) }
+    item { Preference(title = stringResource(R.string.disclaimer_title), summary = stringResource(R.string.disclaimer_text)) }
 }
 
 @Composable
