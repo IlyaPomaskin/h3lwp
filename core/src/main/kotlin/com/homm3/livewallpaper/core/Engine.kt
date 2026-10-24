@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 open class Engine(
     private val prefs: Flow<WallpaperPreferences>,
     private val onSettingsButtonClick: (onProgress: (String) -> Unit, onDone: () -> Unit) -> Unit = { _, _ -> },
-    private val onHotaButtonClick: (onProgress: (String) -> Unit, onDone: () -> Unit) -> Unit = { _, _ -> },
     private val explicitMaps: List<String> = emptyList(),
     private val headless: Boolean = false
 ) : KtxGame<Screen>(null, false) {
@@ -64,7 +63,7 @@ open class Engine(
         uiAssets = ui
 
         addScreen(LoadingScreen(ui))
-        addScreen(AssetSetupScreen(ui, onSettingsButtonClick, onHotaButtonClick, onConversionDone = { submit(MapCommand.Load) }))
+        addScreen(AssetSetupScreen(ui, onSettingsButtonClick, onConversionDone = { submit(MapCommand.Load) }))
         addScreen(GameScreen(
             currentSpriteSet = { library.currentSpriteSet },
             camera = camera,

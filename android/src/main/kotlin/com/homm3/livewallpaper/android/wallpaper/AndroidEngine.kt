@@ -1,13 +1,11 @@
 package com.homm3.livewallpaper.android.wallpaper
 
 import android.content.Context
-import androidx.core.app.TaskStackBuilder
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.backends.android.AndroidWallpaperListener
 import com.homm3.livewallpaper.BuildConfig
-import com.homm3.livewallpaper.android.AssetSetupActivity
-import com.homm3.livewallpaper.android.SettingsActivity
+import com.homm3.livewallpaper.android.MainActivity
 import com.homm3.livewallpaper.core.Engine
 import com.homm3.livewallpaper.core.WallpaperPreferences
 import kotlinx.coroutines.CoroutineScope
@@ -22,8 +20,7 @@ class AndroidEngine(
     private val prefs: Flow<WallpaperPreferences>,
 ) : Engine(
     prefs = prefs,
-    onSettingsButtonClick = { _, _ -> openSettings(context) },
-    onHotaButtonClick = { _, _ -> openAssetSetup(context) },
+    onSettingsButtonClick = { _, _ -> context.startActivity(MainActivity.newTaskIntent(context)) },
 ), AndroidWallpaperListener {
 
     private val prefsScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -58,17 +55,4 @@ class AndroidEngine(
     override fun previewStateChange(isPreview: Boolean) {}
 
     override fun iconDropped(x: Int, y: Int) {}
-}
-
-private fun openSettings(context: Context) {
-    TaskStackBuilder.create(context)
-        .addNextIntent(SettingsActivity.intent(context))
-        .startActivities()
-}
-
-private fun openAssetSetup(context: Context) {
-    TaskStackBuilder.create(context)
-        .addNextIntent(SettingsActivity.intent(context))
-        .addNextIntent(AssetSetupActivity.intent(context, isInitialSetup = false))
-        .startActivities()
 }

@@ -39,7 +39,6 @@ fun main(args: Array<String>) {
         Engine(
             prefs = MutableStateFlow(WallpaperPreferences(brightness = 1.0f)),
             onSettingsButtonClick = ::copyLodFile,
-            onHotaButtonClick = ::copyHotaLodFile,
             explicitMaps = parsedArgs.mapNames,
             headless = parsedArgs.headless
         ),
@@ -55,7 +54,6 @@ fun main(args: Array<String>) {
 }
 
 private const val LOD_SOURCE = "data/H3sprite.lod"
-private const val HOTA_INSTALLER_SOURCE = "data/HotA_1.8.0_setup.exe"
 
 /** Created on use: [Gdx.files] only exists once the application has started. */
 private fun createInstaller() = GameDataInstaller(
@@ -82,20 +80,6 @@ private fun copyLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
 
     thread(isDaemon = true) {
         val result = createInstaller().installBaseLod(lodFile.inputStream(), onProgress)
-        reportResult(result, onProgress, onDone)
-    }
-}
-
-private fun copyHotaLodFile(onProgress: (String) -> Unit, onDone: () -> Unit) {
-    val installer = CWD.resolve(HOTA_INSTALLER_SOURCE)
-    log.info("copyHotaLodFile: source=${installer.absolutePath} exists=${installer.exists()}")
-    if (!installer.exists()) {
-        onProgress("$HOTA_INSTALLER_SOURCE not found")
-        return
-    }
-
-    thread(isDaemon = true) {
-        val result = createInstaller().installHota(installer, extractInstallerMaps = false, onProgress)
         reportResult(result, onProgress, onDone)
     }
 }
