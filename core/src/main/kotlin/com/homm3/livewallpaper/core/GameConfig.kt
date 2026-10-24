@@ -12,8 +12,8 @@ object GameConfig {
     const val MAX_ZOOM = 2.0f
     const val MIN_MAP_UPDATE_INTERVAL_MS = 1000f
 
-    /** Largest supported map side in tiles (XL); bigger maps (H, XH, G) are too slow to build and are skipped. */
-    const val MAX_MAP_SIZE = 144
+    /** Map sides in tiles (M..XL) of installed maps that start enabled; S and bigger than XL start disabled. */
+    val DEFAULT_ENABLED_MAP_SIZES = 72..144
 
     /** Map formats the wallpaper shows; RoE and AB maps are skipped. */
     val SUPPORTED_MAP_VERSIONS = setOf(H3mVersion.SOD, H3mVersion.HOTA)

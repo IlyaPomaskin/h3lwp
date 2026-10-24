@@ -11,7 +11,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -29,13 +28,12 @@ sealed interface MapImportResult {
     data object TooSmall : Failure
     data class UnknownVersion(val versionHex: String) : Failure
     data object UnsupportedVersion : Failure
-    data class TooLarge(val size: Int, val maxSize: Int) : Failure
     data class Invalid(val details: String) : Failure
 }
 
 enum class MapOrigin { SOD_BASE, HOTA_BASE, USER }
 
-data class MapInfo(val fileName: String, val version: H3mVersion, val origin: MapOrigin)
+data class MapInfo(val fileName: String, val version: H3mVersion, val origin: MapOrigin, val size: Int)
 
 class MapsRepository(context: Context) {
     private val appContext = context.applicationContext
@@ -56,10 +54,10 @@ class MapsRepository(context: Context) {
 
     suspend fun setMapsEnabled(fileNames: Collection<String>, isEnabled: Boolean) = withContext(Dispatchers.IO) {
         disabledMapsLock.withLock {
-            val disabledMaps = mutableDisabledMaps.updateAndGet { disabled ->
-                if (isEnabled) disabled - fileNames.toSet() else disabled + fileNames
-            }
+            val disabled = readDisabledMaps()
+            val disabledMaps = if (isEnabled) disabled - fileNames.toSet() else disabled + fileNames
             disabledMapsFile.writeText(disabledMaps.joinToString("\n"))
+            mutableDisabledMaps.value = disabledMaps
         }
     }
 
@@ -100,7 +98,8 @@ class MapsRepository(context: Context) {
         val version = file.inputStream().use { H3mHeaderReader.readVersion(it) }
         val isSupportedVersion = version != null && version in GameConfig.SUPPORTED_MAP_VERSIONS
         if (!isSupportedVersion) return@mapNotNull null
-        MapInfo(fileName = file.name, version = version, origin = originOf(file.name))
+        val size = file.inputStream().use { H3mHeaderReader.readMapSize(it) }
+        MapInfo(fileName = file.name, version = version, origin = originOf(file.name), size = size)
     }
 
     private fun originOf(fileName: String): MapOrigin = when {
@@ -128,13 +127,11 @@ class MapsRepository(context: Context) {
         val isSupportedVersion = knownVersion in GameConfig.SUPPORTED_MAP_VERSIONS
         if (!isSupportedVersion) return MapImportResult.UnsupportedVersion
 
-        val map = try {
+        try {
             H3mReader(bytes.inputStream()).read()
         } catch (e: Exception) {
             return MapImportResult.Invalid(e.message.orEmpty())
         }
-        val size = map.header.size
-        if (size > GameConfig.MAX_MAP_SIZE) return MapImportResult.TooLarge(size, GameConfig.MAX_MAP_SIZE)
         return null
     }
 

@@ -41,7 +41,7 @@
 
     <string name="maps_title">Mapy</string>
     <string name="maps_add_button">Dodaj mapę</string>
-    <string name="maps_note">Obsługiwane są mapy z Cienia Śmierci oraz HotA (do 1.8.0 włącznie) o rozmiarze do XL (144×144).</string>
+    <string name="maps_note">Obsługiwane są mapy z Cienia Śmierci oraz HotA (do 1.8.0 włącznie). Niektóre mapy są domyślnie wyłączone: [S] — za małe dla większości ekranów; [H], [XH], [G] — bardzo duże i mogą zużywać więcej zasobów telefonu.</string>
     <string name="maps_delete_title">Usunąć mapę?</string>
     <string name="maps_delete_text">%s nie będzie już wyświetlana na tapecie.</string>
     <string name="maps_delete_description">Usuń %s</string>
@@ -51,7 +51,6 @@
     <string name="maps_import_error_unknown_version">Nieznana wersja mapy: 0x%s</string>
     <string name="maps_import_error_unsupported_version">Obsługiwane są tylko mapy Shadow of Death i HotA</string>
     <string name="maps_import_error_invalid">Nieprawidłowy plik mapy: %s</string>
-    <string name="maps_import_error_too_large">Ta mapa ma rozmiar %1$d×%1$d. Mapy większe niż XL (%2$d×%2$d) nie są obsługiwane.</string>
     <string name="maps_import_summary">Dodano map: %1$d z %2$d</string>
     <string name="maps_group_user">Moje mapy</string>
     <string name="maps_user_empty">Dotknij +, aby dodać własne mapy</string>

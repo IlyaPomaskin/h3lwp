@@ -20,6 +20,16 @@ import kotlinx.coroutines.launch
 
 private const val STOP_TIMEOUT_MILLIS = 5_000L
 private const val MAP_EXTENSION = ".h3m"
+private val ORIGIN_PREFIXES = listOf(AssetPaths.SOD_MAP_PREFIX, AssetPaths.HOTA_MAP_PREFIX)
+private val SIZE_LABELS = mapOf(
+    36 to "S",
+    72 to "M",
+    108 to "L",
+    144 to "XL",
+    180 to "H",
+    216 to "XH",
+    252 to "G",
+)
 
 enum class MapGroupId { SOD_BASE, HOTA_BASE, USER }
 
@@ -68,7 +78,7 @@ class MapsViewModel(
         val activeMapCount = maps.count { it.fileName !in disabledMaps && isAvailable(it, isHotaInstalled) }
         val context = MapItemContext(disabledMaps, isHotaInstalled, activeMapCount)
         val items = maps.associateWith { map -> toMapItem(map, context) }
-        val mapsByGroup = maps.groupBy(::groupIdOf)
+        val mapsByGroup = maps.sortedWith(MAP_ORDER).groupBy(::groupIdOf)
         val groups = MapGroupId.entries
             .map { groupId -> MapGroup(groupId, mapsByGroup[groupId].orEmpty().map(items::getValue), activeMapCount) }
             .filter { group -> group.id == MapGroupId.USER || group.maps.isNotEmpty() }
@@ -114,7 +124,7 @@ private fun toMapItem(map: MapInfo, context: MapItemContext): MapItem {
     val isLastActiveMap = isEnabled && isAvailable && context.activeMapCount <= 1
     return MapItem(
         fileName = map.fileName,
-        displayName = displayNameOf(map.fileName),
+        displayName = displayNameOf(map),
         isEnabled = isEnabled,
         isAvailable = isAvailable,
         canDelete = isUserMap && !isLastActiveMap,
@@ -131,7 +141,17 @@ private fun groupIdOf(map: MapInfo): MapGroupId = when (map.origin) {
     MapOrigin.USER -> MapGroupId.USER
 }
 
-private fun displayNameOf(fileName: String): String = fileName
-    .removePrefix(AssetPaths.SOD_MAP_PREFIX)
-    .removePrefix(AssetPaths.HOTA_MAP_PREFIX)
-    .removeSuffix(MAP_EXTENSION)
+private val MAP_ORDER = compareBy<MapInfo> { it.size }.thenBy(String.CASE_INSENSITIVE_ORDER, ::baseNameOf)
+
+private fun displayNameOf(map: MapInfo): String {
+    val name = baseNameOf(map)
+    val sizeLabel = SIZE_LABELS[map.size] ?: return name
+    return "[$sizeLabel] $name"
+}
+
+private fun baseNameOf(map: MapInfo): String = stripOriginPrefixes(map.fileName).removeSuffix(MAP_EXTENSION)
+
+private tailrec fun stripOriginPrefixes(fileName: String): String {
+    val prefix = ORIGIN_PREFIXES.find(fileName::startsWith) ?: return fileName
+    return stripOriginPrefixes(fileName.removePrefix(prefix))
+}

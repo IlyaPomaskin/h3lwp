@@ -46,6 +46,7 @@ class GameDataInstaller(
         try {
             dataDir.mkdirs()
             progress.report("Extracting installer...")
+            val existingMaps = mapFileNames()
             val extracted = InnoSetupExtractor.extract(setupExe, gogTargets(lodFile), dataSlices) { written, total, _ ->
                 progress.report("Extracting: ${percent(written, total)}%")
             }
@@ -56,9 +57,12 @@ class GameDataInstaller(
             }
 
             removeNonSodBaseGameMaps()
-            removeOversizedMaps(extracted.map { it.output })
             val result = finishBaseInstall(lodFile, progress)
-            if (result is InstallResult.Failure) removeBaseGameMaps()
+            if (result is InstallResult.Failure) {
+                removeBaseGameMaps()
+                return result
+            }
+            disableMapsOffByDefault(extracted.map { it.output }, existingMaps)
             return result
         } catch (e: Exception) {
             log.log(Level.SEVERE, "installBaseFromGog failed", e)
@@ -116,6 +120,7 @@ class GameDataInstaller(
         try {
             mapsDir.mkdirs()
             progress.report("Extracting installer...")
+            val existingMaps = mapFileNames()
             val targets = hotaTargets(hotaLodFile, extractInstallerMaps)
             val extracted = InnoSetupExtractor.extract(installer, targets) { written, total, _ ->
                 progress.report("Extracting: ${percent(written, total)}%")
@@ -130,7 +135,7 @@ class GameDataInstaller(
                 return InstallResult.Failure(error)
             }
 
-            removeOversizedMaps(extracted.map { it.output })
+            disableMapsOffByDefault(extracted.map { it.output }, existingMaps)
             return InstallResult.Success(DONE_MESSAGE)
         } catch (e: Exception) {
             log.log(Level.SEVERE, "installHota failed", e)
@@ -159,25 +164,32 @@ class GameDataInstaller(
             .filter { it.endsWith(MAP_EXTENSION, ignoreCase = true) }
             .map { name -> name to mapsDir.resolve(name) }
             .filterNot { (_, target) -> target.exists() }
-            .filterNot { (name, _) -> bundledMaps.open(name).use(::isOversized) }
             .forEach { (name, target) ->
                 bundledMaps.open(name).use { input -> target.outputStream().use { output -> input.copyTo(output) } }
                 log.info("copyBundledMaps: wrote ${target.absolutePath} (${target.length()}B)")
             }
     }
 
-    private fun removeOversizedMaps(files: List<File>) {
-        files
+    private fun mapFileNames(): Set<String> = mapsDir.list().orEmpty().toSet()
+
+    private fun disableMapsOffByDefault(files: List<File>, existingMaps: Set<String>) {
+        val offByDefaultMapNames = files
             .distinct()
-            .filter { it.isFile && it.name.endsWith(MAP_EXTENSION, ignoreCase = true) }
-            .filter { map -> map.inputStream().use(::isOversized) }
-            .forEach { map ->
-                log.info("removeOversizedMaps: deleting ${map.name}")
-                map.delete()
-            }
+            .filter { it.isFile && it.name.endsWith(MAP_EXTENSION, ignoreCase = true) && it.name !in existingMaps }
+            .filterNot { map -> map.inputStream().use(H3mHeaderReader::readMapSize) in GameConfig.DEFAULT_ENABLED_MAP_SIZES }
+            .map { it.name }
+        if (offByDefaultMapNames.isEmpty()) return
+
+        val disabledMapsFile = dataDir.resolve(AssetPaths.DISABLED_MAPS_FILE)
+        val disabledMaps = readDisabledMaps(disabledMapsFile)
+        disabledMapsFile.writeText((disabledMaps + offByDefaultMapNames).distinct().joinToString("\n"))
+        log.info("disableMapsOffByDefault: disabled ${offByDefaultMapNames.size} maps")
     }
 
-    private fun isOversized(map: InputStream): Boolean = H3mHeaderReader.readMapSize(map) > GameConfig.MAX_MAP_SIZE
+    private fun readDisabledMaps(file: File): List<String> {
+        if (!file.exists()) return emptyList()
+        return file.readLines().filter { it.isNotBlank() }
+    }
 
     companion object {
         private val log = Logger.getLogger(GameDataInstaller::class.java.name)

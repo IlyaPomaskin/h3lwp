@@ -100,7 +100,7 @@ class GameDataInstallerTest {
     }
 
     @Test
-    fun hotaInstallDeletesMapsLargerThanSupported() {
+    fun hotaInstallDisablesSmallAndLargerThanXlMaps() {
         TestFixtures.requireInstallers()
         val dataDir = tempFolder.newFolder("data")
         val installer = GameDataInstaller(dataDir, tempFolder.newFolder("tmp"), oneBundledMap)
@@ -113,7 +113,10 @@ class GameDataInstallerTest {
             .orEmpty()
             .associate { map -> map.name to map.inputStream().use { H3mHeaderReader.readMapSize(it) } }
         assertTrue(sizes.isNotEmpty())
-        assertTrue(sizes.values.all { it <= GameConfig.MAX_MAP_SIZE }, "Oversized maps: ${sizes.filterValues { it > GameConfig.MAX_MAP_SIZE }}")
+        val disabledMaps = dataDir.resolve(AssetPaths.DISABLED_MAPS_FILE).readLines().toSet()
+        val expectedDisabledMaps = sizes.filterValues { it !in GameConfig.DEFAULT_ENABLED_MAP_SIZES }.keys
+        assertTrue(sizes.values.any { it > GameConfig.DEFAULT_ENABLED_MAP_SIZES.last }, "No maps larger than XL: $sizes")
+        assertEquals(expectedDisabledMaps, disabledMaps)
     }
 
     @Test
