@@ -1,5 +1,7 @@
 package com.homm3.livewallpaper.core
 
+import com.homm3.livewallpaper.parser.h3m.H3mVersion
+
 object GameConfig {
     const val TILE_SIZE = 32f
     const val FRAME_TIME = 0.18f
@@ -12,4 +14,7 @@ object GameConfig {
 
     /** Largest supported map side in tiles (XL); bigger maps (H, XH, G) are too slow to build and are skipped. */
     const val MAX_MAP_SIZE = 144
+
+    /** Map formats the wallpaper shows; RoE and AB maps are skipped. */
+    val SUPPORTED_MAP_VERSIONS = setOf(H3mVersion.SOD, H3mVersion.HOTA)
 }

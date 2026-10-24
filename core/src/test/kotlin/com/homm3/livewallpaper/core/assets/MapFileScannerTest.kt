@@ -67,7 +67,7 @@ class MapFileScannerTest {
     @Test
     fun `lists non-empty h3m files sorted by size`() {
         writeMap("big.h3m", H3mVersion.SOD, paddingBytes = 50_000)
-        writeMap("small.h3m", H3mVersion.ROE)
+        writeMap("small.h3m", H3mVersion.SOD)
         File(mapsFolder, "empty.h3m").createNewFile()
         File(mapsFolder, "notes.txt").writeText("not a map")
 
@@ -87,13 +87,15 @@ class MapFileScannerTest {
     }
 
     @Test
-    fun `does not open files when HotA assets are installed`() {
-        writeMap("hota.h3m", H3mVersion.HOTA)
-        val reader = CountingVersionReader(versionsByName("hota.h3m" to H3mVersion.HOTA))
+    fun `drops RoE and AB maps`() {
+        writeMap("roe.h3m", H3mVersion.ROE)
+        writeMap("ab.h3m", H3mVersion.AB, paddingBytes = 1_000)
+        writeMap("sod.h3m", H3mVersion.SOD, paddingBytes = 2_000)
+        writeMap("hota.h3m", H3mVersion.HOTA, paddingBytes = 3_000)
+        val scanner = MapFileScanner(readSize = { SUPPORTED_SIZE })
 
-        MapFileScanner(reader, readSize = { SUPPORTED_SIZE }).listMapFiles(mapsFolder, includeHota = true)
-
-        assertEquals(emptyList(), reader.readFileNames)
+        assertEquals(listOf("sod.h3m", "hota.h3m"), scanner.listMapFiles(mapsFolder, includeHota = true))
+        assertEquals(listOf("sod.h3m"), scanner.filterSupported(mapsFolder, listOf("roe.h3m", "sod.h3m"), includeHota = true))
     }
 
     @Test
@@ -114,9 +116,9 @@ class MapFileScannerTest {
 
     @Test
     fun `filterSupported keeps order and drops HotA maps`() {
-        writeMap("b.h3m", H3mVersion.AB)
+        writeMap("b.h3m", H3mVersion.SOD)
         writeMap("hota.h3m", H3mVersion.HOTA)
-        writeMap("a.h3m", H3mVersion.ROE)
+        writeMap("a.h3m", H3mVersion.SOD)
 
         val names = MapFileScanner(readSize = { SUPPORTED_SIZE }).filterSupported(
             mapsFolder,

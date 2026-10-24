@@ -18,12 +18,14 @@ class GameDataLocator(private val scanner: MapFileScanner = MapFileScanner()) {
 
     fun mapFile(fileName: String): FileHandle = Gdx.files.local("${AssetPaths.USER_MAPS_FOLDER}/$fileName")
 
-    /** Map file names that can be shown with the installed assets, smallest first. */
+    /** Map file names in rotation that can be shown with the installed assets, smallest first. */
     suspend fun findMapFiles(): List<String> {
         val folder = mapsFolder()
         val includeHota = isHotaAvailable()
         log.debug { "Maps folder: ${folder.absolutePath}" }
-        return withContext(Dispatchers.IO) { scanner.listMapFiles(folder, includeHota) }
+        return withContext(Dispatchers.IO) {
+            excludeDisabledMaps(scanner.listMapFiles(folder, includeHota), readDisabledMaps())
+        }
     }
 
     /** Drops the [fileNames] that need assets which aren't installed. */
@@ -45,7 +47,20 @@ class GameDataLocator(private val scanner: MapFileScanner = MapFileScanner()) {
 
     private fun mapsFolder() = Gdx.files.local(AssetPaths.USER_MAPS_FOLDER).file()
 
+    private fun readDisabledMaps(): Set<String> {
+        val file = Gdx.files.local(AssetPaths.DISABLED_MAPS_FILE)
+        if (!file.exists()) return emptySet()
+        return file.readString(Charsets.UTF_8.name()).lines().filter { it.isNotBlank() }.toSet()
+    }
+
     companion object {
         private val log = logger<GameDataLocator>()
     }
+}
+
+/** [mapFiles] without the [disabledMaps]; all of them when every map is disabled, so the wallpaper still has a map. */
+internal fun excludeDisabledMaps(mapFiles: List<String>, disabledMaps: Set<String>): List<String> {
+    val enabledMaps = mapFiles.filterNot { it in disabledMaps }
+    if (enabledMaps.isEmpty()) return mapFiles
+    return enabledMaps
 }

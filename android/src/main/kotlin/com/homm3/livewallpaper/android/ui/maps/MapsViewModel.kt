@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 private const val STOP_TIMEOUT_MILLIS = 5_000L
 private const val MAP_EXTENSION = ".h3m"
 
-enum class MapGroupId { SOD_BASE, HOTA_BASE, USER_ROE, USER_AB, USER_SOD, USER_HOTA, USER_UNKNOWN }
+enum class MapGroupId { SOD_BASE, HOTA_BASE, USER }
 
 data class MapItem(
     val fileName: String,
@@ -35,19 +35,17 @@ data class MapGroup(val id: MapGroupId, val maps: List<MapItem>) {
     private val availableMaps: List<MapItem> get() = maps.filter { it.isAvailable }
 
     val isAvailable: Boolean get() = availableMaps.isNotEmpty()
-    val isEnabled: Boolean get() = isAvailable && availableMaps.all { it.isEnabled }
+    val isMissingAssets: Boolean get() = maps.isNotEmpty() && availableMaps.isEmpty()
+    val isEnabled: Boolean get() = availableMaps.any { it.isEnabled }
     val enabledCount: Int get() = availableMaps.count { it.isEnabled }
     val availableFileNames: List<String> get() = availableMaps.map { it.fileName }
 }
 
 data class MapsUiState(
-    val baseGroups: List<MapGroup> = emptyList(),
-    val userGroups: List<MapGroup> = emptyList(),
+    val groups: List<MapGroup> = emptyList(),
     val isImporting: Boolean = false,
     val importResults: List<MapImportResult> = emptyList(),
-) {
-    val isEmpty: Boolean get() = baseGroups.isEmpty() && userGroups.isEmpty()
-}
+)
 
 class MapsViewModel(
     private val repository: MapsRepository,
@@ -66,11 +64,11 @@ class MapsViewModel(
         val items = maps.associateWith { map ->
             toMapItem(map, disabledMaps, isHotaInstalled = gameDataStatus.isHotaInstalled, canDelete = canDelete)
         }
-        val groups = maps.groupBy(::groupIdOf)
-            .toSortedMap()
-            .map { (groupId, groupMaps) -> MapGroup(groupId, groupMaps.map(items::getValue)) }
-        val (baseGroups, userGroups) = groups.partition { it.id in BASE_GROUP_IDS }
-        state.copy(baseGroups = baseGroups, userGroups = userGroups)
+        val mapsByGroup = maps.groupBy(::groupIdOf)
+        val groups = MapGroupId.entries
+            .map { groupId -> MapGroup(groupId, mapsByGroup[groupId].orEmpty().map(items::getValue)) }
+            .filter { group -> group.id == MapGroupId.USER || group.maps.isNotEmpty() }
+        state.copy(groups = groups)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), MapsUiState())
 
     init {
@@ -101,10 +99,6 @@ class MapsViewModel(
     fun onImportResultShown() {
         importState.update { it.copy(importResults = emptyList()) }
     }
-
-    private companion object {
-        val BASE_GROUP_IDS = setOf(MapGroupId.SOD_BASE, MapGroupId.HOTA_BASE)
-    }
 }
 
 private fun toMapItem(map: MapInfo, disabledMaps: Set<String>, isHotaInstalled: Boolean, canDelete: Boolean): MapItem {
@@ -122,13 +116,7 @@ private fun toMapItem(map: MapInfo, disabledMaps: Set<String>, isHotaInstalled: 
 private fun groupIdOf(map: MapInfo): MapGroupId = when (map.origin) {
     MapOrigin.SOD_BASE -> MapGroupId.SOD_BASE
     MapOrigin.HOTA_BASE -> MapGroupId.HOTA_BASE
-    MapOrigin.USER -> when (map.version) {
-        H3mVersion.ROE -> MapGroupId.USER_ROE
-        H3mVersion.AB -> MapGroupId.USER_AB
-        H3mVersion.SOD -> MapGroupId.USER_SOD
-        H3mVersion.HOTA -> MapGroupId.USER_HOTA
-        null -> MapGroupId.USER_UNKNOWN
-    }
+    MapOrigin.USER -> MapGroupId.USER
 }
 
 private fun displayNameOf(fileName: String): String = fileName

@@ -26,7 +26,10 @@ class MapFileScanner(
     private val versionCache = ConcurrentHashMap<MapFileKey, CachedVersion>()
     private val sizeCache = ConcurrentHashMap<MapFileKey, Int>()
 
-    /** Non-empty `.h3m` files in [folder], smallest first; oversized maps, and HotA maps unless [includeHota], dropped. */
+    /**
+     * Non-empty `.h3m` files in [folder], smallest first; maps of unsupported versions, oversized maps, and HotA maps
+     * unless [includeHota], dropped.
+     */
     fun listMapFiles(folder: File, includeHota: Boolean): List<String> {
         val mapFiles = folder.listFiles().orEmpty()
             .filter { it.isFile && it.name.endsWith(MAP_EXTENSION) }
@@ -46,7 +49,14 @@ class MapFileScanner(
         fileNames.filter { fileName -> isSupported(MapFile(File(folder, fileName)), includeHota) }
 
     private fun isSupported(mapFile: MapFile, includeHota: Boolean): Boolean {
-        val isHiddenHotaMap = !includeHota && versionOf(mapFile) == H3mVersion.HOTA
+        val version = versionOf(mapFile)
+        val isSupportedVersion = version in GameConfig.SUPPORTED_MAP_VERSIONS
+        if (!isSupportedVersion) {
+            log.info { "Skipping map of unsupported version $version: ${mapFile.key.name}" }
+            return false
+        }
+
+        val isHiddenHotaMap = !includeHota && version == H3mVersion.HOTA
         if (isHiddenHotaMap) {
             log.info { "Skipping HotA map (no HotA assets): ${mapFile.key.name}" }
             return false
