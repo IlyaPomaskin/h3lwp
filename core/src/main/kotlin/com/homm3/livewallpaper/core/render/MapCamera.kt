@@ -38,7 +38,16 @@ class MapCamera : OrthographicCamera() {
         applyScrollOffset()
     }
 
+    /** Zooms out by up to [MAX_LAUNCHER_ZOOM_OUT] as the launcher's [launcherZoom] goes from 0 (home) to 1 (shade or app drawer open). */
+    fun setLauncherZoom(launcherZoom: Float) {
+        zoom = 1f + launcherZoom.coerceIn(0f, 1f) * MAX_LAUNCHER_ZOOM_OUT
+    }
+
     private fun applyScrollOffset() {
         position.x = cameraPoint.x + scrollOffset * GameConfig.SCROLL_OFFSET
+    }
+
+    companion object {
+        const val MAX_LAUNCHER_ZOOM_OUT = 0.1f
     }
 }

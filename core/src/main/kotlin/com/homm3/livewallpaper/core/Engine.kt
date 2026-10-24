@@ -56,6 +56,12 @@ open class Engine(
         Gdx.graphics.requestRendering()
     }
 
+    /** Must be called on the render thread after [create]. */
+    fun setLauncherZoom(zoom: Float) {
+        camera.setLauncherZoom(zoom)
+        Gdx.graphics.requestRendering()
+    }
+
     /** Debug controls below must be called on the render thread after [create]. */
     fun loadNextMap(direction: Direction) = submit(MapCommand.LoadNext(direction))
 

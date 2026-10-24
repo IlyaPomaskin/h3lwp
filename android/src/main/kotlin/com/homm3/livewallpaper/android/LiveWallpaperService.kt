@@ -17,6 +17,13 @@ class LiveWallpaperService : AndroidLiveWallpaperService() {
                 if (isHiding) androidEngine?.prepareForHide()
                 super.onVisibilityChanged(visible)
             }
+
+            override fun onZoomChanged(zoom: Float) {
+                super.onZoomChanged(zoom)
+                val isActiveEngine = linkedEngine === this
+                if (!isActiveEngine) return
+                app?.postRunnable { androidEngine?.setLauncherZoom(zoom) }
+            }
         }
     }
 
