@@ -13,13 +13,20 @@ android {
     targetSdk 37
     versionCode 400
     versionName "4.0.0"
+    testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
   }
+
+  // Instrumented tests run against the debug build unless -PtestBuildType=benchmark is passed.
+  testBuildType project.findProperty('testBuildType') ?: 'debug'
 
   sourceSets {
     main {
       assets.srcDirs = ['../assets']
       java.srcDirs = ['src/main/kotlin']
       jniLibs.srcDirs = ['libs']
+    }
+    androidTest {
+      java.srcDirs = ['src/androidTest/kotlin']
     }
   }
 
@@ -38,6 +45,15 @@ android {
       minifyEnabled true
       shrinkResources true
       proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+    }
+    // Release-like (not debuggable, so ART optimizes fully) but unminified and debug-signed, for on-device benchmarks.
+    benchmark {
+      initWith release
+      debuggable false
+      minifyEnabled false
+      shrinkResources false
+      signingConfig signingConfigs.debug
+      matchingFallbacks = ['release']
     }
   }
 
@@ -75,6 +91,10 @@ dependencies {
   implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.11.0'
   implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0'
   implementation 'androidx.datastore:datastore-preferences:1.3.0'
+
+  androidTestImplementation testFixtures(project(':core'))
+  androidTestImplementation 'androidx.test:runner:1.7.0'
+  androidTestImplementation 'androidx.test.ext:junit:1.3.0'
 }
 
 tasks.register('copyAndroidNatives') {

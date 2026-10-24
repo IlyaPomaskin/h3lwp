@@ -1,5 +1,9 @@
+apply plugin: 'java-test-fixtures'
+
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 eclipse.project.name = appName + '-core'
+// Test fixtures hold the parser benchmark shared with the Android instrumented test, so they must stay dexable.
+compileTestFixturesKotlin.compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
 
 dependencies {
   api "com.badlogicgames.gdx:gdx:$gdxVersion"
