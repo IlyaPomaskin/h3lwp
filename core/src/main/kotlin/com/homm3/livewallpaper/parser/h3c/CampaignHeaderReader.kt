@@ -31,7 +31,7 @@ internal object CampaignHeaderReader {
 
     fun readScenarioNames(stream0: ByteArray): List<String> {
         log.info("readScenarioNames: stream0=${stream0.size} bytes; first16=${stream0.take(16).joinToString { "%02x".format(it) }}")
-        val r = BinaryReader(stream0.inputStream())
+        val r = BinaryReader(stream0)
 
         val versionInt = r.readInt()
         val version = CampaignVersion.fromInt(versionInt)

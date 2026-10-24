@@ -7,9 +7,15 @@ import java.util.zip.GZIPInputStream
 object H3mHeaderReader {
     private const val DEFAULT_SIZE = 36
 
+    // Covers the version ints, the largest HotA header block and the map size field.
+    private const val HEADER_PREFIX_SIZE = 64
+
+    private fun readerForHeader(stream: InputStream) =
+        BinaryReader(GZIPInputStream(stream).readNBytes(HEADER_PREFIX_SIZE))
+
     fun readVersion(stream: InputStream): H3mVersion? {
         return try {
-            val reader = BinaryReader(GZIPInputStream(stream))
+            val reader = readerForHeader(stream)
             H3mVersion.fromInt(reader.readInt())
         } catch (e: Exception) {
             null
@@ -18,7 +24,7 @@ object H3mHeaderReader {
 
     fun readMapSize(stream: InputStream): Int {
         return try {
-            val reader = BinaryReader(GZIPInputStream(stream))
+            val reader = readerForHeader(stream)
             val version = H3mVersion.fromInt(reader.readInt())
             var hotaSubVersion = 0
             if (version == H3mVersion.HOTA) {

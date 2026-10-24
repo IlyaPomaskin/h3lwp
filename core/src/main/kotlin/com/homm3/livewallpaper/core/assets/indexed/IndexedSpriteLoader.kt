@@ -8,7 +8,6 @@ import com.homm3.livewallpaper.parser.lod.LodArchive
 import com.homm3.livewallpaper.parser.lod.LodEntry
 import com.homm3.livewallpaper.parser.lod.LodReader
 import com.homm3.livewallpaper.parser.pcx.PcxReader
-import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 import java.util.Locale
 import java.util.logging.Level
@@ -97,7 +96,7 @@ class IndexedSpriteLoader {
             return
         }
 
-        val def = DefReader(ByteArrayInputStream(bytes)).read()
+        val def = DefReader(bytes).read()
         val paletteIndex = builder.addPalette(def.rawPalette, DefPalette.paletteRotations[job.defName].orEmpty())
         val uniqueFrames = def.groups.flatMap { it.frames }.distinctBy { it.frameName }
 

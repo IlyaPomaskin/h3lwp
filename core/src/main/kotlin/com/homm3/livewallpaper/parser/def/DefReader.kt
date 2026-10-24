@@ -1,7 +1,6 @@
 package com.homm3.livewallpaper.parser.def
 
 import com.homm3.livewallpaper.parser.BinaryReader
-import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.Arrays
 import java.util.logging.Level
@@ -12,13 +11,10 @@ private const val MAX_GROUPS = 256
 private const val MAX_FRAMES_PER_GROUP = 10000
 private const val SEGMENT_WIDTH = 32
 
-class DefReader(stream: InputStream) {
-    private val reader = BinaryReader(stream)
+class DefReader(bytes: ByteArray) {
+    constructor(stream: InputStream) : this(stream.readBytes())
 
-    init {
-        require(stream.markSupported()) { "Mark not supported on input stream" }
-        stream.mark(stream.available())
-    }
+    private val reader = BinaryReader(bytes)
 
     fun read(): DefSprite {
         val type = reader.readInt()
@@ -116,29 +112,30 @@ class DefReader(stream: InputStream) {
     private fun decompressType1(width: Int, height: Int, dataOffset: Long): ByteArray {
         val offsets = IntArray(height) { reader.readInt() }
 
-        val output = ByteArrayOutputStream()
-        for (offset in offsets) {
+        val output = ByteArray(width * height)
+        offsets.forEachIndexed { row, offset ->
             reader.seek(dataOffset + offset)
+            var outputIndex = row * width
             var left = width
             while (left > 0) {
                 val index = reader.readByte()
                 val length = reader.readByte() + 1
                 require(length <= left) { "DEF RLE: run overflows row" }
                 if (index == 0xFF) {
-                    output.write(reader.readBytes(length))
+                    reader.readInto(output, outputIndex, length)
                 } else {
-                    val fill = ByteArray(length)
-                    Arrays.fill(fill, index.toByte())
-                    output.write(fill)
+                    Arrays.fill(output, outputIndex, outputIndex + length, index.toByte())
                 }
+                outputIndex += length
                 left -= length
             }
         }
 
-        return output.toByteArray()
+        return output
     }
 
-    private fun decodePackedRLELine(output: ByteArrayOutputStream, lineWidth: Int) {
+    private fun decodePackedRLELine(output: ByteArray, lineStart: Int, lineWidth: Int) {
+        var outputIndex = lineStart
         var left = lineWidth
         while (left > 0) {
             val code = reader.readByte()
@@ -146,12 +143,11 @@ class DefReader(stream: InputStream) {
             val length = (code and 0x1F) + 1
             require(length <= left) { "DEF RLE: run overflows row" }
             if (index == 0x7) {
-                output.write(reader.readBytes(length))
+                reader.readInto(output, outputIndex, length)
             } else {
-                val fill = ByteArray(length)
-                Arrays.fill(fill, index.toByte())
-                output.write(fill)
+                Arrays.fill(output, outputIndex, outputIndex + length, index.toByte())
             }
+            outputIndex += length
             left -= length
         }
     }
@@ -159,29 +155,27 @@ class DefReader(stream: InputStream) {
     private fun decompressType2(width: Int, height: Int, dataOffset: Long): ByteArray {
         val rowOffsets = IntArray(height) { reader.readShort() }
 
-        val output = ByteArrayOutputStream()
-        for (rowOffset in rowOffsets) {
+        val output = ByteArray(width * height)
+        rowOffsets.forEachIndexed { row, rowOffset ->
             reader.seek(dataOffset + rowOffset)
-            decodePackedRLELine(output, width)
+            decodePackedRLELine(output, row * width, width)
         }
-        return output.toByteArray()
+        return output
     }
 
     // Each row is split into 32-pixel segments with their own offsets; pixels past the last full segment stay transparent.
     private fun decompressType3(width: Int, height: Int, dataOffset: Long): ByteArray {
         val segmentsPerRow = width / SEGMENT_WIDTH
         val segmentOffsets = IntArray(height * segmentsPerRow) { reader.readShort() }
-        val rowRemainder = ByteArray(width - segmentsPerRow * SEGMENT_WIDTH)
 
-        val output = ByteArrayOutputStream()
+        val output = ByteArray(width * height)
         for (row in 0 until height) {
             for (segment in 0 until segmentsPerRow) {
                 reader.seek(dataOffset + segmentOffsets[row * segmentsPerRow + segment])
-                decodePackedRLELine(output, SEGMENT_WIDTH)
+                decodePackedRLELine(output, row * width + segment * SEGMENT_WIDTH, SEGMENT_WIDTH)
             }
-            output.write(rowRemainder)
         }
-        return output.toByteArray()
+        return output
     }
 
     companion object {

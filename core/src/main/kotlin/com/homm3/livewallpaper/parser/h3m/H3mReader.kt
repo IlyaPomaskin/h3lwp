@@ -1,8 +1,6 @@
 package com.homm3.livewallpaper.parser.h3m
 
 import com.homm3.livewallpaper.parser.BinaryReader
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.BitSet
 import java.util.logging.Level
@@ -11,22 +9,9 @@ import java.util.zip.GZIPInputStream
 import kotlin.math.pow
 
 class H3mReader(stream: InputStream) {
-    private val reader = BinaryReader(readWholeStream(GZIPInputStream(stream)))
+    private val reader = BinaryReader(GZIPInputStream(stream).readBytes())
     private lateinit var version: H3mVersion
     private var hotaSubVersion: Int = 0
-
-    private fun readWholeStream(input: InputStream): ByteArrayInputStream {
-        val output = ByteArrayOutputStream()
-        output.use { out ->
-            val bufferSize = 512
-            val buffer = ByteArray(bufferSize)
-            var length: Int
-            while (input.read(buffer, 0, bufferSize).also { length = it } > 0) {
-                out.write(buffer, 0, length)
-            }
-        }
-        return output.toByteArray().inputStream()
-    }
 
     fun read(): H3mMap {
         version = H3mVersion.fromInt(reader.readInt())
@@ -712,17 +697,7 @@ class H3mReader(stream: InputStream) {
     }
 
     private fun parseMirrorConfig(input: Int): BitSet {
-        var value = input
-        val bits = BitSet()
-        var index = 0
-        while (value != 0) {
-            if (value % 2L != 0L) {
-                bits.set(index)
-            }
-            ++index
-            value = value ushr 1
-        }
-        return bits
+        return BitSet.valueOf(longArrayOf(input.toLong()))
     }
 
     private fun readDefs(): List<H3mDef> {
@@ -746,7 +721,7 @@ class H3mReader(stream: InputStream) {
         val objects = mutableListOf<H3mObject>()
         val objectsCount = reader.readInt() - 1
         val objectsReader = H3mObjectDataReader(version, reader, hotaSubVersion)
-        var prevSummary: String? = null
+        var previousObject: ParsedObjectTrace? = null
         for (objectIndex in 0..objectsCount) {
             val posBeforeObject = reader.position
             val x = reader.readByte()
@@ -767,7 +742,7 @@ class H3mReader(stream: InputStream) {
                     "Invalid def index $index (0x${"%08x".format(index)}) at object " +
                         "$objectIndex/${objectsCount + 1} @ offset $posBeforeObject " +
                         "(raw bytes: x=$x y=$y z=$z, defsCount=${defs.size}), stopping object parsing.\n" +
-                        "Previous object: ${prevSummary ?: "<none>"}\n" +
+                        "Previous object: ${previousObject?.describe() ?: "<none>"}\n" +
                         "Bytes [@$dumpStart..@${dumpStart + dumpLen}) around failure (marker at offset $posBeforeObject):\n" +
                         "  $hex\n" +
                         "  $marker"
@@ -863,17 +838,46 @@ class H3mReader(stream: InputStream) {
                 H3mObjectType.HOTA_CUSTOM_OBJECT_3 -> { objectsReader.readHotaCustomObject(objectType, def.objectClassSubId); "HOTA_CUSTOM" }
                 else -> "NONE"
             }
-            val bytesConsumed = reader.position - posBeforeData
 //            log.info("  -> parsed as $parsedType, consumed $bytesConsumed bytes")
 
             objects.add(H3mObject(x, y, z, def, objectType))
-            prevSummary = "#$objectIndex ($x,$y,$z) def=$index '${def.spriteName}' " +
-                "type=$objectType subId=${def.objectClassSubId} parsedAs=$parsedType " +
-                "@ offset=$posBeforeObject dataOffset=$posBeforeData dataBytes=$bytesConsumed " +
-                "endOffset=${reader.position}"
+            previousObject = ParsedObjectTrace(
+                objectIndex = objectIndex,
+                x = x,
+                y = y,
+                z = z,
+                defIndex = index,
+                def = def,
+                objectType = objectType,
+                parsedType = parsedType,
+                offset = posBeforeObject,
+                dataOffset = posBeforeData,
+                endOffset = reader.position,
+            )
         }
 
         return objects
+    }
+
+    /** Kept per object and formatted only when a later object fails to parse. */
+    private class ParsedObjectTrace(
+        val objectIndex: Int,
+        val x: Int,
+        val y: Int,
+        val z: Int,
+        val defIndex: Int,
+        val def: H3mDef,
+        val objectType: H3mObjectType,
+        val parsedType: String,
+        val offset: Long,
+        val dataOffset: Long,
+        val endOffset: Long,
+    ) {
+        fun describe(): String =
+            "#$objectIndex ($x,$y,$z) def=$defIndex '${def.spriteName}' " +
+                "type=$objectType subId=${def.objectClassSubId} parsedAs=$parsedType " +
+                "@ offset=$offset dataOffset=$dataOffset dataBytes=${endOffset - dataOffset} " +
+                "endOffset=$endOffset"
     }
 
     companion object {

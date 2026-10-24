@@ -142,8 +142,10 @@ enum class H3mObjectType(val value: Int) {
     HOTA_CUSTOM_OBJECT_2(146);
 
     companion object {
+        private val byValue: Map<Int, H3mObjectType> = entries.distinctBy { it.value }.associateBy { it.value }
+
         fun fromInt(value: Int?): H3mObjectType {
-            return entries.find { it.value == value } ?: NO_OBJ
+            return byValue[value] ?: NO_OBJ
         }
     }
 }

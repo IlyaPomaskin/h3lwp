@@ -16,7 +16,7 @@ class LodReader(private val source: LodDataSource) : Closeable {
     )
 
     fun read(): LodArchive {
-        val header = BinaryReader(source.read(0, ENTRIES_OFFSET.toInt()).inputStream())
+        val header = BinaryReader(source.read(0, ENTRIES_OFFSET.toInt()))
         val magic = header.readBytes(magicHeader.size)
         if (!magic.contentEquals(magicHeader)) {
             throw IllegalArgumentException("Wrong file selected: invalid LOD magic header")
@@ -26,7 +26,7 @@ class LodReader(private val source: LodDataSource) : Closeable {
         val isHashed = key != 0 && key != PLAIN_KEY_MAGIC
         require(filesCount >= 0) { "Invalid LOD entry count: $filesCount" }
 
-        val entries = BinaryReader(source.read(ENTRIES_OFFSET, filesCount * ENTRY_SIZE).inputStream())
+        val entries = BinaryReader(source.read(ENTRIES_OFFSET, filesCount * ENTRY_SIZE))
         val files = (0 until filesCount).map {
             if (isHashed) readHashedEntry(entries, key) else readEntry(entries)
         }
