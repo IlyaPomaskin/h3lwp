@@ -1,0 +1,4 @@
+• GOG offline installer is now the main setup option
+• Map list shows size tags; maps larger than XL are supported
+• At least one map always stays in rotation
+• Fixed HotA installer maps getting a doubled prefix

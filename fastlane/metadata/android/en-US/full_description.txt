@@ -1,0 +1,26 @@
+Animated live wallpaper that shows maps from Heroes of Might and Magic III.
+
+*** REQUIRES YOUR OWN COPY OF THE GAME ***
+No game content is included. You need Heroes 3: Shadow of Death or Complete Edition:
+• the GOG offline installer (.exe + .bin), or
+• the H3sprite.lod file from the game's Data folder.
+HD Edition, Restoration of Erathia and Armageddon's Blade are not supported.
+
+Horn of the Abyss (optional): select the official HotA installer from h3hota.com.
+
+FEATURES
+• Original and HotA maps, or your own .h3m maps
+• Map change interval, scale, brightness, scrolling
+• No internet permission, no ads, no tracking
+
+FAQ
+Q: Why can't I set it on the lock screen?
+A: Some phones (often MIUI and Samsung) don't allow live wallpapers there.
+
+Q: Will it drain my battery?
+A: No. It uses less than 1% of battery per day, because the wallpaper works only while it is visible.
+
+Q: Source code?
+A: https://github.com/IlyaPomaskin/h3lwp (GPL-3.0)
+
+Heroes of Might and Magic is a trademark of Ubisoft Entertainment. This is a fan project, not affiliated with or endorsed by Ubisoft or the Horn of the Abyss team.
