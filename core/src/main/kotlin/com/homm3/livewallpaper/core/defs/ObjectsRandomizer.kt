@@ -16,7 +16,7 @@ class ObjectsRandomizer(hasHotaAssets: Boolean = false) {
         "avtwood0", "avtore0", "avtsulf0", "avtmerc0", "avtcrys0", "avtgems0", "avtgold0"
     )
 
-    private val dwellings = hashMapOf(
+    private val dwellings = linkedMapOf(
         Faction.CASTLE to arrayOf("AVGpike0", "AVGcros0", "AVGgrff0", "AVGswor0", "AVGmonk0", "AVGcavl0", "AVGangl0"),
         Faction.RAMPART to arrayOf("AVGcent0", "AVGdwrf0", "AVGelf0", "AVGpega0", "AVGtree0", "AVGunic0", "AVGgdrg0"),
         Faction.TOWER to arrayOf("AVGgrem0", "AVGgarg0", "AVGgolm0", "AVGmage0", "AVGgeni0", "AVGnaga0", "AVGtitn0"),
@@ -41,7 +41,7 @@ class ObjectsRandomizer(hasHotaAssets: Boolean = false) {
         10 to arrayOf("AVWfdrg", "AVWazure", "AVWcdrg", "AVWrust")
     )
 
-    private val towns = hashMapOf(
+    private val towns = linkedMapOf(
         Faction.CASTLE to "avccasx0",
         Faction.RAMPART to "avcramx0",
         Faction.TOWER to "avctowx0",
@@ -55,7 +55,7 @@ class ObjectsRandomizer(hasHotaAssets: Boolean = false) {
         Faction.FACTORY to "AVCfacX0"
     ).apply { if (!hasHotaAssets) keys.removeAll(hotaFactions) }
 
-    private val villages = hashMapOf(
+    private val villages = linkedMapOf(
         Faction.CASTLE to "avccast0",
         Faction.RAMPART to "avcramp0",
         Faction.TOWER to "avctowr0",
