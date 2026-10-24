@@ -120,17 +120,18 @@ fun AssetSetupScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            Disclaimer()
             AssetCard(
                 title = stringResource(R.string.asset_setup_base_title),
                 description = stringResource(R.string.asset_setup_base_description),
-                buttonText = stringResource(R.string.asset_setup_base_button),
+                buttonText = stringResource(R.string.asset_setup_base_gog_button),
                 isInstalled = uiState.status.isBaseInstalled,
                 task = uiState.base,
                 isSelectEnabled = !uiState.isBusy,
-                onSelect = onSelectBaseLod,
+                onSelect = onSelectGogInstaller,
                 secondaryAction = AssetAction(
-                    text = stringResource(R.string.asset_setup_base_gog_button),
-                    onClick = onSelectGogInstaller,
+                    text = stringResource(R.string.asset_setup_base_button),
+                    onClick = onSelectBaseLod,
                 ),
                 descriptionLink = DescriptionLink(
                     label = stringResource(R.string.gog_site_label),
@@ -151,7 +152,6 @@ fun AssetSetupScreen(
                     url = stringResource(R.string.hota_site_url),
                 ),
             )
-            Disclaimer()
         }
     }
 }

@@ -32,7 +32,7 @@
     <string name="asset_setup_title">Game assets</string>
     <string name="asset_setup_installed">Installed</string>
     <string name="asset_setup_base_title">Heroes III game data</string>
-    <string name="asset_setup_base_description">This app needs original game files from Heroes of Might and Magic III: Shadow of Death (or Complete Edition). These files cannot be bundled with the app due to copyright.\n\nCopy the file H3sprite.lod from the Data folder of your game installation to your phone, then select it below. If you own the game on GOG.com, download its offline installer, copy setup_heroes_of_might_and_magic_3_complete_*.exe together with its .bin file to your phone and select both files at once.\n\nNote: HD Edition, Restoration of Erathia, and Armageddon\'s Blade are not supported.</string>
+    <string name="asset_setup_base_description">This app needs original game files from Heroes of Might and Magic III: Shadow of Death (or Complete Edition). These files cannot be bundled with the app due to copyright.\n\nIf you own the game on GOG.com, download its offline installer, copy setup_heroes_of_might_and_magic_3_complete_*.exe together with its .bin file to your phone and select both files at once. Otherwise, copy the file H3sprite.lod from the Data folder of your game installation to your phone, then select it below.\n\nNote: HD Edition, Restoration of Erathia, and Armageddon\'s Blade are not supported.</string>
     <string name="asset_setup_base_button">Select H3sprite.lod</string>
     <string name="asset_setup_base_gog_button">Select GOG installer</string>
     <string name="asset_setup_hota_title">HotA assets (optional)</string>

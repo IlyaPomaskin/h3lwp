@@ -29,7 +29,7 @@
     <string name="asset_setup_title">Файлы игры</string>
     <string name="asset_setup_installed">Установлено</string>
     <string name="asset_setup_base_title">Файлы Heroes III</string>
-    <string name="asset_setup_base_description">Приложению нужны оригинальные файлы из Heroes of Might and Magic III: Дыхание Смерти (или Полное издание). Из-за авторских прав эти файлы не могут быть включены в приложение.\n\nСкопируйте файл H3sprite.lod из папки Data вашей установки игры на телефон, затем выберите его ниже. Если у вас есть игра на GOG.com, скачайте её офлайн-установщик, скопируйте на телефон setup_heroes_of_might_and_magic_3_complete_*.exe вместе с его файлом .bin и выберите оба файла сразу.\n\nHD-версия из Steam, Возрождение Эрафии и Клинок Армагеддона не поддерживаются.</string>
+    <string name="asset_setup_base_description">Приложению нужны оригинальные файлы из Heroes of Might and Magic III: Дыхание Смерти (или Полное издание). Из-за авторских прав эти файлы не могут быть включены в приложение.\n\nЕсли у вас есть игра на GOG.com, скачайте её офлайн-установщик, скопируйте на телефон setup_heroes_of_might_and_magic_3_complete_*.exe вместе с его файлом .bin и выберите оба файла сразу. Иначе скопируйте файл H3sprite.lod из папки Data вашей установки игры на телефон, затем выберите его ниже.\n\nHD-версия из Steam, Возрождение Эрафии и Клинок Армагеддона не поддерживаются.</string>
     <string name="asset_setup_base_button">Выбрать H3sprite.lod</string>
     <string name="asset_setup_base_gog_button">Выбрать установщик GOG</string>
     <string name="asset_setup_hota_title">Файлы HotA (необязательно)</string>
