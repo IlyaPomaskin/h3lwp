@@ -33,7 +33,7 @@
     <string name="asset_setup_base_button">Выбрать H3sprite.lod</string>
     <string name="asset_setup_base_gog_button">Выбрать установщик GOG</string>
     <string name="asset_setup_hota_title">Файлы HotA (необязательно)</string>
-    <string name="asset_setup_hota_description">Если у вас есть Horn of the Abyss, вы можете добавить его спрайты. Скачайте официальный установщик HotA (HotA_*_setup.exe) с h3hota.com и выберите его ниже — приложение само извлечёт нужные данные.\n\nПоддерживается HotA 1.8. После установки HotA оригинальные карты игры заменяются картами HotA.</string>
+    <string name="asset_setup_hota_description">Если у вас есть Horn of the Abyss, вы можете добавить его спрайты. Скачайте официальный установщик HotA (HotA_*_setup.exe) с h3hota.com и выберите его ниже — приложение само извлечёт нужные данные.\n\nПоддерживается HotA 1.8.</string>
     <string name="hota_site_url">https://h3hota.com/ru/download</string>
     <string name="gog_site_url">https://www.gog.com/ru/game/heroes_of_might_and_magic_3_complete_edition</string>
     <string name="asset_setup_hota_button">Выбрать установщик HotA</string>

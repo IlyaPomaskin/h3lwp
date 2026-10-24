@@ -38,7 +38,7 @@ class GameDataInstaller(
     /**
      * Extracts H3sprite.lod from a GOG offline installer: [setupExe] holds the setup headers and
      * [dataSlices] are its `-1.bin`, `-2.bin`... files in order. The caller owns the channels.
-     * Also extracts the original SoD maps (not RoE/AB) with a [BASE_GAME_MAP_PREFIX] name, unless HotA is installed.
+     * Also extracts the original SoD maps (not RoE/AB) with a [BASE_GAME_MAP_PREFIX] name.
      */
     fun installBaseFromGog(setupExe: File, dataSlices: List<FileChannel>, progress: InstallProgress): InstallResult {
         val lodFile = dataDir.resolve(AssetPaths.LOD_FILE)
@@ -71,9 +71,6 @@ class GameDataInstaller(
             matcher = { it.endsWith(INSTALLER_BASE_LOD, ignoreCase = true) },
             outputFor = { lodFile },
         )
-        val isHotaInstalled = dataDir.resolve(AssetPaths.HOTA_LOD_FILE).exists()
-        if (isHotaInstalled) return listOf(lodTarget)
-
         mapsDir.mkdirs()
         val mapTarget = InnoSetupExtractor.Target(
             matcher = { it.endsWith(MAP_EXTENSION, ignoreCase = true) },
@@ -108,18 +105,17 @@ class GameDataInstaller(
         return InstallResult.Success(DONE_MESSAGE)
     }
 
-    /** Extracts HotA.lod and the campaign maps from [installer]; [extractInstallerMaps] also extracts its .h3m files. */
+    /** Extracts HotA.lod from [installer]; [extractInstallerMaps] also extracts its .h3m files (not its campaigns). */
     fun installHota(installer: File, extractInstallerMaps: Boolean, progress: InstallProgress): InstallResult {
         val hotaLodFile = dataDir.resolve(AssetPaths.HOTA_LOD_FILE)
-        val lngFile = File.createTempFile(LNG_TEMP_PREFIX, LOD_EXTENSION, tempDir)
         try {
             mapsDir.mkdirs()
             progress.report("Extracting installer...")
-            val targets = hotaTargets(hotaLodFile, lngFile, extractInstallerMaps)
+            val targets = hotaTargets(hotaLodFile, extractInstallerMaps)
             InnoSetupExtractor.extract(installer, targets) { written, total, _ ->
                 progress.report("Extracting: ${percent(written, total)}%")
             }
-            log.info("installHota: extracted hotaLod=${hotaLodFile.length()}B lng=${lngFile.length()}B")
+            log.info("installHota: extracted hotaLod=${hotaLodFile.length()}B")
 
             progress.report("Validating ${AssetPaths.HOTA_LOD_FILE}...")
             val error = hotaLodFile.inputStream().use { LodValidator.validate(it, isHota = true) }
@@ -129,45 +125,26 @@ class GameDataInstaller(
                 return InstallResult.Failure(error)
             }
 
-            val isLngExtracted = lngFile.length() > 0
-            if (isLngExtracted) installCampaignMaps(lngFile, progress)
-            removeBaseGameMaps()
             return InstallResult.Success(DONE_MESSAGE)
         } catch (e: Exception) {
             log.log(Level.SEVERE, "installHota failed", e)
             hotaLodFile.delete()
             return InstallResult.Failure("Error: ${e.message}")
-        } finally {
-            lngFile.delete()
         }
     }
 
-    private fun hotaTargets(hotaLodFile: File, lngFile: File, extractInstallerMaps: Boolean): List<InnoSetupExtractor.Target> {
-        val lodTargets = listOf(
-            InnoSetupExtractor.Target(
-                matcher = { it.endsWith(INSTALLER_HOTA_LOD, ignoreCase = true) },
-                outputFor = { hotaLodFile },
-            ),
-            InnoSetupExtractor.Target(
-                matcher = { it.endsWith(INSTALLER_HOTA_LNG_LOD, ignoreCase = true) },
-                outputFor = { lngFile },
-            ),
+    private fun hotaTargets(hotaLodFile: File, extractInstallerMaps: Boolean): List<InnoSetupExtractor.Target> {
+        val lodTarget = InnoSetupExtractor.Target(
+            matcher = { it.endsWith(INSTALLER_HOTA_LOD, ignoreCase = true) },
+            outputFor = { hotaLodFile },
         )
-        if (!extractInstallerMaps) return lodTargets
+        if (!extractInstallerMaps) return listOf(lodTarget)
 
         val mapTarget = InnoSetupExtractor.Target(
             matcher = { it.endsWith(MAP_EXTENSION, ignoreCase = true) },
             outputFor = { destination -> mapsDir.resolve(sanitizeFileName(baseName(destination))) },
         )
-        return lodTargets + mapTarget
-    }
-
-    private fun installCampaignMaps(lngFile: File, progress: InstallProgress) {
-        progress.report("Extracting campaigns...")
-        val result = CampaignMapInstaller.installFromLod(lngFile, mapsDir) { current, total, message ->
-            progress.report("$message ($current/$total)")
-        }
-        progress.report("Extracted ${result.mapsWritten} maps from ${result.campaignsFound} campaigns")
+        return listOf(lodTarget, mapTarget)
     }
 
     private fun copyBundledMaps() {
@@ -190,9 +167,6 @@ class GameDataInstaller(
         private const val BASE_LOD_NOT_FOUND_MESSAGE = "H3sprite.lod not found in the installer"
         private const val BASE_GAME_MAP_PREFIX = "[SoD] "
         private const val INSTALLER_HOTA_LOD = "data\\hota.lod"
-        private const val INSTALLER_HOTA_LNG_LOD = "data\\hota_lng.lod"
-        private const val LNG_TEMP_PREFIX = "HotA_lng_"
-        private const val LOD_EXTENSION = ".lod"
         private const val MAP_EXTENSION = ".h3m"
     }
 }

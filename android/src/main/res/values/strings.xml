@@ -36,7 +36,7 @@
     <string name="asset_setup_base_button">Select H3sprite.lod</string>
     <string name="asset_setup_base_gog_button">Select GOG installer</string>
     <string name="asset_setup_hota_title">HotA assets (optional)</string>
-    <string name="asset_setup_hota_description">If you have Horn of the Abyss, you can add its sprites. Download the official HotA installer (HotA_*_setup.exe) from h3hota.com and select it below — the app will extract the required data automatically.\n\nHotA 1.8 is supported. Once HotA is installed, the original game maps are replaced with HotA maps.</string>
+    <string name="asset_setup_hota_description">If you have Horn of the Abyss, you can add its sprites. Download the official HotA installer (HotA_*_setup.exe) from h3hota.com and select it below — the app will extract the required data automatically.\n\nHotA 1.8 is supported.</string>
     <string name="asset_setup_hota_button">Select HotA installer</string>
     <string name="asset_setup_continue_button">Continue</string>
 

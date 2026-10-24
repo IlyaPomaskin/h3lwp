@@ -55,7 +55,7 @@ class GameDataInstallerTest {
     }
 
     @Test
-    fun gogInstallerSkipsBaseGameMapsWhenHotaIsInstalled() {
+    fun gogInstallerExtractsBaseGameMapsWhenHotaIsInstalled() {
         TestFixtures.requireGogInstaller()
         val dataDir = tempFolder.newFolder("data")
         dataDir.resolve(AssetPaths.HOTA_LOD_FILE).writeText("hota")
@@ -66,11 +66,11 @@ class GameDataInstallerTest {
         }
 
         assertIs<InstallResult.Success>(result)
-        assertTrue(baseGameMaps(dataDir).isEmpty())
+        assertEquals(GOG_SOD_MAP_COUNT, baseGameMaps(dataDir).size)
     }
 
     @Test
-    fun hotaInstallRemovesBaseGameMapsAndKeepsOthers() {
+    fun hotaInstallKeepsBaseGameMapsAndOthers() {
         TestFixtures.requireInstallers()
         val dataDir = tempFolder.newFolder("data")
         val mapsDir = dataDir.resolve(AssetPaths.USER_MAPS_FOLDER).apply { mkdirs() }
@@ -81,8 +81,21 @@ class GameDataInstallerTest {
         val result = installer.installHota(TestFixtures.installer180, extractInstallerMaps = false) {}
 
         assertIs<InstallResult.Success>(result)
-        assertTrue(baseGameMaps(dataDir).isEmpty())
+        assertEquals(1, baseGameMaps(dataDir).size)
         assertTrue(mapsDir.resolve("imported.h3m").exists())
+    }
+
+    @Test
+    fun hotaInstallDoesNotExtractCampaignMaps() {
+        TestFixtures.requireInstallers()
+        val dataDir = tempFolder.newFolder("data")
+        val installer = GameDataInstaller(dataDir, tempFolder.newFolder("tmp"), oneBundledMap)
+
+        val result = installer.installHota(TestFixtures.installer180, extractInstallerMaps = false) {}
+
+        assertIs<InstallResult.Success>(result)
+        val maps = dataDir.resolve(AssetPaths.USER_MAPS_FOLDER).list().orEmpty()
+        assertTrue(maps.isEmpty(), "Unexpected maps: ${maps.joinToString()}")
     }
 
     @Test
