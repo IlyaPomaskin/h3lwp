@@ -9,6 +9,7 @@ import com.homm3.livewallpaper.core.MapUpdateInterval
 import com.homm3.livewallpaper.core.Scale
 import com.homm3.livewallpaper.core.WallpaperPreferences
 import com.homm3.livewallpaper.core.assets.SpriteSet
+import com.homm3.livewallpaper.core.defs.TerrainDef
 import com.homm3.livewallpaper.core.input.CameraInputProcessor
 import com.homm3.livewallpaper.core.map.GameMap
 import com.homm3.livewallpaper.core.render.AnimationTicker
@@ -36,6 +37,7 @@ class GameScreen(
     private val camera: MapCamera,
     private val prefs: Flow<WallpaperPreferences>,
     private val onSwitchThresholdReached: () -> Unit = {},
+    private val isDarkMode: () -> Boolean = { false },
 ) : KtxScreen {
 
     private val viewport = ScreenViewport(camera)
@@ -213,8 +215,12 @@ class GameScreen(
         }
     }
 
-    /** Rerolls level and camera position until objects cover enough of the view; leaves the camera on the result. */
+    /**
+     * Rerolls level and camera position until objects cover enough of the view and, in dark mode, snow and sand
+     * don't take too much of it; leaves the camera on the result.
+     */
     private fun rollWellCoveredView(): GameMap {
+        val isDarkMode = isDarkMode()
         val candidates = List(MAX_REROLLS) { maps.random() }
         for ((attempt, candidate) in candidates.withIndex()) {
             camera.randomizePosition(candidate.mapSize)
@@ -222,13 +228,21 @@ class GameScreen(
                 camera.position.x, camera.position.y,
                 camera.viewportWidth, camera.viewportHeight
             )
+            val brightTerrainShare = candidate.terrainShare(
+                camera.position.x, camera.position.y,
+                camera.viewportWidth, camera.viewportHeight,
+                BRIGHT_TERRAINS
+            )
             log.debug {
                 "Reroll ${attempt + 1}/$MAX_REROLLS: map='${candidate.fileName}' " +
-                    "(underground=${candidate.isUnderground}) coverage=${"%.2f".format(coverage)}"
+                    "(underground=${candidate.isUnderground}) coverage=${"%.2f".format(coverage)} " +
+                    "brightTerrain=${"%.2f".format(brightTerrainShare)} darkMode=$isDarkMode"
             }
-            if (coverage >= MIN_OBJECT_COVERAGE) return candidate
+            val isWellCovered = coverage >= MIN_OBJECT_COVERAGE
+            val isTooBrightForDarkMode = isDarkMode && brightTerrainShare > MAX_BRIGHT_TERRAIN_SHARE_IN_DARK_MODE
+            if (isWellCovered && !isTooBrightForDarkMode) return candidate
         }
-        log.info { "All $MAX_REROLLS attempts below coverage threshold; showing last view" }
+        log.info { "No view out of $MAX_REROLLS attempts passed the checks; showing last view" }
         return candidates.last()
     }
 
@@ -255,6 +269,8 @@ class GameScreen(
         private val log = logger<GameScreen>()
         private const val MIN_OBJECT_COVERAGE = 0.8f
         private const val MAX_REROLLS = 20
+        private const val MAX_BRIGHT_TERRAIN_SHARE_IN_DARK_MODE = 0.2f
+        private val BRIGHT_TERRAINS = setOf(TerrainDef.snowtl.id, TerrainDef.sandtl.id)
     }
 }
 

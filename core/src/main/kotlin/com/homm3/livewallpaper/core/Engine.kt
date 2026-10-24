@@ -32,7 +32,8 @@ open class Engine(
     private val prefs: Flow<WallpaperPreferences>,
     private val onSettingsButtonClick: (onProgress: (String) -> Unit, onDone: () -> Unit) -> Unit = { _, _ -> },
     private val explicitMaps: List<String> = emptyList(),
-    private val headless: Boolean = false
+    private val headless: Boolean = false,
+    private val isDarkMode: () -> Boolean = { false },
 ) : KtxGame<Screen>(null, false) {
     private val dataLocator = GameDataLocator()
     private val library = MapLibrary(dataLocator)
@@ -69,6 +70,7 @@ open class Engine(
             camera = camera,
             prefs = prefs,
             onSwitchThresholdReached = { submit(MapCommand.Rotate) },
+            isDarkMode = isDarkMode,
         ))
 
         val scope = CoroutineScope(SupervisorJob() + RenderingDispatcher)

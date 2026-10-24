@@ -1,6 +1,7 @@
 package com.homm3.livewallpaper.android.wallpaper
 
 import android.content.Context
+import android.content.res.Configuration
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.backends.android.AndroidWallpaperListener
@@ -21,6 +22,10 @@ class AndroidEngine(
 ) : Engine(
     prefs = prefs,
     onSettingsButtonClick = { _, _ -> context.startActivity(MainActivity.newTaskIntent(context)) },
+    isDarkMode = {
+        val nightMode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        nightMode == Configuration.UI_MODE_NIGHT_YES
+    },
 ), AndroidWallpaperListener {
 
     private val prefsScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

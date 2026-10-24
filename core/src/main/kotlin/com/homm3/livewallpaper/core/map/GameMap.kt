@@ -27,12 +27,21 @@ class GameMap(
     val tiledMap: TiledMap by lazy(LazyThreadSafetyMode.NONE) { buildTiledMap() }
 
     fun objectCoverage(cameraX: Float, cameraY: Float, viewportW: Float, viewportH: Float): Float {
-        val viewBounds = Rectangle(
-            cameraX - viewportW / 2, cameraY - viewportH / 2,
-            viewportW, viewportH
-        )
-        return objectsLayer.objectCoverage(viewBounds)
+        return objectsLayer.objectCoverage(viewBounds(cameraX, cameraY, viewportW, viewportH))
     }
+
+    /** Share of the visible map tiles whose terrain id is one of [terrains]. */
+    fun terrainShare(cameraX: Float, cameraY: Float, viewportW: Float, viewportH: Float, terrains: Set<Int>): Float {
+        val tileOffset = if (isUnderground) mapSize * mapSize else 0
+        return visibleTerrainShare(mapSize, viewBounds(cameraX, cameraY, viewportW, viewportH), terrains) { x, y ->
+            h3m.tiles[tileOffset + mapSize * y + x].terrain
+        }
+    }
+
+    private fun viewBounds(cameraX: Float, cameraY: Float, viewportW: Float, viewportH: Float) = Rectangle(
+        cameraX - viewportW / 2, cameraY - viewportH / 2,
+        viewportW, viewportH
+    )
 
     private fun buildTiledMap(): TiledMap {
         val buildStart = System.currentTimeMillis()
