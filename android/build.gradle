@@ -40,8 +40,20 @@ android {
     buildConfig true
   }
 
+  signingConfigs {
+    release {
+      if (project.hasProperty('H3LWP_STORE_FILE')) {
+        storeFile file(H3LWP_STORE_FILE)
+        storePassword H3LWP_STORE_PASSWORD
+        keyAlias H3LWP_KEY_ALIAS
+        keyPassword H3LWP_KEY_PASSWORD
+      }
+    }
+  }
+
   buildTypes {
     release {
+      signingConfig signingConfigs.release
       minifyEnabled true
       shrinkResources true
       proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
