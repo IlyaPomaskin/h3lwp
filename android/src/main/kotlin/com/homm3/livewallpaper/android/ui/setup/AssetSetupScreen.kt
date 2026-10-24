@@ -32,6 +32,13 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -132,6 +139,10 @@ fun AssetSetupScreen(
                 task = uiState.hota,
                 isSelectEnabled = !uiState.isBusy,
                 onSelect = onSelectHotaInstaller,
+                descriptionLink = DescriptionLink(
+                    label = stringResource(R.string.hota_site_label),
+                    url = stringResource(R.string.hota_site_url),
+                ),
             )
         }
     }
@@ -147,6 +158,7 @@ private fun AssetCard(
     isSelectEnabled: Boolean,
     onSelect: () -> Unit,
     secondaryAction: AssetAction? = null,
+    descriptionLink: DescriptionLink? = null,
 ) {
     ElevatedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -155,7 +167,7 @@ private fun AssetCard(
                 if (isInstalled) InstalledBadge()
             }
             Text(
-                text = description,
+                text = linkifyDescription(description, descriptionLink),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
             )
@@ -173,6 +185,24 @@ private fun AssetCard(
 }
 
 private data class AssetAction(val text: String, val onClick: () -> Unit)
+
+private data class DescriptionLink(val label: String, val url: String)
+
+@Composable
+private fun linkifyDescription(description: String, link: DescriptionLink?): AnnotatedString {
+    val linkStart = link?.let { description.indexOf(it.label) } ?: -1
+    if (link == null || linkStart < 0) return AnnotatedString(description)
+
+    val linkStyles = TextLinkStyles(
+        style = SpanStyle(color = MaterialTheme.colorScheme.primary, textDecoration = TextDecoration.Underline),
+    )
+    val linkEnd = linkStart + link.label.length
+    return buildAnnotatedString {
+        append(description.substring(0, linkStart))
+        withLink(LinkAnnotation.Url(link.url, linkStyles)) { append(link.label) }
+        append(description.substring(linkEnd))
+    }
+}
 
 @Composable
 private fun ContinueBar(isEnabled: Boolean, onClick: () -> Unit) {
