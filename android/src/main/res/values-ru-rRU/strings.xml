@@ -42,7 +42,7 @@
     <string name="maps_title">Карты</string>
     <string name="maps_empty">Карт пока нет</string>
     <string name="maps_add_button">Добавить карту</string>
-    <string name="maps_note">Поддерживаются карты из Дыхания Смерти и HotA (до версии 1.8.0 включительно).</string>
+    <string name="maps_note">Поддерживаются карты из Дыхания Смерти и HotA (до версии 1.8.0 включительно) размером до XL (144×144).</string>
     <string name="maps_delete_title">Удалить карту?</string>
     <string name="maps_delete_text">%s больше не будет показываться на обоях.</string>
     <string name="maps_delete_description">Удалить %s</string>
@@ -51,6 +51,7 @@
     <string name="maps_import_error_too_small">Файл слишком мал для карты</string>
     <string name="maps_import_error_unknown_version">Неизвестная версия карты: 0x%s</string>
     <string name="maps_import_error_invalid">Некорректный файл карты: %s</string>
+    <string name="maps_import_error_too_large">Размер карты %1$d×%1$d. Карты больше XL (%2$d×%2$d) не поддерживаются.</string>
 
     <string name="source_code_title">Исходный код</string>
     <string name="icon_author_title">Иконка: Wit Olszewski</string>

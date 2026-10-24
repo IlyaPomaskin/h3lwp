@@ -1,6 +1,7 @@
 package com.homm3.livewallpaper.core.install
 
 import com.homm3.livewallpaper.core.AssetPaths
+import com.homm3.livewallpaper.core.GameConfig
 import com.homm3.livewallpaper.parser.h3m.H3mHeaderReader
 import com.homm3.livewallpaper.parser.h3m.H3mVersion
 import com.homm3.livewallpaper.parser.inno.InnoSetupExtractor
@@ -55,6 +56,7 @@ class GameDataInstaller(
             }
 
             removeNonSodBaseGameMaps()
+            removeOversizedMaps(extracted.map { it.output })
             val result = finishBaseInstall(lodFile, progress)
             if (result is InstallResult.Failure) removeBaseGameMaps()
             return result
@@ -112,7 +114,7 @@ class GameDataInstaller(
             mapsDir.mkdirs()
             progress.report("Extracting installer...")
             val targets = hotaTargets(hotaLodFile, extractInstallerMaps)
-            InnoSetupExtractor.extract(installer, targets) { written, total, _ ->
+            val extracted = InnoSetupExtractor.extract(installer, targets) { written, total, _ ->
                 progress.report("Extracting: ${percent(written, total)}%")
             }
             log.info("installHota: extracted hotaLod=${hotaLodFile.length()}B")
@@ -125,6 +127,7 @@ class GameDataInstaller(
                 return InstallResult.Failure(error)
             }
 
+            removeOversizedMaps(extracted.map { it.output })
             return InstallResult.Success(DONE_MESSAGE)
         } catch (e: Exception) {
             log.log(Level.SEVERE, "installHota failed", e)
@@ -153,11 +156,25 @@ class GameDataInstaller(
             .filter { it.endsWith(MAP_EXTENSION, ignoreCase = true) }
             .map { name -> name to mapsDir.resolve(name) }
             .filterNot { (_, target) -> target.exists() }
+            .filterNot { (name, _) -> bundledMaps.open(name).use(::isOversized) }
             .forEach { (name, target) ->
                 bundledMaps.open(name).use { input -> target.outputStream().use { output -> input.copyTo(output) } }
                 log.info("copyBundledMaps: wrote ${target.absolutePath} (${target.length()}B)")
             }
     }
+
+    private fun removeOversizedMaps(files: List<File>) {
+        files
+            .distinct()
+            .filter { it.isFile && it.name.endsWith(MAP_EXTENSION, ignoreCase = true) }
+            .filter { map -> map.inputStream().use(::isOversized) }
+            .forEach { map ->
+                log.info("removeOversizedMaps: deleting ${map.name}")
+                map.delete()
+            }
+    }
+
+    private fun isOversized(map: InputStream): Boolean = H3mHeaderReader.readMapSize(map) > GameConfig.MAX_MAP_SIZE
 
     companion object {
         private val log = Logger.getLogger(GameDataInstaller::class.java.name)

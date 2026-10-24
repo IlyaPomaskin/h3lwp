@@ -3,6 +3,7 @@ package com.homm3.livewallpaper.android.data
 import android.content.Context
 import android.net.Uri
 import com.homm3.livewallpaper.core.AssetPaths
+import com.homm3.livewallpaper.core.GameConfig
 import com.homm3.livewallpaper.parser.h3m.H3mReader
 import com.homm3.livewallpaper.parser.h3m.H3mVersion
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +23,7 @@ sealed interface MapImportResult {
     data object CannotOpen : Failure
     data object TooSmall : Failure
     data class UnknownVersion(val versionHex: String) : Failure
+    data class TooLarge(val size: Int, val maxSize: Int) : Failure
     data class Invalid(val details: String) : Failure
 }
 
@@ -79,9 +81,14 @@ class MapsRepository(context: Context) {
         val isKnownVersion = H3mVersion.entries.any { it.value == version }
         if (!isKnownVersion) return MapImportResult.UnknownVersion(version.toString(HEX_RADIX))
 
-        return runCatching { H3mReader(bytes.inputStream()).read() }
-            .exceptionOrNull()
-            ?.let { MapImportResult.Invalid(it.message.orEmpty()) }
+        val map = try {
+            H3mReader(bytes.inputStream()).read()
+        } catch (e: Exception) {
+            return MapImportResult.Invalid(e.message.orEmpty())
+        }
+        val size = map.header.size
+        if (size > GameConfig.MAX_MAP_SIZE) return MapImportResult.TooLarge(size, GameConfig.MAX_MAP_SIZE)
+        return null
     }
 
     private fun toMapFileName(displayName: String?): String {

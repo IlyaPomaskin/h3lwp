@@ -9,4 +9,7 @@ object GameConfig {
     const val MIN_ZOOM = 0.1f
     const val MAX_ZOOM = 2.0f
     const val MIN_MAP_UPDATE_INTERVAL_MS = 1000f
+
+    /** Largest supported map side in tiles (XL); bigger maps (H, XH, G) are too slow to build and are skipped. */
+    const val MAX_MAP_SIZE = 144
 }

@@ -3,6 +3,7 @@ package com.homm3.livewallpaper.core.assets
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.backends.headless.HeadlessApplication
 import com.badlogic.gdx.backends.headless.HeadlessApplicationConfiguration
+import com.homm3.livewallpaper.core.GameConfig
 import com.homm3.livewallpaper.parser.h3m.H3mVersion
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -18,6 +19,7 @@ import kotlin.test.assertEquals
 
 class MapFileScannerTest {
     companion object {
+        private const val SUPPORTED_SIZE = 36
         private lateinit var app: HeadlessApplication
 
         @JvmStatic
@@ -69,7 +71,7 @@ class MapFileScannerTest {
         File(mapsFolder, "empty.h3m").createNewFile()
         File(mapsFolder, "notes.txt").writeText("not a map")
 
-        val names = MapFileScanner().listMapFiles(mapsFolder, includeHota = false)
+        val names = MapFileScanner(readSize = { SUPPORTED_SIZE }).listMapFiles(mapsFolder, includeHota = false)
 
         assertEquals(listOf("small.h3m", "big.h3m"), names)
     }
@@ -78,7 +80,7 @@ class MapFileScannerTest {
     fun `reads real headers and drops HotA maps without HotA assets`() {
         writeMap("hota.h3m", H3mVersion.HOTA)
         writeMap("sod.h3m", H3mVersion.SOD, paddingBytes = 1_000)
-        val scanner = MapFileScanner()
+        val scanner = MapFileScanner(readSize = { SUPPORTED_SIZE })
 
         assertEquals(listOf("sod.h3m"), scanner.listMapFiles(mapsFolder, includeHota = false))
         assertEquals(setOf("hota.h3m", "sod.h3m"), scanner.listMapFiles(mapsFolder, includeHota = true).toSet())
@@ -89,7 +91,7 @@ class MapFileScannerTest {
         writeMap("hota.h3m", H3mVersion.HOTA)
         val reader = CountingVersionReader(versionsByName("hota.h3m" to H3mVersion.HOTA))
 
-        MapFileScanner(reader).listMapFiles(mapsFolder, includeHota = true)
+        MapFileScanner(reader, readSize = { SUPPORTED_SIZE }).listMapFiles(mapsFolder, includeHota = true)
 
         assertEquals(emptyList(), reader.readFileNames)
     }
@@ -98,7 +100,7 @@ class MapFileScannerTest {
     fun `caches versions until the file changes`() {
         val file = writeMap("map.h3m", H3mVersion.SOD)
         val reader = CountingVersionReader(versionsByName("map.h3m" to H3mVersion.SOD))
-        val scanner = MapFileScanner(reader)
+        val scanner = MapFileScanner(reader, readSize = { SUPPORTED_SIZE })
 
         scanner.listMapFiles(mapsFolder, includeHota = false)
         scanner.listMapFiles(mapsFolder, includeHota = false)
@@ -116,12 +118,23 @@ class MapFileScannerTest {
         writeMap("hota.h3m", H3mVersion.HOTA)
         writeMap("a.h3m", H3mVersion.ROE)
 
-        val names = MapFileScanner().filterSupported(
+        val names = MapFileScanner(readSize = { SUPPORTED_SIZE }).filterSupported(
             mapsFolder,
             listOf("b.h3m", "hota.h3m", "a.h3m"),
             includeHota = false,
         )
 
         assertEquals(listOf("b.h3m", "a.h3m"), names)
+    }
+
+    @Test
+    fun `drops maps larger than the supported size`() {
+        writeMap("xl.h3m", H3mVersion.SOD)
+        writeMap("huge.h3m", H3mVersion.SOD, paddingBytes = 1_000)
+        val sizes = mapOf("xl.h3m" to GameConfig.MAX_MAP_SIZE, "huge.h3m" to GameConfig.MAX_MAP_SIZE + 36)
+        val scanner = MapFileScanner(readSize = { file -> sizes.getValue(file.name) })
+
+        assertEquals(listOf("xl.h3m"), scanner.listMapFiles(mapsFolder, includeHota = true))
+        assertEquals(listOf("xl.h3m"), scanner.filterSupported(mapsFolder, listOf("huge.h3m", "xl.h3m"), includeHota = true))
     }
 }

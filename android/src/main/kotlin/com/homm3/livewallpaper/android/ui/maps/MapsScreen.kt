@@ -192,6 +192,7 @@ private fun importResultMessage(result: MapImportResult): String = when (result)
     MapImportResult.TooSmall -> stringResource(R.string.maps_import_error_too_small)
     is MapImportResult.UnknownVersion -> stringResource(R.string.maps_import_error_unknown_version, result.versionHex)
     is MapImportResult.Invalid -> stringResource(R.string.maps_import_error_invalid, result.details)
+    is MapImportResult.TooLarge -> stringResource(R.string.maps_import_error_too_large, result.size, result.maxSize)
 }
 
 @Preview

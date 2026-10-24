@@ -43,7 +43,7 @@
     <string name="maps_title">Maps</string>
     <string name="maps_empty">No maps added yet</string>
     <string name="maps_add_button">Add map</string>
-    <string name="maps_note">Maps from Shadow of Death and HotA (up to 1.8.0) are supported.</string>
+    <string name="maps_note">Maps from Shadow of Death and HotA (up to 1.8.0) are supported, up to size XL (144×144).</string>
     <string name="maps_delete_title">Delete map?</string>
     <string name="maps_delete_text">%s will be removed from the wallpaper rotation.</string>
     <string name="maps_delete_description">Delete %s</string>
@@ -52,6 +52,7 @@
     <string name="maps_import_error_too_small">File is too small to be a valid map</string>
     <string name="maps_import_error_unknown_version">Unknown map version: 0x%s</string>
     <string name="maps_import_error_invalid">Invalid map file: %s</string>
+    <string name="maps_import_error_too_large">This map is %1$d×%1$d. Maps larger than XL (%2$d×%2$d) are not supported.</string>
 
     <string name="source_code_title">Source code</string>
     <string name="source_code_url" translatable="false">https://github.com/IlyaPomaskin/h3lwp</string>

@@ -1,6 +1,7 @@
 package com.homm3.livewallpaper.core.install
 
 import com.homm3.livewallpaper.core.AssetPaths
+import com.homm3.livewallpaper.core.GameConfig
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -96,6 +97,23 @@ class GameDataInstallerTest {
         assertIs<InstallResult.Success>(result)
         val maps = dataDir.resolve(AssetPaths.USER_MAPS_FOLDER).list().orEmpty()
         assertTrue(maps.isEmpty(), "Unexpected maps: ${maps.joinToString()}")
+    }
+
+    @Test
+    fun hotaInstallDeletesMapsLargerThanSupported() {
+        TestFixtures.requireInstallers()
+        val dataDir = tempFolder.newFolder("data")
+        val installer = GameDataInstaller(dataDir, tempFolder.newFolder("tmp"), oneBundledMap)
+
+        val result = installer.installHota(TestFixtures.installer180, extractInstallerMaps = true) {}
+
+        assertIs<InstallResult.Success>(result)
+        val sizes = dataDir.resolve(AssetPaths.USER_MAPS_FOLDER)
+            .listFiles { file -> file.name.endsWith(".h3m") && file.length() > 0 }
+            .orEmpty()
+            .associate { map -> map.name to map.inputStream().use { H3mHeaderReader.readMapSize(it) } }
+        assertTrue(sizes.isNotEmpty())
+        assertTrue(sizes.values.all { it <= GameConfig.MAX_MAP_SIZE }, "Oversized maps: ${sizes.filterValues { it > GameConfig.MAX_MAP_SIZE }}")
     }
 
     @Test
