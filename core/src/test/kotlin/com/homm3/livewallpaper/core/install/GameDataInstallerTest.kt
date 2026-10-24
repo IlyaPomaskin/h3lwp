@@ -149,6 +149,12 @@ class GameDataInstallerTest {
         assertEquals("unnamed.h3m", sanitizeFileName("   "))
     }
 
+    @Test
+    fun hotaMapFileNameAddsPrefixOnce() {
+        assertEquals("[HotA] Jebus.h3m", hotaMapFileName("maps\\Jebus.h3m"))
+        assertEquals("[HotA] Jebus.h3m", hotaMapFileName("maps\\[HotA] Jebus.h3m"))
+    }
+
     private fun baseGameMaps(dataDir: File): List<File> =
         dataDir.resolve(AssetPaths.USER_MAPS_FOLDER)
             .listFiles { file -> file.name.startsWith("[SoD] ") }

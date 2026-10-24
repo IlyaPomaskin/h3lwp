@@ -148,7 +148,7 @@ class GameDataInstaller(
 
         val mapTarget = InnoSetupExtractor.Target(
             matcher = { it.endsWith(MAP_EXTENSION, ignoreCase = true) },
-            outputFor = { destination -> mapsDir.resolve(sanitizeFileName(AssetPaths.HOTA_MAP_PREFIX + baseName(destination))) },
+            outputFor = { destination -> mapsDir.resolve(hotaMapFileName(destination)) },
         )
         return listOf(lodTarget, mapTarget)
     }
@@ -201,6 +201,13 @@ private fun percent(written: Long, total: Long): Int {
 }
 
 private fun baseName(installerPath: String): String = installerPath.substringAfterLast('\\').substringAfterLast('/')
+
+internal fun hotaMapFileName(installerPath: String): String {
+    val name = baseName(installerPath)
+    val hasPrefix = name.startsWith(AssetPaths.HOTA_MAP_PREFIX)
+    if (hasPrefix) return sanitizeFileName(name)
+    return sanitizeFileName(AssetPaths.HOTA_MAP_PREFIX + name)
+}
 
 internal fun sanitizeFileName(name: String): String {
     val cleaned = name.trim().map { char ->
