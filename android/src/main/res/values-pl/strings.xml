@@ -29,12 +29,13 @@
     <string name="asset_setup_title">Pliki gry</string>
     <string name="asset_setup_installed">Zainstalowano</string>
     <string name="asset_setup_base_title">Pliki Heroes III</string>
-    <string name="asset_setup_base_description">Aplikacja potrzebuje oryginalnych plików z Heroes of Might and Magic III: Cień Śmierci (lub Złota Edycja). Ze względu na prawa autorskie pliki te nie mogą być dołączone do aplikacji.\n\nSkopiuj plik H3sprite.lod z folderu Data instalacji gry na telefon, a następnie wybierz go poniżej. Jeśli masz instalator offline GOG, skopiuj na telefon setup_heroes_of_might_and_magic_3_complete_*.exe razem z jego plikiem .bin i wybierz oba pliki naraz.\n\nWersja HD, Odrodzenie Erathii i Ostrze Armagedonu nie są obsługiwane.</string>
+    <string name="asset_setup_base_description">Aplikacja potrzebuje oryginalnych plików z Heroes of Might and Magic III: Cień Śmierci (lub Złota Edycja). Ze względu na prawa autorskie pliki te nie mogą być dołączone do aplikacji.\n\nSkopiuj plik H3sprite.lod z folderu Data instalacji gry na telefon, a następnie wybierz go poniżej. Jeśli masz grę na GOG.com, pobierz jej instalator offline, skopiuj na telefon setup_heroes_of_might_and_magic_3_complete_*.exe razem z jego plikiem .bin i wybierz oba pliki naraz.\n\nWersja HD, Odrodzenie Erathii i Ostrze Armagedonu nie są obsługiwane.</string>
     <string name="asset_setup_base_button">Wybierz H3sprite.lod</string>
     <string name="asset_setup_base_gog_button">Wybierz instalator GOG</string>
     <string name="asset_setup_hota_title">Pliki HotA (opcjonalnie)</string>
     <string name="asset_setup_hota_description">Jeśli masz Horn of the Abyss, możesz dodać jego sprajty. Pobierz oficjalny instalator HotA (HotA_*_setup.exe) ze strony h3hota.com i wybierz go poniżej — aplikacja sama wypakuje potrzebne dane.\n\nObsługiwana jest HotA 1.8. Po zainstalowaniu HotA oryginalne mapy gry zostaną zastąpione mapami HotA.</string>
     <string name="hota_site_url">https://h3hota.com/en/download</string>
+    <string name="gog_site_url">https://www.gog.com/pl/game/heroes_of_might_and_magic_3_complete_edition</string>
     <string name="asset_setup_hota_button">Wybierz instalator HotA</string>
     <string name="asset_setup_continue_button">Kontynuuj</string>
 

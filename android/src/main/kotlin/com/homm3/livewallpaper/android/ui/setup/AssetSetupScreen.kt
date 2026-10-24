@@ -130,6 +130,10 @@ fun AssetSetupScreen(
                     text = stringResource(R.string.asset_setup_base_gog_button),
                     onClick = onSelectGogInstaller,
                 ),
+                descriptionLink = DescriptionLink(
+                    label = stringResource(R.string.gog_site_label),
+                    url = stringResource(R.string.gog_site_url),
+                ),
             )
             AssetCard(
                 title = stringResource(R.string.asset_setup_hota_title),
