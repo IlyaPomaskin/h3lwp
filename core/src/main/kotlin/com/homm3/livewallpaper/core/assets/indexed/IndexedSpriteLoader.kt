@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.g2d.PixmapPacker
 import com.homm3.livewallpaper.parser.def.DefFrame
 import com.homm3.livewallpaper.parser.def.DefReader
+import com.homm3.livewallpaper.parser.def.DefSprite
 import com.homm3.livewallpaper.parser.lod.LodArchive
 import com.homm3.livewallpaper.parser.lod.LodEntry
 import com.homm3.livewallpaper.parser.lod.LodReader
@@ -12,10 +13,13 @@ import java.nio.ByteBuffer
 import java.util.Locale
 import java.util.logging.Level
 import java.util.logging.Logger
+import java.util.stream.Collectors
 
 /**
  * Loads sprites from LOD archives as 8-bit palette indices packed into Pixmap.Format.Alpha pages.
  * CPU only; every call works on its own state, so it is safe to run on a background thread.
+ * DEFs are read and decoded in parallel, in chunks to bound memory; palettes and packing stay sequential in
+ * archive order, so the packed pages are the same as with a sequential load.
  *
  * Factory terrains (wastlnd/highlnd) stored as "<prefix>000.pcx".. tiles are loaded only when their
  * terrain DEF is needed and the same source has no DEF with that name.
@@ -50,8 +54,9 @@ class IndexedSpriteLoader {
         val archive = lodReader.read()
 
         val jobs = names.mapNotNull { name -> findJob(archive, source, name) }.sortedBy { it.offset }
-        val loadedNames = jobs
-            .filter { job -> runJob(lodReader, job, builder) }
+        val loadedNames = jobs.chunked(DECODE_CHUNK_SIZE)
+            .flatMap { chunk -> decodeInParallel(lodReader, chunk) }
+            .filter { decoded -> pack(decoded, builder) }
             .map { it.defName }
             .toSet()
 
@@ -77,52 +82,80 @@ class IndexedSpriteLoader {
         return LoadJob.Tiles(name, tiles)
     }
 
-    private fun runJob(lodReader: LodReader, job: LoadJob, builder: BundleBuilder): Boolean = try {
-        val regionsBefore = builder.regionCount
+    /** Decodes [jobs] on the common fork-join pool; the result keeps the order of [jobs], failed ones dropped. */
+    private fun decodeInParallel(lodReader: LodReader, jobs: List<LoadJob>): List<Decoded> =
+        jobs.parallelStream()
+            .map { job -> decodeOrNull(lodReader, job) }
+            .collect(Collectors.toList())
+            .filterNotNull()
+
+    private fun decodeOrNull(lodReader: LodReader, job: LoadJob): Decoded? = try {
         when (job) {
-            is LoadJob.Def -> loadDef(lodReader, job, builder)
-            is LoadJob.Tiles -> loadTiles(lodReader, job, builder)
+            is LoadJob.Def -> decodeDef(lodReader, job)
+            is LoadJob.Tiles -> decodeTiles(lodReader, job)
         }
-        builder.regionCount > regionsBefore
     } catch (e: Throwable) {
         log.log(Level.WARNING, "Failed to load indexed ${job.defName}", e)
-        false
+        null
     }
 
-    private fun loadDef(lodReader: LodReader, job: LoadJob.Def, builder: BundleBuilder) {
+    private fun decodeDef(lodReader: LodReader, job: LoadJob.Def): Decoded? {
         val bytes = lodReader.readFileContent(job.entry).readBytes()
         if (isD32(bytes)) {
             log.info("Indexed sprites: skipping D32 ${job.defName} (not supported)")
-            return
+            return null
         }
+        return Decoded.Def(job.defName, DefReader(bytes).read())
+    }
 
-        val def = DefReader(bytes).read()
-        val paletteIndex = builder.addPalette(def.rawPalette, DefPalette.paletteRotations[job.defName].orEmpty())
+    private fun decodeTiles(lodReader: LodReader, job: LoadJob.Tiles): Decoded {
+        val tileNames = job.tiles.map { (tileName, _) -> tileName }
+        val tiles = job.tiles.mapNotNull { (tileName, entry) ->
+            val pcx = PcxReader(lodReader.readFileContent(entry)).read()
+            val palette = pcx.palette
+            if (palette == null) {
+                log.warning("Indexed sprites: ${job.defName} tile $tileName is not 8-bit, skipped")
+                return@mapNotNull null
+            }
+            DecodedTile(DefFrame(tileName, pcx.width, pcx.height, pcx.width, pcx.height, 0, 0, pcx.data), palette)
+        }
+        return Decoded.Tiles(job.defName, tileNames, tiles)
+    }
+
+    private fun pack(decoded: Decoded, builder: BundleBuilder): Boolean = try {
+        val regionsBefore = builder.regionCount
+        when (decoded) {
+            is Decoded.Def -> packDef(decoded, builder)
+            is Decoded.Tiles -> packTiles(decoded, builder)
+        }
+        builder.regionCount > regionsBefore
+    } catch (e: Throwable) {
+        log.log(Level.WARNING, "Failed to load indexed ${decoded.defName}", e)
+        false
+    }
+
+    private fun packDef(decoded: Decoded.Def, builder: BundleBuilder) {
+        val def = decoded.def
+        val defName = decoded.defName
+        val paletteIndex = builder.addPalette(def.rawPalette, DefPalette.paletteRotations[defName].orEmpty())
         val uniqueFrames = def.groups.flatMap { it.frames }.distinctBy { it.frameName }
 
-        if (job.defName in DefPalette.terrainDefNames) {
+        if (defName in DefPalette.terrainDefNames) {
             val allFilenames = def.groups.flatMap { it.filenames }
-            uniqueFrames.forEach { frame -> builder.packTerrainFrame(job.defName, frame, allFilenames, paletteIndex) }
+            uniqueFrames.forEach { frame -> builder.packTerrainFrame(defName, frame, allFilenames, paletteIndex) }
             return
         }
 
         uniqueFrames.forEach { frame ->
             val filenames = def.groups.first { group -> frame.frameName in group.filenames }.filenames
-            builder.packObjectFrame(job.defName, frame, filenames, paletteIndex)
+            builder.packObjectFrame(defName, frame, filenames, paletteIndex)
         }
     }
 
-    private fun loadTiles(lodReader: LodReader, job: LoadJob.Tiles, builder: BundleBuilder) {
-        val tileNames = job.tiles.map { (tileName, _) -> tileName }
-        job.tiles.forEach { (tileName, entry) ->
-            val pcx = PcxReader(lodReader.readFileContent(entry)).read()
-            val palette = pcx.palette
-            if (palette == null) {
-                log.warning("Indexed sprites: ${job.defName} tile $tileName is not 8-bit, skipped")
-                return@forEach
-            }
-            val frame = DefFrame(tileName, pcx.width, pcx.height, pcx.width, pcx.height, 0, 0, pcx.data)
-            builder.packTerrainFrame(job.defName, frame, tileNames, builder.addPalette(palette, emptyList()))
+    private fun packTiles(decoded: Decoded.Tiles, builder: BundleBuilder) {
+        decoded.tiles.forEach { tile ->
+            val paletteIndex = builder.addPalette(tile.palette, emptyList())
+            builder.packTerrainFrame(decoded.defName, tile.frame, decoded.tileNames, paletteIndex)
         }
     }
 
@@ -144,8 +177,18 @@ class IndexedSpriteLoader {
         }
     }
 
+    /** A job's content read and decoded, ready to pack. */
+    private sealed class Decoded(val defName: String) {
+        class Def(defName: String, val def: DefSprite) : Decoded(defName)
+
+        class Tiles(defName: String, val tileNames: List<String>, val tiles: List<DecodedTile>) : Decoded(defName)
+    }
+
+    private class DecodedTile(val frame: DefFrame, val palette: ByteArray)
+
     companion object {
         private const val TILE_INDEX_FORMAT = "%03d"
+        private const val DECODE_CHUNK_SIZE = 64
         private val D32_MAGIC = "D32F".toByteArray(Charsets.US_ASCII)
         private val log = Logger.getLogger(IndexedSpriteLoader::class.java.name)
     }
