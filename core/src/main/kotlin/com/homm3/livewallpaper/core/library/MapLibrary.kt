@@ -115,7 +115,7 @@ class MapLibrary(
     private suspend fun parseMapOrNull(fileName: String): H3mMap? = try {
         val start = System.currentTimeMillis()
         val fileHandle = locator.mapFile(fileName)
-        withContext(Dispatchers.IO) { fileHandle.read().use { H3mReader(it).read() } }.also {
+        withContext(Dispatchers.IO) { fileHandle.read().use { H3mReader.read(it) } }.also {
             log.debug { "Parsed map '$fileName' in ${System.currentTimeMillis() - start}ms" }
         }
     } catch (e: CancellationException) {

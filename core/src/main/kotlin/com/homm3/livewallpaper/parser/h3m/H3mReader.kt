@@ -1,15 +1,15 @@
 package com.homm3.livewallpaper.parser.h3m
 
 import com.homm3.livewallpaper.parser.BinaryReader
+import java.io.IOException
 import java.io.InputStream
 import java.util.BitSet
 import java.util.logging.Level
 import java.util.logging.Logger
-import java.util.zip.GZIPInputStream
 import kotlin.math.pow
 
 class H3mReader(stream: InputStream) {
-    private val reader = BinaryReader(GZIPInputStream(stream).readBytes())
+    private val reader = BinaryReader(stream.readUnpackedH3m())
     private lateinit var version: H3mVersion
     private var hotaSubVersion: Int = 0
 
@@ -882,5 +882,15 @@ class H3mReader(stream: InputStream) {
 
     companion object {
         private val log = Logger.getLogger(H3mReader::class.java.name)
+
+        /**
+         * Unpacks and parses a map. An [OutOfMemoryError] here comes from one oversized map, so it is rethrown
+         * as an [IOException] that callers handle like any other unreadable map instead of crashing the app.
+         */
+        fun read(stream: InputStream): H3mMap = try {
+            H3mReader(stream).read()
+        } catch (e: OutOfMemoryError) {
+            throw IOException("Out of memory while parsing map", e)
+        }
     }
 }

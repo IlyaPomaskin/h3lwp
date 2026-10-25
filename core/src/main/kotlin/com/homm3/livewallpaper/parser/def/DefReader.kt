@@ -14,7 +14,7 @@ private const val SEGMENT_WIDTH = 32
 class DefReader(bytes: ByteArray) {
     constructor(stream: InputStream) : this(stream.readBytes())
 
-    private val reader = BinaryReader(bytes)
+    private val reader = BinaryReader(bytes, allowsReadPastEnd = true)
 
     fun read(): DefSprite {
         val type = reader.readInt()

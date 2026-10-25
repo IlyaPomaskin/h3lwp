@@ -3,7 +3,6 @@ package com.homm3.livewallpaper.parser.h3m
 import com.homm3.livewallpaper.parser.BinaryReader
 import com.homm3.livewallpaper.parser.readUpTo
 import java.io.InputStream
-import java.util.zip.GZIPInputStream
 
 object H3mHeaderReader {
     private const val DEFAULT_SIZE = 36
@@ -12,7 +11,7 @@ object H3mHeaderReader {
     private const val HEADER_PREFIX_SIZE = 64
 
     private fun readerForHeader(stream: InputStream) =
-        BinaryReader(GZIPInputStream(stream).readUpTo(HEADER_PREFIX_SIZE))
+        BinaryReader(stream.unpackH3m().readUpTo(HEADER_PREFIX_SIZE))
 
     fun readVersion(stream: InputStream): H3mVersion? {
         return try {

@@ -7,6 +7,7 @@ import com.homm3.livewallpaper.core.GameConfig
 import com.homm3.livewallpaper.parser.h3m.H3mHeaderReader
 import com.homm3.livewallpaper.parser.h3m.H3mReader
 import com.homm3.livewallpaper.parser.h3m.H3mVersion
+import com.homm3.livewallpaper.parser.h3m.readUnpackedH3m
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +19,6 @@ import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.util.zip.GZIPInputStream
 
 sealed interface MapImportResult {
     data class Success(val mapName: String) : MapImportResult
@@ -115,7 +115,7 @@ class MapsRepository(context: Context) {
 
     private fun validate(bytes: ByteArray): MapImportResult.Failure? {
         val decompressed = try {
-            GZIPInputStream(bytes.inputStream()).use { it.readBytes() }
+            bytes.inputStream().use { it.readUnpackedH3m() }
         } catch (e: IOException) {
             return MapImportResult.Invalid(e.message.orEmpty())
         }
@@ -128,7 +128,7 @@ class MapsRepository(context: Context) {
         if (!isSupportedVersion) return MapImportResult.UnsupportedVersion
 
         try {
-            H3mReader(bytes.inputStream()).read()
+            H3mReader.read(bytes.inputStream())
         } catch (e: Exception) {
             return MapImportResult.Invalid(e.message.orEmpty())
         }
