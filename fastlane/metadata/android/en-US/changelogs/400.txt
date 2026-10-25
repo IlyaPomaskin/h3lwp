@@ -1,0 +1,5 @@
+• Horn of the Abyss support
+• Setup from GOG or HotA installer
+• Underground levels
+• Redesigned settings
+• Performance and rendering fixes
