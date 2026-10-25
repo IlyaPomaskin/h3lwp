@@ -1,5 +1,6 @@
 package com.homm3.livewallpaper.parser.inno
 
+import com.homm3.livewallpaper.parser.readUpTo
 import java.io.InputStream
 
 object PascalString {
@@ -7,7 +8,7 @@ object PascalString {
         val len = readU32(stream)
         if (len == 0) return ""
         require(len in 1..(16 * 1024 * 1024)) { "PascalString length out of range: $len" }
-        val bytes = stream.readNBytes(len)
+        val bytes = stream.readUpTo(len)
         require(bytes.size == len) { "Short read: wanted $len, got ${bytes.size}" }
         return String(bytes, Charsets.UTF_16LE)
     }

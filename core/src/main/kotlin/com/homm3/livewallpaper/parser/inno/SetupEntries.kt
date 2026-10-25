@@ -1,5 +1,6 @@
 package com.homm3.livewallpaper.parser.inno
 
+import com.homm3.livewallpaper.parser.skipExactly
 import java.io.InputStream
 
 /**
@@ -38,14 +39,14 @@ object SetupEntries {
     // 10 PascalStrings + 21 fixed bytes
     private fun skipLanguageEntry(s: InputStream) {
         repeat(10) { PascalString.skip(s) }
-        s.skipNBytes(21)
+        s.skipExactly(21)
     }
 
     // 2 PascalStrings + 4 fixed bytes (i32 language_id)
     private fun skipMessageEntry(s: InputStream) {
         PascalString.skip(s)
         PascalString.skip(s)
-        s.skipNBytes(4)
+        s.skipExactly(4)
     }
 
     // 1 length-prefixed blob (treated as a single PascalString skip)
@@ -56,7 +57,7 @@ object SetupEntries {
     // 4 PascalStrings + 30 fixed bytes
     private fun skipTypeEntry(s: InputStream) {
         repeat(4) { PascalString.skip(s) }
-        s.skipNBytes(30)
+        s.skipExactly(30)
     }
 
     // 5 PascalStrings + 42 fixed bytes
@@ -64,7 +65,7 @@ object SetupEntries {
     //         extra_disk_space(8), level(4), used(1), winver(20), options(1), size(8)
     private fun skipComponentEntry(s: InputStream) {
         repeat(5) { PascalString.skip(s) }
-        s.skipNBytes(42)
+        s.skipExactly(42)
     }
 
     // 6 PascalStrings + 26 fixed bytes
@@ -72,7 +73,7 @@ object SetupEntries {
     //         level(4), used(1), winver(20), options(1)
     private fun skipTaskEntry(s: InputStream) {
         repeat(6) { PascalString.skip(s) }
-        s.skipNBytes(26)
+        s.skipExactly(26)
     }
 
     // 7 PascalStrings + 27 fixed bytes
@@ -81,6 +82,6 @@ object SetupEntries {
     //         attributes(4), winver(20), permission(2), options(1)
     private fun skipDirectoryEntry(s: InputStream) {
         repeat(7) { PascalString.skip(s) }
-        s.skipNBytes(27)
+        s.skipExactly(27)
     }
 }

@@ -1,5 +1,6 @@
 package com.homm3.livewallpaper.parser.inno
 
+import com.homm3.livewallpaper.parser.skipExactly
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -52,14 +53,14 @@ object FileEntries {
         repeat(CHECK_CONDITION_STRINGS) { PascalString.skip(stream) }      // condition_data
         val afterInstall = PascalString.read(stream)
         val beforeInstall = PascalString.read(stream)
-        stream.skipNBytes(WINVER_BYTES.toLong())
-        stream.skipNBytes(WINVER_BYTES.toLong())
+        stream.skipExactly(WINVER_BYTES.toLong())
+        stream.skipExactly(WINVER_BYTES.toLong())
         val location = readU32(stream)
-        stream.skipNBytes(4L) // attributes
-        stream.skipNBytes(8L) // external_size u64
-        stream.skipNBytes(PERMISSION_BYTES.toLong())
-        stream.skipNBytes(FLAGS_BYTES.toLong())
-        stream.skipNBytes(1L) // type enum
+        stream.skipExactly(4L) // attributes
+        stream.skipExactly(8L) // external_size u64
+        stream.skipExactly(PERMISSION_BYTES.toLong())
+        stream.skipExactly(FLAGS_BYTES.toLong())
+        stream.skipExactly(1L) // type enum
         return FileEntry(destination, location, afterInstall, beforeInstall)
     }
 

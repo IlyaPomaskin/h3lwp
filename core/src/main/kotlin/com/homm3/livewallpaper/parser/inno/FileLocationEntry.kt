@@ -1,5 +1,6 @@
 package com.homm3.livewallpaper.parser.inno
 
+import com.homm3.livewallpaper.parser.skipExactly
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -38,10 +39,10 @@ object FileLocationEntries {
         val fileOffset  = readU64(stream)
         val fileSize    = readU64(stream)
         val chunkSize   = readU64(stream)
-        stream.skipNBytes(20) // SHA-1 checksum (5.3.9 <= v < 6.4.0)
-        stream.skipNBytes(8)  // Win32 FILETIME (int64) -- timestamp_nsec is computed, not stored
-        stream.skipNBytes(4)  // file_version_ms
-        stream.skipNBytes(4)  // file_version_ls
+        stream.skipExactly(20) // SHA-1 checksum (5.3.9 <= v < 6.4.0)
+        stream.skipExactly(8)  // Win32 FILETIME (int64) -- timestamp_nsec is computed, not stored
+        stream.skipExactly(4)  // file_version_ms
+        stream.skipExactly(4)  // file_version_ls
         // Flags: 2 bytes, read as little-endian u16 so byte[0] lands at bits 0-7
         val b0 = stream.read(); require(b0 >= 0) { "EOF reading data_entry flags byte 0" }
         val b1 = stream.read(); require(b1 >= 0) { "EOF reading data_entry flags byte 1" }

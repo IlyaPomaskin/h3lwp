@@ -1,5 +1,6 @@
 package com.homm3.livewallpaper.parser.inno
 
+import com.homm3.livewallpaper.parser.skipExactly
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -65,7 +66,7 @@ data class SetupHeader(
             // --- compiled_code blob (u32 length + raw bytes) ---
             val ccLen = readU32(stream)
             if (ccLen > 0) {
-                stream.skipNBytes(ccLen.toLong())
+                stream.skipExactly(ccLen.toLong())
             }
 
             // --- 16 u32 entry counts ---
