@@ -1,0 +1,1 @@
+• Fixed crash on Android 12 and older when scanning maps and importing the GOG installer
