@@ -12,14 +12,17 @@ import java.util.logging.LogRecord
 import java.util.logging.Logger
 
 /**
- * Parses every map in the folder named by the H3M_SCAN_DIR environment variable, in parallel.
- * Writes one line per map to `<dir>-scan.txt` and copies failed or suspect maps to `<dir>-failed/`.
+ * Parses every map in the folder named by the H3M_SCAN_DIR environment variable and its subfolders, in parallel.
+ * Writes one line per map to `<dir>-scan.txt` and copies failed or suspect maps to `<dir>-failed/`,
+ * keeping their relative paths.
  * Run: H3M_SCAN_DIR=/abs/path/maps ./gradlew :core:test --tests '*MapCorpusScanTest*'
  */
 class MapCorpusScanTest {
     private enum class Status { FAIL, SUSPECT, OK }
 
-    private class ScanResult(val file: File, val status: Status, val details: String)
+    private class ScanResult(val file: File, val status: Status, val details: String) {
+        lateinit var relativePath: String
+    }
 
     private class ParseStats(
         val map: H3mMap,
@@ -35,14 +38,15 @@ class MapCorpusScanTest {
         val scanDir = File(scanDirPath).canonicalFile
         require(scanDir.isDirectory) { "$scanDir is not a directory" }
 
-        val mapFiles = scanDir.listFiles().orEmpty()
+        val mapFiles = scanDir.walkTopDown()
             .filter { it.isFile && it.extension.equals(MAP_EXTENSION, ignoreCase = true) }
-            .sortedBy { it.name.lowercase() }
+            .sortedBy { it.path.lowercase() }
+            .toList()
         val warningsByThread = installWarningCollector()
         val pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
         val results = mapFiles
             .map { file -> pool.submit<ScanResult> { scanWithTimeout(file, warningsByThread) } }
-            .map { it.get() }
+            .map { it.get().apply { relativePath = file.relativeTo(scanDir).path } }
         pool.shutdown()
         pool.awaitTermination(1, TimeUnit.MINUTES)
 
@@ -120,8 +124,8 @@ class MapCorpusScanTest {
     private fun writeReport(scanDir: File, results: List<ScanResult>) {
         val reportFile = scanDir.resolveSibling("${scanDir.name}$REPORT_SUFFIX")
         val lines = results
-            .sortedWith(compareBy<ScanResult> { it.status }.thenBy { it.file.name.lowercase() })
-            .map { "${it.status.name.padEnd(STATUS_WIDTH)} ${it.file.name}\t${it.details}" }
+            .sortedWith(compareBy<ScanResult> { it.status }.thenBy { it.relativePath.lowercase() })
+            .map { "${it.status.name.padEnd(STATUS_WIDTH)} ${it.relativePath}\t${it.details}" }
         reportFile.writeText(lines.joinToString("\n", postfix = "\n"))
         println("REPORT ${reportFile.absolutePath}")
     }
@@ -132,7 +136,7 @@ class MapCorpusScanTest {
         results
             .filter { it.status != Status.OK }
             .forEach { result ->
-                val target = failedDir.resolve(result.status.name.lowercase()).resolve(result.file.name)
+                val target = failedDir.resolve(result.status.name.lowercase()).resolve(result.relativePath)
                 result.file.copyTo(target, overwrite = true)
             }
         println("FAILED_DIR ${failedDir.absolutePath}")
