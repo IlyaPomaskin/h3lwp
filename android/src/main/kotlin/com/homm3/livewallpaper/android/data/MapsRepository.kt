@@ -4,11 +4,17 @@ import android.content.Context
 import android.net.Uri
 import com.homm3.livewallpaper.core.AssetPaths
 import com.homm3.livewallpaper.core.GameConfig
+import com.homm3.livewallpaper.core.assets.MapValidity
+import com.homm3.livewallpaper.core.assets.MapValidityStore
+import com.homm3.livewallpaper.parser.h3m.MAX_UNPACKED_MAP_SIZE
 import com.homm3.livewallpaper.parser.h3m.H3mHeaderReader
 import com.homm3.livewallpaper.parser.h3m.H3mReader
 import com.homm3.livewallpaper.parser.h3m.H3mVersion
 import com.homm3.livewallpaper.parser.h3m.readUnpackedH3m
+import com.homm3.livewallpaper.parser.readAtMost
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,6 +32,7 @@ sealed interface MapImportResult {
     sealed interface Failure : MapImportResult
     data object CannotOpen : Failure
     data object TooSmall : Failure
+    data object TooLarge : Failure
     data class UnknownVersion(val versionHex: String) : Failure
     data object UnsupportedVersion : Failure
     data class Invalid(val details: String) : Failure
@@ -33,13 +40,20 @@ sealed interface MapImportResult {
 
 enum class MapOrigin { SOD_BASE, HOTA_BASE, USER }
 
-data class MapInfo(val fileName: String, val version: H3mVersion, val origin: MapOrigin, val size: Int)
+data class MapInfo(
+    val fileName: String,
+    val version: H3mVersion,
+    val origin: MapOrigin,
+    val size: Int,
+    val isInvalid: Boolean,
+)
 
 class MapsRepository(context: Context) {
     private val appContext = context.applicationContext
     private val mapsDir = appContext.filesDir.resolve(AssetPaths.USER_MAPS_FOLDER)
     private val disabledMapsFile = appContext.filesDir.resolve(AssetPaths.DISABLED_MAPS_FILE)
     private val disabledMapsLock = Mutex()
+    private val validityStore = MapValidityStore(appContext.filesDir.resolve(AssetPaths.MAP_VALIDITY_FILE))
 
     private val mutableMaps = MutableStateFlow<List<MapInfo>>(emptyList())
     val maps: StateFlow<List<MapInfo>> = mutableMaps.asStateFlow()
@@ -50,6 +64,7 @@ class MapsRepository(context: Context) {
     suspend fun refresh() = withContext(Dispatchers.IO) {
         mutableDisabledMaps.value = readDisabledMaps()
         mutableMaps.value = readMaps()
+        checkUncheckedMaps()
     }
 
     suspend fun setMapsEnabled(fileNames: Collection<String>, isEnabled: Boolean) = withContext(Dispatchers.IO) {
@@ -62,18 +77,21 @@ class MapsRepository(context: Context) {
     }
 
     suspend fun import(uri: Uri): MapImportResult = withContext(Dispatchers.IO) {
+        val stream = appContext.openInputStream(uri) ?: return@withContext MapImportResult.CannotOpen
         val bytes = try {
-            appContext.openInputStream(uri)?.use { it.readBytes() }
+            stream.use { it.readAtMost(MAX_UNPACKED_MAP_SIZE) }
         } catch (e: IOException) {
-            null
-        } ?: return@withContext MapImportResult.CannotOpen
+            return@withContext MapImportResult.CannotOpen
+        } ?: return@withContext MapImportResult.TooLarge
 
         val failure = validate(bytes)
         if (failure != null) return@withContext failure
 
         val mapName = toMapFileName(appContext.queryDisplayName(uri))
         mapsDir.mkdirs()
-        mapsDir.resolve(mapName).writeBytes(bytes)
+        val mapFile = mapsDir.resolve(mapName)
+        mapFile.writeBytes(bytes)
+        validityStore.record(mapFile, MapValidity.VALID)
         mutableMaps.value = readMaps()
         MapImportResult.Success(mapName)
     }
@@ -94,12 +112,32 @@ class MapsRepository(context: Context) {
             ?.sortedBy { it.name }
             .orEmpty()
 
-    private fun readMaps(): List<MapInfo> = readMapFiles().mapNotNull { file ->
-        val version = file.inputStream().use { H3mHeaderReader.readVersion(it) }
-        val isSupportedVersion = version != null && version in GameConfig.SUPPORTED_MAP_VERSIONS
-        if (!isSupportedVersion) return@mapNotNull null
-        val size = file.inputStream().use { H3mHeaderReader.readMapSize(it) }
-        MapInfo(fileName = file.name, version = version, origin = originOf(file.name), size = size)
+    private fun readMaps(): List<MapInfo> {
+        val mapFiles = readMapFiles()
+        val validities = validityStore.knownValidities(mapFiles)
+        return mapFiles.mapNotNull { file ->
+            val version = file.inputStream().use { H3mHeaderReader.readVersion(it) }
+            val isSupportedVersion = version != null && version in GameConfig.SUPPORTED_MAP_VERSIONS
+            if (!isSupportedVersion) return@mapNotNull null
+            val size = file.inputStream().use { H3mHeaderReader.readMapSize(it) }
+            val isInvalid = validities[file.name] == MapValidity.INVALID
+            MapInfo(fileName = file.name, version = version, origin = originOf(file.name), size = size, isInvalid)
+        }
+    }
+
+    /** Fully parses the listed maps that were never checked, so broken ones show up as invalid. */
+    private suspend fun checkUncheckedMaps() {
+        val listedNames = mutableMaps.value.map { it.fileName }.toSet()
+        val listedFiles = readMapFiles().filter { it.name in listedNames }
+        val checkedNames = validityStore.knownValidities(listedFiles).keys
+        val uncheckedFiles = listedFiles.filterNot { it.name in checkedNames }
+        if (uncheckedFiles.isEmpty()) return
+
+        uncheckedFiles.forEach { file ->
+            currentCoroutineContext().ensureActive()
+            validityStore.check(file)
+        }
+        mutableMaps.value = readMaps()
     }
 
     private fun originOf(fileName: String): MapOrigin = when {

@@ -230,8 +230,8 @@ private fun MapGroupHeader(
     )
     val supportingText = when {
         group.maps.isEmpty() -> stringResource(R.string.maps_user_empty)
-        group.isAvailable -> stringResource(R.string.maps_group_enabled_count, group.enabledCount, group.maps.size)
-        else -> stringResource(R.string.maps_hota_required)
+        group.isMissingAssets -> stringResource(R.string.maps_hota_required)
+        else -> stringResource(R.string.maps_group_enabled_count, group.enabledCount, group.maps.size)
     }
     val hasAvailableContent = !group.isMissingAssets
 
@@ -263,6 +263,7 @@ private fun MapRow(
     val isChecked = map.isAvailable && map.isEnabled
     ListItem(
         headlineContent = { Text(map.displayName) },
+        supportingContent = invalidMapText(map.isInvalid),
         modifier = modifier.toggleable(
             value = isChecked,
             enabled = map.canToggle,
@@ -285,6 +286,11 @@ private fun MapRow(
         },
         colors = availabilityColors(map.isAvailable),
     )
+}
+
+private fun invalidMapText(isInvalid: Boolean): (@Composable () -> Unit)? {
+    if (!isInvalid) return null
+    return { Text(stringResource(R.string.maps_invalid), color = MaterialTheme.colorScheme.error) }
 }
 
 @Composable
@@ -335,6 +341,7 @@ private fun importResultMessage(result: MapImportResult): String = when (result)
     is MapImportResult.Success -> stringResource(R.string.maps_import_success, result.mapName)
     MapImportResult.CannotOpen -> stringResource(R.string.maps_import_error_cannot_open)
     MapImportResult.TooSmall -> stringResource(R.string.maps_import_error_too_small)
+    MapImportResult.TooLarge -> stringResource(R.string.maps_import_error_too_large)
     is MapImportResult.UnknownVersion -> stringResource(R.string.maps_import_error_unknown_version, result.versionHex)
     MapImportResult.UnsupportedVersion -> stringResource(R.string.maps_import_error_unsupported_version)
     is MapImportResult.Invalid -> stringResource(R.string.maps_import_error_invalid, result.details)
@@ -357,12 +364,15 @@ private fun MapsScreenPreview() {
                     ),
                     MapGroup(
                         id = MapGroupId.HOTA_BASE,
-                        maps = listOf(previewMap("[HotA] Jebus.h3m", "Jebus", isAvailable = false)),
+                        maps = listOf(previewMap("[HotA] Jebus.h3m", "Jebus", isMissingAssets = true)),
                         activeMapCount = PREVIEW_ACTIVE_MAP_COUNT,
                     ),
                     MapGroup(
                         id = MapGroupId.USER,
-                        maps = listOf(previewMap("My map.h3m", "My map", canDelete = true)),
+                        maps = listOf(
+                            previewMap("My map.h3m", "My map", canDelete = true),
+                            previewMap("Broken.h3m", "Broken", isInvalid = true, canDelete = true),
+                        ),
                         activeMapCount = PREVIEW_ACTIVE_MAP_COUNT,
                     ),
                 ),
@@ -381,15 +391,17 @@ private fun previewMap(
     fileName: String,
     displayName: String,
     isEnabled: Boolean = true,
-    isAvailable: Boolean = true,
+    isMissingAssets: Boolean = false,
+    isInvalid: Boolean = false,
     canDelete: Boolean = false,
 ) = MapItem(
     fileName = fileName,
     displayName = displayName,
     isEnabled = isEnabled,
-    isAvailable = isAvailable,
+    isMissingAssets = isMissingAssets,
+    isInvalid = isInvalid,
     canDelete = canDelete,
-    canToggle = isAvailable,
+    canToggle = !isMissingAssets && !isInvalid,
 )
 
 private const val PREVIEW_ACTIVE_MAP_COUNT = 2

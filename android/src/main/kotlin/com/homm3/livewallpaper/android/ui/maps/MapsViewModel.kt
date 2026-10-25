@@ -37,10 +37,12 @@ data class MapItem(
     val fileName: String,
     val displayName: String,
     val isEnabled: Boolean,
-    val isAvailable: Boolean,
+    val isMissingAssets: Boolean,
+    val isInvalid: Boolean,
     val canDelete: Boolean,
     val canToggle: Boolean,
 ) {
+    val isAvailable: Boolean get() = !isMissingAssets && !isInvalid
     val isActive: Boolean get() = isAvailable && isEnabled
 }
 
@@ -48,7 +50,7 @@ data class MapGroup(val id: MapGroupId, val maps: List<MapItem>, val activeMapCo
     private val availableMaps: List<MapItem> get() = maps.filter { it.isAvailable }
 
     val isAvailable: Boolean get() = availableMaps.isNotEmpty()
-    val isMissingAssets: Boolean get() = maps.isNotEmpty() && availableMaps.isEmpty()
+    val isMissingAssets: Boolean get() = maps.isNotEmpty() && maps.all { it.isMissingAssets }
     val isEnabled: Boolean get() = availableMaps.any { it.isEnabled }
     val enabledCount: Int get() = availableMaps.count { it.isEnabled }
     val availableFileNames: List<String> get() = availableMaps.map { it.fileName }
@@ -120,20 +122,25 @@ private class MapItemContext(val disabledMaps: Set<String>, val isHotaInstalled:
 private fun toMapItem(map: MapInfo, context: MapItemContext): MapItem {
     val isUserMap = map.origin == MapOrigin.USER
     val isEnabled = map.fileName !in context.disabledMaps
+    val isMissingAssets = isMissingAssets(map, context.isHotaInstalled)
     val isAvailable = isAvailable(map, context.isHotaInstalled)
     val isLastActiveMap = isEnabled && isAvailable && context.activeMapCount <= 1
     return MapItem(
         fileName = map.fileName,
         displayName = displayNameOf(map),
         isEnabled = isEnabled,
-        isAvailable = isAvailable,
+        isMissingAssets = isMissingAssets,
+        isInvalid = map.isInvalid,
         canDelete = isUserMap && !isLastActiveMap,
         canToggle = isAvailable && !isLastActiveMap,
     )
 }
 
 private fun isAvailable(map: MapInfo, isHotaInstalled: Boolean): Boolean =
-    isHotaInstalled || map.version != H3mVersion.HOTA
+    !isMissingAssets(map, isHotaInstalled) && !map.isInvalid
+
+private fun isMissingAssets(map: MapInfo, isHotaInstalled: Boolean): Boolean =
+    !isHotaInstalled && map.version == H3mVersion.HOTA
 
 private fun groupIdOf(map: MapInfo): MapGroupId = when (map.origin) {
     MapOrigin.SOD_BASE -> MapGroupId.SOD_BASE

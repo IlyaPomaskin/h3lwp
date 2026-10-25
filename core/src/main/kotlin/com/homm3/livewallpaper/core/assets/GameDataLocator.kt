@@ -8,6 +8,7 @@ import com.homm3.livewallpaper.parser.lod.FileLodDataSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ktx.log.logger
+import java.io.File
 
 /** Where the converted game data lives: LOD archives and user maps. Folder scans run on [Dispatchers.IO]. */
 class GameDataLocator(private val scanner: MapFileScanner = MapFileScanner()) {
@@ -18,21 +19,26 @@ class GameDataLocator(private val scanner: MapFileScanner = MapFileScanner()) {
 
     fun mapFile(fileName: String): FileHandle = Gdx.files.local("${AssetPaths.USER_MAPS_FOLDER}/$fileName")
 
-    /** Map file names in rotation that can be shown with the installed assets, smallest first. */
+    fun mapValidityStore(): MapValidityStore = MapValidityStore(Gdx.files.local(AssetPaths.MAP_VALIDITY_FILE).file())
+
+    /** Map file names in rotation that can be shown with the installed assets and aren't invalid, smallest first. */
     suspend fun findMapFiles(): List<String> {
         val folder = mapsFolder()
         val includeHota = isHotaAvailable()
         log.debug { "Maps folder: ${folder.absolutePath}" }
         return withContext(Dispatchers.IO) {
-            excludeDisabledMaps(scanner.listMapFiles(folder, includeHota), readDisabledMaps())
+            val mapFiles = excludeInvalidMaps(folder, scanner.listMapFiles(folder, includeHota))
+            excludeDisabledMaps(mapFiles, readDisabledMaps())
         }
     }
 
-    /** Drops the [fileNames] that need assets which aren't installed. */
+    /** Drops the [fileNames] that need assets which aren't installed or are invalid. */
     suspend fun filterSupportedMaps(fileNames: List<String>): List<String> {
         val folder = mapsFolder()
         val includeHota = isHotaAvailable()
-        return withContext(Dispatchers.IO) { scanner.filterSupported(folder, fileNames, includeHota) }
+        return withContext(Dispatchers.IO) {
+            excludeInvalidMaps(folder, scanner.filterSupported(folder, fileNames, includeHota))
+        }
     }
 
     /** Installed sprite archives in lookup order (HotA first). */
@@ -46,6 +52,11 @@ class GameDataLocator(private val scanner: MapFileScanner = MapFileScanner()) {
     }
 
     private fun mapsFolder() = Gdx.files.local(AssetPaths.USER_MAPS_FOLDER).file()
+
+    private fun excludeInvalidMaps(folder: File, fileNames: List<String>): List<String> {
+        val validities = mapValidityStore().knownValidities(fileNames.map { File(folder, it) })
+        return fileNames.filterNot { validities[it] == MapValidity.INVALID }
+    }
 
     private fun readDisabledMaps(): Set<String> {
         val file = Gdx.files.local(AssetPaths.DISABLED_MAPS_FILE)

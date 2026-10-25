@@ -37,14 +37,23 @@ class MapDefListStore(private val locator: GameDataLocator) {
         return MapFileStamp(fileName, file.length(), file.lastModified(), hasHotaAssets)
     }
 
-    private fun collectDefs(stamp: MapFileStamp, collector: SpriteCollector): Set<String>? = try {
-        val map = locator.mapFile(stamp.fileName).read().use { H3mReader.read(it) }
-        collector.collectNeededSprites(listOf(map))
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        log.error(e) { "Map DEF list: skipping '${stamp.fileName}', failed to read" }
-        null
+    private fun collectDefs(stamp: MapFileStamp, collector: SpriteCollector): Set<String>? {
+        val mapFile = locator.mapFile(stamp.fileName).file()
+        val validityStore = locator.mapValidityStore()
+        val isKnownInvalid = validityStore.knownValidities(listOf(mapFile))[stamp.fileName] == MapValidity.INVALID
+        if (isKnownInvalid) return null
+
+        return try {
+            val map = mapFile.inputStream().use { H3mReader.read(it) }
+            validityStore.record(mapFile, MapValidity.VALID)
+            collector.collectNeededSprites(listOf(map))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.error(e) { "Map DEF list: skipping '${stamp.fileName}', failed to read" }
+            validityStore.record(mapFile, MapValidity.INVALID)
+            null
+        }
     }
 
     private fun readSaved(): MapDefList {

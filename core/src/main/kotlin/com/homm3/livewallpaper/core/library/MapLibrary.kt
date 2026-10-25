@@ -3,11 +3,11 @@ package com.homm3.livewallpaper.core.library
 import com.badlogic.gdx.utils.Disposable
 import com.homm3.livewallpaper.core.assets.GameDataLocator
 import com.homm3.livewallpaper.core.assets.MapDefListStore
+import com.homm3.livewallpaper.core.assets.MapValidity
 import com.homm3.livewallpaper.core.assets.SpriteSet
 import com.homm3.livewallpaper.core.map.GameMap
 import com.homm3.livewallpaper.parser.h3m.H3mMap
 import com.homm3.livewallpaper.parser.h3m.H3mReader
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ktx.log.logger
@@ -112,17 +112,28 @@ class MapLibrary(
         return MapEntry(currentSpriteSet, fileName, h3m)
     }
 
-    private suspend fun parseMapOrNull(fileName: String): H3mMap? = try {
+    /** A map that fails to parse is dropped from the candidates, so this session doesn't try it again. */
+    private suspend fun parseMapOrNull(fileName: String): H3mMap? {
         val start = System.currentTimeMillis()
-        val fileHandle = locator.mapFile(fileName)
-        withContext(Dispatchers.IO) { fileHandle.read().use { H3mReader.read(it) } }.also {
-            log.debug { "Parsed map '$fileName' in ${System.currentTimeMillis() - start}ms" }
+        val map = withContext(Dispatchers.IO) { readMapOrNull(fileName) }
+        if (map == null) {
+            candidateFiles = candidateFiles - fileName
+            return null
         }
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        log.error(e) { "Skipping map '$fileName': failed to load" }
-        null
+        log.debug { "Parsed map '$fileName' in ${System.currentTimeMillis() - start}ms" }
+        return map
+    }
+
+    /** Blocking; records a map that fails to parse as invalid. */
+    private fun readMapOrNull(fileName: String): H3mMap? {
+        val fileHandle = locator.mapFile(fileName)
+        return try {
+            fileHandle.read().use { H3mReader.read(it) }
+        } catch (e: Exception) {
+            log.error(e) { "Skipping map '$fileName': failed to load" }
+            locator.mapValidityStore().record(fileHandle.file(), MapValidity.INVALID)
+            null
+        }
     }
 
     companion object {

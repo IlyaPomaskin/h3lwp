@@ -9,6 +9,7 @@ object AssetPaths {
     const val MAP_DEFS_FILE = "sprite-defs.txt"
     const val SCANNED_MAPS_FILE = "sprite-defs-scanned-maps.txt"
     const val DISABLED_MAPS_FILE = "disabled-maps.txt"
+    const val MAP_VALIDITY_FILE = "map-validity.txt"
     const val SOD_MAP_PREFIX = "[SoD] "
     const val HOTA_MAP_PREFIX = "[HotA] "
 }

@@ -48,6 +48,7 @@
     <string name="maps_import_success">%s добавлена</string>
     <string name="maps_import_error_cannot_open">Не удалось открыть файл</string>
     <string name="maps_import_error_too_small">Файл слишком мал для карты</string>
+    <string name="maps_import_error_too_large">Файл слишком большой для карты</string>
     <string name="maps_import_error_unknown_version">Неизвестная версия карты: 0x%s</string>
     <string name="maps_import_error_unsupported_version">Поддерживаются только карты Shadow of Death и HotA</string>
     <string name="maps_import_error_invalid">Некорректный файл карты: %s</string>
@@ -58,6 +59,7 @@
     <string name="maps_group_hota_base">Базовые карты HotA</string>
     <string name="maps_group_enabled_count">В ротации: %1$d из %2$d</string>
     <string name="maps_hota_required">Требуется HotA</string>
+    <string name="maps_invalid">Не удаётся прочитать файл карты</string>
 
     <string name="source_code_title">Исходный код</string>
     <string name="icon_author_title">Иконка: Wit Olszewski</string>

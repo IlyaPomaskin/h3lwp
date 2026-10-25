@@ -49,6 +49,7 @@
     <string name="maps_import_success">%s added</string>
     <string name="maps_import_error_cannot_open">Failed to open file</string>
     <string name="maps_import_error_too_small">File is too small to be a valid map</string>
+    <string name="maps_import_error_too_large">File is too large to be a map</string>
     <string name="maps_import_error_unknown_version">Unknown map version: 0x%s</string>
     <string name="maps_import_error_unsupported_version">Only Shadow of Death and HotA maps are supported</string>
     <string name="maps_import_error_invalid">Invalid map file: %s</string>
@@ -59,6 +60,7 @@
     <string name="maps_group_hota_base">HotA base maps</string>
     <string name="maps_group_enabled_count">%1$d of %2$d in rotation</string>
     <string name="maps_hota_required">Requires HotA</string>
+    <string name="maps_invalid">Can\'t read this map file</string>
 
     <string name="source_code_title">Source code</string>
     <string name="source_code_url" translatable="false">https://github.com/IlyaPomaskin/h3lwp</string>
