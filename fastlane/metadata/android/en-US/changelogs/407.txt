@@ -1,0 +1,3 @@
+• Fixed crashes caused by damaged maps
+• Uncompressed maps can now be imported
+• Unreadable maps are greyed out in the map list
