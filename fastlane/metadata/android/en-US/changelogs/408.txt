@@ -1,0 +1,3 @@
+• Fixed water showing as black rectangles on some devices
+• Mud and lava rivers now animate correctly
+• Lower memory use when installing game files
