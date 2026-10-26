@@ -150,7 +150,6 @@ class GameScreen(
         inputProcessor.handlePressedKeys()
         if (currentMap == null) return
         AnimationClock.beginFrame()
-        currentSpriteSet()?.updatePalettes(AnimationClock.frameStep)
         camera.update()
         renderer.setView(camera)
         val renderStart = System.nanoTime()

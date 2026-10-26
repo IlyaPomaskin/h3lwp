@@ -139,7 +139,7 @@ class PaletteTiledMapRenderer(
     }
 
     private fun paletteSlotOf(region: TextureRegion): Int {
-        return (region as? PaletteRegion)?.paletteSlot ?: DEFAULT_PALETTE_SLOT
+        return (region as? PaletteRegion)?.paletteSlots?.at(AnimationClock.frameStep) ?: DEFAULT_PALETTE_SLOT
     }
 
     private fun swap(vertices: FloatArray, first: Int, second: Int) {

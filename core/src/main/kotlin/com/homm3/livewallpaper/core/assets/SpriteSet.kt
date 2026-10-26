@@ -67,8 +67,6 @@ class SpriteSet(
 
     fun paletteTexture(): Texture = registry.paletteTexture
 
-    fun updatePalettes(step: Long) = registry.update(step)
-
     private fun Array<TextureAtlas.AtlasRegion>.orEmptyRegion(): Array<TextureAtlas.AtlasRegion> {
         if (isEmpty) return gdxArrayOf(emptyRegion)
         return this

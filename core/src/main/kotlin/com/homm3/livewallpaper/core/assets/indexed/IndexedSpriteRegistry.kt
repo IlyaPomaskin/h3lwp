@@ -36,8 +36,6 @@ class IndexedSpriteRegistry : Disposable {
 
     fun isDefLoaded(defName: String): Boolean = defName in loadedDefNames
 
-    fun update(step: Long) = paletteAtlas.update(step)
-
     fun add(bundle: IndexedBundle) {
         try {
             addRegions(bundle)
@@ -66,7 +64,7 @@ class IndexedSpriteRegistry : Disposable {
                 y = rect.y,
                 width = info.width,
                 height = info.height,
-                paletteSlot = slotByPalette.getValue(info.paletteIndex),
+                paletteSlots = slotByPalette.getValue(info.paletteIndex),
             ).apply {
                 name = info.regionName
                 index = info.regionIndex

@@ -9,25 +9,16 @@ import com.badlogic.gdx.utils.Disposable
 class PaletteAtlas : Disposable {
     private val table = PaletteTable()
     private val slotBuffer = BufferUtils.newByteBuffer(PALETTE_BYTES)
-    private var lastStep = 0L
 
     val texture: Texture = Texture(PaletteTextureData(table)).apply {
         setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
         setWrap(Texture.TextureWrap.ClampToEdge, Texture.TextureWrap.ClampToEdge)
     }
 
-    fun add(palette: PaletteData): Int {
+    fun add(palette: PaletteData): PaletteSlots {
         val assignment = table.add(palette)
-        if (assignment.isNew) uploadSlot(assignment.slot)
-        return assignment.slot
-    }
-
-    /** Rotates once per new animation [step], so steps coalesced by a late frame are not replayed. */
-    fun update(step: Long) {
-        if (step == lastStep) return
-
-        lastStep = step
-        table.step().forEach(::uploadSlot)
+        if (assignment.isNew) assignment.slots.range.forEach(::uploadSlot)
+        return assignment.slots
     }
 
     private fun uploadSlot(slot: Int) {
@@ -50,11 +41,12 @@ class PaletteAtlas : Disposable {
     }
 }
 
-/** GL-free palette slots: assignment, dedupe of static palettes and runtime colour cycling. */
+/**
+ * GL-free palette slots: assignment and dedupe of static palettes. A cycling palette gets one slot per rotation
+ * phase up front, so nothing is uploaded while animating.
+ */
 internal class PaletteTable(private val maxSlots: Int = MAX_PALETTE_SLOTS) {
-    data class Assignment(val slot: Int, val isNew: Boolean)
-
-    private class RotatingSlot(val slot: Int, val rotations: List<Pair<Int, Int>>)
+    data class Assignment(val slots: PaletteSlots, val isNew: Boolean)
 
     private class PaletteKey(val bytes: ByteArray) {
         private val hash = bytes.contentHashCode()
@@ -64,7 +56,6 @@ internal class PaletteTable(private val maxSlots: Int = MAX_PALETTE_SLOTS) {
 
     private val slots = mutableListOf<ByteArray>()
     private val staticSlotByContent = mutableMapOf<PaletteKey, Int>()
-    private val rotatingSlots = mutableListOf<RotatingSlot>()
 
     val slotCount: Int get() = slots.size
 
@@ -72,40 +63,54 @@ internal class PaletteTable(private val maxSlots: Int = MAX_PALETTE_SLOTS) {
         val isRotating = palette.rotations.isNotEmpty()
         if (isRotating) {
             palette.rotations.forEach { (from, to) -> validateRange(from, to) }
-            val slot = appendSlot(palette.rgba)
-            rotatingSlots.add(RotatingSlot(slot, palette.rotations))
-            return Assignment(slot, isNew = true)
+            val phases = rotationPhases(palette.rgba, palette.rotations)
+            checkCapacity(phases.size)
+            val first = slots.size
+            phases.forEach { phase -> slots.add(phase) }
+            return Assignment(PaletteSlots(first, phases.size), isNew = true)
         }
 
         val key = PaletteKey(palette.rgba.copyOf())
-        staticSlotByContent[key]?.let { return Assignment(it, isNew = false) }
+        staticSlotByContent[key]?.let { return Assignment(PaletteSlots(it, STATIC_SLOT_COUNT), isNew = false) }
 
-        val slot = appendSlot(key.bytes)
+        checkCapacity(STATIC_SLOT_COUNT)
+        val slot = slots.size
+        slots.add(key.bytes)
         staticSlotByContent[key] = slot
-        return Assignment(slot, isNew = true)
+        return Assignment(PaletteSlots(slot, STATIC_SLOT_COUNT), isNew = true)
     }
 
     fun slotBytes(slot: Int): ByteArray = slots[slot]
 
-    /** Rotates every rotating palette by one step; returns the slots that changed. */
-    fun step(): List<Int> = rotatingSlots.map { rotating ->
-        slots[rotating.slot] = rotating.rotations.fold(slots[rotating.slot]) { palette, (from, to) ->
-            rotatePaletteEntries(palette, from, to)
-        }
-        rotating.slot
-    }
-
-    private fun appendSlot(rgba: ByteArray): Int {
-        check(slots.size < maxSlots) { "Palette atlas is full: all $maxSlots slots are used" }
-        slots.add(rgba.copyOf())
-        return slots.size - 1
+    private fun checkCapacity(needed: Int) {
+        val hasRoom = slots.size + needed <= maxSlots
+        check(hasRoom) { "Palette atlas is full: all $maxSlots slots are used" }
     }
 
     private fun validateRange(from: Int, to: Int) {
         val isValidRange = from in 0 until to && to <= PALETTE_SIZE
         require(isValidRange) { "invalid palette rotation range [$from, $to)" }
     }
+
+    private companion object {
+        const val STATIC_SLOT_COUNT = 1
+    }
 }
+
+/**
+ * Every distinct rotation phase of [palette]: phase k has all [rotations] applied k times. The cycle length is
+ * the least common multiple of the range lengths, after which the palette repeats.
+ */
+internal fun rotationPhases(palette: ByteArray, rotations: List<Pair<Int, Int>>): List<ByteArray> {
+    val cycleLength = rotations.map { (from, to) -> to - from }.reduce(::leastCommonMultiple)
+    return generateSequence(palette.copyOf()) { phase ->
+        rotations.fold(phase) { rotated, (from, to) -> rotatePaletteEntries(rotated, from, to) }
+    }.take(cycleLength).toList()
+}
+
+private fun leastCommonMultiple(a: Int, b: Int): Int = a / greatestCommonDivisor(a, b) * b
+
+private tailrec fun greatestCommonDivisor(a: Int, b: Int): Int = if (b == 0) a else greatestCommonDivisor(b, a % b)
 
 /**
  * Rotation as in the original game's palette cycling, on RGBA entries: entries [from, to) shift left by one,

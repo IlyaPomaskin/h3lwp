@@ -34,9 +34,9 @@ class PaletteAtlasTest {
         val other = table.add(PaletteData(gradientPalette(seed = 1)))
 
         assertTrue(first.isNew)
-        assertEquals(first.slot, second.slot)
+        assertEquals(first.slots, second.slots)
         assertFalse(second.isNew)
-        assertNotEquals(first.slot, other.slot)
+        assertNotEquals(first.slots, other.slots)
         assertEquals(2, table.slotCount)
     }
 
@@ -44,46 +44,58 @@ class PaletteAtlasTest {
     fun `static palette input is copied`() {
         val bytes = gradientPalette()
         val table = PaletteTable()
-        val slot = table.add(PaletteData(bytes)).slot
+        val slot = table.add(PaletteData(bytes)).slots.first
         bytes.fill(0)
 
         assertContentEquals(gradientPalette(), table.slotBytes(slot))
-        assertTrue(table.add(PaletteData(gradientPalette())).slot == slot)
+        assertEquals(slot, table.add(PaletteData(gradientPalette())).slots.first)
     }
 
     @Test
-    fun `rotating palettes always get unique slots`() {
+    fun `rotating palettes always get their own slots`() {
         val table = PaletteTable()
-        val static = table.add(PaletteData(gradientPalette())).slot
+        val static = table.add(PaletteData(gradientPalette())).slots
         val rotatingA = table.add(PaletteData(gradientPalette(), waterRotations))
         val rotatingB = table.add(PaletteData(gradientPalette(), waterRotations))
 
         assertTrue(rotatingA.isNew && rotatingB.isNew)
-        assertEquals(setOf(static, rotatingA.slot, rotatingB.slot).size, 3)
+        val allSlots = static.range + rotatingA.slots.range + rotatingB.slots.range
+        assertEquals(allSlots.size, allSlots.toSet().size)
+        assertEquals(table.slotCount, allSlots.size)
     }
 
     @Test
-    fun `step rotates only rotating slots`() {
+    fun `rotating palette gets one slot per phase matching reference rotation`() {
         val table = PaletteTable()
-        val static = table.add(PaletteData(gradientPalette())).slot
-        val rotating = table.add(PaletteData(gradientPalette(), waterRotations)).slot
-
-        assertEquals(listOf(rotating), table.step())
-        assertContentEquals(gradientPalette(), table.slotBytes(static))
-        assertFalse(gradientPalette().contentEquals(table.slotBytes(rotating)))
-    }
-
-    @Test
-    fun `rotation matches reference left rotation after each step`() {
-        val table = PaletteTable()
-        val slot = table.add(PaletteData(gradientPalette(), waterRotations)).slot
+        val slots = table.add(PaletteData(gradientPalette(), waterRotations)).slots
         val reference = toRgb(gradientPalette())
 
-        repeat(20) {
-            table.step()
+        assertEquals(12, slots.count)
+        slots.range.forEachIndexed { phase, slot ->
+            assertContentEquals(reference, toRgb(table.slotBytes(slot)), "phase $phase")
             waterRotations.forEach { (from, to) -> referenceRotate(reference, from, to) }
-            assertContentEquals(reference, toRgb(table.slotBytes(slot)), "step ${it + 1}")
         }
+    }
+
+    @Test
+    fun `phase count is the full cycle`() {
+        val rotations = listOf(183 to 195, 195 to 201) // 12- and 6-entry ranges: cycle = lcm = 12
+        val phases = rotationPhases(gradientPalette(), rotations)
+
+        assertEquals(12, phases.size)
+        assertEquals(phases.size, phases.map { it.toList() }.toSet().size)
+        val afterLastPhase = rotations.fold(phases.last()) { rotated, (from, to) ->
+            rotatePaletteEntries(rotated, from, to)
+        }
+        assertContentEquals(gradientPalette(), afterLastPhase)
+    }
+
+    @Test
+    fun `slot at step wraps around the phases`() {
+        val slots = PaletteSlots(first = 10, count = 3)
+
+        assertEquals(listOf(10, 11, 12, 10, 11), (0L until 5L).map(slots::at))
+        assertEquals(7, PaletteSlots(first = 7, count = 1).at(123))
     }
 
     @Test
@@ -99,21 +111,6 @@ class PaletteAtlasTest {
         assertContentEquals(entry(palette, 10), entry(rotated, 12))
         assertContentEquals(entry(palette, 9), entry(rotated, 9))
         assertContentEquals(entry(palette, 13), entry(rotated, 13))
-    }
-
-    @Test
-    fun `full cycle returns to the original palette`() {
-        val rotations = listOf(183 to 195, 195 to 201) // 12- and 6-entry ranges: cycle = lcm = 12
-        val cycleLength = 12
-        val table = PaletteTable()
-        val slot = table.add(PaletteData(gradientPalette(), rotations)).slot
-
-        repeat(cycleLength - 1) {
-            table.step()
-            assertFalse(gradientPalette().contentEquals(table.slotBytes(slot)), "early return at step ${it + 1}")
-        }
-        table.step()
-        assertContentEquals(gradientPalette(), table.slotBytes(slot))
     }
 
     @Test
@@ -133,7 +130,7 @@ class PaletteAtlasTest {
         val table = PaletteTable(maxSlots)
         repeat(maxSlots) { table.add(PaletteData(gradientPalette(seed = it))) }
 
-        assertEquals(table.add(PaletteData(gradientPalette(seed = 0))).slot, 0)
+        assertEquals(0, table.add(PaletteData(gradientPalette(seed = 0))).slots.first)
         val error = assertFailsWith<IllegalStateException> {
             table.add(PaletteData(gradientPalette(seed = maxSlots)))
         }

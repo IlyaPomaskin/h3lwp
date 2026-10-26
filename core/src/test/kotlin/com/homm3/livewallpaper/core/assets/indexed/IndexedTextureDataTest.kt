@@ -106,11 +106,10 @@ class IndexedTextureDataTest {
     }
 
     @Test
-    fun `palette reload uploads current rotation state`() {
+    fun `palette reload uploads every rotation phase`() {
         val table = PaletteTable()
         table.add(PaletteData(palette(0)))
-        val rotating = table.add(PaletteData(palette(1), listOf(229 to 241))).slot
-        repeat(3) { table.step() }
+        val rotating = table.add(PaletteData(palette(1), listOf(229 to 232))).slots.range.last
         val data = PaletteTextureData(table)
 
         data.consumeCustomData(GL20.GL_TEXTURE_2D)

@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 
 /**
  * SpriteBatch that keeps the palette texture bound on [PALETTE_UNIT] while index pages go through unit 0.
- * Rebinding happens on begin and before every flush (a texture switch flushes first), so a palette re-upload
+ * Rebinding happens on begin and before every flush (a texture switch flushes first), so a palette upload
  * (which binds the palette on whatever unit is active) between draws cannot leave a stale binding.
  */
 class PaletteSpriteBatch(

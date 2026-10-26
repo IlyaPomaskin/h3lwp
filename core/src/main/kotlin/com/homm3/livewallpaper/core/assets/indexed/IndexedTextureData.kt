@@ -69,7 +69,7 @@ internal class IndexPageTextureData(width: Int, height: Int, indices: ByteBuffer
     }
 }
 
-/** The palette texture, rebuilt on reload from the current [table] state, rotation steps included. */
+/** The palette texture, rebuilt on reload from [table]. */
 internal class PaletteTextureData(private val table: PaletteTable) :
     ManagedCustomTextureData(PALETTE_TEXTURE_WIDTH, PALETTE_TEXTURE_HEIGHT, Pixmap.Format.RGBA8888) {
 
