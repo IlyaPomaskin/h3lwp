@@ -17,6 +17,11 @@ object TestFixtures {
     val lng180: File get() = projectRoot.resolve("data/HotA_lng.lod")
     val gogSetupExe: File get() = projectRoot.resolve("data/h3-gog/$GOG_SETUP_BASE_NAME.exe")
     val gogDataSlice: File get() = projectRoot.resolve("data/h3-gog/$GOG_SETUP_BASE_NAME-1.bin")
+    val macDemoSit: File get() = projectRoot.resolve("data/heroes_3_complete_demo.sit")
+
+    /** MD5 of h3sprite.lod in [macDemoSit], as extracted by `unar`. */
+    const val MAC_DEMO_H3SPRITE_MD5 = "3c9c7637d1aee5dd0fb8c2b91d58c217"
+    const val MAC_DEMO_H3SPRITE_SIZE = 49_501_869L
 
     private const val GOG_SETUP_BASE_NAME = "setup_heroes_of_might_and_magic_3_complete_4.0_(3.2)_gog_0.1_(77075)"
 
@@ -32,6 +37,10 @@ object TestFixtures {
     fun requireGogInstaller() {
         assumeTrue("GOG setup .exe not in data/h3-gog/", gogSetupExe.isFile)
         assumeTrue("GOG setup -1.bin not in data/h3-gog/", gogDataSlice.isFile)
+    }
+
+    fun requireMacDemoSit() {
+        assumeTrue("Mac demo archive not in data/ (archive.org/details/heroes_3_complete_demo)", macDemoSit.isFile)
     }
 
     fun requireGoldens() {

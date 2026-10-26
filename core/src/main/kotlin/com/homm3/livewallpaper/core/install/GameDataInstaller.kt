@@ -12,7 +12,8 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 /**
- * Installs the game data the wallpaper reads into [dataDir]: H3sprite.lod (as a file or from a GOG installer)
+ * Installs the game data the wallpaper reads into [dataDir]: H3sprite.lod (as a file, from a StuffIt/ZIP archive
+ * or from a GOG installer)
  * with the bundled maps, and HotA.lod
  * with the maps from the HotA installer. Blocking; call off the UI and GL threads.
  */
@@ -23,15 +24,23 @@ class GameDataInstaller(
 ) {
     private val mapsDir: File get() = dataDir.resolve(AssetPaths.USER_MAPS_FOLDER)
 
+    /** [source] is H3sprite.lod itself, a StuffIt 5 archive (the Mac demo) or a ZIP holding either. */
     fun installBaseLod(source: InputStream, progress: InstallProgress): InstallResult {
         val lodFile = dataDir.resolve(AssetPaths.LOD_FILE)
         try {
             dataDir.mkdirs()
             progress.report("Copying file...")
-            source.use { input -> lodFile.outputStream().use { output -> input.copyTo(output) } }
+            val isLodFound = source.use { input ->
+                BaseLodArchive.extract(input, lodFile) { percent -> progress.report("Extracting: $percent%") }
+            }
+            if (!isLodFound) {
+                lodFile.delete()
+                return InstallResult.Failure(ARCHIVE_LOD_NOT_FOUND_MESSAGE)
+            }
             return finishBaseInstall(lodFile, progress)
         } catch (e: Exception) {
             log.log(Level.SEVERE, "installBaseLod failed", e)
+            lodFile.delete()
             return InstallResult.Failure("Error: ${e.message}")
         }
     }
@@ -197,6 +206,7 @@ class GameDataInstaller(
         private const val DONE_MESSAGE = "Done!"
         private const val INSTALLER_BASE_LOD = "data\\h3sprite.lod"
         private const val BASE_LOD_NOT_FOUND_MESSAGE = "H3sprite.lod not found in the installer"
+        private const val ARCHIVE_LOD_NOT_FOUND_MESSAGE = "H3sprite.lod not found in the archive"
         private const val INSTALLER_HOTA_LOD = "data\\hota.lod"
         private const val MAP_EXTENSION = ".h3m"
     }
@@ -212,7 +222,7 @@ private fun percent(written: Long, total: Long): Int {
     return (written * PERCENT / total).toInt()
 }
 
-private fun baseName(installerPath: String): String = installerPath.substringAfterLast('\\').substringAfterLast('/')
+internal fun baseName(installerPath: String): String = installerPath.substringAfterLast('\\').substringAfterLast('/')
 
 internal fun hotaMapFileName(installerPath: String): String {
     val name = baseName(installerPath)

@@ -8,9 +8,12 @@ import org.junit.rules.TemporaryFolder
 import com.homm3.livewallpaper.parser.h3m.H3mHeaderReader
 import com.homm3.livewallpaper.parser.h3m.H3mVersion
 import com.homm3.livewallpaper.parser.inno.TestFixtures
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
 import java.io.RandomAccessFile
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
@@ -35,6 +38,35 @@ class GameDataInstallerTest {
         assertIs<InstallResult.Failure>(result)
         assertFalse(dataDir.resolve(AssetPaths.LOD_FILE).exists())
         assertFalse(dataDir.resolve("${AssetPaths.USER_MAPS_FOLDER}/bundled.h3m").exists())
+    }
+
+    @Test
+    fun macDemoArchiveInstallsBaseLod() {
+        TestFixtures.requireMacDemoSit()
+        val dataDir = tempFolder.newFolder("data")
+        val installer = GameDataInstaller(dataDir, tempFolder.newFolder("tmp"), oneBundledMap)
+
+        val result = installer.installBaseLod(TestFixtures.macDemoSit.inputStream()) {}
+
+        assertIs<InstallResult.Success>(result)
+        assertEquals(TestFixtures.MAC_DEMO_H3SPRITE_SIZE, dataDir.resolve(AssetPaths.LOD_FILE).length())
+        assertTrue(dataDir.resolve("${AssetPaths.USER_MAPS_FOLDER}/bundled.h3m").exists())
+    }
+
+    @Test
+    fun archiveWithoutLodIsRejected() {
+        val dataDir = tempFolder.newFolder("data")
+        val installer = GameDataInstaller(dataDir, tempFolder.newFolder("tmp"), oneBundledMap)
+        val zipBytes = ByteArrayOutputStream()
+        ZipOutputStream(zipBytes).use { zip ->
+            zip.putNextEntry(ZipEntry("readme.txt"))
+            zip.write("hi".toByteArray())
+        }
+
+        val result = installer.installBaseLod(zipBytes.toByteArray().inputStream()) {}
+
+        assertEquals(InstallResult.Failure("H3sprite.lod not found in the archive"), result)
+        assertFalse(dataDir.resolve(AssetPaths.LOD_FILE).exists())
     }
 
     @Test
