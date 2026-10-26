@@ -119,10 +119,10 @@ internal object DefPalette {
 
     internal val paletteRotations = hashMapOf(
         "watrtl.def" to listOf(229 to 241, 242 to 254),
-        "lavatl.def" to listOf(246 to 254),
+        "lavatl.def" to listOf(246 to 255),
         "clrrvr.def" to listOf(183 to 195, 195 to 201),
-        "mudrvr.def" to listOf(183 to 189, 240 to 246),
-        "lavrvr.def" to listOf(240 to 248)
+        "mudrvr.def" to listOf(228 to 240, 183 to 189, 240 to 246),
+        "lavrvr.def" to listOf(240 to 249)
     )
 
     internal val terrainDefNames = setOf(
