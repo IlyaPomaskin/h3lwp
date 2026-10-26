@@ -100,7 +100,7 @@ class GameDataInstaller(
 
     private fun finishBaseInstall(lodFile: File, progress: InstallProgress): InstallResult {
         progress.report("Validating ${AssetPaths.LOD_FILE}...")
-        val error = lodFile.inputStream().use { LodValidator.validate(it, isHota = false) }
+        val error = LodValidator.validate(lodFile, isHota = false)
         if (error != null) {
             log.warning("finishBaseInstall: validation failed: $error")
             lodFile.delete()
@@ -128,7 +128,7 @@ class GameDataInstaller(
             log.info("installHota: extracted hotaLod=${hotaLodFile.length()}B")
 
             progress.report("Validating ${AssetPaths.HOTA_LOD_FILE}...")
-            val error = hotaLodFile.inputStream().use { LodValidator.validate(it, isHota = true) }
+            val error = LodValidator.validate(hotaLodFile, isHota = true)
             if (error != null) {
                 log.warning("installHota: validation failed: $error")
                 hotaLodFile.delete()

@@ -1,7 +1,8 @@
 package com.homm3.livewallpaper.core.install
 
+import com.homm3.livewallpaper.parser.lod.FileLodDataSource
 import com.homm3.livewallpaper.parser.lod.LodReader
-import java.io.InputStream
+import java.io.File
 import java.util.Locale
 
 object LodValidator {
@@ -27,9 +28,9 @@ object LodValidator {
      * Validates a LOD file by reading its header/index and checking for marker DEFs.
      * Returns null on success, or an error message on failure.
      */
-    fun validate(stream: InputStream, isHota: Boolean): String? {
+    fun validate(file: File, isHota: Boolean): String? {
         val archive = try {
-            LodReader(stream).read()
+            LodReader(FileLodDataSource(file)).use { it.read() }
         } catch (e: IllegalArgumentException) {
             return e.message ?: "Invalid LOD file"
         } catch (e: Exception) {

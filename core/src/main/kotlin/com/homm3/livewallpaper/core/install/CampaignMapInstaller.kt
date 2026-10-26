@@ -1,6 +1,7 @@
 package com.homm3.livewallpaper.core.install
 
 import com.homm3.livewallpaper.parser.h3c.H3cExtractor
+import com.homm3.livewallpaper.parser.lod.FileLodDataSource
 import com.homm3.livewallpaper.parser.lod.LodReader
 import java.io.File
 import java.util.logging.Level
@@ -31,7 +32,15 @@ object CampaignMapInstaller {
         log.info("installFromLod: lod=${lod.absolutePath} size=${lod.length()} outputDir=$outputDir")
         outputDir.mkdirs()
 
-        val archive = LodReader(lod.inputStream()).read()
+        return LodReader(FileLodDataSource(lod)).use { reader -> extractCampaigns(reader, outputDir, onProgress) }
+    }
+
+    private fun extractCampaigns(
+        reader: LodReader,
+        outputDir: File,
+        onProgress: ((current: Int, total: Int, message: String) -> Unit)?,
+    ): Result {
+        val archive = reader.read()
         val h3cEntries = archive.files.filter { it.name.endsWith(".h3c", ignoreCase = true) }
         log.info("archive: ${archive.files.size} entries, ${h3cEntries.size} .h3c: ${h3cEntries.map { it.name }}")
 
@@ -48,7 +57,7 @@ object CampaignMapInstaller {
 
             val bytes = try {
                 val t0 = System.nanoTime()
-                val data = LodReader(lod.inputStream()).readFileContent(entry).readBytes()
+                val data = reader.readFileContent(entry).readBytes()
                 val ms = (System.nanoTime() - t0) / 1_000_000
                 log.info("  readFileContent('${entry.name}'): ${data.size} bytes in ${ms}ms")
                 data
