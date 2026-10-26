@@ -12,6 +12,10 @@ import java.util.Collections
 object CompressedBlockReader {
     private const val SETUP_ID_SIZE = 64
 
+    /** Setup headers of real installers unpack to a few MB; the cap stops a corrupt one from filling the heap. */
+    private const val MAX_UNPACKED_BLOCK_SIZE = 64 * 1024 * 1024
+    private const val EXPECTED_COMPRESSION_RATIO = 4
+
     /**
      * Reads and LZMA-decompresses the primary setup-0 stream starting at [offset0].
      * Returns the decompressed bytes. After this call, [raf]'s file pointer is positioned
@@ -53,6 +57,9 @@ object CompressedBlockReader {
         val storedSize = hdrBuf.int.toLong() and 0xFFFFFFFFL
         val compressed = hdrBuf.get().toInt() != 0
 
+        val remainingFileBytes = raf.length() - raf.filePointer
+        require(storedSize <= remainingFileBytes) { "Compressed block size $storedSize exceeds the file" }
+
         // Read StoredSize bytes; concat all 4096-byte LZMA blocks (after stripping 4-byte CRC each)
         val raw = ByteArray(storedSize.toInt())
         raf.readFully(raw)
@@ -83,12 +90,14 @@ object CompressedBlockReader {
         val lzmaDictSize = ByteBuffer.wrap(lzmaHeader, 1, 4).order(ByteOrder.LITTLE_ENDIAN).int
 
         val lzma = LZMAInputStream(concatenated, -1L, lzmaPropsByte, lzmaDictSize)
-        val out = ByteArrayOutputStream(storedSize.toInt() * 4)
+        val initialCapacity = minOf(storedSize * EXPECTED_COMPRESSION_RATIO, MAX_UNPACKED_BLOCK_SIZE.toLong()).toInt()
+        val out = ByteArrayOutputStream(initialCapacity)
         val buf = ByteArray(8192)
         while (true) {
             val n = try { lzma.read(buf) } catch (e: Exception) { -1 }
             if (n <= 0) break
             out.write(buf, 0, n)
+            require(out.size() <= MAX_UNPACKED_BLOCK_SIZE) { "Setup block unpacks to more than $MAX_UNPACKED_BLOCK_SIZE bytes" }
         }
         try { lzma.close() } catch (_: Exception) {}
         return out.toByteArray()

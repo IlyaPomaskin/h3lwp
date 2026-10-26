@@ -4,12 +4,9 @@ import com.homm3.livewallpaper.parser.BinaryReader
 import org.tukaani.xz.LZMAInputStream
 import java.io.ByteArrayInputStream
 import java.io.Closeable
-import java.io.InputStream
 import java.util.zip.Inflater
 
 class LodReader(private val source: LodDataSource) : Closeable {
-    constructor(stream: InputStream) : this(ByteArrayLodDataSource(stream.readBytes()))
-
     private val magicHeader = byteArrayOf(
         0x4c.toByte(), 0x4f.toByte(), 0x44.toByte(), 0x00.toByte(),
         0xc8.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte()
@@ -24,7 +21,7 @@ class LodReader(private val source: LodDataSource) : Closeable {
         val filesCount = header.readInt()
         val key = header.readInt()
         val isHashed = key != 0 && key != PLAIN_KEY_MAGIC
-        require(filesCount >= 0) { "Invalid LOD entry count: $filesCount" }
+        require(filesCount in 0..MAX_FILES_COUNT) { "Invalid LOD entry count: $filesCount" }
 
         val entries = BinaryReader(source.read(ENTRIES_OFFSET, filesCount * ENTRY_SIZE))
         val files = (0 until filesCount).map {
@@ -40,6 +37,7 @@ class LodReader(private val source: LodDataSource) : Closeable {
         if (entry.compressedSize == 0) {
             return source.read(entry.offset.toLong(), entry.size).inputStream()
         }
+        require(entry.size in 0..MAX_ENTRY_SIZE) { "Invalid LOD entry size: ${entry.name} ${entry.size}" }
 
         val raw = source.read(entry.offset.toLong(), entry.compressedSize)
 
@@ -57,7 +55,12 @@ class LodReader(private val source: LodDataSource) : Closeable {
                         val n = lzma.read(buffer)
                         if (n <= 0) break
                         output.write(buffer, 0, n)
+                        require(output.size() <= MAX_ENTRY_SIZE) {
+                            "LOD entry unpacks to more than $MAX_ENTRY_SIZE bytes: ${entry.name}"
+                        }
                     }
+                } catch (e: IllegalArgumentException) {
+                    throw e
                 } catch (_: Exception) {
                     // Stream may end without proper LZMA termination
                 }
@@ -115,5 +118,9 @@ class LodReader(private val source: LodDataSource) : Closeable {
         private const val PLAIN_KEY_MAGIC = 0x7E0213
         private const val HASHED_ENTRY_JUNK_SIZE = 15
         private const val ENTRY_SIZE = 32
+        private const val MAX_FILES_COUNT = Int.MAX_VALUE / ENTRY_SIZE
+
+        /** The largest real entry (in HotA.lod) unpacks to about 7.5 MB. */
+        private const val MAX_ENTRY_SIZE = 64 * 1024 * 1024
     }
 }

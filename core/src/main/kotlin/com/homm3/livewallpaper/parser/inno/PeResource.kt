@@ -77,7 +77,10 @@ object PeResource {
         val dataRva = readU32(raf).toLong()
         val dataSize = readU32(raf).toLong()
 
-        raf.seek(rvaToFile(dataRva))
+        val dataOffset = rvaToFile(dataRva)
+        val isInsideFile = dataOffset >= 0 && dataSize <= raf.length() - dataOffset
+        require(isInsideFile) { "Resource id=$resourceId lies outside the file: offset=$dataOffset size=$dataSize" }
+        raf.seek(dataOffset)
         val out = ByteArray(dataSize.toInt())
         raf.readFully(out)
         return out

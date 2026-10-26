@@ -119,7 +119,7 @@ class IndexedSpriteLoaderTest {
     )
 
     private fun readFirstDef(lods: List<File>, name: String): DefSprite = lods.firstNotNullOf { lod ->
-        val reader = lod.inputStream().use { LodReader(it) }
+        val reader = LodReader(FileLodDataSource(lod))
         reader.read().find(name)?.let { entry -> DefReader(reader.readFileContent(entry)).read() }
     }
 
