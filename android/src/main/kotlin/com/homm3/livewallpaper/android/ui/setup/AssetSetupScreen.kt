@@ -138,16 +138,6 @@ fun AssetSetupScreen(
                 isSelectEnabled = !uiState.isBusy,
                 options = listOf(
                     AssetOption(
-                        title = stringResource(R.string.asset_setup_base_gog_title),
-                        description = stringResource(R.string.asset_setup_base_gog_description),
-                        descriptionLink = DescriptionLink(
-                            label = stringResource(R.string.gog_site_label),
-                            url = stringResource(R.string.gog_site_url),
-                        ),
-                        buttonText = stringResource(R.string.asset_setup_base_gog_button),
-                        onSelect = onSelectGogInstaller,
-                    ),
-                    AssetOption(
                         title = stringResource(R.string.asset_setup_base_demo_title),
                         description = stringResource(R.string.asset_setup_base_demo_description),
                         descriptionLink = DescriptionLink(
@@ -156,6 +146,16 @@ fun AssetSetupScreen(
                         ),
                         buttonText = stringResource(R.string.asset_setup_base_demo_button),
                         onSelect = onSelectMacDemo,
+                    ),
+                    AssetOption(
+                        title = stringResource(R.string.asset_setup_base_gog_title),
+                        description = stringResource(R.string.asset_setup_base_gog_description),
+                        descriptionLink = DescriptionLink(
+                            label = stringResource(R.string.gog_site_label),
+                            url = stringResource(R.string.gog_site_url),
+                        ),
+                        buttonText = stringResource(R.string.asset_setup_base_gog_button),
+                        onSelect = onSelectGogInstaller,
                     ),
                     AssetOption(
                         title = stringResource(R.string.asset_setup_base_lod_title),
