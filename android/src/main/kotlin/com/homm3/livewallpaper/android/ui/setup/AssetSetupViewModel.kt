@@ -1,12 +1,14 @@
 package com.homm3.livewallpaper.android.ui.setup
 
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.homm3.livewallpaper.android.data.GameDataRepository
 import com.homm3.livewallpaper.android.data.GameDataStatus
 import com.homm3.livewallpaper.core.install.InstallProgress
 import com.homm3.livewallpaper.core.install.InstallResult
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,6 +18,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val STOP_TIMEOUT_MILLIS = 5_000L
+private const val LOG_TAG = "AssetSetup"
 
 data class InstallTaskState(
     val isRunning: Boolean = false,
@@ -66,8 +69,15 @@ class AssetSetupViewModel(private val repository: GameDataRepository) : ViewMode
 
         mutableState.update { updateTask(it, InstallTaskState(isRunning = true)) }
         viewModelScope.launch {
-            val result = install { message ->
-                mutableState.update { updateTask(it, InstallTaskState(isRunning = true, message = message)) }
+            val result = try {
+                install { message ->
+                    mutableState.update { updateTask(it, InstallTaskState(isRunning = true, message = message)) }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                Log.e(LOG_TAG, "install failed", e)
+                InstallResult.Failure("Error: ${e.message ?: e.javaClass.simpleName}")
             }
             val isSuccess = result is InstallResult.Success
             mutableState.update { updateTask(it, InstallTaskState(message = result.message, isFailure = !isSuccess)) }

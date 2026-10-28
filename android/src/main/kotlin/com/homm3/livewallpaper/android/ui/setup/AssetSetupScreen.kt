@@ -73,13 +73,13 @@ fun AssetSetupRoute(onBack: (() -> Unit)?, onContinue: (() -> Unit)?) {
     val viewModel = viewModel { AssetSetupViewModel(context.appContainer.gameDataRepository) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val pickBaseLod = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+    val pickBaseLod = rememberLauncherForActivityResult(OpenSingleDocument()) { uri ->
         if (uri != null) viewModel.installBase(uri)
     }
     val pickGogInstaller = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isNotEmpty()) viewModel.installBaseFromGog(uris)
     }
-    val pickHotaInstaller = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+    val pickHotaInstaller = rememberLauncherForActivityResult(OpenSingleDocument()) { uri ->
         if (uri != null) viewModel.installHota(uri)
     }
 
