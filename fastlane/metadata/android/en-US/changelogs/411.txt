@@ -1,0 +1,3 @@
+• Fixed selecting game files doing nothing on some devices
+• Install errors are now shown instead of closing the app
+• Fixed option numbers on the game files screen
