@@ -28,7 +28,6 @@ class GameDataRepository(context: Context) {
     private val dataDir = appContext.filesDir
 
     private val installer by lazy {
-        System.loadLibrary(GDX_LIBRARY)
         GameDataInstaller(
             dataDir = dataDir,
             tempDir = appContext.cacheDir,
@@ -115,7 +114,6 @@ class GameDataRepository(context: Context) {
     }
 
     private companion object {
-        const val GDX_LIBRARY = "gdx"
         const val HOTA_INSTALLER_CACHE_NAME = "hota_installer.exe"
         const val FAILED_TO_OPEN_MESSAGE = "Failed to open file"
         const val COPYING_INSTALLER_MESSAGE = "Copying installer..."
