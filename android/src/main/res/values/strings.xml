@@ -37,8 +37,8 @@
     <string name="asset_setup_base_demo_description">No game? Download the free Mac demo from archive.org, copy its *.sit file (or a *.zip containing it) to your phone and select it.</string>
     <string name="asset_setup_base_lod_description">Copy the file H3sprite.lod from the Data folder of your game installation to your phone, then select it.\n\nNote: HD Edition, Restoration of Erathia, and Armageddon\'s Blade are not supported.</string>
     <string name="asset_setup_base_choose">Choose one of these ways to add the game files:</string>
-    <string name="asset_setup_base_gog_title">Option 1: GOG installer</string>
-    <string name="asset_setup_base_demo_title">Option 2: Free Mac demo</string>
+    <string name="asset_setup_base_gog_title">Option 2: GOG installer</string>
+    <string name="asset_setup_base_demo_title">Option 1: Free Mac demo</string>
     <string name="asset_setup_base_lod_title">Option 3: H3sprite.lod file</string>
     <string name="asset_setup_or">or</string>
     <string name="asset_setup_base_replace_button">Replace game files</string>

@@ -34,8 +34,8 @@
     <string name="asset_setup_base_demo_description">Nie masz gry? Pobierz darmowe demo na Maca z archive.org, skopiuj jego plik *.sit (lub zawierający go plik *.zip) na telefon i wybierz go.</string>
     <string name="asset_setup_base_lod_description">Skopiuj plik H3sprite.lod z folderu Data instalacji gry na telefon, a następnie go wybierz.\n\nWersja HD, Odrodzenie Erathii i Ostrze Armagedonu nie są obsługiwane.</string>
     <string name="asset_setup_base_choose">Wybierz jeden z tych sposobów dodania plików gry:</string>
-    <string name="asset_setup_base_gog_title">Opcja 1: instalator GOG</string>
-    <string name="asset_setup_base_demo_title">Opcja 2: darmowe demo na Maca</string>
+    <string name="asset_setup_base_gog_title">Opcja 2: instalator GOG</string>
+    <string name="asset_setup_base_demo_title">Opcja 1: darmowe demo na Maca</string>
     <string name="asset_setup_base_lod_title">Opcja 3: plik H3sprite.lod</string>
     <string name="asset_setup_or">lub</string>
     <string name="asset_setup_base_replace_button">Zamień pliki gry</string>

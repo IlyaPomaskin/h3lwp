@@ -34,8 +34,8 @@
     <string name="asset_setup_base_demo_description">Нет игры? Скачайте бесплатное демо для Mac с archive.org, скопируйте его файл *.sit (или содержащий его *.zip) на телефон и выберите его.</string>
     <string name="asset_setup_base_lod_description">Скопируйте файл H3sprite.lod из папки Data вашей установки игры на телефон, затем выберите его.\n\nHD-версия из Steam, Возрождение Эрафии и Клинок Армагеддона не поддерживаются.</string>
     <string name="asset_setup_base_choose">Выберите один из способов добавить файлы игры:</string>
-    <string name="asset_setup_base_gog_title">Вариант 1: установщик GOG</string>
-    <string name="asset_setup_base_demo_title">Вариант 2: бесплатное демо для Mac</string>
+    <string name="asset_setup_base_gog_title">Вариант 2: установщик GOG</string>
+    <string name="asset_setup_base_demo_title">Вариант 1: бесплатное демо для Mac</string>
     <string name="asset_setup_base_lod_title">Вариант 3: файл H3sprite.lod</string>
     <string name="asset_setup_or">или</string>
     <string name="asset_setup_base_replace_button">Заменить файлы игры</string>
