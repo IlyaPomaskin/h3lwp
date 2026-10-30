@@ -176,3 +176,4 @@ assets/user-maps/*
 **/resource-config.json
 assets-desktop
 data
+/maps/
