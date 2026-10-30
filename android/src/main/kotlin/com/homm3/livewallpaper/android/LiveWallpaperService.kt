@@ -2,6 +2,7 @@ package com.homm3.livewallpaper.android
 
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration
 import com.badlogic.gdx.backends.android.AndroidLiveWallpaperService
+import com.badlogic.gdx.backends.android.NonBlockingResumeLiveWallpaper
 import com.homm3.livewallpaper.android.wallpaper.AndroidEngine
 
 class LiveWallpaperService : AndroidLiveWallpaperService() {
@@ -29,6 +30,7 @@ class LiveWallpaperService : AndroidLiveWallpaperService() {
 
     override fun onCreateApplication() {
         super.onCreateApplication()
+        app = NonBlockingResumeLiveWallpaper(this)
 
         val engine = AndroidEngine(this, appContainer.preferencesRepository.preferences)
         androidEngine = engine
