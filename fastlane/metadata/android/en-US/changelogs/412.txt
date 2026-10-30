@@ -1,0 +1,1 @@
+• Fixed the wallpaper freezing when turning the screen on, seen on foldables
