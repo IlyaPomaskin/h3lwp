@@ -16,6 +16,10 @@ Heroes of Might and Magic is a trademark of Ubisoft Entertainment. This is a fan
 
 ## Credits
 
+Thanks to [VCMI](https://github.com/vcmi/vcmi), a reference for the map and assets parsers, rendering engine.
+
+Thanks to [homm3-parser](https://github.com/srg-kostyrko/homm3-parser), a well-structured reference for the game file formats.
+
 Thanks for the application icon to Wit Olszewski
 https://www.instagram.com/witolszewski/
 https://www.behance.net/witolszewski
