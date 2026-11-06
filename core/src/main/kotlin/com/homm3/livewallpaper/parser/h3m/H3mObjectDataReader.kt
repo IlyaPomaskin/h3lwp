@@ -2,11 +2,21 @@ package com.homm3.livewallpaper.parser.h3m
 
 import com.homm3.livewallpaper.parser.BinaryReader
 
+private const val HOTA_1_8_1_SUB_VERSION = 10
+
 class H3mObjectDataReader(
     private val version: H3mVersion,
     private val stream: BinaryReader,
     private val hotaSubVersion: Int = 0
 ) {
+    private val hasQuestTimeoutMessageAndSeerName =
+        version == H3mVersion.HOTA && hotaSubVersion >= HOTA_1_8_1_SUB_VERSION
+
+    private fun readQuestTimeoutMessage() {
+        if (hasQuestTimeoutMessageAndSeerName) {
+            stream.readString()
+        }
+    }
 
     private fun readCreatureSet(count: Int) {
         for (i in 0 until count) {
@@ -250,6 +260,10 @@ class H3mObjectDataReader(
             }
         }
 
+        if (hasQuestTimeoutMessageAndSeerName && stream.readBool()) {
+            stream.readString() // seer name
+        }
+
         stream.skip(2) // reserved
     }
 
@@ -264,6 +278,7 @@ class H3mObjectDataReader(
         }
 
         if (missionType > 0) {
+            readQuestTimeoutMessage()
             when (SeerHutRewardType.fromInt(stream.readByte())) {
                 SeerHutRewardType.EXPERIENCE -> stream.readInt()
                 SeerHutRewardType.MANA_POINTS -> stream.readInt()
@@ -440,6 +455,7 @@ class H3mObjectDataReader(
     fun readQuestGuard() {
         val missionType = stream.readByte()
         readQuest(missionType)
+        readQuestTimeoutMessage()
     }
 
     fun readHeroPlaceholder() {
